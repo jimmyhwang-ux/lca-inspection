@@ -489,7 +489,6 @@ async function startAnalysis() {
   "name":"상품명","modelNo":"모델번호(없으면 빈문자열)","color":"색상","confidence":숫자0-100,
   "verdict":"합격/보류/불합격","verdictReason":"판정 사유 1-2줄",
   "accessories":[{"name":"부속품명","type":"부속품/구성품","status":"있음/없음/불확실","reason":"판단 근거","fromSellerText":true또는false}],
-  "adminTemplate":"어드민 입력 워딩(보류/불합격 시, 없으면 빈문자열)",
   "officialSiteUrl":"브랜드 공식몰 URL","searchKo":"한글 검색 쿼리","searchEn":"영문 검색 쿼리"
 }`});
 
@@ -530,14 +529,14 @@ async function startAnalysis() {
 
 // ── 결과 렌더링 ──
 function renderResult(r) {
-  document.getElementById('res-care-label').textContent = `케어번호 #${r.careNo} · ${r.brand} ${r.category}`;
+  document.getElementById('res-care-label').textContent = `${r.brand} ${r.category}`;
   const accs = r.accessories||[];
   const absent = accs.filter(a=>a.type==='부속품'&&a.status==='없음');
   const presentAcc = accs.filter(a=>a.type==='부속품'&&a.status==='있음');
   const uncertainAcc = accs.filter(a=>a.type==='부속품'&&a.status==='불확실');
   const sqKo = encodeURIComponent(r.searchKo||`${r.brand} ${r.name} ${r.modelNo}`);
   const sqEn = encodeURIComponent(r.searchEn||`${r.brandEn||r.brand} ${r.name}`);
-  const vi = r.verdict==='합격'?'✅':r.verdict==='보류'?'⚠️':'❌';
+  const vi = r.verdict==='합격'?'✅':r.verdict==='보류'?'🔍':'❌';
   const vcls = r.verdict==='합격'?'pass':r.verdict==='보류'?'hold':'fail';
   const missingBadge = absent.length>0
     ? `<span style="background:#fde68a;color:#92400e;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">누락 ${absent.length}개</span>`
@@ -547,7 +546,10 @@ function renderResult(r) {
     <div class="verdict-wrap ${vcls}">
       <div class="verdict-inner">
         <div class="v-icon">${vi}</div>
-        <div><div class="v-label">${r.verdict}</div><div class="v-reason">${r.verdictReason}</div></div>
+        <div>
+          <div class="v-label">${r.verdict==='보류'?'검수자 확인 필요':r.verdict}</div>
+          ${r.verdict==='보류'?`<div class="v-reason">모델번호 <b>${r.modelNo||r.name}</b>으로 확인되나, 주요 부속품 미확인</div>`:`<div class="v-reason">${r.verdictReason}</div>`}
+        </div>
       </div>
     </div>
 
@@ -570,36 +572,36 @@ function renderResult(r) {
       <div id="acc-list">
         ${renderAccList(accs.filter(a=>a.type==='부속품'))}
       </div>
+      <div class="acc-add-wrap" style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:6px;font-weight:600">➕ 이미지에서 확인 불가한 부속품 추가</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="acc-add-select" class="acc-edit-select" style="flex:2">
+            <option value="">부속품 선택...</option>
+            <option value="숄더스트랩">숄더스트랩</option><option value="레더 스트랩">레더 스트랩</option><option value="패브릭 스트랩">패브릭 스트랩</option><option value="자물쇠">자물쇠</option><option value="열쇠">열쇠</option><option value="자물쇠/열쇠">자물쇠/열쇠</option><option value="이너 파우치">이너 파우치</option><option value="미니파우치">미니파우치</option><option value="키벨(자물쇠 커버)">키벨(자물쇠 커버)</option><option value="참 장식">참 장식</option><option value="핸들 홀더">핸들 홀더</option><option value="밑판">밑판</option><option value="네임택">네임택</option><option value="리본">리본</option><option value="체결끈">체결끈</option><option value="엔드참">엔드참</option><option value="스트랩 패드">스트랩 패드</option><option value="신발끈">신발끈</option>
+          </select>
+          <select id="acc-add-status" class="acc-edit-select" style="flex:1">
+            <option value="있음">✅ 있음</option>
+            <option value="없음" selected>⚠️ 없음</option>
+            <option value="불확실">❓ 불확실</option>
+          </select>
+          <button onclick="addManualAcc()" style="padding:6px 12px;background:var(--acc);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">추가</button>
+        </div>
+      </div>
+
       ${accs.filter(a=>a.type==='부속품').length===0?'<div style="text-align:center;padding:16px;color:var(--txt3);font-size:13px">부속품 전체샷을 추가하면 더 정확해요</div>':''}
     </div>
 
-    <div>
-      <div class="sec-title">📋 판정 결과 · 어드민 워딩</div>
-      <div style="background:var(--sur);border-radius:var(--r3);border:.5px solid var(--bdr);overflow:hidden">
-        <div style="padding:12px 14px;border-bottom:.5px solid var(--bdr)">
-          <div style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.3px;margin-bottom:4px">판정 사유</div>
-          <div style="font-size:13px;color:var(--txt)">${r.verdictReason}</div>
-        </div>
-        ${r.adminTemplate?`<div style="padding:12px 14px;border-bottom:.5px solid var(--bdr)">
-          <div style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.3px;margin-bottom:4px">어드민 입력 워딩</div>
-          <div class="template-box" id="tmpl-box" style="background:transparent;border:none;padding:0">${r.adminTemplate}</div>
-        </div>`:''}
-        <button class="chatbot-btn" style="border-radius:0;width:100%" onclick="openGemini()">
-          <span style="font-size:16px">✨</span>
-          Gemini에서 최종 판정 확인
-        </button>
-      </div>
-    </div>
+
 
     <div>
       <div class="sec-title">🔍 모델 확인 검색</div>
       <a class="search-link" href="https://www.bunjang.co.kr/search/products?q=${sqKo}" target="_blank"><span class="sl-tier sl-t3">번장</span><div><div class="sl-name">번개장터</div><div class="sl-desc">동일 모델 실거래 케이스 참고</div></div><span class="sl-arr">↗</span></a>
       <a class="search-link" href="https://www.google.com/search?tbm=isch&q=${sqEn}" target="_blank"><span class="sl-tier sl-t4">구글</span><div><div class="sl-name">Google 이미지</div><div class="sl-desc">이미지 교차 검색 — 모델 확인</div></div><span class="sl-arr">↗</span></a>
-      <a class="search-link" id="gugus-link" href="#" target="_blank" onclick="searchGugus(event,'${sqKo}','${r.brand}','${r.name}')"><span class="sl-tier" style="background:#fce7f3;color:#9d174d">구구스</span><div><div class="sl-name">구구스 (Gugus)</div><div class="sl-desc" id="gugus-status">구구스 API 검색 중...</div></div><span class="sl-arr">↗</span></a>
+
     </div>
   `;
 
-  if(r.adminTemplate) document.getElementById('btn-copy-tmpl').style.display='block';
+  // 어드민 워딩 섹션 제거됨
 }
 
 function renderAccList(accArr) {
@@ -625,6 +627,39 @@ function renderAccList(accArr) {
       <div class="acc-badge">${badge}</div>
     </div>`;
   }).join('');
+}
+
+// ── 부속품 수동 추가 ──
+function addManualAcc() {
+  const sel = document.getElementById('acc-add-select');
+  const statusSel = document.getElementById('acc-add-status');
+  const name = sel.value, status = statusSel.value;
+  if(!name){ showToast('부속품을 선택해 주세요'); return; }
+  const newAcc = {name, type:'부속품', status, reason:'검수자 직접 입력', fromSellerText:false};
+  editedAccs.push(newAcc);
+  const idx = editedAccs.length - 1;
+  const cls = status==='있음'?'acc-present':status==='없음'?'acc-absent':'acc-uncertain';
+  const dot = status==='있음'?'✅':status==='없음'?'⚠️':'❓';
+  const badge = status==='있음'?'확인':status==='없음'?'보류':'확인필요';
+  const div = document.createElement('div');
+  div.id = 'acc-item-'+idx;
+  div.className = cls+' acc-item';
+  div.innerHTML = '<div class="acc-dot">'+dot+'</div>'
+    +'<div style="flex:1">'
+    +'<div class="acc-name">'+(status==='없음'?'❌ ':'')+name+(status==='없음'?' 없음':'')+'</div>'
+    +'<div class="acc-why">검수자 직접 입력</div>'
+    +'<div class="acc-edit-row">'
+    +'<select class="acc-edit-select" onchange="editAcc('+idx+','status',this.value)">'
+    +'<option value="있음"'+(status==='있음'?' selected':'')+'>✅ 있음</option>'
+    +'<option value="없음"'+(status==='없음'?' selected':'')+'>⚠️ 없음</option>'
+    +'<option value="불확실"'+(status==='불확실'?' selected':'')+'>❓ 불확실</option>'
+    +'</select>'
+    +'<input class="acc-edit-note" type="text" placeholder="메모 추가..." oninput="editAcc('+idx+','memo',this.value)">'
+    +'</div></div>'
+    +'<div class="acc-badge">'+badge+'</div>';
+  document.getElementById('acc-list').appendChild(div);
+  sel.value = '';
+  showToast('✅ '+name+' 추가됨');
 }
 
 // ── 부속품 인라인 편집 ──
@@ -660,7 +695,6 @@ function openGemini() {
     `AI 판정: ${r.verdict}\n` +
     `판정 사유: ${r.verdictReason}\n` +
     `누락 부속품: ${missing||'없음'}\n` +
-    `어드민 워딩: ${r.adminTemplate||'—'}\n\n` +
     `위 내용을 검토하고 최종 판정을 도와주세요.`
   );
   window.open(`${GEMINI_URL}?q=${msg}`, '_blank');
@@ -688,7 +722,6 @@ async function saveToSheets() {
   const row = [
     r.careNo, r.brand, r.category, r.name, r.modelNo||'', r.color||'',
     r.verdict, r.verdictReason||'', missing, present, memos,
-    r.adminTemplate||'', (r.confidence||0)+'%', r.imgCount||0, r.analyzedAt
   ];
 
   try {
@@ -730,7 +763,6 @@ function _doCSV() {
     r.careNo, r.brand, r.category, r.name, r.modelNo||'', r.color||'',
     r.verdict, `"${(r.verdictReason||'').replace(/"/g,'""')}"`,
     `"${missing}"`, `"${present}"`, `"${memos}"`,
-    `"${(r.adminTemplate||'').replace(/"/g,'""')}"`,
     (r.confidence||0)+'%', r.imgCount||0, r.analyzedAt
   ].join(',');
   const csv = '\uFEFF'+header+'\n'+row;
@@ -755,62 +787,6 @@ function doReset() {
     document.getElementById('f'+i).value='';
   });
   show('input');
-}
-
-// ── 구구스 API 검색 ──
-async function searchGugus(event, sqKo, brand, name) {
-  event.preventDefault();
-  const link = document.getElementById('gugus-link');
-  const status = document.getElementById('gugus-status');
-  if(!status) return;
-
-  status.textContent = '구구스 검색 중...';
-  link.style.opacity = '0.6';
-
-  try {
-    // 구구스 검색 URL (공개 검색 API 테스트)
-    const query = encodeURIComponent(`${brand} ${name}`);
-    const gugusSearchUrl = `https://www.gugus.co.kr/search?keyword=${query}`;
-
-    // 구구스 API 직접 호출 테스트 (CORS 우회 - Worker 경유)
-    const resp = await fetch(PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'fetch_url',
-        url: `https://www.gugus.co.kr/api/search?q=${query}&limit=5`
-      })
-    });
-
-    const data = await resp.json();
-
-    if(data.items && data.items.length > 0) {
-      const item = data.items[0];
-      status.textContent = `${item.title || '검색 결과 있음'} — ${data.items.length}건`;
-      link.href = gugusSearchUrl;
-      link.style.opacity = '1';
-      showToast(`✅ 구구스: ${data.items.length}건 발견`);
-    } else if(data.error && data.error.includes('fetch_url')) {
-      // API 직접 호출 안 되면 검색 페이지로 이동
-      status.textContent = '구구스 검색 페이지로 이동';
-      link.href = gugusSearchUrl;
-      link.style.opacity = '1';
-      window.open(gugusSearchUrl, '_blank');
-    } else {
-      status.textContent = '구구스에서 검색하기';
-      link.href = gugusSearchUrl;
-      link.style.opacity = '1';
-      window.open(gugusSearchUrl, '_blank');
-    }
-  } catch(err) {
-    // fallback: 구구스 검색 페이지로 직접 이동
-    const query = encodeURIComponent(`${brand} ${name}`);
-    const gugusSearchUrl = `https://www.gugus.co.kr/search?keyword=${query}`;
-    status.textContent = '구구스 검색 페이지로 이동';
-    link.href = gugusSearchUrl;
-    link.style.opacity = '1';
-    window.open(gugusSearchUrl, '_blank');
-  }
 }
 
 // ── 토스트 ──
