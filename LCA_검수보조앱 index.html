@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5a623">
+<title>번개케어 검수 보조</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --accent:#f5a623;--accent2:#ff6b35;
+  --bg:#f2f2f7;--surface:#fff;--surface2:#f8f8fa;
+  --border:#e5e5ea;--border2:#d1d1d6;
+  --text:#1c1c1e;--text2:#6c6c70;--text3:#aeaeb2;
+  --success:#34c759;--danger:#ff3b30;--warn:#ff9500;--info:#007aff;
+  --r:16px;--r2:12px;--r3:10px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,'Noto Sans KR',sans-serif;font-size:16px}
+body{max-width:480px;margin:0 auto;position:relative}
+
+/* ─ 화면들 ─ */
+.screen{display:none;flex-direction:column;min-height:100vh}
+.screen.show{display:flex}
+
+/* ══════════════ 입력 화면 ══════════════ */
+#s-input{background:var(--bg)}
+
+.top-bar{
+  background:rgba(255,255,255,.88);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:.5px solid var(--border);
+  padding:14px 18px 12px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:99;
+}
+.top-bar-logo{font-size:22px;color:var(--accent)}
+.top-bar-info h1{font-size:15px;font-weight:700;color:var(--text)}
+.top-bar-info p{font-size:11px;color:var(--text2);margin-top:1px}
+.top-bar-care{
+  margin-left:auto;
+  background:var(--surface2);border:.5px solid var(--border2);
+  border-radius:8px;padding:5px 11px;
+  font-size:11px;font-family:monospace;color:var(--text2);
+  cursor:pointer;transition:all .15s;
+}
+.top-bar-care.on{color:var(--accent);border-color:var(--accent);background:#fff8ee}
+
+.scroll-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;padding-bottom:100px}
+
+/* ─ 카드 ─ */
+.card{background:var(--surface);border-radius:var(--r);border:.5px solid var(--border);overflow:hidden}
+.card-hd{padding:14px 16px 0;display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
+.card-hd-icon{font-size:20px;margin-top:1px}
+.card-hd h2{font-size:14px;font-weight:600;color:var(--text)}
+.card-hd p{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4}
+
+/* ─ 사진 그리드 ─ */
+.photo-main-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:0 14px 14px}
+.photo-extra-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 14px}
+
+.slot{
+  aspect-ratio:1;border-radius:var(--r3);border:1.5px dashed var(--border2);
+  background:var(--surface2);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;transition:all .15s;position:relative;overflow:hidden;
+}
+.slot:active{transform:scale(.97)}
+.slot.req{border-color:#fbbf24;background:#fffbf2}
+.slot.filled{border-style:solid;border-color:var(--success);background:#f0fff4}
+.slot .s-icon{font-size:22px;z-index:1}
+.slot .s-label{font-size:9px;color:var(--text2);font-weight:600;text-align:center;line-height:1.3;z-index:1}
+.slot .req-badge{
+  position:absolute;top:3px;right:3px;z-index:2;
+  background:var(--warn);color:#fff;font-size:9px;font-weight:700;
+  padding:1px 5px;border-radius:4px;
+}
+.slot .del{
+  position:absolute;top:3px;left:3px;z-index:3;
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(0,0,0,.55);color:#fff;
+  font-size:10px;display:flex;align-items:center;justify-content:center;
+}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px}
+
+.extra-note{
+  margin:0 14px 12px;padding:10px 12px;
+  background:#f0f8ff;border-radius:var(--r3);
+  border-left:3px solid var(--info);
+  font-size:11px;color:#0055aa;line-height:1.5;
+}
+
+/* ─ 텍스트 영역 ─ */
+textarea.seller{
+  width:100%;padding:13px 16px;font-size:13px;font-family:inherit;
+  border:none;outline:none;resize:none;background:transparent;
+  color:var(--text);line-height:1.6;
+}
+textarea.seller::placeholder{color:var(--text3)}
+
+/* ─ 분석 버튼 ─ */
+.fab-wrap{position:sticky;bottom:0;padding:12px 14px 20px;background:linear-gradient(transparent,var(--bg) 40%)}
+.fab{
+  width:100%;padding:15px;border:none;border-radius:var(--r2);
+  background:linear-gradient(135deg,#f5a623,#ff6b35);
+  color:#fff;font-size:16px;font-weight:700;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  cursor:pointer;letter-spacing:-.3px;transition:all .15s;
+  box-shadow:0 4px 20px rgba(245,166,35,.35);
+}
+.fab:active{transform:scale(.98)}
+.fab:disabled{opacity:.45;box-shadow:none}
+.fab .sp{
+  width:18px;height:18px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+  animation:spin .7s linear infinite;display:none;
+}
+.fab.ld .sp{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════ 로딩 화면 ══════════════ */
+#s-loading{background:var(--bg);align-items:center;justify-content:center;gap:0}
+.loading-card{
+  background:var(--surface);border-radius:var(--r);
+  border:.5px solid var(--border);
+  width:calc(100% - 28px);overflow:hidden;
+}
+.loading-hd{
+  padding:20px 20px 16px;text-align:center;
+  border-bottom:.5px solid var(--border);
+}
+.loading-hd .anim-icon{font-size:36px;animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.loading-hd h2{font-size:16px;font-weight:700;margin-top:10px}
+.loading-hd p{font-size:12px;color:var(--text2);margin-top:4px}
+
+.step-list{padding:0 0 4px}
+.step-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 20px;border-bottom:.5px solid var(--border);
+  font-size:13px;color:var(--text3);transition:all .3s;
+}
+.step-item:last-child{border-bottom:none}
+.step-item.active{color:var(--accent);font-weight:600}
+.step-item.done{color:var(--text)}
+.step-dot{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  background:var(--surface2);border:1.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--text3);transition:all .3s;
+}
+.step-item.active .step-dot{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+  animation:pulse 1s ease-in-out infinite;
+}
+.step-item.done .step-dot{background:var(--success);border-color:var(--success);color:#fff}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ══════════════ 결과 화면 ══════════════ */
+#s-result{background:var(--bg)}
+
+/* ─ 판정 박스 ─ */
+.verdict-wrap{
+  border-radius:var(--r);overflow:hidden;
+  border:1px solid;margin-bottom:0;
+}
+.verdict-wrap.pass{background:#f0fff4;border-color:#86efac}
+.verdict-wrap.hold{background:#fffbeb;border-color:#fde68a}
+.verdict-wrap.fail{background:#fff1f0;border-color:#fecaca}
+.verdict-inner{padding:16px 18px;display:flex;align-items:flex-start;gap:13px}
+.v-icon{font-size:30px;flex-shrink:0}
+.v-label{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.verdict-wrap.pass .v-label{color:#16a34a}
+.verdict-wrap.hold .v-label{color:#d97706}
+.verdict-wrap.fail .v-label{color:#dc2626}
+.v-reason{font-size:12px;color:var(--text2);margin-top:5px;line-height:1.5}
+
+/* ─ 모델 정보 그리드 ─ */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-cell{background:var(--surface2);border-radius:var(--r3);padding:10px 12px}
+.info-cell.full{grid-column:1/-1}
+.ic-label{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px;margin-bottom:3px;text-transform:uppercase}
+.ic-value{font-size:13px;font-weight:600;color:var(--text)}
+.ic-value.accent{color:var(--accent);font-size:15px}
+.conf-bar{height:4px;border-radius:2px;background:var(--border);margin-top:5px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px;background:var(--success);transition:width .6s ease}
+
+/* ─ 부속품 결과 ─ */
+.acc-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:11px 14px;border-radius:var(--r3);
+  margin-bottom:6px;border:.5px solid;
+}
+.acc-absent{background:#fffbeb;border-color:#fde68a}
+.acc-present{background:#f0fff4;border-color:#86efac}
+.acc-uncertain{background:#f5f5f7;border-color:var(--border)}
+.acc-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
+.acc-absent .acc-dot{background:#fef3c7}
+.acc-present .acc-dot{background:#dcfce7}
+.acc-uncertain .acc-dot{background:#ebebf0}
+.acc-name{font-size:13px;font-weight:700}
+.acc-absent .acc-name{color:#b45309}
+.acc-present .acc-name{color:#15803d}
+.acc-uncertain .acc-name{color:var(--text2)}
+.acc-why{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4}
+.acc-badge{
+  margin-left:auto;font-size:10px;font-weight:700;
+  padding:3px 9px;border-radius:6px;flex-shrink:0;white-space:nowrap;align-self:center;
+}
+.acc-absent .acc-badge{background:#fde68a;color:#92400e}
+.acc-present .acc-badge{background:#bbf7d0;color:#14532d}
+.acc-uncertain .acc-badge{background:var(--border);color:var(--text2)}
+
+/* ─ 섹션 타이틀 ─ */
+.sec-title{
+  font-size:11px;font-weight:700;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.5px;
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:8px;
+}
+.sec-title::after{content:'';flex:1;height:.5px;background:var(--border)}
+
+/* ─ 어드민 템플릿 ─ */
+.template-box{
+  background:#fffbf2;border:1px solid #fde68a;
+  border-radius:var(--r3);padding:13px 14px;
+  font-size:12px;color:var(--text);line-height:1.75;
+  white-space:pre-wrap;font-family:inherit;
+}
+
+/* ─ 검색 링크 ─ */
+.search-link{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;background:var(--surface2);
+  border:.5px solid var(--border);border-radius:var(--r3);
+  text-decoration:none;color:inherit;margin-bottom:7px;
+  transition:all .12s;
+}
+.search-link:active{background:var(--border)}
+.sl-tier{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0}
+.sl-t1{background:#dcfce7;color:#14532d}
+.sl-t2{background:#dbeafe;color:#1e3a8a}
+.sl-t3{background:#fef3c7;color:#92400e}
+.sl-t4{background:#f3e8ff;color:#6b21a8}
+.sl-name{font-size:13px;font-weight:600}
+.sl-desc{font-size:11px;color:var(--text2)}
+.sl-arr{margin-left:auto;color:var(--text3);font-size:16px}
+
+/* ─ 하단 버튼 ─ */
+.btn-area{display:flex;gap:9px;padding:12px 14px 28px}
+.btn{
+  flex:1;padding:14px;border:none;border-radius:var(--r3);
+  font-size:13px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:all .12s;text-align:center;
+}
+.btn:active{transform:scale(.97)}
+.btn-reset{background:var(--surface);color:var(--danger);border:.5px solid var(--danger)}
+.btn-save{background:var(--success);color:#fff}
+.btn-copy{background:var(--surface);color:var(--text);border:.5px solid var(--border2)}
+
+/* ─ 오류 화면 ─ */
+#s-error{align-items:center;justify-content:center;background:var(--bg);gap:16px}
+.err-icon{font-size:56px}
+.err-msg{font-size:16px;font-weight:600;color:var(--text)}
+.err-sub{font-size:13px;color:var(--text2)}
+.btn-retry{
+  padding:13px 32px;background:var(--accent);color:#fff;
+  border:none;border-radius:var(--r2);font-size:14px;font-weight:700;
+  font-family:inherit;cursor:pointer;
+}
+
+/* ─ 모달 ─ */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:200;display:none;align-items:flex-end;justify-content:center;
+}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:13px}
+.modal input{
+  width:100%;padding:13px 15px;font-size:16px;font-family:monospace;
+  border:1.5px solid var(--border);border-radius:var(--r3);
+  outline:none;background:var(--surface2);color:var(--text);margin-bottom:12px;
+}
+.modal input:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:9px}
+.modal-btns button{
+  flex:1;padding:13px;border:none;border-radius:var(--r3);
+  font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+}
+.m-cancel{background:var(--surface2);color:var(--text)}
+.m-ok{background:var(--accent);color:#fff}
+
+/* ─ 토스트 ─ */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(70px);
+  background:rgba(28,28,30,.92);backdrop-filter:blur(12px);
+  color:#fff;padding:11px 20px;border-radius:22px;
+  font-size:13px;font-weight:500;opacity:0;
+  transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<!-- ══ 입력 화면 ══ -->
+<div class="screen show" id="s-input">
+  <div class="top-bar">
+    <div class="top-bar-logo">⚡</div>
+    <div class="top-bar-info">
+      <h1>번개케어 검수 보조</h1>
+      <p>사진으로 부속품 자동인식 · 판정 조력</p>
+    </div>
+    <div class="top-bar-care" id="careBadge" onclick="openModal()">케어번호</div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- 메인 사진 카드 -->
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-hd-icon">📸</span>
+        <div>
+          <h2>검수 사진</h2>
+          <p>💡 <b>정면사진</b>은 필수입니다. 택·부속품 사진 추가 시 인식 정확도 향상</p>
+        </div>
+      </div>
+      <div class="photo-main-row">
+        <div class="slot req" id="sl0" onclick="triggerFile(0)">
+          <span class="s-icon">📷</span>
+          <span class="s-label">정면 사진<br>필수</span>
+          <span class="req-badge">필수</span>
+        </div>
+        <div class="slot" id="sl1" onclick="triggerFile(1)">
+          <span class="s-icon">🏷️</span>
+          <span class="s-label">메인 택<br>모델번호</span>
+        </div>
+        <div class="slot" id="sl2" onclick="triggerFile(2)">
+          <span class="s-icon">🔧</span>
+          <span class="s-label">부속품<br>전체샷</span>
+        </div>
+      </div>
+
+      <div class="extra-note">
+        💡 추가사진은 후면, 내부, 손상부위, 기타 부속품 등을 촬영해 주세요. 부속품 누락 인식 정확도가 높아집니다.
+      </div>
+
+      <div class="photo-extra-row">
+        <div class="slot" id="sl3" onclick="triggerFile(3)"><span class="s-icon">📷</span><span class="s-label">추가 2</span></div>
+        <div class="slot" id="sl4" onclick="triggerFile(4)"><span class="s-icon">📷</span><span class="s-label">추가 3</span></div>
+        <div class="slot" id="sl5" onclick="triggerFile(5)"><span class="s-icon">📷</span><span class="s-label">추가 4</span></div>
+        <div class="slot" id="sl6" onclick="triggerFile(6)"><span class="s-icon">📷</span><span class="s-label">추가 5</span></div>
+        <div class="slot" id="sl7" onclick="triggerFile(7)"><span class="s-icon">📷</span><span class="s-label">추가 6</span></div>
+        <div class="slot" id="sl8" onclick="triggerFile(8)"><span class="s-icon">📷</span><span class="s-label">추가 7</span></div>
+        <div class="slot" id="sl9" onclick="triggerFile(9)"><span class="s-icon">📷</span><span class="s-label">추가 8</span></div>
+      </div>
+    </div>
+
+    <!-- 판매자 본문 -->
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-hd-icon">📝</span>
+        <div>
+          <h2>판매자 본문</h2>
+          <p>제목 + 상세 설명 붙여넣기 (구성품 파악 및 부속품 누락 판단에 활용)</p>
+        </div>
+      </div>
+      <textarea class="seller" id="sellerTxt" rows="5"
+        placeholder="예) 샤넬 클래식 플랩백 M 판매합니다. 풀구성으로 구매했으나 숄더스트랩은 분실했습니다. 홀로그램 있음."></textarea>
+    </div>
+
+  </div>
+
+  <div class="fab-wrap">
+    <button class="fab" id="fab" onclick="startAnalysis()">
+      <div class="sp"></div>
+      <span id="fab-txt">🔍 부속품 자동인식 시작</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ 로딩 화면 ══ -->
+<div class="screen" id="s-loading">
+  <div style="width:calc(100% - 28px);display:flex;flex-direction:column;gap:14px">
+    <div class="loading-card">
+      <div class="loading-hd">
+        <div class="anim-icon">🔍</div>
+        <h2>AI가 분석 중입니다</h2>
+        <p>브랜드·모델 식별 및 부속품 누락을 확인하고 있어요</p>
+      </div>
+      <div class="step-list">
+        <div class="step-item" id="st0"><div class="step-dot" id="sd0">1</div><span>이미지 업로드 완료</span></div>
+        <div class="step-item" id="st1"><div class="step-dot" id="sd1">2</div><span>브랜드 · 모델 식별</span></div>
+        <div class="step-item" id="st2"><div class="step-dot" id="sd2">3</div><span>기본 부속품 목록 파악</span></div>
+        <div class="step-item" id="st3"><div class="step-dot" id="sd3">4</div><span>누락 부속품 감지</span></div>
+        <div class="step-item" id="st4"><div class="step-dot" id="sd4">5</div><span>판정 결과 생성</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 결과 화면 ══ -->
+<div class="screen" id="s-result">
+  <div class="top-bar">
+    <div class="top-bar-logo">⚡</div>
+    <div class="top-bar-info">
+      <h1>검수 결과</h1>
+      <p id="res-care-label">번개케어 검수 보조</p>
+    </div>
+  </div>
+  <div class="scroll-body" id="result-body"></div>
+  <div class="btn-area">
+    <button class="btn btn-reset" onclick="doReset()">↩ 다시 찍기</button>
+    <button class="btn btn-copy" id="btn-copy-tmpl" onclick="copyTemplate()" style="display:none">📋 워딩복사</button>
+    <button class="btn btn-save" onclick="saveCSV()">📊 시트 저장</button>
+  </div>
+</div>
+
+<!-- ══ 오류 화면 ══ -->
+<div class="screen" id="s-error">
+  <div class="err-icon">😵</div>
+  <div class="err-msg">분석 중 오류가 발생했습니다</div>
+  <div class="err-sub" id="err-detail"></div>
+  <button class="btn-retry" onclick="doReset()">↩ 다시 시도</button>
+</div>
+
+<!-- ══ 모달 ══ -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>케어번호 입력</h3>
+    <input type="text" id="care-input" placeholder="예: 1143210" inputmode="numeric">
+    <div class="modal-btns">
+      <button class="m-cancel" onclick="closeModal()">취소</button>
+      <button class="m-ok" onclick="saveCare()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 파일 인풋들 -->
+<input type="file" id="f0" accept="image/*" capture="environment" onchange="onFile(0,event)">
+<input type="file" id="f1" accept="image/*" capture="environment" onchange="onFile(1,event)">
+<input type="file" id="f2" accept="image/*" capture="environment" onchange="onFile(2,event)">
+<input type="file" id="f3" accept="image/*" capture="environment" onchange="onFile(3,event)">
+<input type="file" id="f4" accept="image/*" capture="environment" onchange="onFile(4,event)">
+<input type="file" id="f5" accept="image/*" capture="environment" onchange="onFile(5,event)">
+<input type="file" id="f6" accept="image/*" capture="environment" onchange="onFile(6,event)">
+<input type="file" id="f7" accept="image/*" capture="environment" onchange="onFile(7,event)">
+<input type="file" id="f8" accept="image/*" capture="environment" onchange="onFile(8,event)">
+<input type="file" id="f9" accept="image/*" capture="environment" onchange="onFile(9,event)">
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─ 상태 ─
+let imgs = Array(10).fill(null);
+let careNo = '';
+let result = null;
+let progressInt = null;
+
+// ─ 화면 전환 ─
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('s-' + id).classList.add('show');
+  window.scrollTo(0,0);
+}
+
+// ─ 모달 ─
+function openModal() {
+  document.getElementById('modal').classList.add('show');
+  setTimeout(() => document.getElementById('care-input').focus(), 150);
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function saveCare() {
+  careNo = document.getElementById('care-input').value.trim();
+  const b = document.getElementById('careBadge');
+  b.textContent = careNo ? '#' + careNo : '케어번호';
+  b.classList.toggle('on', !!careNo);
+  closeModal();
+}
+document.getElementById('modal').addEventListener('click', e => { if(e.target === document.getElementById('modal')) closeModal(); });
+
+// ─ 파일 처리 ─
+const SLOT_DEFAULTS = [
+  ['📷','정면 사진<br>필수', true],
+  ['🏷️','메인 택<br>모델번호', false],
+  ['🔧','부속품<br>전체샷', false],
+  ['📷','추가 2', false],
+  ['📷','추가 3', false],
+  ['📷','추가 4', false],
+  ['📷','추가 5', false],
+  ['📷','추가 6', false],
+  ['📷','추가 7', false],
+  ['📷','추가 8', false],
+];
+
+function triggerFile(i) { document.getElementById('f'+i).click(); }
+
+function onFile(i, e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imgs[i] = ev.target.result;
+    const sl = document.getElementById('sl'+i);
+    sl.innerHTML = `<img src="${ev.target.result}" alt=""><div class="del" onclick="removeImg(${i},event)">✕</div>`;
+    sl.classList.add('filled');
+    sl.classList.remove('req');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImg(i, e) {
+  e.stopPropagation();
+  imgs[i] = null;
+  const sl = document.getElementById('sl'+i);
+  const [icon, label, req] = SLOT_DEFAULTS[i];
+  sl.innerHTML = `<span class="s-icon">${icon}</span><span class="s-label">${label}</span>${req?'<span class="req-badge">필수</span>':''}`;
+  sl.classList.remove('filled');
+  if(req) sl.classList.add('req'); else sl.classList.remove('req');
+  document.getElementById('f'+i).value = '';
+}
+
+// ─ 진행 애니메이션 ─
+function setStep(step) {
+  for (let i = 0; i < 5; i++) {
+    const item = document.getElementById('st'+i);
+    const dot = document.getElementById('sd'+i);
+    item.classList.remove('active','done');
+    dot.classList.remove('active','done');
+    if (i < step) {
+      item.classList.add('done');
+      dot.classList.add('done');
+      dot.textContent = '✓';
+    } else if (i === step) {
+      item.classList.add('active');
+      dot.classList.add('active');
+      dot.textContent = '●';
+    } else {
+      dot.textContent = i + 1;
+    }
+  }
+}
+
+// ─ 분석 시작 ─
+async function startAnalysis() {
+  if (!imgs[0]) { showToast('📷 정면 사진을 먼저 업로드해 주세요'); return; }
+
+  const fab = document.getElementById('fab');
+  fab.disabled = true;
+  fab.classList.add('ld');
+  document.getElementById('fab-txt').textContent = '분석 중...';
+
+  show('loading');
+  setStep(0);
+
+  let step = 0;
+  progressInt = setInterval(() => {
+    step = Math.min(step + 1, 3);
+    setStep(step);
+  }, 1600);
+
+  const validImgs = imgs.filter(Boolean);
+  const sellerTxt = document.getElementById('sellerTxt').value.trim();
+
+  try {
+    const content = [];
+
+    // 이미지 추가
+    validImgs.forEach(img => {
+      const mt = img.split(';')[0].split(':')[1];
+      const b64 = img.split(',')[1];
+      content.push({ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } });
+    });
+
+    // 프롬프트
+    content.push({ type: 'text', text: `당신은 번개케어 명품 검수 전문가입니다. 이미지를 분석해 아래 JSON만 출력하세요. 마크다운, 설명 없이 JSON만.
+
+판매자 본문: "${sellerTxt || '없음'}"
+
+【분석 지침】
+1. 브랜드·카테고리·모델명 식별
+2. 해당 모델의 정품 기본 부속품 전체 목록 파악
+3. 이미지에서 각 부속품 존재 여부 판단
+4. 판매자 본문에 누락 언급 있으면 반영
+5. 부속품과 구성품 반드시 구분
+
+【부속품 정의 — 본문 미기재여도 필수 확인】
+상품 원형의 일부: 숄더스트랩, 숄더스트랩 키퍼, 스트랩 패드, 네임택, 자물쇠, 열쇠, 이너 파우치, 참 장식, 자물쇠 커버(키벨), 핸들 홀더, 파우치 끈, 시계 여분 링크, 크라운, 신발 여분 끈 등
+
+【구성품 정의 — 본문 기재 시만 확인】
+패키지: 박스, 쇼핑백, 더스트백, 케이스, 보증서, 개런티카드, 인보이스, 리본 등
+
+【판정 기준】
+- 부속품 1개라도 누락 → 보류 (본문 미기재여도)
+- 구성품 본문 모호 기재(풀구성/풀셋 등) → 보류
+- 구성품 본문 미기재 → 합격 가능
+
+{
+  "brand": "브랜드명(한글)",
+  "brandEn": "영문",
+  "category": "가방/지갑/의류/신발/시계/주얼리/벨트/기타",
+  "name": "상품명",
+  "modelNo": "모델번호(없으면 빈문자열)",
+  "color": "색상",
+  "confidence": 숫자0-100,
+  "verdict": "합격/보류/불합격",
+  "verdictReason": "판정 사유 1-2줄",
+  "accessories": [
+    {
+      "name": "부속품명",
+      "type": "부속품/구성품",
+      "status": "있음/없음/불확실",
+      "reason": "판단 근거 한 줄",
+      "fromSellerText": true또는false
+    }
+  ],
+  "adminTemplate": "어드민 입력 워딩(보류/불합격 시)",
+  "officialSiteUrl": "브랜드 공식몰 URL",
+  "searchKo": "한글 검색 쿼리",
+  "searchEn": "영문 검색 쿼리"
+}` });
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1800,
+        messages: [{ role: 'user', content }]
+      })
+    });
+
+    if (!resp.ok) throw new Error(`API 오류 (${resp.status})`);
+    const data = await resp.json();
+    const raw = data.content[0].text;
+
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { throw new Error('결과 파싱 실패: ' + raw.substring(0,80)); }
+
+    clearInterval(progressInt);
+    setStep(4);
+    await new Promise(r => setTimeout(r, 700));
+
+    parsed.careNo = careNo || ('임시-' + Date.now());
+    parsed.analyzedAt = new Date().toLocaleString('ko-KR');
+    parsed.imgCount = validImgs.length;
+    result = parsed;
+
+    renderResult(parsed);
+    show('result');
+
+  } catch(err) {
+    clearInterval(progressInt);
+    document.getElementById('err-detail').textContent = err.message;
+    show('error');
+  } finally {
+    fab.disabled = false;
+    fab.classList.remove('ld');
+    document.getElementById('fab-txt').textContent = '🔍 부속품 자동인식 시작';
+  }
+}
+
+// ─ 결과 렌더링 ─
+function renderResult(r) {
+  document.getElementById('res-care-label').textContent =
+    `케어번호 #${r.careNo} · ${r.brand} ${r.category}`;
+
+  const accs = r.accessories || [];
+  const absent = accs.filter(a => a.type==='부속품' && a.status==='없음');
+  const presentAcc = accs.filter(a => a.type==='부속품' && a.status==='있음');
+  const uncertainAcc = accs.filter(a => a.type==='부속품' && a.status==='불확실');
+  const pkgs = accs.filter(a => a.type==='구성품');
+
+  const sqKo = encodeURIComponent(r.searchKo || `${r.brand} ${r.name} ${r.modelNo}`);
+  const sqEn = encodeURIComponent(r.searchEn || `${r.brandEn} ${r.name}`);
+
+  const vi = r.verdict==='합격'?'✅':r.verdict==='보류'?'⚠️':'❌';
+  const vcls = r.verdict==='합격'?'pass':r.verdict==='보류'?'hold':'fail';
+
+  const missingBadge = absent.length > 0
+    ? `<span style="background:#fde68a;color:#92400e;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">누락 ${absent.length}개</span>`
+    : `<span style="background:#bbf7d0;color:#14532d;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">이상 없음</span>`;
+
+  document.getElementById('result-body').innerHTML = `
+
+    <!-- 판정 -->
+    <div class="verdict-wrap ${vcls}">
+      <div class="verdict-inner">
+        <div class="v-icon">${vi}</div>
+        <div>
+          <div class="v-label">${r.verdict}</div>
+          <div class="v-reason">${r.verdictReason}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 모델 정보 -->
+    <div>
+      <div class="sec-title">🏷️ 식별된 모델</div>
+      <div class="info-grid">
+        <div class="info-cell"><div class="ic-label">브랜드</div><div class="ic-value accent">${r.brand}</div></div>
+        <div class="info-cell"><div class="ic-label">카테고리</div><div class="ic-value">${r.category}</div></div>
+        <div class="info-cell full"><div class="ic-label">상품명</div><div class="ic-value">${r.name}${r.modelNo?' · <span style="font-family:monospace;font-size:12px">'+r.modelNo+'</span>':''}</div></div>
+        <div class="info-cell"><div class="ic-label">색상</div><div class="ic-value">${r.color||'—'}</div></div>
+        <div class="info-cell"><div class="ic-label">분석 신뢰도</div><div class="ic-value">${r.confidence||0}%</div><div class="conf-bar"><div class="conf-fill" style="width:${r.confidence||0}%;background:${(r.confidence||0)>=70?'var(--success)':(r.confidence||0)>=40?'var(--warn)':'var(--danger)'}"></div></div></div>
+      </div>
+    </div>
+
+    <!-- 부속품 누락 인식 결과 — 핵심 -->
+    <div>
+      <div class="sec-title" style="color:${absent.length>0?'#d97706':'#16a34a'}">
+        🔧 부속품 인식 결과 ${missingBadge}
+      </div>
+
+      ${absent.map(a => `
+        <div class="acc-item acc-absent">
+          <div class="acc-dot">⚠️</div>
+          <div style="flex:1">
+            <div class="acc-name">❌ ${a.name} 없음</div>
+            <div class="acc-why">${a.reason}${a.fromSellerText?' <b style="color:#92400e">(판매자 본문 확인)</b>':''}</div>
+          </div>
+          <div class="acc-badge">보류</div>
+        </div>`).join('')}
+
+      ${uncertainAcc.map(a => `
+        <div class="acc-item acc-uncertain">
+          <div class="acc-dot">❓</div>
+          <div style="flex:1">
+            <div class="acc-name">? ${a.name} 불확실</div>
+            <div class="acc-why">${a.reason}</div>
+          </div>
+          <div class="acc-badge">확인필요</div>
+        </div>`).join('')}
+
+      ${presentAcc.map(a => `
+        <div class="acc-item acc-present">
+          <div class="acc-dot">✅</div>
+          <div style="flex:1">
+            <div class="acc-name">${a.name}</div>
+            <div class="acc-why">${a.reason}</div>
+          </div>
+          <div class="acc-badge">확인</div>
+        </div>`).join('')}
+
+      ${accs.filter(a=>a.type==='부속품').length===0?
+        '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">사진에서 부속품 정보를 인식하지 못했어요.<br>부속품 전체샷을 추가해 주세요.</div>':''}
+    </div>
+
+    <!-- 구성품(패키지) -->
+    ${pkgs.length>0?`
+    <div>
+      <div class="sec-title">📦 구성품(패키지)</div>
+      ${pkgs.map(a=>`
+        <div class="acc-item ${a.status==='있음'?'acc-present':a.status==='없음'?'acc-absent':'acc-uncertain'}">
+          <div class="acc-dot">${a.status==='있음'?'✅':a.status==='없음'?'⚠️':'❓'}</div>
+          <div style="flex:1">
+            <div class="acc-name">${a.status==='없음'?'❌ ':''} ${a.name}${a.status==='없음'?' 없음':''}</div>
+            <div class="acc-why">${a.reason}${a.fromSellerText?' (본문 기재)':''}</div>
+          </div>
+          <div class="acc-badge">${a.status==='있음'?'확인':a.status==='없음'?'누락':'불확실'}</div>
+        </div>`).join('')}
+    </div>`:''}
+
+    <!-- 어드민 템플릿 -->
+    ${r.adminTemplate?`
+    <div>
+      <div class="sec-title">📋 어드민 입력 워딩</div>
+      <div class="template-box" id="tmpl-box">${r.adminTemplate}</div>
+    </div>`:''}
+
+    <!-- 외부 검색 -->
+    <div>
+      <div class="sec-title">🔍 모델 확인 검색</div>
+      ${r.officialSiteUrl?`
+      <a class="search-link" href="${r.officialSiteUrl}" target="_blank">
+        <span class="sl-tier sl-t1">공식</span>
+        <div><div class="sl-name">${r.brand} 공식몰</div><div class="sl-desc">공식 홈페이지 — 정확한 모델·부속품 목록</div></div>
+        <span class="sl-arr">↗</span>
+      </a>`:''}
+      <a class="search-link" href="https://www.balaan.co.kr/search?keyword=${sqKo}" target="_blank">
+        <span class="sl-tier sl-t2">발란</span>
+        <div><div class="sl-name">발란</div><div class="sl-desc">명품 플랫폼 — 동일 모델 스펙 · 구성품 확인</div></div>
+        <span class="sl-arr">↗</span>
+      </a>
+      <a class="search-link" href="https://www.mustit.co.kr/search?keyword=${sqKo}" target="_blank">
+        <span class="sl-tier sl-t2">머스트잇</span>
+        <div><div class="sl-name">머스트잇</div><div class="sl-desc">명품 플랫폼 — 부속품 목록 비교</div></div>
+        <span class="sl-arr">↗</span>
+      </a>
+      <a class="search-link" href="https://www.bunjang.co.kr/search/products?q=${sqKo}" target="_blank">
+        <span class="sl-tier sl-t3">번장</span>
+        <div><div class="sl-name">번개장터</div><div class="sl-desc">동일 모델 실거래 케이스 · 구성품 참고</div></div>
+        <span class="sl-arr">↗</span>
+      </a>
+      <a class="search-link" href="https://www.google.com/search?tbm=isch&q=${sqEn}" target="_blank">
+        <span class="sl-tier sl-t4">구글</span>
+        <div><div class="sl-name">Google 이미지</div><div class="sl-desc">이미지 교차 검색 — 모델 확인</div></div>
+        <span class="sl-arr">↗</span>
+      </a>
+    </div>
+  `;
+
+  // 워딩 복사 버튼 표시
+  if (r.adminTemplate) {
+    document.getElementById('btn-copy-tmpl').style.display = 'block';
+  }
+}
+
+// ─ 워딩 복사 ─
+function copyTemplate() {
+  const box = document.getElementById('tmpl-box');
+  if (!box) return;
+  navigator.clipboard.writeText(box.textContent).then(() => showToast('📋 워딩 복사됐어요!'));
+}
+
+// ─ CSV 저장 ─
+function saveCSV() {
+  if (!result) return;
+  const r = result;
+  const accs = r.accessories || [];
+  const missing = accs.filter(a=>a.type==='부속품'&&a.status==='없음').map(a=>a.name).join(', ');
+  const present = accs.filter(a=>a.status==='있음').map(a=>a.name).join(', ');
+  const header = '케어번호,브랜드,카테고리,상품명,모델번호,색상,판정,판정사유,누락부속품,확인부속품,어드민워딩,신뢰도,사진수,분석일시';
+  const row = [
+    r.careNo, r.brand, r.category, r.name, r.modelNo||'', r.color||'',
+    r.verdict, `"${(r.verdictReason||'').replace(/"/g,'""')}"`,
+    `"${missing}"`, `"${present}"`,
+    `"${(r.adminTemplate||'').replace(/"/g,'""')}"`,
+    (r.confidence||0)+'%', r.imgCount||0, r.analyzedAt
+  ].join(',');
+  const csv = '\uFEFF' + header + '\n' + row;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `LCA_${r.careNo}_${r.brand}_${r.category}.csv`;
+  a.click();
+  showToast('📊 CSV 저장 완료!');
+}
+
+// ─ 리셋 ─
+function doReset() {
+  imgs = Array(10).fill(null);
+  result = null;
+  document.getElementById('sellerTxt').value = '';
+  document.getElementById('result-body').innerHTML = '';
+  document.getElementById('btn-copy-tmpl').style.display = 'none';
+
+  SLOT_DEFAULTS.forEach(([icon,label,req],i) => {
+    const sl = document.getElementById('sl'+i);
+    if (!sl) return;
+    sl.innerHTML = `<span class="s-icon">${icon}</span><span class="s-label">${label}</span>${req?'<span class="req-badge">필수</span>':''}`;
+    sl.classList.remove('filled');
+    if(req) sl.classList.add('req'); else sl.classList.remove('req');
+    document.getElementById('f'+i).value = '';
+  });
+
+  show('input');
+}
+
+// ─ 토스트 ─
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+</script>
+</body>
+</html>
