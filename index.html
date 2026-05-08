@@ -4,65 +4,93 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#f5a623">
-<title>번개케어 검수 보조 v4</title>
+<title>번개케어 검수 보조 v7</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--acc:#f5a623;--bg:#f2f2f7;--sur:#fff;--sur2:#f8f8fa;--bdr:#e5e5ea;--bdr2:#d1d1d6;--txt:#1c1c1e;--txt2:#6c6c70;--txt3:#aeaeb2;--ok:#34c759;--err:#ff3b30;--warn:#ff9500;--info:#007aff;--r:16px;--r2:12px;--r3:10px}
-html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,'Noto Sans KR',sans-serif}
+:root{
+  --acc:#f5a623;--bg:#f2f2f7;--sur:#fff;--sur2:#f8f8fa;--sur3:#efefef;
+  --bdr:#e5e5ea;--bdr2:#d1d1d6;--txt:#1c1c1e;--txt2:#6c6c70;--txt3:#aeaeb2;
+  --ok:#34c759;--err:#ff3b30;--warn:#ff9500;--info:#007aff;--purple:#9b59b6;
+  --r:16px;--r2:12px;--r3:10px;
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,'Noto Sans KR',sans-serif;overscroll-behavior:none}
 body{max-width:480px;margin:0 auto}
-.screen{display:none;flex-direction:column;min-height:100vh}
-.screen.show{display:flex}
-.top-bar{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:14px 18px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99}
+
+/* ── 탭바 ── */
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:.5px solid var(--bdr);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 8px;cursor:pointer;gap:3px;transition:all .15s;position:relative}
+.tab-item .ti{font-size:20px;transition:transform .2s}
+.tab-item .tl{font-size:10px;font-weight:600;color:var(--txt3);transition:color .15s}
+.tab-item.active .tl{color:var(--acc)}
+.tab-item.active .ti{transform:translateY(-2px)}
+.tab-bar-line{position:absolute;top:0;left:0;height:2.5px;background:var(--acc);border-radius:0 0 3px 3px;transition:transform .25s cubic-bezier(.4,0,.2,1);width:50%}
+
+/* ── 공통 페이지 ── */
+.page{display:none;flex-direction:column;min-height:100vh;padding-bottom:72px}
+.page.show{display:flex}
+.top-bar{background:rgba(255,255,255,.93);backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:14px 18px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99}
 .top-bar-logo{font-size:22px;color:var(--acc)}
 .top-bar-info h1{font-size:15px;font-weight:700}
 .top-bar-info p{font-size:11px;color:var(--txt2);margin-top:1px}
-.top-bar-care{margin-left:auto;background:var(--sur2);border:.5px solid var(--bdr2);border-radius:8px;padding:5px 11px;font-size:11px;font-family:monospace;color:var(--txt2);cursor:pointer;transition:all .15s}
-.top-bar-care.on{color:var(--acc);border-color:var(--acc);background:#fff8ee}
-.scroll-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;padding-bottom:100px}
+.top-bar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.care-badge{background:var(--sur2);border:.5px solid var(--bdr2);border-radius:8px;padding:5px 11px;font-size:11px;font-family:monospace;color:var(--txt2);cursor:pointer}
+.care-badge.on{color:var(--acc);border-color:var(--acc);background:#fff8ee}
+.scroll-body{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px}
 .card{background:var(--sur);border-radius:var(--r);border:.5px solid var(--bdr);overflow:hidden}
 .card-hd{padding:14px 16px 0;display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
 .card-hd-icon{font-size:20px;margin-top:1px}
 .card-hd h2{font-size:14px;font-weight:600}
 .card-hd p{font-size:11px;color:var(--txt2);margin-top:2px;line-height:1.4}
-.photo-main-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:0 14px 10px}
-.photo-extra-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 14px}
+
+/* 입력 공통 */
+.f-row{display:flex;gap:8px}
+.f-col{flex:1;display:flex;flex-direction:column;gap:4px}
+.f-lbl{font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.3px}
+select.fi,input.fi{width:100%;padding:10px 12px;font-size:13px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur);color:var(--txt);outline:none;-webkit-appearance:none;appearance:none}
+select.fi:focus,input.fi:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+input.fi::placeholder{color:var(--txt3)}
+textarea.fi{width:100%;padding:10px 12px;font-size:13px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur);color:var(--txt);outline:none;resize:none;line-height:1.5}
+textarea.fi:focus{border-color:var(--acc)}
+textarea.fi::placeholder{color:var(--txt3)}
+textarea.seller-ta{width:100%;padding:13px 16px;font-size:13px;font-family:inherit;border:none;outline:none;resize:none;background:transparent;color:var(--txt);line-height:1.6}
+textarea.seller-ta::placeholder{color:var(--txt3)}
+.model-area{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}
+.fi-wrap{display:flex;flex-direction:column;gap:4px}
+
+/* 사진 슬롯 */
+.photo-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:0 14px 10px}
+.photo-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 14px}
 .slot{aspect-ratio:1;border-radius:var(--r3);border:1.5px dashed var(--bdr2);background:var(--sur2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
 .slot.req{border-color:#fbbf24;background:#fffbf2}
-.slot.filled{border-style:solid;border-color:var(--ok);background:#f0fff4}
+.slot.filled{border-style:solid;border-color:var(--ok)}
 .slot.drag-over{border-color:var(--acc);background:#fff8ee;transform:scale(1.02)}
-.slot .s-icon{font-size:22px;z-index:1}
+.slot .s-icon{font-size:20px;z-index:1}
 .slot .s-label{font-size:9px;color:var(--txt2);font-weight:600;text-align:center;line-height:1.3;z-index:1}
 .slot .req-badge{position:absolute;top:3px;right:3px;z-index:2;background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px}
-.slot .del{position:absolute;top:3px;left:3px;z-index:3;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.slot .del-btn{position:absolute;top:3px;left:3px;z-index:3;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px}
 .extra-note{margin:0 14px 12px;padding:10px 12px;background:#f0f8ff;border-radius:var(--r3);border-left:3px solid var(--info);font-size:11px;color:#0055aa;line-height:1.5}
-.model-area{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}
-.model-row{display:flex;gap:8px}
-.model-col{flex:1;display:flex;flex-direction:column;gap:4px}
-.inp-lbl{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.3px}
-select.inp,input.inp{width:100%;padding:10px 12px;font-size:13px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur);color:var(--txt);outline:none;-webkit-appearance:none;appearance:none}
-select.inp:focus,input.inp:focus{border-color:var(--acc)}
-input.inp::placeholder{color:var(--txt3)}
-textarea.seller{width:100%;padding:13px 16px;font-size:13px;font-family:inherit;border:none;outline:none;resize:none;background:transparent;color:var(--txt);line-height:1.6}
-textarea.seller::placeholder{color:var(--txt3)}
-.fab-wrap{position:sticky;bottom:0;padding:12px 14px 24px;background:linear-gradient(transparent,var(--bg) 40%)}
-.fab{width:100%;padding:15px;border:none;border-radius:var(--r2);background:linear-gradient(135deg,#f5a623,#ff6b35);color:#fff;font-size:16px;font-weight:700;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.35);transition:all .15s}
+
+/* FAB */
+.fab-wrap{padding:12px 14px 8px}
+.fab{width:100%;padding:15px;border:none;border-radius:var(--r2);background:linear-gradient(135deg,#f5a623,#ff6b35);color:#fff;font-size:15px;font-weight:700;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.35);transition:all .15s}
 .fab:active{transform:scale(.98)}
 .fab:disabled{opacity:.45;box-shadow:none}
 .fab .sp{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite;display:none}
 .fab.ld .sp{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
-#s-loading{background:var(--bg);align-items:center;justify-content:center}
-.loading-card{background:var(--sur);border-radius:var(--r);border:.5px solid var(--bdr);width:calc(100% - 28px);overflow:hidden}
+
+/* 로딩 */
+#p-loading{background:var(--bg);align-items:center;justify-content:center}
+.loading-card{background:var(--sur);border-radius:var(--r);border:.5px solid var(--bdr);width:calc(100% - 28px)}
 .loading-hd{padding:24px 20px 18px;text-align:center;border-bottom:.5px solid var(--bdr)}
 .loading-hd .anim-icon{font-size:40px;animation:bob 1.2s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 .loading-hd h2{font-size:16px;font-weight:700;margin-top:12px}
 .loading-hd p{font-size:12px;color:var(--txt2);margin-top:5px}
 .step-list{padding:0 0 4px}
-.step-item{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:.5px solid var(--bdr);font-size:13px;color:var(--txt3);transition:all .3s}
+.step-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:.5px solid var(--bdr);font-size:13px;color:var(--txt3);transition:all .3s}
 .step-item:last-child{border-bottom:none}
 .step-item.active{color:var(--acc);font-weight:600}
 .step-item.done{color:var(--txt)}
@@ -70,12 +98,13 @@ textarea.seller::placeholder{color:var(--txt3)}
 .step-item.active .step-dot{background:var(--acc);border-color:var(--acc);color:#fff;animation:pulse 1s ease-in-out infinite}
 .step-item.done .step-dot{background:var(--ok);border-color:var(--ok);color:#fff}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-#s-result{background:var(--bg)}
+
+/* 결과 */
 .verdict-wrap{border-radius:var(--r);overflow:hidden;border:1px solid}
 .verdict-wrap.pass{background:#f0fff4;border-color:#86efac}
 .verdict-wrap.hold{background:#fffbeb;border-color:#fde68a}
 .verdict-wrap.fail{background:#fff1f0;border-color:#fecaca}
-.verdict-inner{padding:18px 18px;display:flex;align-items:flex-start;gap:13px}
+.verdict-inner{padding:18px;display:flex;align-items:flex-start;gap:13px}
 .v-icon{font-size:32px;flex-shrink:0}
 .v-label{font-size:22px;font-weight:800;letter-spacing:-.5px}
 .verdict-wrap.pass .v-label{color:#16a34a}
@@ -85,217 +114,474 @@ textarea.seller::placeholder{color:var(--txt3)}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .info-cell{background:var(--sur2);border-radius:var(--r3);padding:10px 12px;border:.5px solid var(--bdr)}
 .info-cell.full{grid-column:1/-1}
-.ic-label{font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.3px;margin-bottom:3px;text-transform:uppercase}
-.ic-value{font-size:13px;font-weight:600}
-.ic-value.accent{color:var(--acc);font-size:15px}
-.edit-brand-btn{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 10px;background:var(--sur);border:.5px solid var(--bdr2);border-radius:6px;font-size:11px;color:var(--txt2);cursor:pointer;transition:all .15s}
-.edit-brand-btn:hover{border-color:var(--acc);color:var(--acc)}
+.ic-lbl{font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.3px;margin-bottom:3px;text-transform:uppercase}
+.ic-val{font-size:13px;font-weight:600}
+.ic-val.accent{color:var(--acc);font-size:15px}
+.edit-btn{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 10px;background:var(--sur);border:.5px solid var(--bdr2);border-radius:6px;font-size:11px;color:var(--txt2);cursor:pointer}
+.edit-btn:hover{border-color:var(--acc);color:var(--acc)}
 .conf-bar{height:4px;border-radius:2px;background:var(--bdr);margin-top:6px;overflow:hidden}
-.conf-fill{height:100%;border-radius:2px;transition:width .6s ease}
+.conf-fill{height:100%;border-radius:2px}
 .sec-title{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .sec-title::after{content:'';flex:1;height:.5px;background:var(--bdr)}
-.acc-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r3);margin-bottom:7px;border:.5px solid;transition:all .2s}
+
+/* SKU 매칭 박스 */
+.sku-match-box{border-radius:var(--r3);border:1.5px solid;padding:14px;margin-bottom:2px}
+.sku-match-box.verified{background:#fffbf0;border-color:#fbbf24}
+.sku-match-box.no-db{background:#f5f5f7;border-color:var(--bdr)}
+.sku-match-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sku-match-title{font-size:13px;font-weight:700}
+.sku-match-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}
+.badge-db{background:#fbbf24;color:#92400e}
+.badge-ai{background:#dbeafe;color:#1e40af}
+.sku-kv{display:flex;gap:8px;margin-bottom:5px;align-items:flex-start}
+.sku-k{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;min-width:58px;padding-top:2px;flex-shrink:0}
+.sku-v{font-size:12px;color:var(--txt);line-height:1.4;flex:1}
+.sku-note-box{background:#fff3cd;border-radius:6px;padding:8px 10px;font-size:11px;color:#856404;border-left:3px solid #fbbf24;margin-top:8px;line-height:1.5}
+
+/* SKU 참조 이미지 */
+.sku-img-row{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px}
+.sku-ref-img{width:72px;height:72px;border-radius:8px;object-fit:cover;border:1.5px solid var(--bdr2);flex-shrink:0}
+.sku-ref-img.mismatch{border-color:var(--err);box-shadow:0 0 0 3px rgba(255,59,48,.15)}
+.sku-ref-img.match{border-color:var(--ok);box-shadow:0 0 0 3px rgba(52,199,89,.12)}
+.sku-img-label{font-size:9px;font-weight:600;text-align:center;margin-top:3px}
+
+/* 불일치 경고 */
+.mismatch-alert{background:#fff1f0;border:1.5px solid #fecaca;border-radius:var(--r3);padding:12px 14px;margin-bottom:8px}
+.mismatch-alert-hd{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#dc2626;margin-bottom:8px}
+.mismatch-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:.5px solid #fecaca}
+.mismatch-item:last-child{border-bottom:none;padding-bottom:0}
+.mi-dot{width:6px;height:6px;border-radius:50%;background:var(--err);flex-shrink:0;margin-top:5px}
+.mi-name{font-size:12px;font-weight:700;color:#b91c1c}
+.mi-reason{font-size:11px;color:#dc2626;margin-top:2px;line-height:1.4}
+.google-lens-link{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f0f8ff;border:.5px solid #bfdbfe;border-radius:var(--r3);text-decoration:none;color:#1e40af;font-size:12px;font-weight:600;margin-top:8px}
+.google-lens-link .gl-icon{font-size:16px}
+
+/* 부속품 */
+.acc-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--r3);margin-bottom:7px;border:.5px solid;transition:all .2s}
 .acc-absent{background:#fffbeb;border-color:#fde68a}
 .acc-present{background:#f0fff4;border-color:#86efac}
 .acc-uncertain{background:#f5f5f7;border-color:var(--bdr)}
+.acc-mismatch{background:#fff1f0;border-color:#fecaca}
 .acc-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
 .acc-absent .acc-dot{background:#fef3c7}
 .acc-present .acc-dot{background:#dcfce7}
 .acc-uncertain .acc-dot{background:#ebebf0}
+.acc-mismatch .acc-dot{background:#fee2e2}
 .acc-name{font-size:13px;font-weight:700}
 .acc-absent .acc-name{color:#b45309}
 .acc-present .acc-name{color:#15803d}
 .acc-uncertain .acc-name{color:var(--txt2)}
+.acc-mismatch .acc-name{color:#b91c1c}
 .acc-why{font-size:11px;color:var(--txt2);margin-top:2px;line-height:1.4}
 .acc-badge{margin-left:auto;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;flex-shrink:0;white-space:nowrap;align-self:flex-start;margin-top:1px}
 .acc-absent .acc-badge{background:#fde68a;color:#92400e}
 .acc-present .acc-badge{background:#bbf7d0;color:#14532d}
 .acc-uncertain .acc-badge{background:var(--bdr);color:var(--txt2)}
+.acc-mismatch .acc-badge{background:#fecaca;color:#b91c1c}
 .acc-edit-row{display:flex;align-items:center;gap:6px;margin-top:7px}
-.acc-edit-select{flex:1;padding:6px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
-.acc-edit-note{flex:2;padding:6px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
-.acc-edit-note::placeholder{color:var(--txt3)}
-.acc-del-btn{width:22px;height:22px;border-radius:50%;background:rgba(255,59,48,.1);border:.5px solid rgba(255,59,48,.25);color:var(--err);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.acc-sel{flex:1;padding:6px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
+.acc-note-inp{flex:2;padding:6px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
+.acc-note-inp::placeholder{color:var(--txt3)}
+.acc-del{width:22px;height:22px;border-radius:50%;background:rgba(255,59,48,.1);border:.5px solid rgba(255,59,48,.25);color:var(--err);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .add-acc-box{background:var(--sur);border-radius:var(--r3);border:.5px solid var(--bdr);padding:12px 14px;margin-bottom:8px}
 .add-acc-title{font-size:11px;font-weight:600;color:var(--txt2);margin-bottom:8px}
-.add-acc-row{display:flex;gap:6px;align-items:center}
-.add-acc-input{flex:2;padding:7px 9px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur2);color:var(--txt);outline:none}
-.add-acc-input:focus{border-color:var(--acc);background:var(--sur)}
-.add-acc-input::placeholder{color:var(--txt3)}
-.add-acc-status{flex:1;padding:7px 8px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
+.add-acc-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.add-acc-row:last-child{margin-bottom:0}
+.add-acc-inp{flex:2;padding:7px 9px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur2);color:var(--txt);outline:none}
+.add-acc-inp:focus{border-color:var(--acc);background:var(--sur)}
+.add-acc-inp::placeholder{color:var(--txt3)}
+.add-acc-sel{flex:1;padding:7px 8px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
 .add-acc-btn{padding:7px 13px;background:var(--acc);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-.search-link{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--sur2);border:.5px solid var(--bdr);border-radius:var(--r3);text-decoration:none;color:inherit;margin-bottom:7px;transition:all .15s}
-.search-link:active{background:#fff;border-color:var(--acc)}
+.search-link{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--sur2);border:.5px solid var(--bdr);border-radius:var(--r3);text-decoration:none;color:inherit;margin-bottom:7px}
 .sl-tier{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0}
 .sl-t1{background:#fef3c7;color:#92400e}
 .sl-t2{background:#f3e8ff;color:#6b21a8}
+.sl-t3{background:#d1fae5;color:#065f46}
 .sl-name{font-size:13px;font-weight:600}
 .sl-desc{font-size:11px;color:var(--txt2)}
-.sl-arr{margin-left:auto;color:var(--txt3);font-size:18px}
-.btn-area{display:flex;gap:9px;padding:12px 14px 28px}
-.btn{flex:1;padding:14px;border:none;border-radius:var(--r3);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;transition:all .15s}
-.btn:active{transform:scale(.97)}
+.sl-arr{margin-left:auto;color:var(--txt3);font-size:16px}
+.btn-area{display:flex;gap:9px;padding:4px 14px 12px}
+.btn{flex:1;padding:12px;border:none;border-radius:var(--r3);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
 .btn-reset{background:var(--sur);color:var(--err);border:.5px solid var(--err)}
-.btn-save{background:var(--ok);color:#fff}
-#s-error{align-items:center;justify-content:center;background:var(--bg);gap:16px;padding:40px 20px}
-.err-icon{font-size:56px}
-.err-msg{font-size:16px;font-weight:600}
-.err-sub{font-size:13px;color:var(--txt2);text-align:center;padding:0 20px}
-.btn-retry{padding:13px 32px;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.btn-csv{background:var(--ok);color:#fff}
+.btn-sheet{background:var(--info);color:#fff}
+
+/* ══════════════════════
+   SKU 관리 페이지
+══════════════════════ */
+.sku-topbar{background:rgba(255,255,255,.93);backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:14px 18px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99}
+.sku-top-info h1{font-size:15px;font-weight:700}
+.sku-top-info p{font-size:11px;color:var(--txt2);margin-top:1px}
+.sku-actions{margin-left:auto;display:flex;gap:8px}
+.icon-btn{background:var(--sur2);border:.5px solid var(--bdr2);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s}
+.icon-btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.icon-btn:active{transform:scale(.97)}
+
+/* 통계 카드 */
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 14px 0}
+.stat-card{background:var(--sur);border-radius:var(--r2);border:.5px solid var(--bdr);padding:12px 14px}
+.stat-num{font-size:22px;font-weight:800;color:var(--acc)}
+.stat-lbl{font-size:10px;color:var(--txt2);font-weight:600;margin-top:2px}
+
+/* 필터/검색 */
+.filter-bar{padding:10px 14px 6px;display:flex;gap:8px}
+.sku-search{flex:1;padding:9px 12px 9px 32px;font-size:13px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur);color:var(--txt);outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8' stroke='%23aeaeb2' stroke-width='2.5'/%3E%3Cpath d='m21 21-4.35-4.35' stroke='%23aeaeb2' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center}
+.sku-search:focus{border-color:var(--acc)}
+.filter-sel{padding:9px 10px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur);color:var(--txt);outline:none;-webkit-appearance:none}
+.filter-sel:focus{border-color:var(--acc)}
+
+/* 동기화 바 */
+.sync-bar{margin:6px 14px;padding:9px 12px;border-radius:var(--r3);font-size:11px;display:flex;align-items:center;gap:8px;border:.5px solid}
+.sync-bar.idle{background:var(--sur2);border-color:var(--bdr);color:var(--txt2)}
+.sync-bar.ok{background:#f0fff4;border-color:#86efac;color:#15803d}
+.sync-bar.err{background:#fff1f0;border-color:#fecaca;color:#dc2626}
+.sync-bar.loading{background:#f0f8ff;border-color:#bfdbfe;color:var(--info)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;animation:none}
+.sync-bar.loading .sync-dot{animation:pulse 1s infinite}
+
+/* SKU 카드 */
+.sku-list{padding:0 14px;display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
+.sku-card{background:var(--sur);border-radius:var(--r2);border:.5px solid var(--bdr);overflow:hidden;transition:border-color .15s}
+.sku-card:active{border-color:var(--acc)}
+.sku-card-top{padding:12px 14px 10px;display:flex;align-items:flex-start;gap:10px}
+.sku-brand-pill{font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;background:var(--sur3);color:var(--txt2);flex-shrink:0;margin-top:2px}
+.sku-card-mid{flex:1}
+.sku-card-name{font-size:13px;font-weight:700;line-height:1.4}
+.sku-card-sub{font-size:10px;font-family:monospace;color:var(--txt3);margin-top:2px}
+.sku-card-btns{display:flex;gap:5px;flex-shrink:0}
+.sku-act{width:28px;height:28px;border-radius:6px;border:.5px solid var(--bdr2);background:var(--sur2);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer}
+.sku-act:hover{border-color:var(--acc);background:#fff8ee}
+.sku-act.del-act:hover{border-color:var(--err);background:#fff1f0}
+.sku-card-bottom{padding:0 14px 12px;display:flex;flex-direction:column;gap:5px}
+.sku-pill-row{display:flex;flex-wrap:wrap;gap:5px}
+.sku-pill{font-size:10px;padding:3px 8px;border-radius:5px;border:.5px solid var(--bdr);background:var(--sur2);color:var(--txt2)}
+.sku-pill.p-acc{background:#fffbf0;border-color:#fde68a;color:#92400e;font-weight:600}
+.sku-pill.p-note{background:#f0f8ff;border-color:#bfdbfe;color:#1e40af}
+.sku-pill.p-img{background:#f0fff4;border-color:#86efac;color:#15803d}
+/* 썸네일 미리보기 */
+.sku-thumb-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px}
+.sku-thumb{width:48px;height:48px;border-radius:6px;object-fit:cover;border:.5px solid var(--bdr);flex-shrink:0}
+.sku-empty{text-align:center;padding:48px 20px;color:var(--txt3)}
+.sku-empty-icon{font-size:48px;margin-bottom:12px}
+.sku-empty p{font-size:14px;font-weight:600;color:var(--txt2)}
+.sku-empty span{font-size:12px}
+
+/* ── 모달 공통 ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:300;display:none;align-items:flex-end;justify-content:center}
 .modal-bg.show{display:flex}
-.modal{background:var(--sur);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px}
-.modal h3{font-size:17px;font-weight:700;margin-bottom:5px}
-.modal-sub{font-size:12px;color:var(--txt2);margin-bottom:16px;line-height:1.5}
-.modal input[type=text]{width:100%;padding:13px 15px;font-size:16px;font-family:monospace;border:1.5px solid var(--bdr);border-radius:var(--r3);outline:none;background:var(--sur2);color:var(--txt);margin-bottom:12px}
-.modal input[type=text]:focus{border-color:var(--acc)}
-.modal-btns{display:flex;gap:9px}
-.modal-btns button{flex:1;padding:13px;border:none;border-radius:var(--r3);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
-.m-cancel{background:var(--sur2);color:var(--txt)}
-.m-ok{background:var(--acc);color:#fff}
-.brand-chips{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:16px}
+.modal-sheet{background:var(--sur);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:92vh;display:flex;flex-direction:column}
+.modal-drag{width:36px;height:4px;border-radius:2px;background:var(--bdr2);margin:10px auto 0}
+.modal-hd{padding:14px 20px 12px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-hd h3{font-size:16px;font-weight:700}
+.modal-close{width:28px;height:28px;border-radius:50%;background:var(--sur2);border:.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--txt2)}
+.modal-body{padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.modal-footer{padding:12px 20px 24px;border-top:.5px solid var(--bdr);display:flex;gap:10px;flex-shrink:0}
+.mf-btn{flex:1;padding:13px;border:none;border-radius:var(--r3);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.mf-btn:active{transform:scale(.97)}
+.mf-cancel{background:var(--sur2);color:var(--txt)}
+.mf-ok{background:var(--acc);color:#fff}
+.mf-del{background:#fff1f0;color:var(--err);border:.5px solid var(--err)}
+.form-sec{display:flex;flex-direction:column;gap:8px}
+.form-sec-title{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px;padding-bottom:6px;border-bottom:.5px solid var(--bdr);margin-bottom:2px}
+
+/* SKU 이미지 업로드 영역 */
+.img-upload-area{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.img-slot{aspect-ratio:1;border-radius:var(--r3);border:1.5px dashed var(--bdr2);background:var(--sur2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;overflow:hidden;transition:all .15s}
+.img-slot:hover{border-color:var(--acc);background:#fff8ee}
+.img-slot.has-img{border-style:solid;border-color:var(--ok)}
+.img-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.img-slot .img-del{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;z-index:2;cursor:pointer}
+.img-slot .img-lbl{font-size:9px;color:var(--txt3);font-weight:600;text-align:center;line-height:1.3;z-index:1}
+.img-slot .img-icon{font-size:20px;z-index:1}
+
+/* 미니 모달 (케어번호/필드수정) */
+.mini-modal{background:var(--sur);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px}
+.mini-modal h3{font-size:17px;font-weight:700;margin-bottom:4px}
+.mini-modal .sub{font-size:12px;color:var(--txt2);margin-bottom:14px}
+.mini-modal input{width:100%;padding:13px 15px;font-size:15px;font-family:inherit;border:1.5px solid var(--bdr);border-radius:var(--r3);outline:none;background:var(--sur2);color:var(--txt);margin-bottom:12px}
+.mini-modal input:focus{border-color:var(--acc)}
+.mm-btns{display:flex;gap:9px}
+.mm-btns button{flex:1;padding:13px;border:none;border-radius:var(--r3);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.mm-cancel{background:var(--sur2);color:var(--txt)}
+.mm-ok{background:var(--acc);color:#fff}
+
+/* 브랜드 chips */
+.brand-chips{display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto;margin-bottom:14px}
 .b-chip{padding:6px 13px;border-radius:20px;border:.5px solid var(--bdr2);font-size:12px;background:var(--sur2);cursor:pointer;transition:all .15s}
 .b-chip.active{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:rgba(28,28,30,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;padding:11px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+
+/* 시트 설정 */
+.sheet-panel{padding:0 14px 8px}
+.sheet-box{background:var(--sur);border-radius:var(--r2);border:.5px solid var(--bdr);padding:14px;display:flex;flex-direction:column;gap:10px}
+.sheet-box-hd{font-size:13px;font-weight:700}
+.sheet-url-row{display:flex;gap:8px}
+.sheet-url-inp{flex:1;padding:9px 11px;font-size:12px;font-family:monospace;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur2);color:var(--txt);outline:none}
+.sheet-url-inp:focus{border-color:var(--acc)}
+.sheet-url-inp::placeholder{color:var(--txt3)}
+.sheet-conn-btn{padding:9px 14px;background:var(--sur2);border:.5px solid var(--bdr2);border-radius:var(--r3);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap}
+.sheet-conn-btn.ok{background:#f0fff4;border-color:var(--ok);color:#15803d}
+.script-block{background:#1c1c1e;color:#f5a623;font-family:monospace;font-size:10px;padding:12px;border-radius:8px;overflow-x:auto;white-space:pre;line-height:1.5}
+.copy-btn{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:5px 11px;background:var(--sur);border:1px solid var(--bdr2);border-radius:6px;font-size:11px;color:var(--txt2);cursor:pointer}
+
+/* 토스트 */
+.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%) translateY(40px);background:rgba(28,28,30,.92);backdrop-filter:blur(12px);color:#fff;padding:11px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 input[type=file]{display:none}
 </style>
 </head>
 <body>
 
-<div class="screen show" id="s-input">
+<!-- ════ 검수 입력 ════ -->
+<div class="page show" id="p-input">
   <div class="top-bar">
     <div class="top-bar-logo">⚡</div>
-    <div class="top-bar-info">
-      <h1>번개케어 검수 보조</h1>
-      <p>사진으로 부속품 자동인식 · 판정 조력</p>
-    </div>
-    <div class="top-bar-care" id="careBadge" onclick="openCareModal()">케어번호</div>
+    <div class="top-bar-info"><h1>번개케어 검수</h1><p>SKU DB 우선 · AI 보조</p></div>
+    <div class="top-bar-right"><div class="care-badge" id="careBadge" onclick="openMod('care-modal')">케어번호</div></div>
   </div>
   <div class="scroll-body">
     <div class="card">
-      <div class="card-hd">
-        <span class="card-hd-icon">📸</span>
-        <div><h2>검수 사진</h2><p>💡 <b>정면 사진</b> 필수 · PC에서 드래그 앤 드롭 가능</p></div>
+      <div class="card-hd"><span class="card-hd-icon">📸</span><div><h2>검수 사진</h2><p>정면 필수 · 부속품 전체샷 권장</p></div></div>
+      <div class="photo-grid-3">
+        <div class="slot req" id="sl0" onclick="tF(0)" ondragover="oDO(0,event)" ondragleave="oDL(0)" ondrop="oDR(0,event)"><span class="s-icon">📷</span><span class="s-label">정면<br>필수</span><span class="req-badge">필수</span></div>
+        <div class="slot" id="sl1" onclick="tF(1)" ondragover="oDO(1,event)" ondragleave="oDL(1)" ondrop="oDR(1,event)"><span class="s-icon">🏷️</span><span class="s-label">라벨/택</span></div>
+        <div class="slot" id="sl2" onclick="tF(2)" ondragover="oDO(2,event)" ondragleave="oDL(2)" ondrop="oDR(2,event)"><span class="s-icon">🔧</span><span class="s-label">부속품<br>전체샷</span></div>
       </div>
-      <div class="photo-main-row">
-        <div class="slot req" id="sl0" onclick="triggerFile(0)" ondragover="onDragOver(0,event)" ondragleave="onDragLeave(0)" ondrop="onDrop(0,event)">
-          <span class="s-icon">📷</span><span class="s-label">정면 사진<br>필수</span><span class="req-badge">필수</span>
-        </div>
-        <div class="slot" id="sl1" onclick="triggerFile(1)" ondragover="onDragOver(1,event)" ondragleave="onDragLeave(1)" ondrop="onDrop(1,event)">
-          <span class="s-icon">🏷️</span><span class="s-label">라벨 / 택</span>
-        </div>
-        <div class="slot" id="sl2" onclick="triggerFile(2)" ondragover="onDragOver(2,event)" ondragleave="onDragLeave(2)" ondrop="onDrop(2,event)">
-          <span class="s-icon">🔧</span><span class="s-label">부속품<br>전체샷</span>
-        </div>
-      </div>
-      <div class="extra-note">💡 추가사진: 후면, 내부, 손상부위 등</div>
-      <div class="photo-extra-row" id="extra-slots"></div>
+      <div class="extra-note">💡 추가사진: 후면, 내부, 손상부위</div>
+      <div class="photo-grid-4" id="extra-slots"></div>
     </div>
     <div class="card">
-      <div class="card-hd">
-        <span class="card-hd-icon">🏷️</span>
-        <div><h2>모델 정보 <span style="font-weight:400;color:var(--txt2);font-size:12px">(선택)</span></h2><p>입력하면 부속품 인식 정확도가 높아집니다</p></div>
-      </div>
+      <div class="card-hd"><span class="card-hd-icon">🏷️</span><div><h2>모델 정보</h2><p>SKU 입력 시 DB에서 부속품 자동 조회</p></div></div>
       <div class="model-area">
-        <div class="model-row">
-          <div class="model-col">
-            <label class="inp-lbl">카테고리</label>
-            <select class="inp" id="sel-cat" onchange="onCatChange()">
-              <option value="">선택</option>
-              <option>의류</option><option>가방/지갑</option><option>벨트</option>
-              <option>모자</option><option>스카프</option><option>시계</option><option>쥬얼리</option>
-            </select>
-          </div>
-          <div class="model-col">
-            <label class="inp-lbl">브랜드</label>
-            <select class="inp" id="sel-brand"><option value="">선택</option></select>
-          </div>
+        <div class="f-row">
+          <div class="f-col"><label class="f-lbl">카테고리</label><select class="fi" id="sel-cat" onchange="onCatChange()"><option value="">선택</option><option>의류</option><option>가방/지갑</option><option>벨트</option><option>모자</option><option>스카프</option><option>시계</option><option>쥬얼리</option></select></div>
+          <div class="f-col"><label class="f-lbl">브랜드</label><select class="fi" id="sel-brand"><option value="">선택</option></select></div>
         </div>
-        <div>
-          <label class="inp-lbl">모델명</label>
-          <input class="inp" type="text" id="inp-modelname" placeholder="예: 클래식 플랩백 미디엄">
-        </div>
-        <div>
-          <label class="inp-lbl">모델번호 / SKU</label>
-          <input class="inp" type="text" id="inp-sku" placeholder="예: A01112 Y01864 C3906">
+        <div><label class="f-lbl">모델명</label><input class="fi" type="text" id="inp-modelname" placeholder="예: 클래식 플랩백 미디엄"></div>
+        <div><label class="f-lbl">모델번호 / SKU</label><input class="fi" type="text" id="inp-sku" placeholder="예: ANJOUSMINCG01TY01P" oninput="onSkuInput(this.value)"></div>
+        <div id="sku-preview-wrap" style="display:none">
+          <div id="sku-preview-box"></div>
         </div>
       </div>
     </div>
     <div class="card">
-      <div class="card-hd"><span class="card-hd-icon">📝</span><div><h2>판매자 본문</h2><p>제목 + 상세 설명 붙여넣기 (구성품 판단에 활용)</p></div></div>
-      <textarea class="seller" id="sellerTxt" rows="4" placeholder="예) 샤넬 클래식 플랩백 M. 풀구성으로 구매했으나 숄더스트랩 분실했습니다."></textarea>
+      <div class="card-hd"><span class="card-hd-icon">📝</span><div><h2>판매자 본문</h2><p>분실 언급 부속품 자동 감지</p></div></div>
+      <textarea class="seller-ta" id="sellerTxt" rows="4" placeholder="예) 샤넬 클래식 플랩백 M. 숄더스트랩 분실했습니다."></textarea>
     </div>
   </div>
-  <div class="fab-wrap">
-    <button class="fab" id="fab" onclick="startAnalysis()">
-      <div class="sp"></div><span id="fab-txt">🔍 부속품 자동인식 시작</span>
-    </button>
-  </div>
+  <div class="fab-wrap"><button class="fab" id="fab" onclick="startAnalysis()"><div class="sp"></div><span id="fab-txt">🔍 검수 시작</span></button></div>
 </div>
 
-<div class="screen" id="s-loading">
+<!-- ════ 로딩 ════ -->
+<div class="page" id="p-loading" style="align-items:center;justify-content:center">
   <div style="width:calc(100% - 28px)">
     <div class="loading-card">
-      <div class="loading-hd">
-        <div class="anim-icon">🔍</div>
-        <h2>AI가 분석 중입니다</h2>
-        <p>브랜드·모델 식별 및 부속품 누락 확인 중</p>
-      </div>
+      <div class="loading-hd"><div class="anim-icon">🔍</div><h2>검수 분석 중</h2><p id="loading-sub">SKU DB 조회 → AI 비교 분석</p></div>
       <div class="step-list">
-        <div class="step-item" id="st0"><div class="step-dot" id="sd0">1</div><span>이미지 업로드 완료</span></div>
-        <div class="step-item" id="st1"><div class="step-dot" id="sd1">2</div><span>브랜드 · 모델 식별</span></div>
-        <div class="step-item" id="st2"><div class="step-dot" id="sd2">3</div><span>기본 부속품 목록 파악</span></div>
-        <div class="step-item" id="st3"><div class="step-dot" id="sd3">4</div><span>누락 부속품 감지</span></div>
+        <div class="step-item" id="st0"><div class="step-dot" id="sd0">1</div><span>이미지 업로드</span></div>
+        <div class="step-item" id="st1"><div class="step-dot" id="sd1">2</div><span>SKU DB 조회</span></div>
+        <div class="step-item" id="st2"><div class="step-dot" id="sd2">3</div><span>부속품 이미지 비교</span></div>
+        <div class="step-item" id="st3"><div class="step-dot" id="sd3">4</div><span>불일치 감지</span></div>
         <div class="step-item" id="st4"><div class="step-dot" id="sd4">5</div><span>판정 결과 생성</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="screen" id="s-result">
-  <div class="top-bar">
-    <div class="top-bar-logo">⚡</div>
-    <div class="top-bar-info"><h1>검수 결과</h1><p id="res-label">번개케어</p></div>
-  </div>
+<!-- ════ 결과 ════ -->
+<div class="page" id="p-result">
+  <div class="top-bar"><div class="top-bar-logo">⚡</div><div class="top-bar-info"><h1>검수 결과</h1><p id="res-label">번개케어</p></div></div>
   <div class="scroll-body" id="result-body"></div>
   <div class="btn-area">
-    <button class="btn btn-reset" onclick="doReset()">↩ 다시 찍기</button>
-    <button class="btn btn-save" onclick="saveCSV()">📊 CSV 저장</button>
+    <button class="btn btn-reset" onclick="doReset()">↩ 다시</button>
+    <button class="btn btn-csv" onclick="saveCSV()">📊 CSV</button>
+    <button class="btn btn-sheet" onclick="saveResultToSheet()">📋 시트</button>
   </div>
 </div>
 
-<div class="screen" id="s-error">
-  <div class="err-icon">😵</div>
-  <div class="err-msg">분석 중 오류가 발생했습니다</div>
-  <div class="err-sub" id="err-detail"></div>
-  <button class="btn-retry" onclick="doReset()">↩ 다시 시도</button>
+<!-- ════ 에러 ════ -->
+<div class="page" id="p-error" style="align-items:center;justify-content:center;gap:16px;padding:40px 20px">
+  <div style="font-size:56px;text-align:center">😵</div>
+  <div style="font-size:16px;font-weight:600">분석 중 오류가 발생했습니다</div>
+  <div style="font-size:13px;color:var(--txt2);text-align:center" id="err-detail"></div>
+  <button style="padding:13px 32px;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer" onclick="doReset()">↩ 다시 시도</button>
 </div>
 
+<!-- ════ SKU 관리 ════ -->
+<div class="page" id="p-sku">
+  <div class="sku-topbar">
+    <div style="font-size:22px;color:var(--acc)">🗂️</div>
+    <div class="sku-top-info"><h1>SKU 관리</h1><p>검수 기준 부속품 DB</p></div>
+    <div class="sku-actions">
+      <button class="icon-btn" onclick="toggleSheetPanel()">⚙️ 시트</button>
+      <button class="icon-btn primary" onclick="openSkuForm(null)">＋ 추가</button>
+    </div>
+  </div>
+
+  <!-- 시트 설정 패널 -->
+  <div class="sheet-panel" id="sheet-panel" style="display:none;padding-top:12px">
+    <div class="sheet-box">
+      <div class="sheet-box-hd">⚙️ Google Sheets 동기화</div>
+      <div class="sheet-url-row">
+        <input class="sheet-url-inp" id="sheet-url-inp" placeholder="Apps Script 웹앱 URL">
+        <button class="sheet-conn-btn" id="sheet-conn-btn" onclick="testSheetUrl()">연결</button>
+      </div>
+      <div style="font-size:11px;color:var(--txt2)">시트 → 확장 프로그램 → Apps Script → 코드 붙여넣기 → 배포 → URL 복사</div>
+      <div class="script-block" id="script-code">function doPost(e){
+  var ss=SpreadsheetApp.getActiveSpreadsheet();
+  var d=JSON.parse(e.postData.contents);
+  var a=d.action;
+  function ok(){return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);}
+  if(a==='upsert_sku'){
+    var sh=ss.getSheetByName("SKU_DB")||ss.insertSheet("SKU_DB");
+    if(sh.getLastRow()===0)sh.appendRow(["카테고리","브랜드","SKU","모델명","라인","특이사항","사이즈","실측","부속품","링크","이미지수","등록일"]);
+    var rows=sh.getDataRange().getValues();var found=-1;
+    for(var i=1;i&lt;rows.length;i++){if(rows[i][2]==d.sku){found=i+1;break;}}
+    var row=[d.category,d.brand,d.sku,d.modelName,d.line,d.note,d.size,d.realSize,d.accessories,d.link,d.imgCount||0,new Date().toLocaleDateString('ko-KR')];
+    if(found&gt;0)sh.getRange(found,1,1,row.length).setValues([row]);else sh.appendRow(row);
+    return ok();
+  }
+  if(a==='delete_sku'){
+    var sh=ss.getSheetByName("SKU_DB");if(!sh)return ok();
+    var rows=sh.getDataRange().getValues();
+    for(var i=rows.length-1;i&gt;=1;i--){if(rows[i][2]==d.sku){sh.deleteRow(i+1);break;}}
+    return ok();
+  }
+  if(a==='save_result'){
+    var sh=ss.getSheetByName("검수결과")||ss.insertSheet("검수결과");
+    if(sh.getLastRow()===0)sh.appendRow(["케어번호","브랜드","카테고리","상품명","모델번호","색상","판정","누락","확인","불확실","불일치","신뢰도","사진수","분석일시"]);
+    sh.appendRow([d.careNo,d.brand,d.category,d.name,d.modelNo,d.color,d.verdict,d.missing,d.present,d.uncertain,d.mismatch,d.confidence,d.imgCount,d.analyzedAt]);
+    return ok();
+  }
+  return ok();
+}
+function doGet(){return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);}</div>
+      <button class="copy-btn" onclick="copyScript()">📋 코드 복사</button>
+    </div>
+  </div>
+
+  <!-- 동기화 상태 -->
+  <div class="sync-bar idle" id="sync-bar" style="margin-top:10px">
+    <div class="sync-dot"></div>
+    <span id="sync-msg">로컬 저장소 — 시트 URL 설정 시 자동 동기화</span>
+  </div>
+
+  <!-- 통계 -->
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">전체 SKU</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-with-img" style="color:var(--ok)">0</div><div class="stat-lbl">이미지 등록</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-no-img" style="color:var(--warn)">0</div><div class="stat-lbl">이미지 미등록</div></div>
+  </div>
+
+  <!-- 검색/필터 -->
+  <div class="filter-bar">
+    <input class="sku-search" id="sku-search" placeholder="브랜드, 모델명, SKU…" oninput="renderSkuList()">
+    <select class="filter-sel" id="sku-cat-filter" onchange="renderSkuList()">
+      <option value="">전체</option><option>가방/지갑</option><option>의류</option><option>벨트</option><option>모자</option><option>스카프</option><option>시계</option><option>쥬얼리</option>
+    </select>
+  </div>
+
+  <div class="sku-list" id="sku-list"></div>
+  <div style="height:8px"></div>
+</div>
+
+<!-- ── 탭바 ── -->
+<div class="tab-bar">
+  <div class="tab-bar-line" id="tab-line"></div>
+  <div class="tab-item active" id="tab-check"><span class="ti">🔍</span><span class="tl">검수</span></div>
+  <div class="tab-item" id="tab-sku"><span class="ti">🗂️</span><span class="tl">SKU 관리</span></div>
+</div>
+
+<!-- ════════ MODALS ════════ -->
+<!-- 케어번호 -->
 <div class="modal-bg" id="care-modal">
-  <div class="modal">
-    <h3>케어번호 입력</h3>
-    <p class="modal-sub">케어번호를 입력하면 결과에 함께 표시됩니다</p>
-    <input type="text" id="care-input" placeholder="예: 1143210" inputmode="numeric">
-    <div class="modal-btns">
-      <button class="m-cancel" onclick="closeCareModal()">취소</button>
-      <button class="m-ok" onclick="saveCare()">확인</button>
-    </div>
+  <div class="mini-modal">
+    <h3>케어번호 입력</h3><div class="sub">결과에 함께 표시됩니다</div>
+    <input type="text" id="care-inp" placeholder="예: 1143210" inputmode="numeric">
+    <div class="mm-btns"><button class="mm-cancel" onclick="closeMod('care-modal')">취소</button><button class="mm-ok" onclick="saveCare()">확인</button></div>
   </div>
 </div>
 
+<!-- 브랜드 수정 -->
 <div class="modal-bg" id="brand-modal">
-  <div class="modal">
-    <h3>브랜드 수정</h3>
-    <p class="modal-sub" id="brand-modal-sub">검수 가능 브랜드 목록</p>
+  <div class="mini-modal">
+    <h3>브랜드 수정</h3><div class="sub" id="brand-modal-sub">브랜드 선택</div>
     <div class="brand-chips" id="brand-chips"></div>
-    <div class="modal-btns">
-      <button class="m-cancel" onclick="closeBrandModal()">취소</button>
-      <button class="m-ok" onclick="confirmBrand()">선택 완료</button>
+    <div class="mm-btns"><button class="mm-cancel" onclick="closeMod('brand-modal')">취소</button><button class="mm-ok" onclick="confirmBrand()">확인</button></div>
+  </div>
+</div>
+
+<!-- 필드 수정 -->
+<div class="modal-bg" id="field-modal">
+  <div class="mini-modal">
+    <h3 id="field-modal-title">수정</h3><div class="sub">새 값을 입력하세요</div>
+    <input type="text" id="field-inp" placeholder="">
+    <div class="mm-btns"><button class="mm-cancel" onclick="closeMod('field-modal')">취소</button><button class="mm-ok" onclick="confirmField()">저장</button></div>
+  </div>
+</div>
+
+<!-- SKU 추가/편집 폼 -->
+<div class="modal-bg" id="sku-form-modal">
+  <div class="modal-sheet">
+    <div class="modal-drag"></div>
+    <div class="modal-hd"><h3 id="sf-title">SKU 추가</h3><div class="modal-close" onclick="closeMod('sku-form-modal')">✕</div></div>
+    <div class="modal-body">
+
+      <div class="form-sec">
+        <div class="form-sec-title">기본 정보</div>
+        <div class="f-row">
+          <div class="f-col"><label class="f-lbl">카테고리 *</label>
+            <select class="fi" id="sf-cat" onchange="onSfCat()"><option value="">선택</option><option>가방/지갑</option><option>의류</option><option>벨트</option><option>모자</option><option>스카프</option><option>시계</option><option>쥬얼리</option></select>
+          </div>
+          <div class="f-col"><label class="f-lbl">브랜드 *</label><select class="fi" id="sf-brand"><option value="">선택</option></select></div>
+        </div>
+        <div><label class="f-lbl">SKU 번호 *</label><input class="fi" id="sf-sku" type="text" placeholder="예: ANJOUSMINCG01TY01P"></div>
+        <div><label class="f-lbl">상품명 *</label><input class="fi" id="sf-name" type="text" placeholder="예: 앙주 미니 블랙"></div>
+        <div><label class="f-lbl">라인</label><input class="fi" id="sf-line" type="text" placeholder="예: 앙주, 생루이, 러브…"></div>
+        <div><label class="f-lbl">참고 링크</label><input class="fi" id="sf-link" type="text" placeholder="https://…"></div>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title">사이즈</div>
+        <div class="f-row">
+          <div class="f-col"><label class="f-lbl">공식 사이즈</label><input class="fi" id="sf-size" type="text" placeholder="예: 미니, PM, 클래식"></div>
+          <div class="f-col"><label class="f-lbl">실측 (cm)</label><input class="fi" id="sf-realsize" type="text" placeholder="예: 19.5x19.5"></div>
+        </div>
+        <div id="sf-watch" style="display:none;flex-direction:column;gap:8px;margin-top:4px">
+          <div class="f-row"><div class="f-col"><label class="f-lbl">케이스(mm)</label><input class="fi" id="sf-case" type="text" placeholder="예: 38"></div><div class="f-col"><label class="f-lbl">무브먼트</label><input class="fi" id="sf-move" type="text" placeholder="쿼츠/오토매틱"></div></div>
+          <div class="f-row"><div class="f-col"><label class="f-lbl">케이스 소재</label><input class="fi" id="sf-material" type="text" placeholder="예: 스틸"></div><div class="f-col"><label class="f-lbl">다이얼 색상</label><input class="fi" id="sf-dial" type="text" placeholder="예: 실버"></div></div>
+        </div>
+        <div id="sf-jewelry" style="display:none;flex-direction:column;gap:8px;margin-top:4px">
+          <div class="f-row"><div class="f-col"><label class="f-lbl">폭 (mm)</label><input class="fi" id="sf-width" type="text" placeholder="예: 5.5"></div><div class="f-col"><label class="f-lbl">펜던트 (mm)</label><input class="fi" id="sf-pendant" type="text" placeholder="예: 13"></div></div>
+          <div class="f-row"><div class="f-col"><label class="f-lbl">체인 길이 (cm)</label><input class="fi" id="sf-chain" type="text" placeholder="예: 42"></div><div class="f-col"><label class="f-lbl">유형</label><input class="fi" id="sf-jtype" type="text" placeholder="예: 링, 네크리스"></div></div>
+        </div>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title">구성품 (부속품)</div>
+        <textarea class="fi" id="sf-acc" rows="3" placeholder="쉼표로 구분&#10;예: 레더 스트랩, 키퍼(스트랩 후프) 2개, 이너파우치&#10;없으면 '없음' 입력"></textarea>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title">특이사항</div>
+        <textarea class="fi" id="sf-note" rows="2" placeholder="예: 신형/구형 차이, 금속 키퍼 포함 여부 등"></textarea>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title">📷 풀부속 이미지 (최대 6장)</div>
+        <div style="font-size:11px;color:var(--txt2);margin-bottom:8px;line-height:1.5">검수 시 이 이미지와 실제 사진을 AI가 비교합니다. 부속품이 명확히 보이는 사진을 등록하세요.</div>
+        <div class="img-upload-area" id="sku-img-area"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="mf-btn mf-cancel" onclick="closeMod('sku-form-modal')">취소</button>
+      <button class="mf-btn mf-del" id="sf-del-btn" onclick="deleteSku()" style="display:none">삭제</button>
+      <button class="mf-btn mf-ok" onclick="saveSku()">저장</button>
     </div>
   </div>
 </div>
 
+<!-- 파일 입력 -->
 <div style="display:none">
   <input type="file" id="f0" accept="image/*" onchange="onFile(0,event)">
   <input type="file" id="f1" accept="image/*" onchange="onFile(1,event)">
@@ -307,193 +593,684 @@ input[type=file]{display:none}
   <input type="file" id="f7" accept="image/*" onchange="onFile(7,event)">
   <input type="file" id="f8" accept="image/*" onchange="onFile(8,event)">
   <input type="file" id="f9" accept="image/*" onchange="onFile(9,event)">
+  <input type="file" id="sif0" accept="image/*" onchange="onSkuImgFile(0,event)">
+  <input type="file" id="sif1" accept="image/*" onchange="onSkuImgFile(1,event)">
+  <input type="file" id="sif2" accept="image/*" onchange="onSkuImgFile(2,event)">
+  <input type="file" id="sif3" accept="image/*" onchange="onSkuImgFile(3,event)">
+  <input type="file" id="sif4" accept="image/*" onchange="onSkuImgFile(4,event)">
+  <input type="file" id="sif5" accept="image/*" onchange="onSkuImgFile(5,event)">
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const PROXY='https://lca-proxy.jimmy-hwang.workers.dev';
-const BM={'의류':['샤넬','루이비통','구찌','디올','발렌시아가','프라다','톰브라운','버버리','몽클레어','파라점퍼스','스톤아일랜드','무스너클','에르메스','보테가베네타','셀린느','메종마르지엘라','로에베','펜디','발렌티노','미우미우','르메르'],'가방/지갑':['샤넬','루이비통','에르메스','고야드','구찌','디올','발렌시아가','보테가베네타','생로랑','셀린느','프라다','델보','메종마르지엘라','로에베','펜디','발렌티노','톰브라운','미우미우','버버리','끌로에','르메르','지방시','마르니','멀버리','페라가모','질샌더'],'벨트':['샤넬','루이비통','에르메스','고야드','구찌','디올','발렌시아가','보테가베네타','생로랑','셀린느','프라다','델보','메종마르지엘라','로에베','펜디','발렌티노','톰브라운','미우미우','버버리','끌로에','르메르','지방시','마르니','멀버리','페라가모'],'모자':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','생로랑','셀린느','프라다','메종마르지엘라','펜디','발렌티노','톰브라운','미우미우','버버리','지방시','몽클레어','스톤아일랜드','무스너클','파라점퍼스'],'스카프':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','생로랑','셀린느','프라다','펜디','발렌티노','톰브라운','미우미우','버버리'],'시계':['샤넬','루이비통','까르띠에','롤렉스','태그호이어','오메가','구찌','티쏘','오데마피게','미도','해밀턴','라도','론진','튜더','오리스','몽블랑','제니스','프레드릭 콘스탄트','에르메스','불가리','티파니','쇼파드','프랭크뮬러','아이더블유씨','디올','펜디','버버리','브라이틀링'],'쥬얼리':['샤넬','루이비통','다미아니','반클리프앤아펠','불가리','티파니','에르메스','구찌','까르띠에','프라다','프레드','부쉐론','쇼메','보테가베네타','셀린느','쇼파드','피아제']};
-const ACC_LIST=['숄더스트랩','레더 스트랩','패브릭 스트랩','자물쇠','열쇠','자물쇠/열쇠 세트','이너 파우치','미니파우치','키벨','참 장식','핸들 홀더','밑판','네임택','리본','체결끈','엔드참','스트랩 버클','여분 링크','크라운','신발끈'];
-let imgs=Array(10).fill(null),careNo='',result=null,editedAccs=[],pendingBrand='';
+const BM={
+  '의류':['샤넬','루이비통','구찌','디올','발렌시아가','프라다','톰브라운','버버리','몽클레어','파라점퍼스','스톤아일랜드','무스너클','에르메스','보테가베네타','셀린느','메종마르지엘라','로에베','펜디','발렌티노','미우미우','르메르'],
+  '가방/지갑':['샤넬','루이비통','에르메스','고야드','구찌','디올','발렌시아가','보테가베네타','생로랑','셀린느','프라다','델보','메종마르지엘라','로에베','펜디','발렌티노','톰브라운','미우미우','버버리','끌로에','르메르','지방시','마르니','멀버리','페라가모','질샌더'],
+  '벨트':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','보테가베네타','생로랑','프라다','펜디','발렌티노'],
+  '모자':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','생로랑','셀린느','프라다','메종마르지엘라','펜디','발렌티노','톰브라운','미우미우','버버리'],
+  '스카프':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','셀린느','프라다','펜디','버버리'],
+  '시계':['샤넬','루이비통','까르띠에','롤렉스','태그호이어','오메가','구찌','오데마피게','미도','해밀턴','라도','론진','튜더','오리스','에르메스','불가리','티파니','쇼파드','프랭크뮬러','아이더블유씨','디올','브라이틀링'],
+  '쥬얼리':['샤넬','루이비통','다미아니','반클리프앤아펠','불가리','티파니','에르메스','구찌','까르띠에','프라다','부쉐론','쇼메','보테가베네타','셀린느','쇼파드','피아제']
+};
+const ACC_LIST=['숄더스트랩','레더 스트랩','패브릭 스트랩','자물쇠','열쇠','자물쇠/열쇠 세트','이너 파우치','미니파우치','키벨','참 장식','핸들 홀더','밑판','네임택','리본','체결끈','스트랩 버클','여분 링크','크라운'];
+const LS_KEY='bungae_sku_v3';
+const LS_SHEET='bungae_sheet_url';
 
-(function(){const w=document.getElementById('extra-slots');for(let i=3;i<=9;i++){const d=document.createElement('div');d.className='slot';d.id='sl'+i;d.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-2)+'</span>';d.setAttribute('onclick','triggerFile('+i+')');d.setAttribute('ondragover','onDragOver('+i+',event)');d.setAttribute('ondragleave','onDragLeave('+i+')');d.setAttribute('ondrop','onDrop('+i+',event)');w.appendChild(d);}})();
+let imgs=Array(10).fill(null), careNo='', analysisResult=null, editedAccs=[];
+let pendingBrand='', fieldKey='';
+let editingSkuId=null, skuImgs=Array(6).fill(null);
+let sheetUrl='', skuDB=loadSkuDB();
 
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));document.getElementById('s-'+id).classList.add('show');window.scrollTo(0,0);}
-function openCareModal(){document.getElementById('care-modal').classList.add('show');setTimeout(()=>document.getElementById('care-input').focus(),150);}
-function closeCareModal(){document.getElementById('care-modal').classList.remove('show');}
-function saveCare(){careNo=document.getElementById('care-input').value.trim();const b=document.getElementById('careBadge');b.textContent=careNo?'#'+careNo:'케어번호';b.classList.toggle('on',!!careNo);closeCareModal();}
-document.getElementById('care-modal').addEventListener('click',e=>{if(e.target===document.getElementById('care-modal'))closeCareModal();});
-function onCatChange(){const cat=document.getElementById('sel-cat').value,sel=document.getElementById('sel-brand');sel.innerHTML='<option value="">선택</option>';if(cat&&BM[cat])BM[cat].forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});}
-function openBrandModal(brand,cat){pendingBrand=brand;document.getElementById('brand-modal-sub').textContent=(cat||'전체')+' · 검수 가능 브랜드';const chips=document.getElementById('brand-chips');chips.innerHTML='';const list=(cat&&BM[cat])?BM[cat]:[...new Set(Object.values(BM).flat())].sort();list.forEach(b=>{const btn=document.createElement('button');btn.className='b-chip'+(b===brand?' active':'');btn.textContent=b;btn.onclick=()=>{document.querySelectorAll('.b-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');pendingBrand=b;};chips.appendChild(btn);});document.getElementById('brand-modal').classList.add('show');}
-function closeBrandModal(){document.getElementById('brand-modal').classList.remove('show');}
-function confirmBrand(){if(!pendingBrand)return;const el=document.getElementById('res-brand-val');if(el)el.textContent=pendingBrand;closeBrandModal();showToast('✅ 브랜드 수정됨: '+pendingBrand);}
-document.getElementById('brand-modal').addEventListener('click',e=>{if(e.target===document.getElementById('brand-modal'))closeBrandModal();});
-function compress(file,cb){const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const M=800;let w=img.width,h=img.height;if(w>h){if(w>M){h=Math.round(h*M/w);w=M;}}else{if(h>M){w=Math.round(w*M/h);h=M;}}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.72));};img.src=ev.target.result;};r.readAsDataURL(file);}
-function setSlot(i,src){imgs[i]=src;const sl=document.getElementById('sl'+i);sl.innerHTML='<img src="'+src+'" alt=""><div class="del" onclick="removeImg('+i+',event)">✕</div>';sl.classList.add('filled');sl.classList.remove('req','drag-over');}
-function triggerFile(i){document.getElementById('f'+i).click();}
+function seedData(){
+  return [
+    {id:'s1',category:'가방/지갑',brand:'고야드',sku:'ANJOUSMINCG01TY01P',modelName:'앙주 미니 블랙',line:'앙주',size:'미니',realSize:'19.5x19.5',accessories:'이너파우치, 키퍼(스트랩 후프) 1개, 훅 클로저',note:'신형: 훅 클로저 추가. 구형에는 없음',link:'https://www.goyard.com/kr_ko/sac-anjou-mini.html',images:[]},
+    {id:'s2',category:'가방/지갑',brand:'고야드',sku:'STLOUIGMLTY01CL01P',modelName:'생루이 GM 블랙',line:'생루이',size:'GM',realSize:'40x32',accessories:'미니파우치, 레더 스트랩, 키퍼(스트랩 후프) 1개',note:'',link:'https://www.goyard.com/kr_ko/sac-saint-louis-gm.html',images:[]},
+    {id:'s3',category:'가방/지갑',brand:'고야드',sku:'STLOUIPMLTY01CL01P',modelName:'생루이 PM 블랙',line:'생루이',size:'PM',realSize:'34x28',accessories:'미니파우치, 레더 스트랩, 키퍼(스트랩 후프) 1개',note:'',link:'',images:[]},
+    {id:'s4',category:'가방/지갑',brand:'고야드',sku:'AMBAS2MMLTY51CL51P',modelName:'암바사드 MM 그레이',line:'암바사드',size:'MM',realSize:'38.5x27.5',accessories:'열쇠 2개, 자물쇠',note:'',link:'',images:[]},
+    {id:'s5',category:'가방/지갑',brand:'고야드',sku:'BELVE3PMLTY01CG01P',modelName:'벨베데르 PM 블랙',line:'벨베데르',size:'PM',realSize:'22x16',accessories:'키퍼(스트랩 후프) 2개',note:'키퍼 2개 중 1개는 금속 키퍼',link:'',images:[]},
+    {id:'s6',category:'쥬얼리',brand:'까르띠에',sku:'B6067417',modelName:'러브 브레이슬릿 클래식 핑크골드',line:'러브',size:'클래식',realSize:'',accessories:'없음',note:'폭 6.1mm. 드라이버 포함 신품 제외',link:'',images:[]},
+    {id:'s7',category:'시계',brand:'까르띠에',sku:'W2SA0007',modelName:'산토스 드 까르띠에 미디엄 스틸&옐로우골드',line:'산토스',size:'미디엄',realSize:'35.1',accessories:'스트랩/브레이슬릿(레더)',note:'퀵스위치 스트랩 포함 여부 확인 필요',link:'',images:[]},
+  ];
+}
+function loadSkuDB(){
+  try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}
+  return seedData();
+}
+function saveSkuDB(){localStorage.setItem(LS_KEY,JSON.stringify(skuDB));}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tab-line').style.transform=tab==='sku'?'translateX(100%)':'translateX(0)';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  if(tab==='check'){
+    const cur=analysisResult?'p-result':'p-input';
+    document.getElementById(cur).classList.add('show');
+  } else {
+    document.getElementById('p-sku').classList.add('show');
+    renderSkuList();
+    loadSheetSettings();
+  }
+}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+
+(function(){
+  const w=document.getElementById('extra-slots');
+  for(let i=3;i<=9;i++){
+    const d=document.createElement('div');
+    d.className='slot';d.id='sl'+i;
+    d.innerHTML=`<span class="s-icon">📷</span><span class="s-label">추가 ${i-2}</span>`;
+    d.setAttribute('onclick',`tF(${i})`);
+    d.setAttribute('ondragover',`oDO(${i},event)`);
+    d.setAttribute('ondragleave',`oDL(${i})`);
+    d.setAttribute('ondrop',`oDR(${i},event)`);
+    w.appendChild(d);
+  }
+})();
+
+function compress(file,cb,maxPx=800){
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      let w=img.width,h=img.height;
+      if(w>h){if(w>maxPx){h=Math.round(h*maxPx/w);w=maxPx;}}
+      else if(h>maxPx){w=Math.round(w*maxPx/h);h=maxPx;}
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.72));
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+function setSlot(i,src){
+  imgs[i]=src;
+  const sl=document.getElementById('sl'+i);
+  sl.innerHTML=`<img src="${src}" alt=""><div class="del-btn" onclick="removeImg(${i},event)">✕</div>`;
+  sl.classList.add('filled');sl.classList.remove('req','drag-over');
+}
+function tF(i){document.getElementById('f'+i).click();}
 function onFile(i,e){const f=e.target.files[0];if(f)compress(f,src=>setSlot(i,src));}
-function removeImg(i,e){e.stopPropagation();imgs[i]=null;const sl=document.getElementById('sl'+i);const defs=[['📷','정면 사진<br>필수',true],['🏷️','라벨 / 택',false],['🔧','부속품<br>전체샷',false]];if(i<3){const[ic,lb,req]=defs[i];sl.innerHTML='<span class="s-icon">'+ic+'</span><span class="s-label">'+lb+'</span>'+(req?'<span class="req-badge">필수</span>':'');sl.classList.remove('filled');if(req)sl.classList.add('req');}else{sl.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-2)+'</span>';sl.classList.remove('filled');}document.getElementById('f'+i).value='';}
-function onDragOver(i,e){e.preventDefault();document.getElementById('sl'+i).classList.add('drag-over');}
-function onDragLeave(i){document.getElementById('sl'+i).classList.remove('drag-over');}
-function onDrop(i,e){e.preventDefault();document.getElementById('sl'+i).classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))compress(f,src=>setSlot(i,src));}
+function removeImg(i,e){
+  e.stopPropagation();imgs[i]=null;
+  const sl=document.getElementById('sl'+i);
+  const defs=[['📷','정면<br>필수',true],['🏷️','라벨/택',false],['🔧','부속품<br>전체샷',false]];
+  if(i<3){
+    const[ic,lb,req]=defs[i];
+    sl.innerHTML=`<span class="s-icon">${ic}</span><span class="s-label">${lb}</span>${req?'<span class="req-badge">필수</span>':''}`;
+    sl.classList.remove('filled');if(req)sl.classList.add('req');
+  }else{
+    sl.innerHTML=`<span class="s-icon">📷</span><span class="s-label">추가 ${i-2}</span>`;
+    sl.classList.remove('filled');
+  }
+  document.getElementById('f'+i).value='';
+}
+function oDO(i,e){e.preventDefault();document.getElementById('sl'+i).classList.add('drag-over');}
+function oDL(i){document.getElementById('sl'+i).classList.remove('drag-over');}
+function oDR(i,e){
+  e.preventDefault();document.getElementById('sl'+i).classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/'))compress(f,src=>setSlot(i,src));
+}
 document.addEventListener('dragover',e=>e.preventDefault());
 document.addEventListener('drop',e=>e.preventDefault());
-function setStep(s){for(let i=0;i<5;i++){const item=document.getElementById('st'+i),dot=document.getElementById('sd'+i);item.classList.remove('active','done');if(i<s){item.classList.add('done');dot.textContent='✓';}else if(i===s){item.classList.add('active');dot.textContent='●';}else dot.textContent=i+1;}}
+
+function buildSkuImgSlots(){
+  const area=document.getElementById('sku-img-area');
+  area.innerHTML='';
+  const labels=['전체샷','정면','측면','내부','부속품1','부속품2'];
+  for(let i=0;i<6;i++){
+    const div=document.createElement('div');
+    div.className='img-slot'+(skuImgs[i]?' has-img':'');
+    div.id='sil'+i;
+    div.onclick=()=>document.getElementById('sif'+i).click();
+    if(skuImgs[i]){
+      div.innerHTML=`<img src="${skuImgs[i]}" alt=""><div class="img-del" onclick="removeSkuImg(${i},event)">✕</div>`;
+    } else {
+      div.innerHTML=`<span class="img-icon">📷</span><span class="img-lbl">${labels[i]}</span>`;
+    }
+    area.appendChild(div);
+  }
+}
+function onSkuImgFile(i,e){
+  const f=e.target.files[0];if(!f)return;
+  compress(f,src=>{skuImgs[i]=src;buildSkuImgSlots();},600);
+  e.target.value='';
+}
+function removeSkuImg(i,e){e.stopPropagation();skuImgs[i]=null;buildSkuImgSlots();}
+
+function openMod(id){document.getElementById(id).classList.add('show');}
+function closeMod(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('show');}));
+
+function saveCare(){
+  careNo=document.getElementById('care-inp').value.trim();
+  const b=document.getElementById('careBadge');
+  b.textContent=careNo?'#'+careNo:'케어번호';
+  b.classList.toggle('on',!!careNo);
+  closeMod('care-modal');
+}
+
+function onCatChange(){fillBrand('sel-cat','sel-brand');}
+function onSfCat(){
+  fillBrand('sf-cat','sf-brand');
+  const c=document.getElementById('sf-cat').value;
+  document.getElementById('sf-watch').style.display=c==='시계'?'flex':'none';
+  document.getElementById('sf-jewelry').style.display=c==='쥬얼리'?'flex':'none';
+}
+function fillBrand(catId,brandId){
+  const cat=document.getElementById(catId).value,sel=document.getElementById(brandId);
+  sel.innerHTML='<option value="">선택</option>';
+  if(cat&&BM[cat])BM[cat].forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});
+}
+function openBrandModal(brand,cat){
+  pendingBrand=brand;
+  document.getElementById('brand-modal-sub').textContent=(cat||'전체')+' 브랜드';
+  const chips=document.getElementById('brand-chips');chips.innerHTML='';
+  const list=cat&&BM[cat]?BM[cat]:[...new Set(Object.values(BM).flat())].sort();
+  list.forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className='b-chip'+(b===brand?' active':'');
+    btn.textContent=b;
+    btn.onclick=()=>{document.querySelectorAll('.b-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');pendingBrand=b;};
+    chips.appendChild(btn);
+  });
+  openMod('brand-modal');
+}
+function confirmBrand(){
+  if(!pendingBrand)return;
+  const el=document.getElementById('res-brand-val');
+  if(el)el.textContent=pendingBrand;
+  if(analysisResult)analysisResult._brand=pendingBrand;
+  closeMod('brand-modal');showToast('✅ 브랜드: '+pendingBrand);
+}
+function openFieldModal(title,ph,cur,key){
+  fieldKey=key;
+  document.getElementById('field-modal-title').textContent=title+' 수정';
+  const inp=document.getElementById('field-inp');
+  inp.placeholder=ph;inp.value=cur||'';
+  openMod('field-modal');setTimeout(()=>inp.focus(),150);
+}
+function confirmField(){
+  const v=document.getElementById('field-inp').value.trim();
+  if(!v){closeMod('field-modal');return;}
+  const el=document.getElementById('res-field-'+fieldKey);
+  if(el)el.textContent=v;
+  if(analysisResult)analysisResult['_'+fieldKey]=v;
+  closeMod('field-modal');showToast('✅ 수정됨');
+}
+
+function onSkuInput(val){
+  const wrap=document.getElementById('sku-preview-wrap');
+  const match=lookupSKU(val.trim());
+  if(match){
+    document.getElementById('sku-preview-box').innerHTML=buildSkuPreview(match);
+    wrap.style.display='block';
+  } else {
+    wrap.style.display='none';
+  }
+}
+function buildSkuPreview(s){
+  const thumbs=s.images&&s.images.length?s.images.slice(0,3).map(img=>`<img class="sku-ref-img" src="${img}" alt="">`).join(''):'';
+  return `<div class="sku-match-box verified" style="margin-top:0">
+    <div class="sku-match-hd"><span style="font-size:16px">📋</span><span class="sku-match-title" style="font-size:12px">${s.modelName}</span><span class="sku-match-badge badge-db">DB 확인</span></div>
+    <div class="sku-kv"><span class="sku-k">부속품</span><span class="sku-v"><b>${s.accessories||'—'}</b></span></div>
+    ${s.realSize?`<div class="sku-kv"><span class="sku-k">실측</span><span class="sku-v">${s.realSize}cm</span></div>`:''}
+    ${s.note?`<div class="sku-note-box">⚠️ ${s.note}</div>`:''}
+    ${thumbs?`<div class="sku-img-row">${thumbs}</div>`:''}
+  </div>`;
+}
+
+function lookupSKU(sku){
+  if(!sku)return null;
+  const c=sku.toUpperCase().replace(/\s/g,'');
+  return skuDB.find(s=>s.sku&&s.sku.toUpperCase().replace(/\s/g,'')===c)||null;
+}
+
+function setStep(s){
+  for(let i=0;i<5;i++){
+    const item=document.getElementById('st'+i),dot=document.getElementById('sd'+i);
+    item.classList.remove('active','done');
+    if(i<s){item.classList.add('done');dot.textContent='✓';}
+    else if(i===s){item.classList.add('active');dot.textContent='●';}
+    else dot.textContent=i+1;
+  }
+}
 
 async function startAnalysis(){
   if(!imgs[0]){showToast('📷 정면 사진을 먼저 업로드해 주세요');return;}
-  const fab=document.getElementById('fab');fab.disabled=true;fab.classList.add('ld');document.getElementById('fab-txt').textContent='분석 중...';
-  show('loading');setStep(0);
-  let step=0;const t=setInterval(()=>{step=Math.min(step+1,3);setStep(step);},1700);
-  const brand=document.getElementById('sel-brand').value,cat=document.getElementById('sel-cat').value,modelName=document.getElementById('inp-modelname').value.trim(),sku=document.getElementById('inp-sku').value.trim(),sellerTxt=document.getElementById('sellerTxt').value.trim(),validImgs=imgs.filter(Boolean);
+  const fab=document.getElementById('fab');
+  fab.disabled=true;fab.classList.add('ld');
+  document.getElementById('fab-txt').textContent='분석 중...';
+  showPage('p-loading');setStep(0);
+
+  const brand=document.getElementById('sel-brand').value,
+        cat=document.getElementById('sel-cat').value,
+        modelName=document.getElementById('inp-modelname').value.trim(),
+        inputSku=document.getElementById('inp-sku').value.trim(),
+        sellerTxt=document.getElementById('sellerTxt').value.trim(),
+        validImgs=imgs.filter(Boolean);
+
+  await tick(600);setStep(1);
+  const skuMatch=lookupSKU(inputSku);
+  const hasSkuImages=skuMatch&&skuMatch.images&&skuMatch.images.length>0;
+
+  await tick(600);setStep(2);
+
+  let parsed;
   try{
     const content=[];
     validImgs.forEach(img=>{content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});});
+    if(hasSkuImages){
+      skuMatch.images.slice(0,3).forEach(img=>{content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});});
+    }
+
+    const dbInfo=skuMatch?`SKU DB 기준 정보:
+- 모델명: ${skuMatch.modelName}
+- 기준 부속품: ${skuMatch.accessories}
+- 사이즈: ${skuMatch.size||'—'}${skuMatch.realSize?' ('+skuMatch.realSize+'cm)':''}
+- 특이사항: ${skuMatch.note||'없음'}
+${hasSkuImages?`- 기준 이미지 ${skuMatch.images.length}장 첨부됨`:'- 기준 이미지 없음: AI 일반 지식 기반 판단'}`:'SKU DB에 해당 모델 없음: AI 일반 지식 기반 판단';
+
+    const dataSource=hasSkuImages?'DB이미지비교':(skuMatch?'DB텍스트비교':'AI판단');
+
     content.push({type:'text',text:`번개케어 명품 검수 전문가입니다. JSON만 출력 (마크다운 없이).
 
-입력 정보:
-- 브랜드: ${brand||'미확인'} / 카테고리: ${cat||'미확인'}
-- 모델명: ${modelName||'미확인'} / SKU: ${sku||'미확인'}
-- 판매자 본문: "${sellerTxt||'없음'}"
+입력: 브랜드:${brand||'미확인'} 카테고리:${cat||'미확인'} 모델명:${modelName||'미확인'} SKU:${inputSku||'미확인'}
+판매자본문: "${sellerTxt||'없음'}"
+
+${dbInfo}
 
 분석 규칙:
-1. 더스트백·박스·보증서 등 패키지 구성품은 분석 제외
-2. 스트랩 키퍼 분석 제외
-3. 판매자 본문에 분실 언급된 부속품 → status "없음" 처리
-4. 사진에서 확인 불가 → "불확실"
-5. "없음" 항목 있으면 → verdict = "검수자 확인 필요"
-6. verdictReason 형식: "모델번호 [모델번호]로 확인되나, 주요 부속품 확인 불가" / 모델번호 미확인 시: "입고된 상품의 모델번호를 확인해 주세요"
+1. 더스트백·박스·보증서는 제외
+2. 판매자 본문 분실 언급 → status "없음"
+3. 확인 불가 → "불확실"
+4. ${hasSkuImages?'기준 이미지와 검수 사진을 직접 비교 후 불일치 감지':'AI 일반 지식 기반으로 부속품 판단'}
+5. "없음" 또는 "불일치" 항목 있으면 verdict = "검수자 확인 필요"
+6. 불일치는 mismatch 배열에 별도 기록
 
-{"brand":"브랜드(한글)","brandEn":"영문","category":"카테고리","name":"상품명","modelNo":"모델번호","color":"색상","confidence":숫자(0-100),"verdict":"합격/검수자 확인 필요/불합격","verdictReason":"사유","accessories":[{"name":"부속품명","status":"있음/없음/불확실","reason":"판단근거","fromSellerText":불리언}],"searchKo":"한글검색어","searchEn":"영문검색어"}`});
-    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,messages:[{role:'user',content}]})});
+{"brand":"","brandEn":"","category":"","name":"","modelNo":"","color":"","confidence":0,"verdict":"합격/검수자 확인 필요/불합격","verdictReason":"","dataSource":"${dataSource}","accessories":[{"name":"","status":"있음/없음/불확실","reason":"","fromSellerText":false,"mismatch":false}],"mismatch":[{"name":"부속품명","reason":"불일치 상세 사유","severity":"경고/오류"}],"searchKo":"","searchEn":""}`});
+
+    await tick(400);setStep(3);
+    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2500,messages:[{role:'user',content}]})});
     if(!resp.ok)throw new Error('API 오류 ('+resp.status+')');
     const data=await resp.json();
     if(data.error)throw new Error(JSON.stringify(data.error));
-    let parsed;
     try{parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());}
-    catch{throw new Error('파싱 실패: '+data.content[0].text.substring(0,80));}
-    clearInterval(t);setStep(4);
-    await new Promise(r=>setTimeout(r,700));
-    parsed.careNo=careNo||'';parsed.analyzedAt=new Date().toLocaleString('ko-KR');parsed.imgCount=validImgs.length;
-    result=parsed;editedAccs=JSON.parse(JSON.stringify(parsed.accessories||[]));
-    renderResult(parsed);show('result');
-  }catch(err){clearInterval(t);document.getElementById('err-detail').textContent=err.message;show('error');}
-  finally{fab.disabled=false;fab.classList.remove('ld');document.getElementById('fab-txt').textContent='🔍 부속품 자동인식 시작';}
+    catch{throw new Error('파싱 실패');}
+  }catch(err){
+    document.getElementById('err-detail').textContent=err.message;
+    showPage('p-error');
+    fab.disabled=false;fab.classList.remove('ld');
+    document.getElementById('fab-txt').textContent='🔍 검수 시작';
+    return;
+  }
+
+  setStep(4);await tick(700);
+  parsed.careNo=careNo||'';
+  parsed.analyzedAt=new Date().toLocaleString('ko-KR');
+  parsed.imgCount=validImgs.length;
+  parsed._skuMatch=skuMatch;
+  parsed._hasSkuImages=hasSkuImages;
+  parsed._inputSku=inputSku;
+
+  analysisResult=parsed;
+  editedAccs=JSON.parse(JSON.stringify(parsed.accessories||[]));
+  renderResult(parsed);
+  showPage('p-result');
+  fab.disabled=false;fab.classList.remove('ld');
+  document.getElementById('fab-txt').textContent='🔍 검수 시작';
 }
+function tick(ms){return new Promise(r=>setTimeout(r,ms));}
 
 function renderResult(r){
   document.getElementById('res-label').textContent=(r.careNo?'#'+r.careNo+' · ':'')+r.brand+' '+r.category;
-  const accs=r.accessories||[],absent=accs.filter(a=>a.status==='없음'),uncertain=accs.filter(a=>a.status==='불확실'),present=accs.filter(a=>a.status==='있음');
-  const isHold=r.verdict==='검수자 확인 필요'||r.verdict==='보류',isFail=r.verdict==='불합격';
-  const vcls=isFail?'fail':isHold?'hold':'pass',vi=isFail?'❌':isHold?'🔍':'✅',vlabel=isFail?'불합격':isHold?'검수자 확인 필요':'합격';
-  const mb=absent.length>0?'<span style="background:#fde68a;color:#92400e;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">누락 '+absent.length+'개</span>':'<span style="background:#bbf7d0;color:#14532d;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">이상 없음</span>';
+  const accs=r.accessories||[];
+  const absent=accs.filter(a=>a.status==='없음');
+  const uncertain=accs.filter(a=>a.status==='불확실');
+  const present=accs.filter(a=>a.status==='있음'&&!a.mismatch);
+  const mismatchAccs=accs.filter(a=>a.mismatch);
+  const mismatches=r.mismatch||[];
+  const isHold=r.verdict==='검수자 확인 필요',isFail=r.verdict==='불합격';
+  const vcls=isFail?'fail':isHold?'hold':'pass';
+  const vi=isFail?'❌':isHold?'🔍':'✅';
+  const vlabel=isFail?'불합격':isHold?'검수자 확인 필요':'합격';
   const cc=(r.confidence||0)>=70?'var(--ok)':(r.confidence||0)>=40?'var(--warn)':'var(--err)';
-  const sqKo=encodeURIComponent(r.searchKo||r.brand+' '+r.name),sqEn=encodeURIComponent(r.searchEn||(r.brandEn||r.brand)+' '+r.name);
-  const sb=(r.brand||'').replace(/'/g,"&#39;"),sc=(r.category||'').replace(/'/g,"&#39;");
+  const sqKo=encodeURIComponent(r.searchKo||r.brand+' '+r.name);
+  const sqEn=encodeURIComponent(r.searchEn||(r.brandEn||r.brand)+' '+r.name);
+  const sb=(r.brand||'').replace(/'/g,"&#39;");
+  const sc=(r.category||'').replace(/'/g,"&#39;");
+  const sm=r._skuMatch;
+
+  let skuHtml='';
+  if(sm){
+    const thumbs=sm.images&&sm.images.length?sm.images.slice(0,4).map((img,i)=>`<div style="flex-shrink:0;text-align:center"><img class="sku-ref-img${mismatches.length>0&&i===0?' mismatch':''}" src="${img}" alt=""><div class="sku-img-label" style="color:var(--txt3)">기준${i+1}</div></div>`).join(''):'';
+    skuHtml=`<div class="sku-match-box verified">
+      <div class="sku-match-hd"><span style="font-size:17px">📋</span><span class="sku-match-title">SKU DB 매칭</span>
+        <span class="sku-match-badge badge-db">DB 확인</span>
+        ${r._hasSkuImages?'<span style="background:#d1fae5;color:#065f46;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:4px">이미지 비교</span>':'<span style="background:#f3e8ff;color:#6b21a8;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:4px">텍스트 비교</span>'}
+      </div>
+      <div class="sku-kv"><span class="sku-k">기준부속품</span><span class="sku-v"><b>${sm.accessories||'—'}</b></span></div>
+      ${sm.size?`<div class="sku-kv"><span class="sku-k">사이즈</span><span class="sku-v">${sm.size}${sm.realSize?' ('+sm.realSize+'cm)':''}</span></div>`:''}
+      ${sm.note?`<div class="sku-note-box">⚠️ ${sm.note}</div>`:''}
+      ${thumbs?`<div class="sku-img-row">${thumbs}<div style="flex-shrink:0;text-align:center;display:flex;align-items:center;justify-content:center;width:72px;font-size:11px;color:var(--txt3);line-height:1.4">←<br>기준<br>이미지</div></div>`:''}
+      ${!r._hasSkuImages?`<a class="google-lens-link" href="https://lens.google.com/search?q=${encodeURIComponent(r.brand+' '+r.name+' accessories')}" target="_blank"><span class="gl-icon">🔍</span>구글 렌즈로 추가 확인하기</a>`:''}
+    </div>`;
+  } else {
+    skuHtml=`<div class="sku-match-box no-db">
+      <div class="sku-match-hd"><span style="font-size:17px">🤖</span><span class="sku-match-title" style="color:var(--txt2)">SKU DB 미등록</span><span class="sku-match-badge" style="background:#f3e8ff;color:#6b21a8">AI 판단</span></div>
+      <div style="font-size:12px;color:var(--txt2);line-height:1.5">AI 일반 지식 기반으로 분석했습니다. SKU DB에 등록하면 이미지 기반 정확도 높은 비교가 가능합니다.</div>
+      <a class="google-lens-link" href="https://lens.google.com/search?q=${encodeURIComponent((r.brand||'')+'+'+(r.name||'')+'+accessories+full+set')}" target="_blank"><span class="gl-icon">🔍</span>구글 렌즈로 부속품 확인하기</a>
+    </div>`;
+  }
+
+  let mismatchHtml='';
+  if(mismatches.length>0){
+    mismatchHtml=`<div class="mismatch-alert">
+      <div class="mismatch-alert-hd">⚠️ 불일치 감지 — 확인 필요 (${mismatches.length}건)</div>
+      ${mismatches.map(m=>`<div class="mismatch-item"><div class="mi-dot"></div><div><div class="mi-name">${m.name}</div><div class="mi-reason">${m.reason||''}</div></div></div>`).join('')}
+    </div>`;
+  }
+
+  const totalProblems=absent.length+uncertain.length+mismatchAccs.length;
+  const mbTag=totalProblems>0?`<span style="background:#fde68a;color:#92400e;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">문제 ${totalProblems}건</span>`:`<span style="background:#bbf7d0;color:#14532d;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">이상 없음</span>`;
+
   document.getElementById('result-body').innerHTML=`
     <div class="verdict-wrap ${vcls}"><div class="verdict-inner"><div class="v-icon">${vi}</div><div><div class="v-label">${vlabel}</div><div class="v-reason">${r.verdictReason||''}</div></div></div></div>
     <div>
-      <div class="sec-title">🏷️ 식별된 모델</div>
+      <div class="sec-title">🏷️ 식별 모델</div>
       <div class="info-grid">
-        <div class="info-cell"><div class="ic-label">브랜드</div><div class="ic-value accent" id="res-brand-val">${r.brand}</div><button class="edit-brand-btn" onclick="openBrandModal('${sb}','${sc}')">✏️ 수정</button></div>
-        <div class="info-cell"><div class="ic-label">카테고리</div><div class="ic-value">${r.category}</div></div>
-        <div class="info-cell full"><div class="ic-label">상품명</div><div class="ic-value">${r.name}${r.modelNo?' · <span style="font-family:monospace;font-size:12px;color:var(--txt2)">'+r.modelNo+'</span>':''}</div></div>
-        <div class="info-cell"><div class="ic-label">색상</div><div class="ic-value">${r.color||'—'}</div></div>
-        <div class="info-cell"><div class="ic-label">신뢰도</div><div class="ic-value">${r.confidence||0}%</div><div class="conf-bar"><div class="conf-fill" style="width:${r.confidence||0}%;background:${cc}"></div></div></div>
+        <div class="info-cell"><div class="ic-lbl">브랜드</div><div class="ic-val accent" id="res-brand-val">${r.brand}</div><button class="edit-btn" onclick="openBrandModal('${sb}','${sc}')">✏️</button></div>
+        <div class="info-cell"><div class="ic-lbl">카테고리</div><div class="ic-val" id="res-field-category">${r.category}</div><button class="edit-btn" onclick="openFieldModal('카테고리','가방/지갑','${(r.category||'').replace(/'/g,"\\'")}','category')">✏️</button></div>
+        <div class="info-cell full"><div class="ic-lbl">상품명</div><div class="ic-val" id="res-field-name">${r.name}${r.modelNo?` · <span style="font-family:monospace;font-size:12px;color:var(--txt2)">${r.modelNo}</span>`:''}</div><button class="edit-btn" onclick="openFieldModal('상품명','모델명','${(r.name||'').replace(/'/g,"\\'")}','name')">✏️</button></div>
+        <div class="info-cell"><div class="ic-lbl">색상</div><div class="ic-val" id="res-field-color">${r.color||'—'}</div><button class="edit-btn" onclick="openFieldModal('색상','블랙','${(r.color||'').replace(/'/g,"\\'")}','color')">✏️</button></div>
+        <div class="info-cell"><div class="ic-lbl">신뢰도</div><div class="ic-val">${r.confidence||0}%</div><div class="conf-bar"><div class="conf-fill" style="width:${r.confidence||0}%;background:${cc}"></div></div></div>
       </div>
     </div>
+    ${skuHtml}
+    ${mismatchHtml}
     <div>
-      <div class="sec-title" style="color:${absent.length>0?'#d97706':'#16a34a'}">🔧 부속품 인식 결과 ${mb}</div>
-      <div class="add-acc-box"><div class="add-acc-title">➕ 이미지 확인 불가 부속품 직접 추가</div>
-        <div class="add-acc-row">
-          <input type="text" id="add-acc-inp" class="add-acc-input" placeholder="부속품명 입력" list="acc-dl">
-          <datalist id="acc-dl">${ACC_LIST.map(a=>'<option value="'+a+'">').join('')}</datalist>
-          <select id="add-status" class="add-acc-status"><option value="없음">⚠️ 없음</option><option value="있음">✅ 있음</option><option value="불확실">❓ 불확실</option></select>
-          <button class="add-acc-btn" onclick="addAcc()">추가</button>
-        </div>
+      <div class="sec-title" style="color:${totalProblems>0?'#d97706':'#16a34a'}">🔧 부속품 ${mbTag}</div>
+      <div class="add-acc-box"><div class="add-acc-title">➕ 직접 추가 (2개 동시)</div>
+        <datalist id="acc-dl">${ACC_LIST.map(a=>`<option value="${a}">`).join('')}</datalist>
+        <div class="add-acc-row"><input type="text" id="aai1" class="add-acc-inp" placeholder="부속품명 1" list="acc-dl"><select id="aas1" class="add-acc-sel"><option value="없음">⚠️ 없음</option><option value="있음">✅ 있음</option><option value="불확실">❓ 불확실</option></select><button class="add-acc-btn" onclick="addAcc('aai1','aas1')">추가</button></div>
+        <div class="add-acc-row"><input type="text" id="aai2" class="add-acc-inp" placeholder="부속품명 2" list="acc-dl"><select id="aas2" class="add-acc-sel"><option value="없음">⚠️ 없음</option><option value="있음">✅ 있음</option><option value="불확실">❓ 불확실</option></select><button class="add-acc-btn" onclick="addAcc('aai2','aas2')">추가</button></div>
       </div>
       <div id="acc-list">
-        ${renderAccItems(absent,'acc-absent','⚠️','보류')}
+        ${renderAccItems(mismatchAccs,'acc-mismatch','⚠️','불일치')}
+        ${renderAccItems(absent,'acc-absent','⚠️','누락')}
         ${renderAccItems(uncertain,'acc-uncertain','❓','확인필요')}
         ${renderAccItems(present,'acc-present','✅','확인')}
         ${accs.length===0?'<div style="text-align:center;padding:18px;color:var(--txt3);font-size:13px">부속품 전체샷을 추가하면 더 정확해요 📦</div>':''}
       </div>
     </div>
     <div>
-      <div class="sec-title">🔍 모델 확인 검색</div>
-      <a class="search-link" href="https://www.bunjang.co.kr/search/products?q=${sqKo}" target="_blank"><span class="sl-tier sl-t1">번장</span><div><div class="sl-name">번개장터</div><div class="sl-desc">동일 모델 실거래 케이스 참고</div></div><span class="sl-arr">↗</span></a>
-      <a class="search-link" href="https://www.google.com/search?tbm=isch&q=${sqEn}" target="_blank"><span class="sl-tier sl-t2">구글</span><div><div class="sl-name">Google 이미지</div><div class="sl-desc">이미지 교차 검색 — 모델 확인</div></div><span class="sl-arr">↗</span></a>
-    </div>`;}
+      <div class="sec-title">🔍 추가 검색</div>
+      <a class="search-link" href="https://www.bunjang.co.kr/search/products?q=${sqKo}" target="_blank"><span class="sl-tier sl-t1">번장</span><div><div class="sl-name">번개장터</div><div class="sl-desc">동일 모델 실거래</div></div><span class="sl-arr">↗</span></a>
+      <a class="search-link" href="https://lens.google.com/search?q=${sqEn}+accessories+full+set" target="_blank"><span class="sl-tier sl-t3">렌즈</span><div><div class="sl-name">구글 렌즈</div><div class="sl-desc">부속품 구성 외부 확인</div></div><span class="sl-arr">↗</span></a>
+      <a class="search-link" href="https://www.google.com/search?tbm=isch&q=${sqEn}+accessories" target="_blank"><span class="sl-tier sl-t2">구글</span><div><div class="sl-name">Google 이미지</div><div class="sl-desc">이미지 교차 검색</div></div><span class="sl-arr">↗</span></a>
+    </div>`;
+}
 
 function renderAccItems(arr,cls,dot,badge){
   return arr.map(a=>{
-    const idx=editedAccs.indexOf(a),nm=(a.status==='없음'?'❌ ':'')+a.name+(a.status==='없음'?' 없음':'');
-    return '<div class="'+cls+' acc-item" id="acc-'+idx+'">'
-      +'<div class="acc-dot">'+dot+'</div>'
-      +'<div style="flex:1"><div class="acc-name">'+nm+'</div>'
-      +'<div class="acc-why">'+(a.reason||'')+(a.fromSellerText?' <b style="color:#92400e;font-size:10px">(판매자 본문)</b>':'')+'</div>'
-      +'<div class="acc-edit-row">'
-      +'<select class="acc-edit-select" onchange="editAcc('+idx+',\'status\',this.value)">'
-      +'<option value="있음"'+(a.status==='있음'?' selected':'')+'>✅ 있음</option>'
-      +'<option value="없음"'+(a.status==='없음'?' selected':'')+'>⚠️ 없음</option>'
-      +'<option value="불확실"'+(a.status==='불확실'?' selected':'')+'>❓ 불확실</option>'
-      +'</select>'
-      +'<input class="acc-edit-note" type="text" placeholder="메모..." oninput="editAcc('+idx+',\'memo\',this.value)">'
-      +'<button class="acc-del-btn" onclick="delAcc('+idx+')" title="삭제">✕</button>'
-      +'</div></div><div class="acc-badge">'+badge+'</div></div>';
-  }).join('');}
-
+    const idx=editedAccs.indexOf(a);
+    const nm=(a.status==='없음'||a.mismatch?'❌ ':'')+a.name+(a.status==='없음'?' 없음':a.mismatch?' 불일치':'');
+    return `<div class="${cls} acc-item" id="acc-${idx}"><div class="acc-dot">${dot}</div><div style="flex:1"><div class="acc-name">${nm}</div><div class="acc-why">${a.reason||''}${a.fromSellerText?' <b style="color:#92400e;font-size:10px">(판매자 본문)</b>':''}</div><div class="acc-edit-row"><select class="acc-sel" onchange="editAcc(${idx},'status',this.value)"><option value="있음"${a.status==='있음'?' selected':''}>✅ 있음</option><option value="없음"${a.status==='없음'?' selected':''}>⚠️ 없음</option><option value="불확실"${a.status==='불확실'?' selected':''}>❓ 불확실</option></select><input class="acc-note-inp" type="text" placeholder="메모..." oninput="editAcc(${idx},'memo',this.value)"><button class="acc-del" onclick="delAcc(${idx})">✕</button></div></div><div class="acc-badge">${badge}</div></div>`;
+  }).join('');
+}
 function editAcc(idx,field,val){
+  if(!editedAccs[idx])return;
   editedAccs[idx][field]=val;
   if(field==='status'){
     const el=document.getElementById('acc-'+idx);if(!el)return;
     const a=editedAccs[idx];
     el.className=(val==='있음'?'acc-present':val==='없음'?'acc-absent':'acc-uncertain')+' acc-item';
     el.querySelector('.acc-dot').textContent=val==='있음'?'✅':val==='없음'?'⚠️':'❓';
-    el.querySelector('.acc-badge').textContent=val==='있음'?'확인':val==='없음'?'보류':'확인필요';
-    el.querySelector('.acc-name').textContent=(val==='없음'?'❌ ':'')+a.name+(val==='없음'?' 없음':'');
-    showToast(val==='있음'?'✅ 있음으로 변경':val==='없음'?'⚠️ 없음으로 변경':'❓ 불확실로 변경');
+    el.querySelector('.acc-badge').textContent=val==='있음'?'확인':val==='없음'?'누락':'확인필요';
+    showToast(val==='있음'?'✅ 있음':val==='없음'?'⚠️ 없음으로':'❓ 불확실로');
   }
 }
-
-function delAcc(idx){const el=document.getElementById('acc-'+idx);if(el){el.style.opacity='0';el.style.transform='scale(.95)';setTimeout(()=>el.remove(),220);}editedAccs[idx].deleted=true;showToast('삭제됨');}
-
-function addAcc(){
-  const inp=document.getElementById('add-acc-inp'),statusSel=document.getElementById('add-status'),name=inp.value.trim(),status=statusSel.value;
-  if(!name){showToast('부속품명을 입력해 주세요');return;}
-  const a={name,status,reason:'검수자 직접 입력',fromSellerText:false},idx=editedAccs.length;
-  editedAccs.push(a);
-  const cls=status==='있음'?'acc-present':status==='없음'?'acc-absent':'acc-uncertain',dot=status==='있음'?'✅':status==='없음'?'⚠️':'❓',badge=status==='있음'?'확인':status==='없음'?'보류':'확인필요';
+function delAcc(idx){
+  const el=document.getElementById('acc-'+idx);
+  if(el){el.style.opacity='0';el.style.transform='scale(.95)';setTimeout(()=>el.remove(),200);}
+  if(editedAccs[idx])editedAccs[idx].deleted=true;
+}
+function addAcc(inpId,selId){
+  const inp=document.getElementById(inpId),st=document.getElementById(selId);
+  const name=inp.value.trim(),status=st.value;
+  if(!name){showToast('부속품명을 입력하세요');return;}
+  const a={name,status,reason:'검수자 직접 입력',fromSellerText:false,mismatch:false};
+  const idx=editedAccs.length;editedAccs.push(a);
+  const cls=status==='있음'?'acc-present':status==='없음'?'acc-absent':'acc-uncertain';
+  const dot=status==='있음'?'✅':status==='없음'?'⚠️':'❓';
+  const badge=status==='있음'?'확인':status==='없음'?'누락':'확인필요';
   const div=document.createElement('div');div.id='acc-'+idx;div.className=cls+' acc-item';
-  div.innerHTML='<div class="acc-dot">'+dot+'</div><div style="flex:1"><div class="acc-name">'+(status==='없음'?'❌ ':'')+name+(status==='없음'?' 없음':'')+'</div><div class="acc-why">검수자 직접 입력</div><div class="acc-edit-row"><select class="acc-edit-select" onchange="editAcc('+idx+',\'status\',this.value)"><option value="있음"'+(status==='있음'?' selected':'')+'>✅ 있음</option><option value="없음"'+(status==='없음'?' selected':'')+'>⚠️ 없음</option><option value="불확실"'+(status==='불확실'?' selected':'')+'>❓ 불확실</option></select><input class="acc-edit-note" type="text" placeholder="메모..." oninput="editAcc('+idx+',\'memo\',this.value)"><button class="acc-del-btn" onclick="delAcc('+idx+')" title="삭제">✕</button></div></div><div class="acc-badge">'+badge+'</div>';
+  div.innerHTML=`<div class="acc-dot">${dot}</div><div style="flex:1"><div class="acc-name">${status==='없음'?'❌ ':''}${name}${status==='없음'?' 없음':''}</div><div class="acc-why">검수자 직접 입력</div><div class="acc-edit-row"><select class="acc-sel" onchange="editAcc(${idx},'status',this.value)"><option value="있음"${status==='있음'?' selected':''}>✅ 있음</option><option value="없음"${status==='없음'?' selected':''}>⚠️ 없음</option><option value="불확실"${status==='불확실'?' selected':''}>❓ 불확실</option></select><input class="acc-note-inp" type="text" placeholder="메모..." oninput="editAcc(${idx},'memo',this.value)"><button class="acc-del" onclick="delAcc(${idx})">✕</button></div></div><div class="acc-badge">${badge}</div>`;
   document.getElementById('acc-list').appendChild(div);inp.value='';showToast('✅ '+name+' 추가됨');
 }
 
-function saveCSV(){
-  if(!result)return;const r=result;
+function getPayload(){
+  if(!analysisResult)return null;
+  const r=analysisResult;
   const curBrand=document.getElementById('res-brand-val')?.textContent||r.brand;
   const active=editedAccs.filter(a=>!a.deleted);
-  const missing=active.filter(a=>a.status==='없음').map(a=>a.name+(a.memo?'('+a.memo+')':'')).join(', ');
-  const pres=active.filter(a=>a.status==='있음').map(a=>a.name).join(', ');
-  const unc=active.filter(a=>a.status==='불확실').map(a=>a.name).join(', ');
-  const header='케어번호,브랜드,카테고리,상품명,모델번호,색상,판정,누락부속품,확인부속품,불확실,신뢰도,사진수,분석일시';
-  const row=[r.careNo||'',curBrand,r.category,r.name,r.modelNo||'',r.color||'',r.verdict,'"'+missing+'"','"'+pres+'"','"'+unc+'"',(r.confidence||0)+'%',r.imgCount||0,r.analyzedAt].join(',');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+header+'\n'+row],{type:'text/csv;charset=utf-8'}));
-  a.download='LCA_'+(r.careNo?r.careNo+'_':'')+curBrand+'_'+r.category+'.csv';a.click();showToast('📊 CSV 저장 완료!');
+  return {
+    careNo:r.careNo||'',brand:r._brand||curBrand,category:r._category||r.category,
+    name:r._name||r.name,modelNo:r.modelNo||'',color:r._color||r.color||'',
+    verdict:r.verdict,
+    missing:active.filter(a=>a.status==='없음').map(a=>a.name+(a.memo?'('+a.memo+')':'')).join(', '),
+    present:active.filter(a=>a.status==='있음'&&!a.mismatch).map(a=>a.name).join(', '),
+    uncertain:active.filter(a=>a.status==='불확실').map(a=>a.name).join(', '),
+    mismatch:(r.mismatch||[]).map(m=>m.name).join(', '),
+    confidence:(r.confidence||0)+'%',imgCount:r.imgCount||0,analyzedAt:r.analyzedAt
+  };
 }
-
+function saveCSV(){
+  const p=getPayload();if(!p)return;
+  const header='케어번호,브랜드,카테고리,상품명,모델번호,색상,판정,누락,확인,불확실,불일치,신뢰도,사진수,분석일시';
+  const row=[p.careNo,p.brand,p.category,p.name,p.modelNo,p.color,p.verdict,`"${p.missing}"`,`"${p.present}"`,`"${p.uncertain}"`,`"${p.mismatch}"`,p.confidence,p.imgCount,p.analyzedAt].join(',');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+header+'\n'+row],{type:'text/csv;charset=utf-8'}));
+  a.download=`LCA_${p.careNo||''}${p.brand}_${p.category}.csv`;
+  a.click();showToast('📊 CSV 저장!');
+}
+async function saveResultToSheet(){
+  const p=getPayload();if(!p)return;
+  if(!sheetUrl){showToast('SKU 관리 탭에서 시트 URL 설정 필요');return;}
+  try{await sheetPost({action:'save_result',...p});showToast('📋 시트 저장 완료!');}
+  catch(e){showToast('❌ '+e.message);}
+}
 function doReset(){
-  imgs=Array(10).fill(null);result=null;editedAccs=[];
-  document.getElementById('sellerTxt').value='';document.getElementById('result-body').innerHTML='';
-  document.getElementById('inp-modelname').value='';document.getElementById('inp-sku').value='';
-  const sl0=document.getElementById('sl0');sl0.innerHTML='<span class="s-icon">📷</span><span class="s-label">정면 사진<br>필수</span><span class="req-badge">필수</span>';sl0.className='slot req';
-  [['🏷️','라벨 / 택'],['🔧','부속품<br>전체샷']].forEach(([ic,lb],i)=>{const sl=document.getElementById('sl'+(i+1));sl.innerHTML='<span class="s-icon">'+ic+'</span><span class="s-label">'+lb+'</span>';sl.className='slot';});
-  for(let i=3;i<=9;i++){const sl=document.getElementById('sl'+i);if(!sl)continue;sl.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-2)+'</span>';sl.className='slot';document.getElementById('f'+i).value='';}
-  for(let i=0;i<=2;i++)document.getElementById('f'+i).value='';
-  show('input');
+  imgs=Array(10).fill(null);analysisResult=null;editedAccs=[];
+  ['sellerTxt','inp-modelname','inp-sku'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('result-body').innerHTML='';
+  document.getElementById('sku-preview-wrap').style.display='none';
+  const sl0=document.getElementById('sl0');
+  sl0.innerHTML='<span class="s-icon">📷</span><span class="s-label">정면<br>필수</span><span class="req-badge">필수</span>';
+  sl0.className='slot req';
+  [['🏷️','라벨/택'],['🔧','부속품<br>전체샷']].forEach(([ic,lb],i)=>{
+    const sl=document.getElementById('sl'+(i+1));
+    sl.innerHTML=`<span class="s-icon">${ic}</span><span class="s-label">${lb}</span>`;sl.className='slot';
+  });
+  for(let i=3;i<=9;i++){const sl=document.getElementById('sl'+i);if(sl){sl.innerHTML=`<span class="s-icon">📷</span><span class="s-label">추가 ${i-2}</span>`;sl.className='slot';}}
+  for(let i=0;i<=9;i++){const f=document.getElementById('f'+i);if(f)f.value='';}
+  switchTab('check');
 }
 
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function renderSkuList(){
+  const q=(document.getElementById('sku-search').value||'').toLowerCase();
+  const cat=document.getElementById('sku-cat-filter').value;
+  let list=skuDB.filter(s=>{
+    if(cat&&s.category!==cat)return false;
+    if(!q)return true;
+    return (s.brand+s.modelName+s.sku+s.line).toLowerCase().includes(q);
+  }).sort((a,b)=>((a.brand||'')+(a.modelName||'')).localeCompare((b.brand||'')+(b.modelName||'')));
+
+  document.getElementById('stat-total').textContent=skuDB.length;
+  const withImg=skuDB.filter(s=>s.images&&s.images.length>0).length;
+  document.getElementById('stat-with-img').textContent=withImg;
+  document.getElementById('stat-no-img').textContent=skuDB.length-withImg;
+
+  const container=document.getElementById('sku-list');
+  if(list.length===0){
+    container.innerHTML=`<div class="sku-empty"><div class="sku-empty-icon">${q?'🔍':'📦'}</div><p>${q?'검색 결과 없음':'SKU가 없습니다'}</p><span>${q?'다른 키워드':'+ 추가 버튼으로 등록'}</span></div>`;
+    return;
+  }
+  container.innerHTML=list.map(s=>{
+    const hasImg=s.images&&s.images.length>0;
+    const thumbs=hasImg?s.images.slice(0,4).map(img=>`<img class="sku-thumb" src="${img}" alt="">`).join(''):'';
+    return `<div class="sku-card">
+      <div class="sku-card-top">
+        <span class="sku-brand-pill">${s.brand||'?'}</span>
+        <div class="sku-card-mid">
+          <div class="sku-card-name">${s.modelName||'—'}</div>
+          <div class="sku-card-sub">${s.sku||''} ${s.size?'· '+s.size:''}</div>
+        </div>
+        <div class="sku-card-btns">
+          <div class="sku-act" onclick="openSkuForm('${s.id}')">✏️</div>
+          <div class="sku-act del-act" onclick="confirmDelSku('${s.id}')">🗑</div>
+        </div>
+      </div>
+      ${(s.accessories||s.note||s.realSize||hasImg)?`<div class="sku-card-bottom">
+        <div class="sku-pill-row">
+          ${s.accessories?`<span class="sku-pill p-acc">🔧 ${s.accessories}</span>`:''}
+          ${s.realSize?`<span class="sku-pill">📐 ${s.realSize}cm</span>`:''}
+          ${s.category?`<span class="sku-pill">${s.category}</span>`:''}
+          ${hasImg?`<span class="sku-pill p-img">📷 이미지 ${s.images.length}장</span>`:'<span class="sku-pill" style="color:var(--warn);border-color:var(--warn)">📷 이미지 없음</span>'}
+          ${s.note?`<span class="sku-pill p-note">⚠️ ${s.note.length>28?s.note.slice(0,28)+'…':s.note}</span>`:''}
+        </div>
+        ${thumbs?`<div class="sku-thumb-row">${thumbs}</div>`:''}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openSkuForm(id){
+  editingSkuId=id;skuImgs=Array(6).fill(null);
+  document.getElementById('sf-title').textContent=id?'SKU 편집':'SKU 추가';
+  document.getElementById('sf-del-btn').style.display=id?'block':'none';
+  ['sf-cat','sf-brand','sf-sku','sf-name','sf-line','sf-link','sf-size','sf-realsize','sf-acc','sf-note','sf-case','sf-move','sf-material','sf-dial','sf-width','sf-pendant','sf-chain','sf-jtype'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  document.getElementById('sf-watch').style.display='none';
+  document.getElementById('sf-jewelry').style.display='none';
+  if(id){
+    const s=skuDB.find(x=>x.id===id);if(!s)return;
+    document.getElementById('sf-cat').value=s.category||'';onSfCat();
+    document.getElementById('sf-brand').value=s.brand||'';
+    document.getElementById('sf-sku').value=s.sku||'';
+    document.getElementById('sf-name').value=s.modelName||'';
+    document.getElementById('sf-line').value=s.line||'';
+    document.getElementById('sf-link').value=s.link||'';
+    document.getElementById('sf-size').value=s.size||'';
+    document.getElementById('sf-realsize').value=s.realSize||'';
+    document.getElementById('sf-acc').value=s.accessories||'';
+    document.getElementById('sf-note').value=s.note||'';
+    if(s.category==='시계'){['case','move','material','dial'].forEach(k=>{const el=document.getElementById('sf-'+k);if(el)el.value=s[k]||'';});}
+    if(s.category==='쥬얼리'){['width','pendant','chain','jtype'].forEach(k=>{const el=document.getElementById('sf-'+k);if(el)el.value=s[k]||'';});}
+    if(s.images)skuImgs=s.images.slice(0,6).concat(Array(6).fill(null)).slice(0,6);
+  }
+  buildSkuImgSlots();
+  openMod('sku-form-modal');
+}
+async function saveSku(){
+  const cat=document.getElementById('sf-cat').value,brand=document.getElementById('sf-brand').value;
+  const sku=document.getElementById('sf-sku').value.trim(),name=document.getElementById('sf-name').value.trim();
+  if(!cat||!brand||!sku||!name){showToast('카테고리, 브랜드, SKU, 상품명은 필수');return;}
+  const entry={
+    id:editingSkuId||('sku_'+Date.now()),
+    category:cat,brand,sku,modelName:name,
+    line:document.getElementById('sf-line').value.trim(),
+    size:document.getElementById('sf-size').value.trim(),
+    realSize:document.getElementById('sf-realsize').value.trim(),
+    accessories:document.getElementById('sf-acc').value.trim(),
+    note:document.getElementById('sf-note').value.trim(),
+    link:document.getElementById('sf-link').value.trim(),
+    images:skuImgs.filter(Boolean),
+  };
+  if(cat==='시계')Object.assign(entry,{case:document.getElementById('sf-case').value.trim(),move:document.getElementById('sf-move').value.trim(),material:document.getElementById('sf-material').value.trim(),dial:document.getElementById('sf-dial').value.trim()});
+  if(cat==='쥬얼리')Object.assign(entry,{width:document.getElementById('sf-width').value.trim(),pendant:document.getElementById('sf-pendant').value.trim(),chain:document.getElementById('sf-chain').value.trim(),jtype:document.getElementById('sf-jtype').value.trim()});
+
+  if(editingSkuId){const i=skuDB.findIndex(s=>s.id===editingSkuId);if(i>=0)skuDB[i]=entry;}
+  else skuDB.unshift(entry);
+  saveSkuDB();closeMod('sku-form-modal');renderSkuList();
+  showToast((editingSkuId?'✅ 수정: ':'✅ 추가: ')+name);
+
+  if(sheetUrl){
+    setSyncState('loading','시트 동기화 중…');
+    try{
+      const {images:_,...payload}=entry;
+      await sheetPost({action:'upsert_sku',...payload,imgCount:entry.images.length});
+      setSyncState('ok','시트 동기화 완료');
+    }catch(e){setSyncState('err','동기화 실패: '+e.message);}
+  }
+}
+function confirmDelSku(id){
+  const s=skuDB.find(x=>x.id===id);
+  if(!s)return;
+  if(confirm(`"${s.modelName}" 삭제할까요?`))deleteSku(id);
+}
+async function deleteSku(id){
+  const targetId=id||editingSkuId;if(!targetId)return;
+  const s=skuDB.find(x=>x.id===targetId);
+  skuDB=skuDB.filter(x=>x.id!==targetId);
+  saveSkuDB();closeMod('sku-form-modal');renderSkuList();showToast('🗑 삭제됨');
+  if(sheetUrl&&s){try{await sheetPost({action:'delete_sku',sku:s.sku});}catch(e){}}
+}
+
+function toggleSheetPanel(){const p=document.getElementById('sheet-panel');p.style.display=p.style.display==='none'?'block':'none';}
+function loadSheetSettings(){
+  const saved=localStorage.getItem(LS_SHEET);
+  if(saved){
+    sheetUrl=saved;
+    document.getElementById('sheet-url-inp').value=saved;
+    setSyncState('ok','시트 연결됨 — 변경 시 자동 동기화');
+  }
+}
+async function testSheetUrl(){
+  const url=document.getElementById('sheet-url-inp').value.trim();if(!url)return;
+  const btn=document.getElementById('sheet-conn-btn');btn.textContent='확인 중…';
+  try{
+    await fetch(url,{method:'GET',mode:'no-cors'});
+    sheetUrl=url;localStorage.setItem(LS_SHEET,url);
+    btn.textContent='✅ 연결됨';btn.classList.add('ok');
+    setSyncState('ok','시트 연결됨');showToast('✅ 연결 완료!');
+  }catch(e){btn.textContent='❌ 실패';setSyncState('err','연결 실패');showToast('❌ 실패');}
+}
+function setSyncState(state,msg){
+  const bar=document.getElementById('sync-bar');
+  bar.className='sync-bar '+state;
+  document.getElementById('sync-msg').textContent=msg;
+}
+async function sheetPost(data){
+  if(!sheetUrl)throw new Error('URL 없음');
+  await fetch(sheetUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+}
+function copyScript(){
+  const code=document.getElementById('script-code').textContent;
+  navigator.clipboard.writeText(code).then(()=>showToast('📋 복사됨!')).catch(()=>{
+    const t=document.createElement('textarea');t.value=code;
+    document.body.appendChild(t);t.select();document.execCommand('copy');
+    document.body.removeChild(t);showToast('📋 복사됨!');
+  });
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+window.addEventListener('load',()=>{
+  document.getElementById('tab-check').addEventListener('click',()=>switchTab('check'));
+  document.getElementById('tab-sku').addEventListener('click',()=>switchTab('sku'));
+  loadSheetSettings();
+  renderSkuList();
+});
 </script>
 </body>
 </html>
