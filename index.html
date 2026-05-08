@@ -6,19 +6,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#f5a623">
-<title>번개케어 검수 보조 v3</title>
+<title>번개케어 검수 보조 v4</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--acc:#f5a623;--bg:#f2f2f7;--sur:#fff;--sur2:#f8f8fa;--bdr:#e5e5ea;--bdr2:#d1d1d6;--txt:#1c1c1e;--txt2:#6c6c70;--txt3:#aeaeb2;--ok:#34c759;--err:#ff3b30;--warn:#ff9500;--r:16px;--r2:12px;--r3:10px}
+:root{--acc:#f5a623;--bg:#f2f2f7;--sur:#fff;--sur2:#f8f8fa;--bdr:#e5e5ea;--bdr2:#d1d1d6;--txt:#1c1c1e;--txt2:#6c6c70;--txt3:#aeaeb2;--ok:#34c759;--err:#ff3b30;--warn:#ff9500;--info:#007aff;--r:16px;--r2:12px;--r3:10px}
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,'Noto Sans KR',sans-serif}
 body{max-width:480px;margin:0 auto}
 .screen{display:none;flex-direction:column;min-height:100vh}
 .screen.show{display:flex}
-.top-bar{background:rgba(255,255,255,.9);backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:14px 18px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99}
+.top-bar{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:14px 18px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99}
 .top-bar-logo{font-size:22px;color:var(--acc)}
 .top-bar-info h1{font-size:15px;font-weight:700}
 .top-bar-info p{font-size:11px;color:var(--txt2);margin-top:1px}
-.top-bar-care{margin-left:auto;background:var(--sur2);border:.5px solid var(--bdr2);border-radius:8px;padding:5px 11px;font-size:11px;font-family:monospace;color:var(--txt2);cursor:pointer}
+.top-bar-care{margin-left:auto;background:var(--sur2);border:.5px solid var(--bdr2);border-radius:8px;padding:5px 11px;font-size:11px;font-family:monospace;color:var(--txt2);cursor:pointer;transition:all .15s}
 .top-bar-care.on{color:var(--acc);border-color:var(--acc);background:#fff8ee}
 .scroll-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;padding-bottom:100px}
 .card{background:var(--sur);border-radius:var(--r);border:.5px solid var(--bdr);overflow:hidden}
@@ -26,7 +26,7 @@ body{max-width:480px;margin:0 auto}
 .card-hd-icon{font-size:20px;margin-top:1px}
 .card-hd h2{font-size:14px;font-weight:600}
 .card-hd p{font-size:11px;color:var(--txt2);margin-top:2px;line-height:1.4}
-.photo-main-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:0 14px 14px}
+.photo-main-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:0 14px 10px}
 .photo-extra-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 14px}
 .slot{aspect-ratio:1;border-radius:var(--r3);border:1.5px dashed var(--bdr2);background:var(--sur2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
 .slot.req{border-color:#fbbf24;background:#fffbf2}
@@ -35,30 +35,38 @@ body{max-width:480px;margin:0 auto}
 .slot .s-icon{font-size:22px;z-index:1}
 .slot .s-label{font-size:9px;color:var(--txt2);font-weight:600;text-align:center;line-height:1.3;z-index:1}
 .slot .req-badge{position:absolute;top:3px;right:3px;z-index:2;background:var(--warn);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px}
-.slot .del{position:absolute;top:3px;left:3px;z-index:3;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center}
+.slot .del{position:absolute;top:3px;left:3px;z-index:3;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px}
-.extra-note{margin:0 14px 12px;padding:10px 12px;background:#f0f8ff;border-radius:var(--r3);border-left:3px solid #007aff;font-size:11px;color:#0055aa;line-height:1.5}
+.extra-note{margin:0 14px 12px;padding:10px 12px;background:#f0f8ff;border-radius:var(--r3);border-left:3px solid var(--info);font-size:11px;color:#0055aa;line-height:1.5}
+.model-area{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}
+.model-row{display:flex;gap:8px}
+.model-col{flex:1;display:flex;flex-direction:column;gap:4px}
+.inp-lbl{font-size:10px;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.3px}
+select.inp,input.inp{width:100%;padding:10px 12px;font-size:13px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:var(--r3);background:var(--sur);color:var(--txt);outline:none;-webkit-appearance:none;appearance:none}
+select.inp:focus,input.inp:focus{border-color:var(--acc)}
+input.inp::placeholder{color:var(--txt3)}
 textarea.seller{width:100%;padding:13px 16px;font-size:13px;font-family:inherit;border:none;outline:none;resize:none;background:transparent;color:var(--txt);line-height:1.6}
 textarea.seller::placeholder{color:var(--txt3)}
-.fab-wrap{position:sticky;bottom:0;padding:12px 14px 20px;background:linear-gradient(transparent,var(--bg) 40%)}
+.fab-wrap{position:sticky;bottom:0;padding:12px 14px 24px;background:linear-gradient(transparent,var(--bg) 40%)}
 .fab{width:100%;padding:15px;border:none;border-radius:var(--r2);background:linear-gradient(135deg,#f5a623,#ff6b35);color:#fff;font-size:16px;font-weight:700;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 4px 20px rgba(245,166,35,.35);transition:all .15s}
+.fab:active{transform:scale(.98)}
 .fab:disabled{opacity:.45;box-shadow:none}
 .fab .sp{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite;display:none}
 .fab.ld .sp{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 #s-loading{background:var(--bg);align-items:center;justify-content:center}
 .loading-card{background:var(--sur);border-radius:var(--r);border:.5px solid var(--bdr);width:calc(100% - 28px);overflow:hidden}
-.loading-hd{padding:20px 20px 16px;text-align:center;border-bottom:.5px solid var(--bdr)}
-.loading-hd .anim-icon{font-size:36px;animation:bob 1.2s ease-in-out infinite}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.loading-hd h2{font-size:16px;font-weight:700;margin-top:10px}
-.loading-hd p{font-size:12px;color:var(--txt2);margin-top:4px}
+.loading-hd{padding:24px 20px 18px;text-align:center;border-bottom:.5px solid var(--bdr)}
+.loading-hd .anim-icon{font-size:40px;animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.loading-hd h2{font-size:16px;font-weight:700;margin-top:12px}
+.loading-hd p{font-size:12px;color:var(--txt2);margin-top:5px}
 .step-list{padding:0 0 4px}
 .step-item{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:.5px solid var(--bdr);font-size:13px;color:var(--txt3);transition:all .3s}
 .step-item:last-child{border-bottom:none}
 .step-item.active{color:var(--acc);font-weight:600}
 .step-item.done{color:var(--txt)}
-.step-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:var(--sur2);border:1.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--txt3);transition:all .3s}
+.step-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;background:var(--sur2);border:1.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--txt3);transition:all .3s}
 .step-item.active .step-dot{background:var(--acc);border-color:var(--acc);color:#fff;animation:pulse 1s ease-in-out infinite}
 .step-item.done .step-dot{background:var(--ok);border-color:var(--ok);color:#fff}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
@@ -67,24 +75,26 @@ textarea.seller::placeholder{color:var(--txt3)}
 .verdict-wrap.pass{background:#f0fff4;border-color:#86efac}
 .verdict-wrap.hold{background:#fffbeb;border-color:#fde68a}
 .verdict-wrap.fail{background:#fff1f0;border-color:#fecaca}
-.verdict-inner{padding:16px 18px;display:flex;align-items:flex-start;gap:13px}
-.v-icon{font-size:30px;flex-shrink:0}
-.v-label{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.verdict-inner{padding:18px 18px;display:flex;align-items:flex-start;gap:13px}
+.v-icon{font-size:32px;flex-shrink:0}
+.v-label{font-size:22px;font-weight:800;letter-spacing:-.5px}
 .verdict-wrap.pass .v-label{color:#16a34a}
 .verdict-wrap.hold .v-label{color:#d97706}
 .verdict-wrap.fail .v-label{color:#dc2626}
-.v-reason{font-size:12px;color:var(--txt2);margin-top:5px;line-height:1.5}
+.v-reason{font-size:12px;color:var(--txt2);margin-top:6px;line-height:1.5}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.info-cell{background:var(--sur2);border-radius:var(--r3);padding:10px 12px}
+.info-cell{background:var(--sur2);border-radius:var(--r3);padding:10px 12px;border:.5px solid var(--bdr)}
 .info-cell.full{grid-column:1/-1}
 .ic-label{font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.3px;margin-bottom:3px;text-transform:uppercase}
 .ic-value{font-size:13px;font-weight:600}
 .ic-value.accent{color:var(--acc);font-size:15px}
-.conf-bar{height:4px;border-radius:2px;background:var(--bdr);margin-top:5px;overflow:hidden}
+.edit-brand-btn{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 10px;background:var(--sur);border:.5px solid var(--bdr2);border-radius:6px;font-size:11px;color:var(--txt2);cursor:pointer;transition:all .15s}
+.edit-brand-btn:hover{border-color:var(--acc);color:var(--acc)}
+.conf-bar{height:4px;border-radius:2px;background:var(--bdr);margin-top:6px;overflow:hidden}
 .conf-fill{height:100%;border-radius:2px;transition:width .6s ease}
 .sec-title{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .sec-title::after{content:'';flex:1;height:.5px;background:var(--bdr)}
-.acc-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r3);margin-bottom:6px;border:.5px solid}
+.acc-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r3);margin-bottom:7px;border:.5px solid;transition:all .2s}
 .acc-absent{background:#fffbeb;border-color:#fde68a}
 .acc-present{background:#f0fff4;border-color:#86efac}
 .acc-uncertain{background:#f5f5f7;border-color:var(--bdr)}
@@ -97,48 +107,56 @@ textarea.seller::placeholder{color:var(--txt3)}
 .acc-present .acc-name{color:#15803d}
 .acc-uncertain .acc-name{color:var(--txt2)}
 .acc-why{font-size:11px;color:var(--txt2);margin-top:2px;line-height:1.4}
-.acc-badge{margin-left:auto;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;flex-shrink:0;white-space:nowrap;align-self:center}
+.acc-badge{margin-left:auto;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;flex-shrink:0;white-space:nowrap;align-self:flex-start;margin-top:1px}
 .acc-absent .acc-badge{background:#fde68a;color:#92400e}
 .acc-present .acc-badge{background:#bbf7d0;color:#14532d}
 .acc-uncertain .acc-badge{background:var(--bdr);color:var(--txt2)}
-.acc-edit-row{display:flex;align-items:center;gap:6px;margin-top:6px}
-.acc-edit-select{flex:1;padding:5px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
-.acc-edit-note{flex:2;padding:5px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
+.acc-edit-row{display:flex;align-items:center;gap:6px;margin-top:7px}
+.acc-edit-select{flex:1;padding:6px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
+.acc-edit-note{flex:2;padding:6px 8px;font-size:11px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
 .acc-edit-note::placeholder{color:var(--txt3)}
+.acc-del-btn{width:22px;height:22px;border-radius:50%;background:rgba(255,59,48,.1);border:.5px solid rgba(255,59,48,.25);color:var(--err);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .add-acc-box{background:var(--sur);border-radius:var(--r3);border:.5px solid var(--bdr);padding:12px 14px;margin-bottom:8px}
 .add-acc-title{font-size:11px;font-weight:600;color:var(--txt2);margin-bottom:8px}
 .add-acc-row{display:flex;gap:6px;align-items:center}
-.add-acc-select{flex:2;padding:7px 8px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
-.add-acc-select:focus{border-color:var(--acc)}
+.add-acc-input{flex:2;padding:7px 9px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur2);color:var(--txt);outline:none}
+.add-acc-input:focus{border-color:var(--acc);background:var(--sur)}
+.add-acc-input::placeholder{color:var(--txt3)}
 .add-acc-status{flex:1;padding:7px 8px;font-size:12px;font-family:inherit;border:.5px solid var(--bdr2);border-radius:6px;background:var(--sur);color:var(--txt);outline:none}
-.add-acc-btn{padding:7px 12px;background:var(--acc);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-.search-link{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--sur2);border:.5px solid var(--bdr);border-radius:var(--r3);text-decoration:none;color:inherit;margin-bottom:7px}
-.sl-tier{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0}
-.sl-t3{background:#fef3c7;color:#92400e}
-.sl-t4{background:#f3e8ff;color:#6b21a8}
+.add-acc-btn{padding:7px 13px;background:var(--acc);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.search-link{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--sur2);border:.5px solid var(--bdr);border-radius:var(--r3);text-decoration:none;color:inherit;margin-bottom:7px;transition:all .15s}
+.search-link:active{background:#fff;border-color:var(--acc)}
+.sl-tier{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0}
+.sl-t1{background:#fef3c7;color:#92400e}
+.sl-t2{background:#f3e8ff;color:#6b21a8}
 .sl-name{font-size:13px;font-weight:600}
 .sl-desc{font-size:11px;color:var(--txt2)}
-.sl-arr{margin-left:auto;color:var(--txt3);font-size:16px}
+.sl-arr{margin-left:auto;color:var(--txt3);font-size:18px}
 .btn-area{display:flex;gap:9px;padding:12px 14px 28px}
-.btn{flex:1;padding:14px;border:none;border-radius:var(--r3);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center}
+.btn{flex:1;padding:14px;border:none;border-radius:var(--r3);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;transition:all .15s}
+.btn:active{transform:scale(.97)}
 .btn-reset{background:var(--sur);color:var(--err);border:.5px solid var(--err)}
 .btn-save{background:var(--ok);color:#fff}
-#s-error{align-items:center;justify-content:center;background:var(--bg);gap:16px}
+#s-error{align-items:center;justify-content:center;background:var(--bg);gap:16px;padding:40px 20px}
 .err-icon{font-size:56px}
 .err-msg{font-size:16px;font-weight:600}
 .err-sub{font-size:13px;color:var(--txt2);text-align:center;padding:0 20px}
 .btn-retry{padding:13px 32px;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center}
 .modal-bg.show{display:flex}
-.modal{background:var(--sur);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px}
-.modal h3{font-size:16px;font-weight:700;margin-bottom:13px}
-.modal input{width:100%;padding:13px 15px;font-size:16px;font-family:monospace;border:1.5px solid var(--bdr);border-radius:var(--r3);outline:none;background:var(--sur2);color:var(--txt);margin-bottom:12px}
-.modal input:focus{border-color:var(--acc)}
+.modal{background:var(--sur);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:5px}
+.modal-sub{font-size:12px;color:var(--txt2);margin-bottom:16px;line-height:1.5}
+.modal input[type=text]{width:100%;padding:13px 15px;font-size:16px;font-family:monospace;border:1.5px solid var(--bdr);border-radius:var(--r3);outline:none;background:var(--sur2);color:var(--txt);margin-bottom:12px}
+.modal input[type=text]:focus{border-color:var(--acc)}
 .modal-btns{display:flex;gap:9px}
 .modal-btns button{flex:1;padding:13px;border:none;border-radius:var(--r3);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
 .m-cancel{background:var(--sur2);color:var(--txt)}
 .m-ok{background:var(--acc);color:#fff}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:rgba(28,28,30,.92);backdrop-filter:blur(12px);color:#fff;padding:11px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.brand-chips{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:16px}
+.b-chip{padding:6px 13px;border-radius:20px;border:.5px solid var(--bdr2);font-size:12px;background:var(--sur2);cursor:pointer;transition:all .15s}
+.b-chip.active{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:rgba(28,28,30,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;padding:11px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 input[type=file]{display:none}
 </style>
@@ -148,21 +166,24 @@ input[type=file]{display:none}
 <div class="screen show" id="s-input">
   <div class="top-bar">
     <div class="top-bar-logo">⚡</div>
-    <div class="top-bar-info"><h1>번개케어 검수 보조</h1><p>사진으로 부속품 자동인식 · 판정 조력</p></div>
-    <div class="top-bar-care" id="careBadge" onclick="openModal()">케어번호</div>
+    <div class="top-bar-info">
+      <h1>번개케어 검수 보조</h1>
+      <p>사진으로 부속품 자동인식 · 판정 조력</p>
+    </div>
+    <div class="top-bar-care" id="careBadge" onclick="openCareModal()">케어번호</div>
   </div>
   <div class="scroll-body">
     <div class="card">
       <div class="card-hd">
         <span class="card-hd-icon">📸</span>
-        <div><h2>검수 사진</h2><p>💡 <b>정면사진</b> 필수 · PC에서 드래그 앤 드롭 가능</p></div>
+        <div><h2>검수 사진</h2><p>💡 <b>정면 사진</b> 필수 · PC에서 드래그 앤 드롭 가능</p></div>
       </div>
       <div class="photo-main-row">
         <div class="slot req" id="sl0" onclick="triggerFile(0)" ondragover="onDragOver(0,event)" ondragleave="onDragLeave(0)" ondrop="onDrop(0,event)">
           <span class="s-icon">📷</span><span class="s-label">정면 사진<br>필수</span><span class="req-badge">필수</span>
         </div>
         <div class="slot" id="sl1" onclick="triggerFile(1)" ondragover="onDragOver(1,event)" ondragleave="onDragLeave(1)" ondrop="onDrop(1,event)">
-          <span class="s-icon">🏷️</span><span class="s-label">메인 택</span>
+          <span class="s-icon">🏷️</span><span class="s-label">라벨 / 택</span>
         </div>
         <div class="slot" id="sl2" onclick="triggerFile(2)" ondragover="onDragOver(2,event)" ondragleave="onDragLeave(2)" ondrop="onDrop(2,event)">
           <span class="s-icon">🔧</span><span class="s-label">부속품<br>전체샷</span>
@@ -172,7 +193,37 @@ input[type=file]{display:none}
       <div class="photo-extra-row" id="extra-slots"></div>
     </div>
     <div class="card">
-      <div class="card-hd"><span class="card-hd-icon">📝</span><div><h2>판매자 본문</h2><p>제목 + 상세 설명 붙여넣기</p></div></div>
+      <div class="card-hd">
+        <span class="card-hd-icon">🏷️</span>
+        <div><h2>모델 정보 <span style="font-weight:400;color:var(--txt2);font-size:12px">(선택)</span></h2><p>입력하면 부속품 인식 정확도가 높아집니다</p></div>
+      </div>
+      <div class="model-area">
+        <div class="model-row">
+          <div class="model-col">
+            <label class="inp-lbl">카테고리</label>
+            <select class="inp" id="sel-cat" onchange="onCatChange()">
+              <option value="">선택</option>
+              <option>의류</option><option>가방/지갑</option><option>벨트</option>
+              <option>모자</option><option>스카프</option><option>시계</option><option>쥬얼리</option>
+            </select>
+          </div>
+          <div class="model-col">
+            <label class="inp-lbl">브랜드</label>
+            <select class="inp" id="sel-brand"><option value="">선택</option></select>
+          </div>
+        </div>
+        <div>
+          <label class="inp-lbl">모델명</label>
+          <input class="inp" type="text" id="inp-modelname" placeholder="예: 클래식 플랩백 미디엄">
+        </div>
+        <div>
+          <label class="inp-lbl">모델번호 / SKU</label>
+          <input class="inp" type="text" id="inp-sku" placeholder="예: A01112 Y01864 C3906">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-hd-icon">📝</span><div><h2>판매자 본문</h2><p>제목 + 상세 설명 붙여넣기 (구성품 판단에 활용)</p></div></div>
       <textarea class="seller" id="sellerTxt" rows="4" placeholder="예) 샤넬 클래식 플랩백 M. 풀구성으로 구매했으나 숄더스트랩 분실했습니다."></textarea>
     </div>
   </div>
@@ -221,215 +272,143 @@ input[type=file]{display:none}
   <button class="btn-retry" onclick="doReset()">↩ 다시 시도</button>
 </div>
 
-<div class="modal-bg" id="modal">
+<div class="modal-bg" id="care-modal">
   <div class="modal">
     <h3>케어번호 입력</h3>
+    <p class="modal-sub">케어번호를 입력하면 결과에 함께 표시됩니다</p>
     <input type="text" id="care-input" placeholder="예: 1143210" inputmode="numeric">
     <div class="modal-btns">
-      <button class="m-cancel" onclick="closeModal()">취소</button>
+      <button class="m-cancel" onclick="closeCareModal()">취소</button>
       <button class="m-ok" onclick="saveCare()">확인</button>
     </div>
   </div>
 </div>
 
+<div class="modal-bg" id="brand-modal">
+  <div class="modal">
+    <h3>브랜드 수정</h3>
+    <p class="modal-sub" id="brand-modal-sub">검수 가능 브랜드 목록</p>
+    <div class="brand-chips" id="brand-chips"></div>
+    <div class="modal-btns">
+      <button class="m-cancel" onclick="closeBrandModal()">취소</button>
+      <button class="m-ok" onclick="confirmBrand()">선택 완료</button>
+    </div>
+  </div>
+</div>
+
 <div style="display:none">
-<input type="file" id="f0" accept="image/*" onchange="onFile(0,event)">
-<input type="file" id="f1" accept="image/*" onchange="onFile(1,event)">
-<input type="file" id="f2" accept="image/*" onchange="onFile(2,event)">
-<input type="file" id="f3" accept="image/*" onchange="onFile(3,event)">
-<input type="file" id="f4" accept="image/*" onchange="onFile(4,event)">
-<input type="file" id="f5" accept="image/*" onchange="onFile(5,event)">
-<input type="file" id="f6" accept="image/*" onchange="onFile(6,event)">
-<input type="file" id="f7" accept="image/*" onchange="onFile(7,event)">
-<input type="file" id="f8" accept="image/*" onchange="onFile(8,event)">
-<input type="file" id="f9" accept="image/*" onchange="onFile(9,event)">
+  <input type="file" id="f0" accept="image/*" onchange="onFile(0,event)">
+  <input type="file" id="f1" accept="image/*" onchange="onFile(1,event)">
+  <input type="file" id="f2" accept="image/*" onchange="onFile(2,event)">
+  <input type="file" id="f3" accept="image/*" onchange="onFile(3,event)">
+  <input type="file" id="f4" accept="image/*" onchange="onFile(4,event)">
+  <input type="file" id="f5" accept="image/*" onchange="onFile(5,event)">
+  <input type="file" id="f6" accept="image/*" onchange="onFile(6,event)">
+  <input type="file" id="f7" accept="image/*" onchange="onFile(7,event)">
+  <input type="file" id="f8" accept="image/*" onchange="onFile(8,event)">
+  <input type="file" id="f9" accept="image/*" onchange="onFile(9,event)">
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-const PROXY = 'https://lca-proxy.jimmy-hwang.workers.dev';
-const ACC_LIST = ['숄더스트랩','레더 스트랩','패브릭 스트랩','자물쇠','열쇠','자물쇠/열쇠','이너 파우치','미니파우치','키벨(자물쇠 커버)','참 장식','핸들 홀더','밑판','네임택','리본','체결끈','엔드참','스트랩 패드','신발끈'];
+const PROXY='https://lca-proxy.jimmy-hwang.workers.dev';
+const BM={'의류':['샤넬','루이비통','구찌','디올','발렌시아가','프라다','톰브라운','버버리','몽클레어','파라점퍼스','스톤아일랜드','무스너클','에르메스','보테가베네타','셀린느','메종마르지엘라','로에베','펜디','발렌티노','미우미우','르메르'],'가방/지갑':['샤넬','루이비통','에르메스','고야드','구찌','디올','발렌시아가','보테가베네타','생로랑','셀린느','프라다','델보','메종마르지엘라','로에베','펜디','발렌티노','톰브라운','미우미우','버버리','끌로에','르메르','지방시','마르니','멀버리','페라가모','질샌더'],'벨트':['샤넬','루이비통','에르메스','고야드','구찌','디올','발렌시아가','보테가베네타','생로랑','셀린느','프라다','델보','메종마르지엘라','로에베','펜디','발렌티노','톰브라운','미우미우','버버리','끌로에','르메르','지방시','마르니','멀버리','페라가모'],'모자':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','생로랑','셀린느','프라다','메종마르지엘라','펜디','발렌티노','톰브라운','미우미우','버버리','지방시','몽클레어','스톤아일랜드','무스너클','파라점퍼스'],'스카프':['샤넬','루이비통','에르메스','구찌','디올','발렌시아가','생로랑','셀린느','프라다','펜디','발렌티노','톰브라운','미우미우','버버리'],'시계':['샤넬','루이비통','까르띠에','롤렉스','태그호이어','오메가','구찌','티쏘','오데마피게','미도','해밀턴','라도','론진','튜더','오리스','몽블랑','제니스','프레드릭 콘스탄트','에르메스','불가리','티파니','쇼파드','프랭크뮬러','아이더블유씨','디올','펜디','버버리','브라이틀링'],'쥬얼리':['샤넬','루이비통','다미아니','반클리프앤아펠','불가리','티파니','에르메스','구찌','까르띠에','프라다','프레드','부쉐론','쇼메','보테가베네타','셀린느','쇼파드','피아제']};
+const ACC_LIST=['숄더스트랩','레더 스트랩','패브릭 스트랩','자물쇠','열쇠','자물쇠/열쇠 세트','이너 파우치','미니파우치','키벨','참 장식','핸들 홀더','밑판','네임택','리본','체결끈','엔드참','스트랩 버클','여분 링크','크라운','신발끈'];
+let imgs=Array(10).fill(null),careNo='',result=null,editedAccs=[],pendingBrand='';
 
-let imgs = Array(10).fill(null);
-let careNo = '';
-let result = null;
-let editedAccs = [];
+(function(){const w=document.getElementById('extra-slots');for(let i=3;i<=9;i++){const d=document.createElement('div');d.className='slot';d.id='sl'+i;d.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-2)+'</span>';d.setAttribute('onclick','triggerFile('+i+')');d.setAttribute('ondragover','onDragOver('+i+',event)');d.setAttribute('ondragleave','onDragLeave('+i+')');d.setAttribute('ondrop','onDrop('+i+',event)');w.appendChild(d);}})();
 
-// 추가 슬롯 렌더링
-(function(){
-  const labels = ['추가 2','추가 3','추가 4','추가 5','추가 6','추가 7','추가 8'];
-  const wrap = document.getElementById('extra-slots');
-  for(let i=3;i<=9;i++){
-    const d = document.createElement('div');
-    d.className = 'slot';
-    d.id = 'sl'+i;
-    d.innerHTML = '<span class="s-icon">📷</span><span class="s-label">'+labels[i-3]+'</span>';
-    d.setAttribute('onclick','triggerFile('+i+')');
-    d.setAttribute('ondragover','onDragOver('+i+',event)');
-    d.setAttribute('ondragleave','onDragLeave('+i+')');
-    d.setAttribute('ondrop','onDrop('+i+',event)');
-    wrap.appendChild(d);
-  }
-})();
-
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));document.getElementById('s-'+id).classList.add('show');window.scrollTo(0,0)}
-function openModal(){document.getElementById('modal').classList.add('show');setTimeout(()=>document.getElementById('care-input').focus(),150)}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-function saveCare(){careNo=document.getElementById('care-input').value.trim();const b=document.getElementById('careBadge');b.textContent=careNo?'#'+careNo:'케어번호';b.classList.toggle('on',!!careNo);closeModal()}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()});
-
-function compress(file, cb){
-  const r=new FileReader();
-  r.onload=ev=>{
-    const img=new Image();
-    img.onload=()=>{
-      const c=document.createElement('canvas');
-      const M=800;let w=img.width,h=img.height;
-      if(w>h){if(w>M){h=Math.round(h*M/w);w=M}}else{if(h>M){w=Math.round(w*M/h);h=M}}
-      c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
-      cb(c.toDataURL('image/jpeg',0.7));
-    };img.src=ev.target.result;
-  };r.readAsDataURL(file);
-}
-
-function setSlot(i, src){
-  imgs[i]=src;
-  const sl=document.getElementById('sl'+i);
-  sl.innerHTML='<img src="'+src+'" alt=""><div class="del" onclick="removeImg('+i+',event)">✕</div>';
-  sl.classList.add('filled');sl.classList.remove('req','drag-over');
-}
-
-function triggerFile(i){document.getElementById('f'+i).click()}
-function onFile(i,e){const f=e.target.files[0];if(f)compress(f,src=>setSlot(i,src))}
-function removeImg(i,e){
-  e.stopPropagation();imgs[i]=null;
-  const sl=document.getElementById('sl'+i);
-  const labels=[['📷','정면 사진<br>필수',true],['🏷️','메인 택',false],['🔧','부속품<br>전체샷',false]];
-  if(i<3){const[ic,lb,req]=labels[i];sl.innerHTML='<span class="s-icon">'+ic+'</span><span class="s-label">'+lb+'</span>'+(req?'<span class="req-badge">필수</span>':'');sl.classList.remove('filled');if(req)sl.classList.add('req')}
-  else{sl.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-1)+'</span>';sl.classList.remove('filled')}
-  document.getElementById('f'+i).value='';
-}
-function onDragOver(i,e){e.preventDefault();document.getElementById('sl'+i).classList.add('drag-over')}
-function onDragLeave(i){document.getElementById('sl'+i).classList.remove('drag-over')}
-function onDrop(i,e){e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))compress(f,src=>setSlot(i,src))}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));document.getElementById('s-'+id).classList.add('show');window.scrollTo(0,0);}
+function openCareModal(){document.getElementById('care-modal').classList.add('show');setTimeout(()=>document.getElementById('care-input').focus(),150);}
+function closeCareModal(){document.getElementById('care-modal').classList.remove('show');}
+function saveCare(){careNo=document.getElementById('care-input').value.trim();const b=document.getElementById('careBadge');b.textContent=careNo?'#'+careNo:'케어번호';b.classList.toggle('on',!!careNo);closeCareModal();}
+document.getElementById('care-modal').addEventListener('click',e=>{if(e.target===document.getElementById('care-modal'))closeCareModal();});
+function onCatChange(){const cat=document.getElementById('sel-cat').value,sel=document.getElementById('sel-brand');sel.innerHTML='<option value="">선택</option>';if(cat&&BM[cat])BM[cat].forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});}
+function openBrandModal(brand,cat){pendingBrand=brand;document.getElementById('brand-modal-sub').textContent=(cat||'전체')+' · 검수 가능 브랜드';const chips=document.getElementById('brand-chips');chips.innerHTML='';const list=(cat&&BM[cat])?BM[cat]:[...new Set(Object.values(BM).flat())].sort();list.forEach(b=>{const btn=document.createElement('button');btn.className='b-chip'+(b===brand?' active':'');btn.textContent=b;btn.onclick=()=>{document.querySelectorAll('.b-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');pendingBrand=b;};chips.appendChild(btn);});document.getElementById('brand-modal').classList.add('show');}
+function closeBrandModal(){document.getElementById('brand-modal').classList.remove('show');}
+function confirmBrand(){if(!pendingBrand)return;const el=document.getElementById('res-brand-val');if(el)el.textContent=pendingBrand;closeBrandModal();showToast('✅ 브랜드 수정됨: '+pendingBrand);}
+document.getElementById('brand-modal').addEventListener('click',e=>{if(e.target===document.getElementById('brand-modal'))closeBrandModal();});
+function compress(file,cb){const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const M=800;let w=img.width,h=img.height;if(w>h){if(w>M){h=Math.round(h*M/w);w=M;}}else{if(h>M){w=Math.round(w*M/h);h=M;}}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',0.72));};img.src=ev.target.result;};r.readAsDataURL(file);}
+function setSlot(i,src){imgs[i]=src;const sl=document.getElementById('sl'+i);sl.innerHTML='<img src="'+src+'" alt=""><div class="del" onclick="removeImg('+i+',event)">✕</div>';sl.classList.add('filled');sl.classList.remove('req','drag-over');}
+function triggerFile(i){document.getElementById('f'+i).click();}
+function onFile(i,e){const f=e.target.files[0];if(f)compress(f,src=>setSlot(i,src));}
+function removeImg(i,e){e.stopPropagation();imgs[i]=null;const sl=document.getElementById('sl'+i);const defs=[['📷','정면 사진<br>필수',true],['🏷️','라벨 / 택',false],['🔧','부속품<br>전체샷',false]];if(i<3){const[ic,lb,req]=defs[i];sl.innerHTML='<span class="s-icon">'+ic+'</span><span class="s-label">'+lb+'</span>'+(req?'<span class="req-badge">필수</span>':'');sl.classList.remove('filled');if(req)sl.classList.add('req');}else{sl.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-2)+'</span>';sl.classList.remove('filled');}document.getElementById('f'+i).value='';}
+function onDragOver(i,e){e.preventDefault();document.getElementById('sl'+i).classList.add('drag-over');}
+function onDragLeave(i){document.getElementById('sl'+i).classList.remove('drag-over');}
+function onDrop(i,e){e.preventDefault();document.getElementById('sl'+i).classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))compress(f,src=>setSlot(i,src));}
 document.addEventListener('dragover',e=>e.preventDefault());
 document.addEventListener('drop',e=>e.preventDefault());
-
-function setStep(s){
-  for(let i=0;i<5;i++){
-    const item=document.getElementById('st'+i),dot=document.getElementById('sd'+i);
-    item.classList.remove('active','done');dot.classList.remove('active','done');
-    if(i<s){item.classList.add('done');dot.classList.add('done');dot.textContent='✓'}
-    else if(i===s){item.classList.add('active');dot.classList.add('active');dot.textContent='●'}
-    else dot.textContent=i+1;
-  }
-}
+function setStep(s){for(let i=0;i<5;i++){const item=document.getElementById('st'+i),dot=document.getElementById('sd'+i);item.classList.remove('active','done');if(i<s){item.classList.add('done');dot.textContent='✓';}else if(i===s){item.classList.add('active');dot.textContent='●';}else dot.textContent=i+1;}}
 
 async function startAnalysis(){
-  if(!imgs[0]){showToast('📷 정면 사진을 먼저 업로드해 주세요');return}
-  const fab=document.getElementById('fab');
-  fab.disabled=true;fab.classList.add('ld');document.getElementById('fab-txt').textContent='분석 중...';
+  if(!imgs[0]){showToast('📷 정면 사진을 먼저 업로드해 주세요');return;}
+  const fab=document.getElementById('fab');fab.disabled=true;fab.classList.add('ld');document.getElementById('fab-txt').textContent='분석 중...';
   show('loading');setStep(0);
-  let step=0;
-  const t=setInterval(()=>{step=Math.min(step+1,3);setStep(step)},1700);
-  const validImgs=imgs.filter(Boolean);
-  const sellerTxt=document.getElementById('sellerTxt').value.trim();
+  let step=0;const t=setInterval(()=>{step=Math.min(step+1,3);setStep(step);},1700);
+  const brand=document.getElementById('sel-brand').value,cat=document.getElementById('sel-cat').value,modelName=document.getElementById('inp-modelname').value.trim(),sku=document.getElementById('inp-sku').value.trim(),sellerTxt=document.getElementById('sellerTxt').value.trim(),validImgs=imgs.filter(Boolean);
   try{
     const content=[];
-    validImgs.forEach(img=>{
-      content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});
-    });
-    content.push({type:'text',text:`당신은 번개케어 명품 검수 전문가입니다. JSON만 출력하세요. 마크다운 없이.
+    validImgs.forEach(img=>{content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});});
+    content.push({type:'text',text:`번개케어 명품 검수 전문가입니다. JSON만 출력 (마크다운 없이).
 
-판매자 본문: "${sellerTxt||'없음'}"
+입력 정보:
+- 브랜드: ${brand||'미확인'} / 카테고리: ${cat||'미확인'}
+- 모델명: ${modelName||'미확인'} / SKU: ${sku||'미확인'}
+- 판매자 본문: "${sellerTxt||'없음'}"
 
-부속품(이미지에서 확인, 본문 미기재여도 필수): 숄더스트랩, 네임택, 자물쇠, 열쇠, 이너 파우치, 참 장식, 키벨, 핸들 홀더, 밑판, 여분 링크, 크라운, 여분 끈 등
-※ 더스트백, 박스, 보증서 등 패키지 구성품은 부속품이 아님 — 분석 제외
+분석 규칙:
+1. 더스트백·박스·보증서 등 패키지 구성품은 분석 제외
+2. 스트랩 키퍼 분석 제외
+3. 판매자 본문에 분실 언급된 부속품 → status "없음" 처리
+4. 사진에서 확인 불가 → "불확실"
+5. "없음" 항목 있으면 → verdict = "검수자 확인 필요"
+6. verdictReason 형식: "모델번호 [모델번호]로 확인되나, 주요 부속품 확인 불가" / 모델번호 미확인 시: "입고된 상품의 모델번호를 확인해 주세요"
 
-판정: 부속품 누락 → 검수자 확인 필요 / 구성품 풀셋 모호 기재 → 검수자 확인 필요
-
-{"brand":"브랜드(한글)","brandEn":"영문","category":"가방/지갑/의류/신발/시계/주얼리/벨트/기타","name":"상품명","modelNo":"모델번호(없으면 빈문자열)","color":"색상","confidence":숫자,"verdict":"합격/검수자 확인 필요/불합격","verdictReason":"사유","accessories":[{"name":"부속품명","type":"부속품","status":"있음/없음/불확실","reason":"판단 근거","fromSellerText":false}],"searchKo":"한글 검색어","searchEn":"영문 검색어"}`});
-    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1800,messages:[{role:'user',content}]})});
+{"brand":"브랜드(한글)","brandEn":"영문","category":"카테고리","name":"상품명","modelNo":"모델번호","color":"색상","confidence":숫자(0-100),"verdict":"합격/검수자 확인 필요/불합격","verdictReason":"사유","accessories":[{"name":"부속품명","status":"있음/없음/불확실","reason":"판단근거","fromSellerText":불리언}],"searchKo":"한글검색어","searchEn":"영문검색어"}`});
+    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,messages:[{role:'user',content}]})});
     if(!resp.ok)throw new Error('API 오류 ('+resp.status+')');
     const data=await resp.json();
     if(data.error)throw new Error(JSON.stringify(data.error));
     let parsed;
-    try{parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim())}
-    catch{throw new Error('파싱 실패: '+data.content[0].text.substring(0,80))}
+    try{parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());}
+    catch{throw new Error('파싱 실패: '+data.content[0].text.substring(0,80));}
     clearInterval(t);setStep(4);
     await new Promise(r=>setTimeout(r,700));
-    parsed.careNo=careNo||('임시-'+Date.now());
-    parsed.analyzedAt=new Date().toLocaleString('ko-KR');
-    parsed.imgCount=validImgs.length;
-    result=parsed;
-    editedAccs=JSON.parse(JSON.stringify(parsed.accessories||[]));
-    renderResult(parsed);
-    show('result');
-  }catch(err){
-    clearInterval(t);
-    document.getElementById('err-detail').textContent=err.message;
-    show('error');
-  }finally{
-    fab.disabled=false;fab.classList.remove('ld');document.getElementById('fab-txt').textContent='🔍 부속품 자동인식 시작';
-  }
+    parsed.careNo=careNo||'';parsed.analyzedAt=new Date().toLocaleString('ko-KR');parsed.imgCount=validImgs.length;
+    result=parsed;editedAccs=JSON.parse(JSON.stringify(parsed.accessories||[]));
+    renderResult(parsed);show('result');
+  }catch(err){clearInterval(t);document.getElementById('err-detail').textContent=err.message;show('error');}
+  finally{fab.disabled=false;fab.classList.remove('ld');document.getElementById('fab-txt').textContent='🔍 부속품 자동인식 시작';}
 }
 
 function renderResult(r){
-  document.getElementById('res-label').textContent=r.brand+' '+r.category;
-  const accs=r.accessories||[];
-  const absent=accs.filter(a=>a.status==='없음');
-  const present=accs.filter(a=>a.status==='있음');
-  const uncertain=accs.filter(a=>a.status==='불확실');
-  const sqKo=encodeURIComponent(r.searchKo||r.brand+' '+r.name);
-  const sqEn=encodeURIComponent(r.searchEn||r.brandEn+' '+r.name);
-  const isHold=r.verdict==='검수자 확인 필요'||r.verdict==='보류';
-  const vcls=r.verdict==='합격'?'pass':isHold?'hold':'fail';
-  const vi=r.verdict==='합격'?'✅':isHold?'🔍':'❌';
-  const vlabel=r.verdict==='합격'?'합격':isHold?'검수자 확인 필요':r.verdict;
-  const vreason=isHold
-    ?'모델번호 <b>'+(r.modelNo||r.name)+'</b>으로 확인되나, 주요 부속품 미확인'
-    :r.verdictReason;
-  const missingBadge=absent.length>0
-    ?'<span style="background:#fde68a;color:#92400e;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">누락 '+absent.length+'개</span>'
-    :'<span style="background:#bbf7d0;color:#14532d;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">이상 없음</span>';
-  const confColor=(r.confidence||0)>=70?'var(--ok)':(r.confidence||0)>=40?'var(--warn)':'var(--err)';
-  const accOptions=ACC_LIST.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
-
+  document.getElementById('res-label').textContent=(r.careNo?'#'+r.careNo+' · ':'')+r.brand+' '+r.category;
+  const accs=r.accessories||[],absent=accs.filter(a=>a.status==='없음'),uncertain=accs.filter(a=>a.status==='불확실'),present=accs.filter(a=>a.status==='있음');
+  const isHold=r.verdict==='검수자 확인 필요'||r.verdict==='보류',isFail=r.verdict==='불합격';
+  const vcls=isFail?'fail':isHold?'hold':'pass',vi=isFail?'❌':isHold?'🔍':'✅',vlabel=isFail?'불합격':isHold?'검수자 확인 필요':'합격';
+  const mb=absent.length>0?'<span style="background:#fde68a;color:#92400e;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">누락 '+absent.length+'개</span>':'<span style="background:#bbf7d0;color:#14532d;font-size:10px;padding:2px 8px;border-radius:4px;margin-left:6px">이상 없음</span>';
+  const cc=(r.confidence||0)>=70?'var(--ok)':(r.confidence||0)>=40?'var(--warn)':'var(--err)';
+  const sqKo=encodeURIComponent(r.searchKo||r.brand+' '+r.name),sqEn=encodeURIComponent(r.searchEn||(r.brandEn||r.brand)+' '+r.name);
+  const sb=(r.brand||'').replace(/'/g,"&#39;"),sc=(r.category||'').replace(/'/g,"&#39;");
   document.getElementById('result-body').innerHTML=`
-    <div class="verdict-wrap ${vcls}">
-      <div class="verdict-inner">
-        <div class="v-icon">${vi}</div>
-        <div><div class="v-label">${vlabel}</div><div class="v-reason">${vreason}</div></div>
-      </div>
-    </div>
-
+    <div class="verdict-wrap ${vcls}"><div class="verdict-inner"><div class="v-icon">${vi}</div><div><div class="v-label">${vlabel}</div><div class="v-reason">${r.verdictReason||''}</div></div></div></div>
     <div>
       <div class="sec-title">🏷️ 식별된 모델</div>
       <div class="info-grid">
-        <div class="info-cell"><div class="ic-label">브랜드</div><div class="ic-value accent">${r.brand}</div></div>
+        <div class="info-cell"><div class="ic-label">브랜드</div><div class="ic-value accent" id="res-brand-val">${r.brand}</div><button class="edit-brand-btn" onclick="openBrandModal('${sb}','${sc}')">✏️ 수정</button></div>
         <div class="info-cell"><div class="ic-label">카테고리</div><div class="ic-value">${r.category}</div></div>
-        <div class="info-cell full"><div class="ic-label">상품명</div><div class="ic-value">${r.name}${r.modelNo?' · <span style="font-family:monospace;font-size:12px">'+r.modelNo+'</span>':''}</div></div>
+        <div class="info-cell full"><div class="ic-label">상품명</div><div class="ic-value">${r.name}${r.modelNo?' · <span style="font-family:monospace;font-size:12px;color:var(--txt2)">'+r.modelNo+'</span>':''}</div></div>
         <div class="info-cell"><div class="ic-label">색상</div><div class="ic-value">${r.color||'—'}</div></div>
-        <div class="info-cell"><div class="ic-label">신뢰도</div><div class="ic-value">${r.confidence||0}%</div><div class="conf-bar"><div class="conf-fill" style="width:${r.confidence||0}%;background:${confColor}"></div></div></div>
+        <div class="info-cell"><div class="ic-label">신뢰도</div><div class="ic-value">${r.confidence||0}%</div><div class="conf-bar"><div class="conf-fill" style="width:${r.confidence||0}%;background:${cc}"></div></div></div>
       </div>
     </div>
-
     <div>
-      <div class="sec-title" style="color:${absent.length>0?'#d97706':'#16a34a'}">
-        🔧 부속품 인식 결과 ${missingBadge}
-      </div>
-      <div class="add-acc-box">
-        <div class="add-acc-title">➕ 이미지에서 확인 불가한 부속품 직접 추가</div>
+      <div class="sec-title" style="color:${absent.length>0?'#d97706':'#16a34a'}">🔧 부속품 인식 결과 ${mb}</div>
+      <div class="add-acc-box"><div class="add-acc-title">➕ 이미지 확인 불가 부속품 직접 추가</div>
         <div class="add-acc-row">
-          <select id="add-sel" class="add-acc-select">
-            <option value="">부속품 선택...</option>
-            ${accOptions}
-          </select>
-          <select id="add-status" class="add-acc-status">
-            <option value="없음" selected>⚠️ 없음</option>
-            <option value="있음">✅ 있음</option>
-            <option value="불확실">❓ 불확실</option>
-          </select>
+          <input type="text" id="add-acc-inp" class="add-acc-input" placeholder="부속품명 입력" list="acc-dl">
+          <datalist id="acc-dl">${ACC_LIST.map(a=>'<option value="'+a+'">').join('')}</datalist>
+          <select id="add-status" class="add-acc-status"><option value="없음">⚠️ 없음</option><option value="있음">✅ 있음</option><option value="불확실">❓ 불확실</option></select>
           <button class="add-acc-btn" onclick="addAcc()">추가</button>
         </div>
       </div>
@@ -437,32 +416,22 @@ function renderResult(r){
         ${renderAccItems(absent,'acc-absent','⚠️','보류')}
         ${renderAccItems(uncertain,'acc-uncertain','❓','확인필요')}
         ${renderAccItems(present,'acc-present','✅','확인')}
-        ${accs.length===0?'<div style="text-align:center;padding:16px;color:var(--txt3);font-size:13px">부속품 전체샷을 추가하면 더 정확해요</div>':''}
+        ${accs.length===0?'<div style="text-align:center;padding:18px;color:var(--txt3);font-size:13px">부속품 전체샷을 추가하면 더 정확해요 📦</div>':''}
       </div>
     </div>
-
     <div>
       <div class="sec-title">🔍 모델 확인 검색</div>
-      <a class="search-link" href="https://www.bunjang.co.kr/search/products?q=${sqKo}" target="_blank">
-        <span class="sl-tier sl-t3">번장</span>
-        <div><div class="sl-name">번개장터</div><div class="sl-desc">동일 모델 실거래 케이스 참고</div></div>
-        <span class="sl-arr">↗</span>
-      </a>
-      <a class="search-link" href="https://www.google.com/search?tbm=isch&q=${sqEn}" target="_blank">
-        <span class="sl-tier sl-t4">구글</span>
-        <div><div class="sl-name">Google 이미지</div><div class="sl-desc">이미지 교차 검색 — 모델 확인</div></div>
-        <span class="sl-arr">↗</span>
-      </a>
-    </div>
-  `;
-}
+      <a class="search-link" href="https://www.bunjang.co.kr/search/products?q=${sqKo}" target="_blank"><span class="sl-tier sl-t1">번장</span><div><div class="sl-name">번개장터</div><div class="sl-desc">동일 모델 실거래 케이스 참고</div></div><span class="sl-arr">↗</span></a>
+      <a class="search-link" href="https://www.google.com/search?tbm=isch&q=${sqEn}" target="_blank"><span class="sl-tier sl-t2">구글</span><div><div class="sl-name">Google 이미지</div><div class="sl-desc">이미지 교차 검색 — 모델 확인</div></div><span class="sl-arr">↗</span></a>
+    </div>`;}
 
-function renderAccItems(arr, cls, dot, badge){
-  return arr.map((a,i)=>{
-    const idx=editedAccs.indexOf(a);
-    return '<div class="'+cls+' acc-item" id="acc-'+idx+'"><div class="acc-dot">'+dot+'</div>'
-      +'<div style="flex:1"><div class="acc-name">'+(a.status==='없음'?'❌ ':'')+a.name+(a.status==='없음'?' 없음':'')+'</div>'
-      +'<div class="acc-why">'+a.reason+(a.fromSellerText?' <b style="color:#92400e">(판매자 본문)</b>':'')+'</div>'
+function renderAccItems(arr,cls,dot,badge){
+  return arr.map(a=>{
+    const idx=editedAccs.indexOf(a),nm=(a.status==='없음'?'❌ ':'')+a.name+(a.status==='없음'?' 없음':'');
+    return '<div class="'+cls+' acc-item" id="acc-'+idx+'">'
+      +'<div class="acc-dot">'+dot+'</div>'
+      +'<div style="flex:1"><div class="acc-name">'+nm+'</div>'
+      +'<div class="acc-why">'+(a.reason||'')+(a.fromSellerText?' <b style="color:#92400e;font-size:10px">(판매자 본문)</b>':'')+'</div>'
       +'<div class="acc-edit-row">'
       +'<select class="acc-edit-select" onchange="editAcc('+idx+',\'status\',this.value)">'
       +'<option value="있음"'+(a.status==='있음'?' selected':'')+'>✅ 있음</option>'
@@ -470,16 +439,14 @@ function renderAccItems(arr, cls, dot, badge){
       +'<option value="불확실"'+(a.status==='불확실'?' selected':'')+'>❓ 불확실</option>'
       +'</select>'
       +'<input class="acc-edit-note" type="text" placeholder="메모..." oninput="editAcc('+idx+',\'memo\',this.value)">'
-      +'</div></div>'
-      +'<div class="acc-badge">'+badge+'</div></div>';
-  }).join('');
-}
+      +'<button class="acc-del-btn" onclick="delAcc('+idx+')" title="삭제">✕</button>'
+      +'</div></div><div class="acc-badge">'+badge+'</div></div>';
+  }).join('');}
 
 function editAcc(idx,field,val){
   editedAccs[idx][field]=val;
   if(field==='status'){
-    const el=document.getElementById('acc-'+idx);
-    if(!el)return;
+    const el=document.getElementById('acc-'+idx);if(!el)return;
     const a=editedAccs[idx];
     el.className=(val==='있음'?'acc-present':val==='없음'?'acc-absent':'acc-uncertain')+' acc-item';
     el.querySelector('.acc-dot').textContent=val==='있음'?'✅':val==='없음'?'⚠️':'❓';
@@ -489,77 +456,44 @@ function editAcc(idx,field,val){
   }
 }
 
+function delAcc(idx){const el=document.getElementById('acc-'+idx);if(el){el.style.opacity='0';el.style.transform='scale(.95)';setTimeout(()=>el.remove(),220);}editedAccs[idx].deleted=true;showToast('삭제됨');}
+
 function addAcc(){
-  const sel=document.getElementById('add-sel');
-  const statusSel=document.getElementById('add-status');
-  const name=sel.value,status=statusSel.value;
-  if(!name){showToast('부속품을 선택해 주세요');return}
-  const a={name,type:'부속품',status,reason:'검수자 직접 입력',fromSellerText:false};
+  const inp=document.getElementById('add-acc-inp'),statusSel=document.getElementById('add-status'),name=inp.value.trim(),status=statusSel.value;
+  if(!name){showToast('부속품명을 입력해 주세요');return;}
+  const a={name,status,reason:'검수자 직접 입력',fromSellerText:false},idx=editedAccs.length;
   editedAccs.push(a);
-  const idx=editedAccs.length-1;
-  const cls=status==='있음'?'acc-present':status==='없음'?'acc-absent':'acc-uncertain';
-  const dot=status==='있음'?'✅':status==='없음'?'⚠️':'❓';
-  const badge=status==='있음'?'확인':status==='없음'?'보류':'확인필요';
-  const div=document.createElement('div');
-  div.id='acc-'+idx;div.className=cls+' acc-item';
-  div.innerHTML='<div class="acc-dot">'+dot+'</div>'
-    +'<div style="flex:1"><div class="acc-name">'+(status==='없음'?'❌ ':'')+name+(status==='없음'?' 없음':'')+'</div>'
-    +'<div class="acc-why">검수자 직접 입력</div>'
-    +'<div class="acc-edit-row">'
-    +'<select class="acc-edit-select" onchange="editAcc('+idx+',\'status\',this.value)">'
-    +'<option value="있음"'+(status==='있음'?' selected':'')+'>✅ 있음</option>'
-    +'<option value="없음"'+(status==='없음'?' selected':'')+'>⚠️ 없음</option>'
-    +'<option value="불확실"'+(status==='불확실'?' selected':'')+'>❓ 불확실</option>'
-    +'</select>'
-    +'<input class="acc-edit-note" type="text" placeholder="메모..." oninput="editAcc('+idx+',\'memo\',this.value)">'
-    +'</div></div>'
-    +'<div class="acc-badge">'+badge+'</div>';
-  document.getElementById('acc-list').appendChild(div);
-  sel.value='';
-  showToast('✅ '+name+' 추가됨');
+  const cls=status==='있음'?'acc-present':status==='없음'?'acc-absent':'acc-uncertain',dot=status==='있음'?'✅':status==='없음'?'⚠️':'❓',badge=status==='있음'?'확인':status==='없음'?'보류':'확인필요';
+  const div=document.createElement('div');div.id='acc-'+idx;div.className=cls+' acc-item';
+  div.innerHTML='<div class="acc-dot">'+dot+'</div><div style="flex:1"><div class="acc-name">'+(status==='없음'?'❌ ':'')+name+(status==='없음'?' 없음':'')+'</div><div class="acc-why">검수자 직접 입력</div><div class="acc-edit-row"><select class="acc-edit-select" onchange="editAcc('+idx+',\'status\',this.value)"><option value="있음"'+(status==='있음'?' selected':'')+'>✅ 있음</option><option value="없음"'+(status==='없음'?' selected':'')+'>⚠️ 없음</option><option value="불확실"'+(status==='불확실'?' selected':'')+'>❓ 불확실</option></select><input class="acc-edit-note" type="text" placeholder="메모..." oninput="editAcc('+idx+',\'memo\',this.value)"><button class="acc-del-btn" onclick="delAcc('+idx+')" title="삭제">✕</button></div></div><div class="acc-badge">'+badge+'</div>';
+  document.getElementById('acc-list').appendChild(div);inp.value='';showToast('✅ '+name+' 추가됨');
 }
 
 function saveCSV(){
-  if(!result)return;
-  const r=result;
-  const missing=editedAccs.filter(a=>a.status==='없음').map(a=>a.name).join(', ');
-  const present=editedAccs.filter(a=>a.status==='있음').map(a=>a.name).join(', ');
-  const memos=editedAccs.filter(a=>a.memo).map(a=>a.name+':'+a.memo).join('; ');
-  const header='브랜드,카테고리,상품명,모델번호,색상,판정,누락부속품,확인부속품,메모,신뢰도,사진수,분석일시';
-  const row=[r.brand,r.category,r.name,r.modelNo||'',r.color||'',r.verdict,'"'+missing+'"','"'+present+'"','"'+memos+'"',(r.confidence||0)+'%',r.imgCount||0,r.analyzedAt].join(',');
-  const csv='\uFEFF'+header+'\n'+row;
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-  a.download='LCA_'+r.brand+'_'+r.category+'.csv';
-  a.click();
-  showToast('📊 CSV 저장 완료!');
+  if(!result)return;const r=result;
+  const curBrand=document.getElementById('res-brand-val')?.textContent||r.brand;
+  const active=editedAccs.filter(a=>!a.deleted);
+  const missing=active.filter(a=>a.status==='없음').map(a=>a.name+(a.memo?'('+a.memo+')':'')).join(', ');
+  const pres=active.filter(a=>a.status==='있음').map(a=>a.name).join(', ');
+  const unc=active.filter(a=>a.status==='불확실').map(a=>a.name).join(', ');
+  const header='케어번호,브랜드,카테고리,상품명,모델번호,색상,판정,누락부속품,확인부속품,불확실,신뢰도,사진수,분석일시';
+  const row=[r.careNo||'',curBrand,r.category,r.name,r.modelNo||'',r.color||'',r.verdict,'"'+missing+'"','"'+pres+'"','"'+unc+'"',(r.confidence||0)+'%',r.imgCount||0,r.analyzedAt].join(',');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+header+'\n'+row],{type:'text/csv;charset=utf-8'}));
+  a.download='LCA_'+(r.careNo?r.careNo+'_':'')+curBrand+'_'+r.category+'.csv';a.click();showToast('📊 CSV 저장 완료!');
 }
 
 function doReset(){
   imgs=Array(10).fill(null);result=null;editedAccs=[];
-  document.getElementById('sellerTxt').value='';
-  document.getElementById('result-body').innerHTML='';
-  const sl0=document.getElementById('sl0');
-  sl0.innerHTML='<span class="s-icon">📷</span><span class="s-label">정면 사진<br>필수</span><span class="req-badge">필수</span>';
-  sl0.className='slot req';
-  for(let i=1;i<=9;i++){
-    const sl=document.getElementById('sl'+i);
-    if(!sl)continue;
-    if(i===1)sl.innerHTML='<span class="s-icon">🏷️</span><span class="s-label">메인 택</span>';
-    else if(i===2)sl.innerHTML='<span class="s-icon">🔧</span><span class="s-label">부속품<br>전체샷</span>';
-    else sl.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-1)+'</span>';
-    sl.className='slot';
-    document.getElementById('f'+i).value='';
-  }
-  document.getElementById('f0').value='';
+  document.getElementById('sellerTxt').value='';document.getElementById('result-body').innerHTML='';
+  document.getElementById('inp-modelname').value='';document.getElementById('inp-sku').value='';
+  const sl0=document.getElementById('sl0');sl0.innerHTML='<span class="s-icon">📷</span><span class="s-label">정면 사진<br>필수</span><span class="req-badge">필수</span>';sl0.className='slot req';
+  [['🏷️','라벨 / 택'],['🔧','부속품<br>전체샷']].forEach(([ic,lb],i)=>{const sl=document.getElementById('sl'+(i+1));sl.innerHTML='<span class="s-icon">'+ic+'</span><span class="s-label">'+lb+'</span>';sl.className='slot';});
+  for(let i=3;i<=9;i++){const sl=document.getElementById('sl'+i);if(!sl)continue;sl.innerHTML='<span class="s-icon">📷</span><span class="s-label">추가 '+(i-2)+'</span>';sl.className='slot';document.getElementById('f'+i).value='';}
+  for(let i=0;i<=2;i++)document.getElementById('f'+i).value='';
   show('input');
 }
 
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 </script>
 </body>
 </html>
