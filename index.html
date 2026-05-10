@@ -759,16 +759,22 @@ function onSkuInput(val){
   if(match){
     document.getElementById('sku-preview-box').innerHTML=buildSkuPreview(match);
     wrap.style.display='block';
+    document.getElementById('inp-modelname').value=match.modelName;
     return;
   }
 
-  // 부분 매칭
+  // 부분 매칭 (SKU + 모델명 둘 다)
   const vl=v.toLowerCase();
   const candidates=skuDB.filter(s=>
-    (s.sku&&s.sku.toLowerCase().includes(vl))
+    (s.sku&&s.sku.toLowerCase().includes(vl))||
+    (s.modelName&&s.modelName.toLowerCase().includes(vl))
   );
-  if(candidates.length>0){
-    document.getElementById('sku-preview-box').innerHTML=buildSkuCandidates(candidates,'SKU 검색 결과');
+  if(candidates.length===1){
+    document.getElementById('sku-preview-box').innerHTML=buildSkuPreview(candidates[0]);
+    wrap.style.display='block';
+    document.getElementById('inp-modelname').value=candidates[0].modelName;
+  } else if(candidates.length>1){
+    document.getElementById('sku-preview-box').innerHTML=buildSkuCandidates(candidates,'검색 결과');
     wrap.style.display='block';
   } else {
     wrap.style.display='none';
@@ -784,11 +790,11 @@ function onModelNameInput(val){
   const vl=v.toLowerCase();
   const candidates=skuDB.filter(s=>
     (s.modelName&&s.modelName.toLowerCase().includes(vl))||
-    (s.line&&s.line.toLowerCase().includes(vl))
+    (s.line&&s.line.toLowerCase().includes(vl))||
+    (s.sku&&s.sku.toLowerCase().includes(vl))
   );
 
   if(candidates.length===1){
-    // 하나면 바로 SKU 필드에 자동 입력
     document.getElementById('modelname-preview-box').innerHTML=buildSkuPreview(candidates[0]);
     wrap.style.display='block';
     document.getElementById('inp-sku').value=candidates[0].sku;
@@ -811,17 +817,15 @@ function buildSkuCandidates(list,title){
   return `<div style="background:var(--sur);border:.5px solid var(--bdr);border-radius:var(--r3);padding:12px">
     <div class="sku-candidate-header">🔍 ${title} (${list.length}건)</div>
     ${items}
-    ${list.length>6?`<div style="font-size:11px;color:var(--txt3);text-align:center;padding-top:4px">+${list.length-6}개 더 있음 — 검색어를 구체화하세요</div>`:''}
+    ${list.length>6?`<div style="font-size:11px;color:var(--txt3);text-align:center;padding-top:4px">+${list.length-6}개 더 있음</div>`:''}
   </div>`;
 }
 
 function selectSkuCandidate(id){
   const s=skuDB.find(x=>x.id===id);
   if(!s)return;
-  // SKU 필드와 모델명 필드 자동 입력
   document.getElementById('inp-sku').value=s.sku;
   document.getElementById('inp-modelname').value=s.modelName;
-  // 미리보기 업데이트
   document.getElementById('sku-preview-box').innerHTML=buildSkuPreview(s);
   document.getElementById('sku-preview-wrap').style.display='block';
   document.getElementById('modelname-preview-wrap').style.display='none';
@@ -831,8 +835,14 @@ function selectSkuCandidate(id){
 function buildSkuPreview(s){
   const thumbs=s.images&&s.images.length?s.images.slice(0,3).map(img=>`<img class="sku-ref-img" src="${img}" alt="">`).join(''):'';
   return `<div class="sku-match-box verified" style="margin-top:0">
-    <div class="sku-match-hd"><span style="font-size:16px">📋</span><span class="sku-match-title" style="font-size:12px">${s.modelName}</span><span class="sku-match-badge badge-db">DB 확인</span></div>
+    <div class="sku-match-hd">
+      <span style="font-size:16px">📋</span>
+      <span class="sku-match-title" style="font-size:12px">${s.modelName}</span>
+      <span class="sku-match-badge badge-db">DB 확인</span>
+    </div>
+    <div class="sku-kv"><span class="sku-k">SKU</span><span class="sku-v" style="font-family:monospace;font-size:11px">${s.sku||'—'}</span></div>
     <div class="sku-kv"><span class="sku-k">부속품</span><span class="sku-v"><b>${s.accessories||'—'}</b></span></div>
+    ${s.size?`<div class="sku-kv"><span class="sku-k">사이즈</span><span class="sku-v">${s.size}</span></div>`:''}
     ${s.realSize?`<div class="sku-kv"><span class="sku-k">실측</span><span class="sku-v">${s.realSize}cm</span></div>`:''}
     ${s.note?`<div class="sku-note-box">⚠️ ${s.note}</div>`:''}
     ${thumbs?`<div class="sku-img-row">${thumbs}</div>`:''}
