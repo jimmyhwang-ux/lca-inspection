@@ -75,7 +75,7 @@ body{max-width:480px;margin:0 auto;padding-bottom:72px}
 .match-conf{font-size:10px;color:var(--ok);margin-top:4px}
 
 /* 추가 사진 그리드 */
-.extra-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.extra-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
 .extra-slot{aspect-ratio:1;border-radius:var(--r3);border:1.5px dashed var(--bdr);background:var(--sur2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;position:relative;overflow:hidden;transition:all .15s}
 .extra-slot.filled{border-style:solid;border-color:var(--ok)}
 .extra-slot .si{font-size:18px;z-index:1;color:var(--txt3)}
@@ -391,7 +391,7 @@ input[type=file]{display:none}
       </div>
 
       <!-- 추가 사진 -->
-      <div class="extra-hint">💡 추가사진: 라벨·택·후면·내부·손상부위</div>
+      <div class="extra-hint">💡 추가사진: 라벨/택 · 로고 · 원산지 · 내부 · 손상부위</div>
       <div class="extra-grid" id="extra-slots"></div>
     </div>
 
@@ -649,7 +649,7 @@ input[type=file]{display:none}
 <div class="img-viewer" id="img-viewer" onclick="this.classList.remove('show')"><div class="img-viewer-x">✕</div><img id="viewer-img" alt=""></div>
 
 <div style="display:none">
-  <input type="file" id="f0" accept="image/*" onchange="onFile(0,event)"><input type="file" id="f1" accept="image/*" onchange="onFile(1,event)"><input type="file" id="f2" accept="image/*" onchange="onFile(2,event)"><input type="file" id="f3" accept="image/*" onchange="onFile(3,event)"><input type="file" id="f4" accept="image/*" onchange="onFile(4,event)"><input type="file" id="f5" accept="image/*" onchange="onFile(5,event)"><input type="file" id="f6" accept="image/*" onchange="onFile(6,event)"><input type="file" id="f7" accept="image/*" onchange="onFile(7,event)">
+  <input type="file" id="f0" accept="image/*" onchange="onFile(0,event)"><input type="file" id="f1" accept="image/*" onchange="onFile(1,event)"><input type="file" id="f2" accept="image/*" onchange="onFile(2,event)"><input type="file" id="f3" accept="image/*" onchange="onFile(3,event)"><input type="file" id="f4" accept="image/*" onchange="onFile(4,event)"><input type="file" id="f5" accept="image/*" onchange="onFile(5,event)">
   <input type="file" id="sif0" accept="image/*" onchange="onSkuImg(0,event)"><input type="file" id="sif1" accept="image/*" onchange="onSkuImg(1,event)"><input type="file" id="sif2" accept="image/*" onchange="onSkuImg(2,event)"><input type="file" id="sif3" accept="image/*" onchange="onSkuImg(3,event)"><input type="file" id="sif4" accept="image/*" onchange="onSkuImg(4,event)"><input type="file" id="sif5" accept="image/*" onchange="onSkuImg(5,event)">
 </div>
 <div class="toast" id="toast"></div>
@@ -661,10 +661,13 @@ const BM={'의류':['샤넬','루이비통','구찌','디올','발렌시아가',
 const BKO={'louis vuitton':'루이비통','lv':'루이비통','hermes':'에르메스','goyard':'고야드','gucci':'구찌','dior':'디올','balenciaga':'발렌시아가','bottega veneta':'보테가베네타','saint laurent':'생로랑','ysl':'생로랑','celine':'셀린느','prada':'프라다','delvaux':'델보','maison margiela':'메종마르지엘라','loewe':'로에베','fendi':'펜디','valentino':'발렌티노','miu miu':'미우미우','burberry':'버버리','chloe':'끌로에','lemaire':'르메르','givenchy':'지방시','marni':'마르니','mulberry':'멀버리','ferragamo':'페라가모','jil sander':'질샌더','cartier':'까르띠에','rolex':'롤렉스','tag heuer':'태그호이어','omega':'오메가','audemars piguet':'오데마피게','chanel':'샤넬','bulgari':'불가리','bvlgari':'불가리','tiffany':'티파니','chopard':'쇼파드','iwc':'아이더블유씨','breitling':'브라이틀링','damiani':'다미아니','van cleef':'반클리프앤아펠','boucheron':'부쉐론','chaumet':'쇼메','piaget':'피아제'};
 function toKo(s){if(!s)return s;return BKO[s.toLowerCase().trim()]||s;}
 
-let imgs=Array(8).fill(null),careNo='',skuDB=loadSkuDB();
+let imgs=Array(6).fill(null),careNo='',skuDB=loadSkuDB();
 let analysisResult=null,editedAccs=[],editFieldKey='',sheetUrl='';
 let skuImgs=Array(6).fill(null),editingSkuId=null;
 let skuTimer=null,nameTimer=null;
+
+// ── 슬롯 라벨 정의 (5개) ──
+const SLOT_LABELS=['라벨/택1','라벨/택2','라벨/택3','로고','원산지'];
 
 function loadSkuDB(){try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(e){}return [{id:'s1',category:'가방/지갑',brand:'고야드',sku:'ANJOUSMINCG01TY01P',modelName:'앙주 미니 블랙',color:'블랙',line:'앙주',size:'미니',realSize:'19.5x19.5',accessories:'이너파우치, 키퍼(스트랩 후프) 1개, 훅 클로저',note:'신형: 훅 클로저 추가. 구형에는 없음',link:'',images:[]},{id:'s2',category:'가방/지갑',brand:'루이비통',sku:'M82766',modelName:'포쉐트 악세수아',color:'',line:'',size:'OS',realSize:'23.5x13.5',accessories:'레더 스트랩, 체인 스트랩',note:'',link:'',images:[]}];}
 function saveSkuDB(){localStorage.setItem(LS_KEY,JSON.stringify(skuDB));}
@@ -760,7 +763,6 @@ async function setSlot0(src){
   const sl=document.getElementById('sl0');
   sl.innerHTML='<img src="'+src+'" alt=""><div class="x-btn" onclick="removeImg0(event)">✕</div><div class="match-banner" id="match-banner"><div class="match-brand" id="match-brand"></div><div class="match-name" id="match-name"></div><div class="match-acc" id="match-acc"></div><div class="match-conf" id="match-conf"></div></div>';
   sl.classList.add('filled');sl.classList.remove('req');
-  // 이미지 매칭 시도
   await autoMatchAndSave(src);
 }
 function removeImg0(e){e&&e.stopPropagation();imgs[0]=null;const sl=document.getElementById('sl0');sl.innerHTML='<div class="main-slot-icon">📦</div><div class="main-slot-label">본품 + 부속품 전체샷</div><div class="main-slot-sub">필수 · 탭하거나 드래그</div><div class="req-chip">필수</div><div class="match-banner" id="match-banner"><div class="match-brand" id="match-brand"></div><div class="match-name" id="match-name"></div><div class="match-acc" id="match-acc"></div><div class="match-conf" id="match-conf"></div></div>';sl.classList.remove('filled');sl.classList.add('req');document.getElementById('f0').value='';}
@@ -801,15 +803,45 @@ function showMatchBanner(brand,name,acc,conf){
   set('match-brand',brand);set('match-name',name);set('match-acc',acc);set('match-conf',conf);
 }
 
-function setExtraSlot(i,src){imgs[i]=src;const sl=document.getElementById('esl'+(i-1));if(!sl)return;sl.innerHTML='<img src="'+src+'" alt=""><div class="xb" onclick="removeExtra('+i+',event)">✕</div>';sl.classList.add('filled');}
-function removeExtra(i,e){e&&e.stopPropagation();imgs[i]=null;const sl=document.getElementById('esl'+(i-1));if(!sl)return;const lbls=['라벨/택','후면','내부','추가4','추가5','추가6','추가7'];sl.innerHTML='<span class="si">📷</span><span class="sl">'+(lbls[i-1]||'추가')+'</span>';sl.classList.remove('filled');document.getElementById('f'+i).value='';}
+// ── 추가 슬롯: 인덱스 i=1..5, 슬롯 id=esl1..esl5, 파일 id=f1..f5 ──
+function setExtraSlot(i,src){
+  imgs[i]=src;
+  const sl=document.getElementById('esl'+i); // ✅ 수정: i-1 → i
+  if(!sl)return;
+  sl.innerHTML='<img src="'+src+'" alt=""><div class="xb" onclick="removeExtra('+i+',event)">✕</div>';
+  sl.classList.add('filled');
+}
+function removeExtra(i,e){
+  e&&e.stopPropagation();
+  imgs[i]=null;
+  const sl=document.getElementById('esl'+i); // ✅ 수정: i-1 → i
+  if(!sl)return;
+  sl.innerHTML='<span class="si">📷</span><span class="sl">'+(SLOT_LABELS[i-1]||'추가')+'</span>';
+  sl.classList.remove('filled');
+  document.getElementById('f'+i).value='';
+}
 function tF(i){document.getElementById('f'+i).click();}
 function onFile(i,e){const f=e.target.files[0];if(!f)return;compress(f,src=>{if(i===0)setSlot0(src);else setExtraSlot(i,src);});e.target.value='';}
 function oDO(e,i){e.preventDefault();if(i===0)document.getElementById('sl0').classList.add('drag-over');}
 function oDL(e,i){if(i===0)document.getElementById('sl0').classList.remove('drag-over');}
 function oDR(e,i){e.preventDefault();document.getElementById('sl0').classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))compress(f,src=>{if(i===0)setSlot0(src);else setExtraSlot(i,src);});}
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>e.preventDefault());
-(function(){const w=document.getElementById('extra-slots');const lbls=['라벨/택','후면','내부','추가4','추가5','추가6','추가7'];for(let i=1;i<=7;i++){const d=document.createElement('div');d.className='extra-slot';d.id='esl'+(i);d.innerHTML='<span class="si">📷</span><span class="sl">'+(lbls[i-1]||'추가')+'</span>';d.onclick=()=>tF(i);d.addEventListener('dragover',e=>{e.preventDefault();d.style.borderColor='var(--acc)';});d.addEventListener('dragleave',()=>{d.style.borderColor='';});d.addEventListener('drop',e=>{e.preventDefault();d.style.borderColor='';const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))compress(f,src=>setExtraSlot(i,src));});w.appendChild(d);}})();
+
+// ── 추가 슬롯 초기화 (5개: i=1..5) ──
+(function(){
+  const w=document.getElementById('extra-slots');
+  for(let i=1;i<=5;i++){
+    const d=document.createElement('div');
+    d.className='extra-slot';
+    d.id='esl'+i; // esl1..esl5
+    d.innerHTML='<span class="si">📷</span><span class="sl">'+(SLOT_LABELS[i-1]||'추가')+'</span>';
+    d.onclick=()=>tF(i);
+    d.addEventListener('dragover',e=>{e.preventDefault();d.style.borderColor='var(--acc)';});
+    d.addEventListener('dragleave',()=>{d.style.borderColor='';});
+    d.addEventListener('drop',e=>{e.preventDefault();d.style.borderColor='';const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))compress(f,src=>setExtraSlot(i,src));});
+    w.appendChild(d);
+  }
+})();
 
 // ── 카테고리/브랜드 ──
 function onCatChange(){const cat=document.getElementById('sel-cat').value,sel=document.getElementById('sel-brand');sel.innerHTML='<option value="">선택</option>';if(cat&&BM[cat])BM[cat].forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});}
@@ -959,7 +991,7 @@ function openFieldEdit(key,label){editFieldKey=key;document.getElementById('fiel
 function confirmFieldEdit(){const v=document.getElementById('field-inp').value.trim();if(!v){closeMod('field-modal');return;}const targets={brand:'r-brand',cat:'r-cat',name:'r-name',sku:'r-sku',color:'r-color',size:'r-size'};const sfMap={brand:'sf-brand',cat:'sf-category',name:'sf-modelname',sku:'sf-sku',color:'sf-color',size:'sf-size'};const el=document.getElementById(targets[editFieldKey]);if(el&&el.childNodes[0]&&el.childNodes[0].nodeType===3)el.childNodes[0].textContent=v;const sf=document.getElementById(sfMap[editFieldKey]);if(sf)sf.value=v;closeMod('field-modal');showToast('✅ 수정됨');}
 
 // ── 리셋 ──
-function doReset(){imgs=Array(8).fill(null);analysisResult=null;editedAccs=[];['sellerTxt','inp-sku','inp-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});hideDbCard();removeImg0();for(let i=1;i<=7;i++)removeExtra(i);showStep(1);}
+function doReset(){imgs=Array(6).fill(null);analysisResult=null;editedAccs=[];['sellerTxt','inp-sku','inp-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});hideDbCard();removeImg0();for(let i=1;i<=5;i++)removeExtra(i);showStep(1);}
 
 // ── 이미지 뷰어 ──
 function openViewer(){if(!analysisResult||!analysisResult._accImg)return;document.getElementById('viewer-img').src=analysisResult._accImg;document.getElementById('img-viewer').classList.add('show');}
