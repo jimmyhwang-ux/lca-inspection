@@ -219,8 +219,7 @@ textarea.fi:focus{border-color:var(--acc)}
 .icon-btn.primary{background:var(--acc);border-color:var(--acc);color:#000}
 
 /* 설정 패널 */
-.settings-panel{padding:0 20px;display:none;padding-top:10px}
-.settings-panel.show{display:flex;flex-direction:column;gap:8px}
+.settings-panel{padding:0 20px;display:flex;flex-direction:column;gap:8px;padding-top:10px}
 .settings-box{background:var(--sur);border:.5px solid var(--bdr);border-radius:var(--r2);padding:13px;display:flex;flex-direction:column;gap:8px}
 .settings-box-t{font-size:11px;font-weight:700;color:var(--txt2)}
 .settings-row{display:flex;gap:6px}
@@ -370,7 +369,7 @@ input[type=file]{display:none}
     <!-- SerpApi 키 미설정 배너 -->
     <div id="api-missing-banner" style="margin:0 20px;padding:10px 13px;background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.25);border-radius:var(--r3);font-size:11px;color:var(--err);display:flex;align-items:center;justify-content:space-between;gap:8px">
       <span id="api-banner-msg">⚠️ imgbb 키 + SerpApi 키 미설정 — Google Lens 사용 불가</span>
-      <button onclick="switchTab('sku');setTimeout(()=>{document.getElementById('settings-panel').classList.add('show');document.getElementById('api-btn').style.background='rgba(245,166,35,.15)';},400)" style="padding:4px 10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.3);border-radius:6px;font-size:10px;font-weight:700;color:var(--err);cursor:pointer;font-family:inherit;white-space:nowrap">설정하기 →</button>
+      <button onclick="switchTab('sku');setTimeout(()=>{scrollToSettings();},400)" style="padding:4px 10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.3);border-radius:6px;font-size:10px;font-weight:700;color:var(--err);cursor:pointer;font-family:inherit;white-space:nowrap">설정하기 →</button>
     </div>
     <div class="analyze-wrap">
       <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">
@@ -522,7 +521,7 @@ input[type=file]{display:none}
       <div class="sku-hdr-info"><h1>SKU 관리</h1><p>검수 기준 부속품 DB</p></div>
     </div>
     <div class="sku-actions">
-      <button class="icon-btn" onclick="toggleSettings()" id="api-btn">⚙️ API 설정</button>
+      <button class="icon-btn" onclick="scrollToSettings()" id="api-btn">⚙️ API 설정</button>
       <button class="icon-btn" onclick="loadFromSheet()" id="load-btn">⬇️ 불러오기</button>
       <button class="icon-btn primary" onclick="openSkuForm(null)">＋ SKU 추가</button>
     </div>
@@ -885,7 +884,7 @@ async function startAnalysis() {
     showToast('⚙️ '+missing+'를 먼저 설정해 주세요');
     switchTab('sku');
     setTimeout(()=>{
-      document.getElementById('settings-panel').classList.add('show');
+      // settings panel always visible
       const btn2=document.getElementById('api-btn');
       if(btn2){btn2.style.background='rgba(245,166,35,.15)';btn2.style.borderColor='rgba(245,166,35,.4)';btn2.style.color='var(--acc)';}
     },400);
@@ -1265,15 +1264,13 @@ function loadSettings(){
 function saveImgbbKey(){const k=document.getElementById('imgbb-key-inp').value.trim();if(!k)return;imgbbApiKey=k;localStorage.setItem(LS_IMGBB,k);const btn=document.getElementById('imgbb-save-btn');if(btn){btn.textContent='✅ 저장됨';btn.classList.add('ok');}showToast('✅ imgbb 키 저장됨');updateApiBanner();}
 function saveSerpApiKey(){const k=document.getElementById('serpapi-key-inp').value.trim();if(!k)return;serpApiKey=k;localStorage.setItem(LS_SERPAPI,k);document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');showToast('✅ SerpApi 키 저장됨');setSyncState('ok','SerpApi 연결됨');updateApiBanner();}
 async function testSheetUrl(){const url=document.getElementById('sheet-url-inp').value.trim();if(!url)return;const btn=document.getElementById('sheet-conn-btn');btn.textContent='확인 중…';try{await fetch(url,{method:'GET',mode:'no-cors'});sheetUrl=url;localStorage.setItem(LS_SHEET,url);btn.textContent='✅ 연결됨';btn.classList.add('ok');showToast('✅ 시트 연결됨');}catch(e){btn.textContent='❌ 실패';}}
-function toggleSettings(){
-  const panel=document.getElementById('settings-panel');
+function scrollToSettings(){
+  document.getElementById('settings-panel').scrollIntoView({behavior:'smooth',block:'start'});
   const btn=document.getElementById('api-btn');
-  const isOpen=panel.classList.toggle('show');
-  btn.style.background=isOpen?'rgba(245,166,35,.15)':'';
-  btn.style.borderColor=isOpen?'rgba(245,166,35,.4)':'';
-  btn.style.color=isOpen?'var(--acc)':'';
-  if(isOpen) setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),100);
+  if(btn){btn.style.background='rgba(245,166,35,.15)';btn.style.borderColor='rgba(245,166,35,.4)';btn.style.color='var(--acc)';}
+  setTimeout(()=>{const btn=document.getElementById('api-btn');if(btn){btn.style.background='';btn.style.borderColor='';btn.style.color='';}},1500);
 }
+function toggleSettings(){scrollToSettings();}
 function setSyncState(s,m){const bar=document.getElementById('sync-bar');bar.className='sync-bar '+s;document.getElementById('sync-msg').textContent=m;}
 
 // ── SKU 관리 ──
