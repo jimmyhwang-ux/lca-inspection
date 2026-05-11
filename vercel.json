@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/inspect.js": {
+      "maxDuration": 30
+    }
+  }
+}
