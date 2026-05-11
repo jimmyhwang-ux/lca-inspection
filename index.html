@@ -381,8 +381,8 @@ input[type=file]{display:none}
       <p style="font-size:13px;font-weight:700">AI 분석 중입니다</p>
       <div class="lsteps-box">
         <div class="lstep" id="ls0"><div class="lstep-dot" id="ld0">1</div><span>이미지 업로드</span></div>
-        <div class="lstep" id="ls1"><div class="lstep-dot" id="ld1">2</div><span>SKU DB · 이미지 조회</span></div>
-        <div class="lstep" id="ls2"><div class="lstep-dot" id="ld2">3</div><span>DB 이미지로 부속품 비교</span></div>
+        <div class="lstep" id="ls1"><div class="lstep-dot" id="ld1">2</div><span>DB 이미지 매칭</span></div>
+        <div class="lstep" id="ls2"><div class="lstep-dot" id="ld2">3</div><span>부속품 목록 확인</span></div>
         <div class="lstep" id="ls3"><div class="lstep-dot" id="ld3">4</div><span>AI 부속품 판정</span></div>
         <div class="lstep" id="ls4"><div class="lstep-dot" id="ld4">5</div><span>결과 생성</span></div>
       </div>
@@ -709,6 +709,60 @@ function loadSkuDB(){
   ];
 }
 function saveSkuDB(){localStorage.setItem(LS_KEY,JSON.stringify(skuDB));}
+// ══════════════════════════════════════════════════
+// SKU DB 이미지 기반 매칭
+// 검수 사진 1장 + DB 후보 이미지들을 Claude에 전송
+// → 가장 일치하는 SKU ID 반환
+// ══════════════════════════════════════════════════
+async function matchByImage(checkImg, candidates){
+  // 후보 최대 8개 (이미지 있는 것 우선, API 토큰 절약)
+  const pool=candidates.slice(0,8);
+  if(pool.length===0) return null;
+
+  try{
+    const content=[];
+
+    // 검수 대상 사진 (첫 번째)
+    content.push({type:'image',source:{type:'base64',
+      media_type:checkImg.split(';')[0].split(':')[1],
+      data:checkImg.split(',')[1]}});
+
+    // DB 후보 이미지들 + 인덱스 정보
+    const candidateInfo=pool.map((s,i)=>{
+      const img=s.images[0]; // 각 SKU의 대표 이미지 1장
+      content.push({type:'image',source:{type:'base64',
+        media_type:img.split(';')[0].split(':')[1],
+        data:img.split(',')[1]}});
+      return (i+1)+'. id='+s.id+' brand='+s.brand+' name='+s.modelName+' sku='+(s.sku||'?');
+    }).join('\n');
+
+    content.push({type:'text',text:`첫 번째 사진은 검수 대상 상품입니다.
+나머지 ${pool.length}장은 SKU DB에 등록된 기준 이미지입니다 (순서대로):
+${candidateInfo}
+
+질문: 검수 대상 상품(첫 번째 사진)과 가장 일치하는 DB 항목 번호는 무엇입니까?
+- 동일 모델이면: {"match":번호,"id":"해당id","confidence":숫자0~100,"reason":"근거"}
+- 일치하는 것이 없으면: {"match":0,"id":"","confidence":0,"reason":"없음"}
+JSON만 출력(마크다운 없이).`});
+
+    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,messages:[{role:'user',content}]})});
+    if(!resp.ok) return null;
+    const data=await resp.json();
+    if(data.error) return null;
+
+    const txt=data.content[0].text.replace(/```json|```/g,'').trim();
+    const result=JSON.parse(txt);
+    if(result.match>0&&result.confidence>=60){
+      return pool.find(s=>s.id===result.id)||null;
+    }
+    return null;
+  }catch(e){
+    console.warn('이미지 매칭 실패:', e.message);
+    return null;
+  }
+}
+
 function lookupSKU(v){if(!v)return null;const c=v.toUpperCase().replace(/\s/g,'');return skuDB.find(s=>s.sku&&s.sku.toUpperCase().replace(/\s/g,'')===c)||null;}
 function lookupName(v){
   if(!v||v.length<2)return null;
@@ -836,21 +890,45 @@ function setSlot(i,src){
   sl.innerHTML='<img src="'+src+'" alt=""><div class="x-btn" onclick="removeImg('+i+',event)">✕</div>';
   sl.classList.add('filled');sl.classList.remove('req');
   // 슬롯0(본품+부속품 전체샷) 채워지면 현재 매칭 SKU DB에 이미지 자동 저장
-  if(i===0) autoSaveImgToSku(src);
+  if(i===0) autoSaveImgToSku(src); // async — 백그라운드 실행
 }
-// 촬영 사진 → SKU DB 이미지 자동 적재
-function autoSaveImgToSku(src){
+// 슬롯0 사진 업로드 시: 텍스트 매칭 → 없으면 이미지 매칭 시도
+async function autoSaveImgToSku(src){
   const skuVal=document.getElementById('inp-sku').value.trim();
   const nameVal=document.getElementById('inp-name').value.trim();
-  const sm=lookupSKU(skuVal)||(()=>{const r=lookupName(nameVal);return r&&!Array.isArray(r)?r:null;})();
-  if(!sm) return; // SKU 매칭 없으면 스킵
-  // images 배열 첫 번째 슬롯에 저장 (기존 이미지 유지, 중복 방지)
-  if(!sm.images) sm.images=[];
-  if(!sm.images.includes(src)){
-    sm.images.unshift(src); // 최신 사진을 맨 앞에
-    if(sm.images.length>6) sm.images=sm.images.slice(0,6); // 최대 6장
-    saveSkuDB();
-    showToast('📸 사진이 SKU DB에 자동 저장됨 ('+sm.modelName+')');
+
+  // 1) 텍스트 매칭 먼저
+  let sm=lookupSKU(skuVal)||(()=>{const r=lookupName(nameVal);return r&&!Array.isArray(r)?r:null;})();
+
+  // 2) 텍스트 매칭 없고 DB에 이미지 있는 항목이 있으면 → 이미지로 즉시 매칭
+  if(!sm){
+    const candidates=skuDB.filter(s=>s.images&&s.images.length>0);
+    if(candidates.length>0){
+      showToast('🔍 DB 이미지와 비교 중...');
+      sm=await matchByImage(src,candidates);
+      if(sm){
+        // 매칭 성공 → 입력 필드 + DB 카드 자동 표시
+        document.getElementById('inp-sku').value=sm.sku||'';
+        document.getElementById('inp-name').value=sm.modelName||'';
+        showDbMatch(sm);
+        showToast('✅ 이미지 매칭 성공: '+sm.brand+' '+sm.modelName);
+      } else {
+        showToast('❓ DB에서 일치하는 모델 없음 — SKU 직접 입력');
+      }
+    }
+  } else {
+    // 텍스트 매칭 성공 시 DB 카드 표시
+    showDbMatch(sm);
+  }
+
+  // 3) 매칭된 항목이 있으면 이미지 저장
+  if(sm){
+    if(!sm.images) sm.images=[];
+    if(!sm.images.includes(src)){
+      sm.images.unshift(src);
+      if(sm.images.length>6) sm.images=sm.images.slice(0,6);
+      saveSkuDB();
+    }
   }
 }
 function tF(i){document.getElementById('f'+i).click();}
@@ -927,14 +1005,35 @@ async function startAnalysis(){
   const sellerTxt=document.getElementById('sellerTxt').value.trim();
   const validImgs=imgs.filter(Boolean);
 
-  await tick(400);setStep(1);
-  // ── SKU DB 조회 + 이미지 우선 로직 ──
-  const sm=lookupSKU(inputSku)||(()=>{const r=lookupName(modelName);return r&&!Array.isArray(r)?r:null;})();
+  await tick(300);setStep(1);
+
+  // ══════════════════════════════════════════════════
+  // Step1: SKU DB 이미지 매칭 (텍스트 매칭보다 우선)
+  // 이미지가 있는 DB 항목들을 모아 → 검수 사진과 함께 Claude에 전송
+  // → "어떤 DB 항목과 가장 일치하는가?" 판단
+  // ══════════════════════════════════════════════════
+  let sm = lookupSKU(inputSku)||(()=>{const r=lookupName(modelName);return r&&!Array.isArray(r)?r:null;})();
+
+  // 텍스트 매칭 없을 때 이미지 매칭 시도
+  if(!sm){
+    const candidates=skuDB.filter(s=>s.images&&s.images.length>0);
+    if(candidates.length>0&&imgs[0]){
+      sm=await matchByImage(imgs[0],candidates);
+      if(sm){
+        // 매칭 성공 → 입력 필드 자동 채우기
+        document.getElementById('inp-sku').value=sm.sku||'';
+        document.getElementById('inp-name').value=sm.modelName||'';
+        showDbMatch(sm);
+        showToast('🔍 이미지 매칭: '+sm.brand+' '+sm.modelName);
+      }
+    }
+  }
+
   const dbAccList=sm&&sm.accessories?sm.accessories.trim():'';
   const skuImages=sm&&sm.images&&sm.images.length>0?sm.images:[];
   const hasSkuImages=skuImages.length>0;
 
-  await tick(400);setStep(2);
+  await tick(300);setStep(2);
   let parsed;
   try{
     const content=[];
