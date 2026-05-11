@@ -201,8 +201,9 @@ input[type=file]{display:none}
     </div>
     <div class="result-meta">
       <div class="conf-badge" id="conf-badge">신뢰도 —%</div>
-      <div class="result-model" id="r-model" onclick="editField('r-model')">—</div>
       <div class="result-brand" id="r-brand">—</div>
+      <div class="result-model" id="r-model-ko" onclick="editField('r-model-ko')" style="font-size:17px;font-weight:800;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3">—</div>
+      <div id="r-model" onclick="editField('r-model')" style="font-size:12px;color:#555;margin-bottom:6px;cursor:pointer">—</div>
       <div class="result-reason" id="r-reason">—</div>
       <div class="result-cats" id="r-cats"></div>
     </div>
@@ -363,6 +364,7 @@ function renderResult(){
     document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
+  document.getElementById('r-model-ko').textContent=analysis.model_name_ko||analysis.model_name||'—';
   document.getElementById('r-model').textContent=analysis.model_name||'—';
   document.getElementById('r-reason').textContent=analysis.verdict_reason||'';
 
