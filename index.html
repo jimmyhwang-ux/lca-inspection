@@ -310,7 +310,7 @@ textarea.fi:focus{border-color:var(--acc)}
 .field-modal input:focus{border-color:var(--acc)}
 .toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(28,28,28,.96);border:.5px solid var(--bdr2);color:var(--txt);padding:10px 18px;border-radius:24px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;pointer-events:none;backdrop-filter:blur(16px)}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-input[type=file]{display:none}
+input[type=file]{opacity:0;position:fixed;top:-200px;left:-200px;width:1px;height:1px}
 </style>
 </head>
 <body>
@@ -642,20 +642,7 @@ input[type=file]{display:none}
   <div class="img-viewer-x">✕</div><img id="viewer-img" alt="">
 </div>
 
-<div style="position:absolute;width:0;height:0;overflow:hidden;opacity:0">
-  <input type="file" id="f0" accept="image/*" onchange="onFile(0,event)">
-  <input type="file" id="f1" accept="image/*" onchange="onFile(1,event)">
-  <input type="file" id="f2" accept="image/*" onchange="onFile(2,event)">
-  <input type="file" id="f3" accept="image/*" onchange="onFile(3,event)">
-  <input type="file" id="f4" accept="image/*" onchange="onFile(4,event)">
-  <input type="file" id="f5" accept="image/*" onchange="onFile(5,event)">
-  <input type="file" id="sif0" accept="image/*" onchange="onSkuImg(0,event)">
-  <input type="file" id="sif1" accept="image/*" onchange="onSkuImg(1,event)">
-  <input type="file" id="sif2" accept="image/*" onchange="onSkuImg(2,event)">
-  <input type="file" id="sif3" accept="image/*" onchange="onSkuImg(3,event)">
-  <input type="file" id="sif4" accept="image/*" onchange="onSkuImg(4,event)">
-  <input type="file" id="sif5" accept="image/*" onchange="onSkuImg(5,event)">
-</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1190,5 +1177,18 @@ async function loadFromSheet(){if(!sheetUrl){showToast('시트 URL을 먼저 연
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 </script>
+
+<input type="file" id="f0" accept="image/*" onchange="onFile(0,event)">
+<input type="file" id="f1" accept="image/*" onchange="onFile(1,event)">
+<input type="file" id="f2" accept="image/*" onchange="onFile(2,event)">
+<input type="file" id="f3" accept="image/*" onchange="onFile(3,event)">
+<input type="file" id="f4" accept="image/*" onchange="onFile(4,event)">
+<input type="file" id="f5" accept="image/*" onchange="onFile(5,event)">
+<input type="file" id="sif0" accept="image/*" onchange="onSkuImg(0,event)">
+<input type="file" id="sif1" accept="image/*" onchange="onSkuImg(1,event)">
+<input type="file" id="sif2" accept="image/*" onchange="onSkuImg(2,event)">
+<input type="file" id="sif3" accept="image/*" onchange="onSkuImg(3,event)">
+<input type="file" id="sif4" accept="image/*" onchange="onSkuImg(4,event)">
+<input type="file" id="sif5" accept="image/*" onchange="onSkuImg(5,event)">
 </body>
 </html>
