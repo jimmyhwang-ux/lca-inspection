@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     });
 
     const claudeBody = {
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 1024,
       system: `당신은 명품·패션 아이템 전문 감정사입니다. Google Lens 검색 결과와 사진을 종합하여 상품 정보를 정확히 추출하세요.
 규칙:
