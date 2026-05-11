@@ -310,7 +310,7 @@ textarea.fi:focus{border-color:var(--acc)}
 .field-modal input:focus{border-color:var(--acc)}
 .toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(28,28,28,.96);border:.5px solid var(--bdr2);color:var(--txt);padding:10px 18px;border-radius:24px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;pointer-events:none;backdrop-filter:blur(16px)}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-input[type=file]{position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0}
+input[type=file]{display:none}
 </style>
 </head>
 <body>
@@ -329,14 +329,12 @@ input[type=file]{position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;op
     </div>
 
     <div class="photo-wrap">
-      <label for="f0" style="display:block;width:100%">
-      <div class="main-slot req" id="sl0" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDR(event)">
+      <div class="main-slot req" id="sl0" onclick="tF(0)" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDR(event)">
         <div class="slot-icon">📦</div>
         <div class="slot-label">본품 + 부속품 전체샷</div>
         <div class="slot-sub">필수 · 탭하거나 드래그</div>
         <div class="req-pill">필수</div>
       </div>
-      </label>
     </div>
 
     <div class="extra-hint">💡 라벨/택 사진 추가 시 스타일번호 OCR → 정확도 ↑↑</div>
@@ -644,7 +642,7 @@ input[type=file]{position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;op
   <div class="img-viewer-x">✕</div><img id="viewer-img" alt="">
 </div>
 
-<div style="display:none">
+<div style="position:absolute;width:0;height:0;overflow:hidden;opacity:0">
   <input type="file" id="f0" accept="image/*" onchange="onFile(0,event)">
   <input type="file" id="f1" accept="image/*" onchange="onFile(1,event)">
   <input type="file" id="f2" accept="image/*" onchange="onFile(2,event)">
