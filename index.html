@@ -326,7 +326,7 @@ input[type=file]{display:none}
     <div class="sec">
       <div class="sec-title">검수 사진</div>
       <div class="photo-row">
-        <div class="slot req" id="sl0" onclick="tF(0)"><span class="si">🔧</span><span class="sl">부속품<br>전체샷</span><span class="req-tag">필수</span></div>
+        <div class="slot req" id="sl0" onclick="tF(0)"><span class="si">🔧</span><span class="sl">본품+부속품<br>전체샷</span><span class="req-tag">필수</span></div>
         <div class="slot" id="sl1" onclick="tF(1)"><span class="si">📷</span><span class="sl">정면 사진</span></div>
         <div class="slot" id="sl2" onclick="tF(2)"><span class="si">🏷️</span><span class="sl">라벨 / 택</span></div>
       </div>
@@ -381,9 +381,10 @@ input[type=file]{display:none}
       <p style="font-size:13px;font-weight:700">AI 분석 중입니다</p>
       <div class="lsteps-box">
         <div class="lstep" id="ls0"><div class="lstep-dot" id="ld0">1</div><span>이미지 업로드</span></div>
-        <div class="lstep" id="ls1"><div class="lstep-dot" id="ld1">2</div><span>SKU DB 조회</span></div>
-        <div class="lstep" id="ls2"><div class="lstep-dot" id="ld2">3</div><span>AI 부속품 분석</span></div>
-        <div class="lstep" id="ls3"><div class="lstep-dot" id="ld3">4</div><span>판정 결과 생성</span></div>
+        <div class="lstep" id="ls1"><div class="lstep-dot" id="ld1">2</div><span>SKU DB · 이미지 조회</span></div>
+        <div class="lstep" id="ls2"><div class="lstep-dot" id="ld2">3</div><span>DB 이미지로 부속품 비교</span></div>
+        <div class="lstep" id="ls3"><div class="lstep-dot" id="ld3">4</div><span>AI 부속품 판정</span></div>
+        <div class="lstep" id="ls4"><div class="lstep-dot" id="ld4">5</div><span>결과 생성</span></div>
       </div>
     </div>
   </div><!-- /input-section -->
@@ -545,7 +546,8 @@ input[type=file]{display:none}
     <div class="sku-hdr-info"><h1>SKU 관리</h1><p>검수 기준 부속품 DB</p></div>
     <div class="sku-actions">
       <button class="icon-btn" onclick="toggleSheetPanel()">⚙️ 시트</button>
-      <button class="icon-btn" onclick="loadFromSheet()" id="load-btn">⬇️ 불러오기</button>
+      <button class="icon-btn" onclick="syncFromSheetResult()" id="sync-result-btn" title="시트 검수결과→SKU DB 자동 적재">📥 결과→DB</button>
+      <button class="icon-btn" onclick="loadFromSheet()" id="load-btn">⬇️ DB불러오기</button>
       <button class="icon-btn primary" onclick="openSkuForm(null)">＋ 추가</button>
     </div>
   </div>
@@ -560,7 +562,9 @@ input[type=file]{display:none}
       </div>
       <div class="sheet-conn-hint">
         시트 → 확장프로그램 → Apps Script → 새 배포 → 웹앱 → URL 복사<br>
-        이 URL은 검수탭 시트 저장에도 사용됩니다.
+        이 URL은 검수탭 시트 저장 + 📥결과→DB 자동 적재에 모두 사용됩니다.<br>
+        <b>📥 결과→DB</b>: Apps Script에 <code>getSheetResult</code> 액션 추가 필요<br>
+        → 검수결과 시트 탭 데이터를 읽어 SKU DB에 자동 적재합니다.
       </div>
     </div>
   </div>
@@ -831,13 +835,30 @@ function setSlot(i,src){
   imgs[i]=src;const sl=document.getElementById('sl'+i);if(!sl)return;
   sl.innerHTML='<img src="'+src+'" alt=""><div class="x-btn" onclick="removeImg('+i+',event)">✕</div>';
   sl.classList.add('filled');sl.classList.remove('req');
+  // 슬롯0(본품+부속품 전체샷) 채워지면 현재 매칭 SKU DB에 이미지 자동 저장
+  if(i===0) autoSaveImgToSku(src);
+}
+// 촬영 사진 → SKU DB 이미지 자동 적재
+function autoSaveImgToSku(src){
+  const skuVal=document.getElementById('inp-sku').value.trim();
+  const nameVal=document.getElementById('inp-name').value.trim();
+  const sm=lookupSKU(skuVal)||(()=>{const r=lookupName(nameVal);return r&&!Array.isArray(r)?r:null;})();
+  if(!sm) return; // SKU 매칭 없으면 스킵
+  // images 배열 첫 번째 슬롯에 저장 (기존 이미지 유지, 중복 방지)
+  if(!sm.images) sm.images=[];
+  if(!sm.images.includes(src)){
+    sm.images.unshift(src); // 최신 사진을 맨 앞에
+    if(sm.images.length>6) sm.images=sm.images.slice(0,6); // 최대 6장
+    saveSkuDB();
+    showToast('📸 사진이 SKU DB에 자동 저장됨 ('+sm.modelName+')');
+  }
 }
 function tF(i){document.getElementById('f'+i).click();}
 function onFile(i,e){const f=e.target.files[0];if(f)compress(f,src=>setSlot(i,src));e.target.value='';}
 function removeImg(i,e){
   e.stopPropagation();imgs[i]=null;
   const sl=document.getElementById('sl'+i);
-  const defs=[['🔧','부속품<br>전체샷',true],['📷','정면 사진',false],['🏷️','라벨 / 택',false]];
+  const defs=[['🔧','본품+부속품<br>전체샷',true],['📷','정면 사진',false],['🏷️','라벨 / 택',false]];
   if(i<3){const[ic,lb,req]=defs[i];sl.innerHTML='<span class="si">'+ic+'</span><span class="sl">'+lb+'</span>'+(req?'<span class="req-tag">필수</span>':'');sl.classList.remove('filled');if(req)sl.classList.add('req');}
   else{sl.innerHTML='<span class="si">📷</span><span class="sl">추가 '+(i-2)+'</span>';sl.classList.remove('filled');}
   document.getElementById('f'+i).value='';
@@ -878,8 +899,9 @@ function onSfCat(){
 // 로딩 스텝
 // ════════════════════════════════════════
 function setStep(s){
-  for(let i=0;i<4;i++){
+  for(let i=0;i<5;i++){
     const it=document.getElementById('ls'+i),dt=document.getElementById('ld'+i);
+    if(!it)continue;
     it.classList.remove('active','done');
     if(i<s){it.classList.add('done');dt.textContent='✓';}
     else if(i===s){it.classList.add('active');dt.textContent='●';}
@@ -892,7 +914,7 @@ function tick(ms){return new Promise(r=>setTimeout(r,ms));}
 // 분석
 // ════════════════════════════════════════
 async function startAnalysis(){
-  if(!imgs[0]){showToast('🔧 부속품 전체샷을 먼저 업로드해 주세요');return;}
+  if(!imgs[0]){showToast('🔧 본품+부속품 전체샷을 먼저 업로드해 주세요');return;}
   const btn=document.getElementById('analyzeBtn');
   btn.disabled=true;btn.classList.add('ld');document.getElementById('analyze-txt').textContent='분석 중...';
   document.getElementById('loading-wrap').classList.add('show');
@@ -906,36 +928,48 @@ async function startAnalysis(){
   const validImgs=imgs.filter(Boolean);
 
   await tick(400);setStep(1);
+  // ── SKU DB 조회 + 이미지 우선 로직 ──
   const sm=lookupSKU(inputSku)||(()=>{const r=lookupName(modelName);return r&&!Array.isArray(r)?r:null;})();
   const dbAccList=sm&&sm.accessories?sm.accessories.trim():'';
+  const skuImages=sm&&sm.images&&sm.images.length>0?sm.images:[];
+  const hasSkuImages=skuImages.length>0;
 
-  await tick(500);setStep(2);
+  await tick(400);setStep(2);
   let parsed;
   try{
     const content=[];
+    // 1순위: 검수자 업로드 사진
     validImgs.forEach(img=>content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}}));
-    if(sm&&sm.images)sm.images.slice(0,2).forEach(img=>content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}}));
+    // 2순위: SKU DB 기준 이미지 (최대 3장, 비교용)
+    if(hasSkuImages){
+      skuImages.slice(0,3).forEach(img=>{
+        try{content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});}catch(e){}
+      });
+    }
 
-    const dbInfo=sm?'SKU DB 매칭: 모델명='+sm.modelName+', [기준부속품]='+dbAccList+', 컬러='+(sm.color||'없음')+', 사이즈='+(sm.size||'없음')+(sm.realSize?', 실측='+sm.realSize+'cm':''):'SKU DB 미등록';
-
-    // ★★ 핵심 프롬프트: DB I열 항목만 체크, 더스트백·박스 등은 구성품이므로 절대 포함 금지
-    const accRule=dbAccList&&dbAccList!=='없음'
-      ?`부속품 체크: 반드시 아래 목록에 있는 항목만 체크할 것. 목록에 없는 항목은 절대 포함하지 말 것. 더스트백·박스·보증서·영수증·쇼핑백 등 구성품/패키지류는 목록에 있더라도 별도 판단하지 말 것.\n기준 부속품 목록: [${dbAccList}]`
-      :`부속품 체크: 더스트백·박스·보증서·영수증·쇼핑백·리본 등 패키지 구성품은 절대 포함 금지. SKU DB에 등록된 항목이 없으므로 사진에서 보이는 기능성 부속품(스트랩·잠금장치 등)만 포함.`;
-
-    content.push({type:'text',text:`번개케어 명품 검수 전문가. JSON만 출력(마크다운 없이).
-입력: 브랜드=${brand||'미확인'} 카테고리=${cat||'미확인'} 모델명=${modelName||'미확인'} SKU=${inputSku||'미확인'}
-판매자본문: "${sellerTxt||'없음'}"
-${dbInfo}
-
-${accRule}
-
-판매자가 분실언급한 항목→없음. 사진확인불가→불확실. brand는 반드시 한국어로. 없음/불일치→verdict=검수자확인필요.
-verdictReason: "모델번호 [SKU]로 확인되나, 주요 부속품 확인 불가" 또는 "입고된 상품의 모델번호를 확인해 주세요"
-
-{"brand":"(한글)","brandEn":"","category":"","name":"","modelNo":"","color":"","size":"","realSize":"","confidence":0,"verdict":"합격/검수자 확인 필요/불합격","verdictReason":"","accessories":[{"name":"","status":"있음/없음/불확실","reason":"","fromSellerText":false}],"searchKo":"","searchEn":"","officialUrl":""}`});
+    const dbInfo=sm
+      ?'SKU DB 매칭: 모델명='+sm.modelName+', [기준부속품]='+dbAccList+', 컬러='+(sm.color||'없음')+', 사이즈='+(sm.size||'없음')+(sm.realSize?', 실측='+sm.realSize+'cm':'')+(hasSkuImages?' ★기준이미지'+skuImages.length+'장첨부':'')
+      :'SKU DB 미등록 — 사진만으로 판단';
 
     await tick(300);setStep(3);
+
+    let accPrompt;
+    if(dbAccList&&dbAccList.trim()&&dbAccList.trim()!=='없음'){
+      const items=dbAccList.split(',').map(s=>s.trim()).filter(Boolean);
+      const imgNote=hasSkuImages
+        ?'★ DB 기준 이미지 '+skuImages.length+'장 첨부됨. 앞쪽 사진=검수 대상, 뒤쪽 사진=DB 기준. 두 이미지를 비교하여 각 부속품 유무를 판단하라.'
+        :'DB 이미지 없음 — 검수 사진만으로 판단.';
+      const listStr=items.map((it,i)=>'  '+(i+1)+'. '+it).join('\n');
+      accPrompt='[부속품 검수 — DB I열 기준]\n'+imgNote+'\n공식 부속품 목록 (총 '+items.length+'개):\n'+listStr+'\n\n판단 기준:\n- 있음: 검수 사진에 명확히 보임\n- 없음: 사진에 없거나 판매자 분실/없음 언급\n- 불확실: 사진 불명확·부분 노출\n\n절대 금지: 위 목록에 없는 항목 추가 (더스트백·박스·보증서·쇼핑백·리본 등 구성품)\naccessories에 위 목록 '+items.length+'개 항목만 포함할 것';
+    } else {
+      accPrompt='[부속품 검수 — DB 미등록]\nSKU DB에 부속품 정보 없음. 사진에서 확인되는 기능성 부속품(스트랩·체인·자물쇠·열쇠 등)만 나열.\n절대 금지: 더스트백·박스·보증서·영수증·쇼핑백·리본 등 패키지 구성품';
+    }
+
+    const promptText='당신은 번개케어 명품 검수 전문가입니다. JSON만 출력하세요(마크다운 코드블록 없이).\n\n[검수 정보]\n브랜드: '+(brand||'미확인')+' | 카테고리: '+(cat||'미확인')+' | 모델명: '+(modelName||'미확인')+' | SKU: '+(inputSku||'미확인')+'\n판매자 본문: "'+(sellerTxt||'없음')+'"\n'+dbInfo+'\n\n'+accPrompt+'\n\n[판정 규칙]\n- 판매자 분실·없음 언급 → status: "없음", fromSellerText: true\n- "없음" 1개 이상 → verdict: "검수자 확인 필요"\n- verdictReason: DB 매칭 시 "모델번호 '+(inputSku||'확인필요')+'로 확인되나, [없는부속품명] 확인 불가" / 미매칭 시 "입고된 상품의 모델번호를 확인해 주세요"\n- brand 반드시 한국어 (Louis Vuitton→루이비통, Chanel→샤넬, Goyard→고야드 등)\n\n{"brand":"(한글)","brandEn":"","category":"","name":"","modelNo":"","color":"","size":"","realSize":"","confidence":숫자0~100,"verdict":"합격/검수자 확인 필요/불합격","verdictReason":"","accessories":[{"name":"부속품명","status":"있음/없음/불확실","reason":"판단근거 한줄","fromSellerText":불리언}],"searchKo":"번개장터검색어","searchEn":"영문검색어","officialUrl":""}';
+    content.push({type:'text',text:promptText});
+
+    await tick(200);setStep(4);
+
     const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,messages:[{role:'user',content}]})});
     if(!resp.ok)throw new Error('API 오류 ('+resp.status+')');
     const data=await resp.json();if(data.error)throw new Error(JSON.stringify(data.error));
@@ -972,6 +1006,12 @@ verdictReason: "모델번호 [SKU]로 확인되나, 주요 부속품 확인 불�
   parsed._sm=sm;
   parsed._accImg=imgs[0]||null;
   parsed._inputSku=inputSku;
+  parsed._allImgs=validImgs; // 전체 사진 (시트 저장용)
+  // 분석 완료 후 — 매칭 SKU가 있고 이미지가 없으면 사진 자동 저장
+  if(sm&&imgs[0]&&(!sm.images||sm.images.length===0)){
+    sm.images=[imgs[0]];
+    saveSkuDB();
+  }
 
   analysisResult=parsed;
   editedAccs=JSON.parse(JSON.stringify(parsed.accessories||[]));
@@ -1108,6 +1148,8 @@ async function saveToSheet(){
   const btn=document.getElementById('sheet-save-btn');
   btn.disabled=true;btn.classList.add('ld');
   const g=id=>document.getElementById(id)?document.getElementById(id).value:'';
+  // 이미지는 base64 → 시트에 저장 (Apps Script에서 Drive 업로드 후 URL 기록)
+  const mainImg=analysisResult&&analysisResult._accImg?analysisResult._accImg:'';
   const payload={
     action:'save_result',
     category:g('sf-category'),brand:g('sf-brand'),sku:g('sf-sku'),
@@ -1116,7 +1158,8 @@ async function saveToSheet(){
     link:g('sf-link'),
     confidence:(analysisResult?analysisResult.confidence||0:0)+'%',
     imgCount:analysisResult?analysisResult.imgCount||0:0,
-    analyzedAt:analysisResult?analysisResult.analyzedAt||'':new Date().toLocaleString('ko-KR')
+    analyzedAt:analysisResult?analysisResult.analyzedAt||'':new Date().toLocaleString('ko-KR'),
+    mainImgBase64:mainImg  // 본품+부속품 전체샷 base64 — Apps Script에서 Drive 저장 후 I열 URL 기록
   };
   try{
     await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -1168,7 +1211,7 @@ function doReset(){
   document.getElementById('input-section').style.display='';
   hideDbMatch();
   const sl0=document.getElementById('sl0');
-  sl0.innerHTML='<span class="si">🔧</span><span class="sl">부속품<br>전체샷</span><span class="req-tag">필수</span>';sl0.className='slot req';
+  sl0.innerHTML='<span class="si">🔧</span><span class="sl">본품+부속품<br>전체샷</span><span class="req-tag">필수</span>';sl0.className='slot req';
   [['📷','정면 사진'],['🏷️','라벨 / 택']].forEach(([ic,lb],i)=>{const sl=document.getElementById('sl'+(i+1));sl.innerHTML='<span class="si">'+ic+'</span><span class="sl">'+lb+'</span>';sl.className='slot';});
   for(let i=3;i<=9;i++){const sl=document.getElementById('sl'+i);if(sl){sl.innerHTML='<span class="si">📷</span><span class="sl">추가 '+(i-2)+'</span>';sl.className='slot';}}
   for(let i=0;i<=9;i++){const f=document.getElementById('f'+i);if(f)f.value='';}
@@ -1313,6 +1356,57 @@ async function loadFromSheet(){
     saveSkuDB();renderSkuList();setSyncState('ok','완료 — 신규 '+added+' · 업데이트 '+updated);showToast('✅ '+data.data.length+'개 불러옴');
   }catch(e){setSyncState('err','실패: '+e.message);showToast('❌ '+e.message);}
   btn.textContent='⬇️ 불러오기';btn.disabled=false;
+}
+
+// ════════════════════════════════════════
+// 시트 검수결과 탭 → SKU DB 자동 적재
+// ════════════════════════════════════════
+async function syncFromSheetResult(){
+  if(!sheetUrl){showToast('⚙️ 시트 URL을 먼저 설정하세요');return;}
+  const btn=document.getElementById('sync-result-btn');
+  btn.textContent='⏳…';btn.disabled=true;
+  setSyncState('loading','시트 검수결과 읽는 중…');
+  try{
+    const resp=await fetch(sheetUrl+'?action=getSheetResult',{method:'GET',mode:'cors'});
+    if(!resp.ok)throw new Error('시트 응답 오류 '+resp.status);
+    const data=await resp.json();
+    if(!data.ok||!Array.isArray(data.data))throw new Error('데이터 형식 오류');
+    let added=0,updated=0,skipped=0;
+    data.data.forEach(row=>{
+      const sku=(row.sku||row['Sku 넘버']||row['SKU']||'').trim();
+      if(!sku){skipped++;return;}
+      const idx=skuDB.findIndex(s=>s.sku===sku);
+      const rawAcc=row.accessories||row['부속품']||'';
+      const entry={
+        id:idx>=0?skuDB[idx].id:('result_'+sku+'_'+Date.now()),
+        category:row.category||row['카테고리']||'가방/지갑',
+        brand:row.brand||row['브랜드']||'',
+        sku:sku,
+        modelName:row.modelName||row['모델명']||'',
+        color:row.color||row['컬러']||'',
+        line:'',
+        size:row.size||row['사이즈']||'',
+        realSize:row.realSize||row['공홈 실측 사이즈']||row['실측']||'',
+        accessories:rawAcc,
+        note:row.note||row['특이사항']||'',
+        link:row.link||row['링크']||'',
+        images:idx>=0?skuDB[idx].images||[]:[]
+      };
+      if(idx>=0){
+        const merged={...skuDB[idx],...entry};
+        merged.accessories=skuDB[idx].accessories||entry.accessories;
+        merged.images=skuDB[idx].images||[];
+        skuDB[idx]=merged;updated++;
+      } else {skuDB.unshift(entry);added++;}
+    });
+    saveSkuDB();renderSkuList();
+    setSyncState('ok','완료 — 신규 '+added+' · 업데이트 '+updated+' · 스킵 '+skipped);
+    showToast('✅ 검수결과 '+data.data.length+'행 → SKU DB 적재 완료');
+  }catch(e){
+    setSyncState('err','실패: '+e.message);
+    showToast('❌ '+e.message);
+  }
+  btn.textContent='📥 결과→DB';btn.disabled=false;
 }
 
 // ════════════════════════════════════════
