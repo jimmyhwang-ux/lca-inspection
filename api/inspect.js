@@ -43,10 +43,10 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 금지.
-{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"모델명","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
+{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
 verdict: pass/review/fail, confidence: 0-100 정수`,
         messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답하세요.' }] }]
       })
