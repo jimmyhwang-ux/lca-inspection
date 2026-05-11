@@ -210,11 +210,12 @@ textarea.fi:focus{border-color:var(--acc)}
 .bb-save.ld .sp{display:inline-block}
 
 /* ── SKU 탭 ── */
-.sku-hdr{background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:14px 20px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99}
+.sku-hdr{background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:.5px solid var(--bdr);padding:12px 20px 10px;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;z-index:99}
+.sku-hdr-row1{display:flex;align-items:center;gap:10px}
 .sku-hdr-info h1{font-size:15px;font-weight:800}
 .sku-hdr-info p{font-size:10px;color:var(--txt3);margin-top:1px}
-.sku-actions{margin-left:auto;display:flex;gap:5px}
-.icon-btn{padding:7px 11px;border:.5px solid var(--bdr2);border-radius:var(--r4);font-size:11px;font-weight:700;color:var(--txt2);background:var(--sur2);cursor:pointer;font-family:inherit;white-space:nowrap}
+.sku-actions{display:flex;gap:6px;width:100%}
+.icon-btn{flex:1;padding:8px 4px;border:.5px solid var(--bdr2);border-radius:var(--r4);font-size:11px;font-weight:700;color:var(--txt2);background:var(--sur2);cursor:pointer;font-family:inherit;white-space:nowrap;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px}
 .icon-btn.primary{background:var(--acc);border-color:var(--acc);color:#000}
 
 /* 설정 패널 */
@@ -366,6 +367,11 @@ input[type=file]{display:none}
       </div>
     </div>
 
+    <!-- SerpApi 키 미설정 배너 -->
+    <div id="api-missing-banner" style="margin:0 20px;padding:10px 13px;background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.25);border-radius:var(--r3);font-size:11px;color:var(--err);display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span>⚠️ SerpApi 키 미설정 — Google Lens 사용 불가</span>
+      <button onclick="switchTab('sku');setTimeout(()=>{document.getElementById('settings-panel').classList.add('show');document.getElementById('api-btn').style.background='rgba(245,166,35,.15)';},400)" style="padding:4px 10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.3);border-radius:6px;font-size:10px;font-weight:700;color:var(--err);cursor:pointer;font-family:inherit;white-space:nowrap">설정하기 →</button>
+    </div>
     <div class="analyze-wrap">
       <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">
         <div class="sp"></div><span id="analyze-txt">🔍 Google Lens 검수 시작 →</span>
@@ -511,12 +517,14 @@ input[type=file]{display:none}
 <!-- SKU 관리 탭 -->
 <div class="page" id="p-sku">
   <div class="sku-hdr">
-    <div style="font-size:20px">🗂️</div>
-    <div class="sku-hdr-info"><h1>SKU 관리</h1><p>검수 기준 부속품 DB</p></div>
+    <div class="sku-hdr-row1">
+      <div style="font-size:20px">🗂️</div>
+      <div class="sku-hdr-info"><h1>SKU 관리</h1><p>검수 기준 부속품 DB</p></div>
+    </div>
     <div class="sku-actions">
-      <button class="icon-btn" onclick="toggleSettings()" title="API 설정">⚙️ API</button>
-      <button class="icon-btn" onclick="loadFromSheet()" id="load-btn" title="시트에서 불러오기">⬇️</button>
-      <button class="icon-btn primary" onclick="openSkuForm(null)">＋ 추가</button>
+      <button class="icon-btn" onclick="toggleSettings()" id="api-btn">⚙️ API 설정</button>
+      <button class="icon-btn" onclick="loadFromSheet()" id="load-btn">⬇️ 불러오기</button>
+      <button class="icon-btn primary" onclick="openSkuForm(null)">＋ SKU 추가</button>
     </div>
   </div>
 
@@ -1214,14 +1222,29 @@ function onCatChange(){const cat=document.getElementById('sel-cat').value,sel=do
 function onSfCat(){const cat=document.getElementById('sff-cat').value,sel=document.getElementById('sff-brand');sel.innerHTML='<option value="">선택</option>';if(cat&&BM[cat])BM[cat].forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});}
 
 // ── 설정 ──
+function updateApiBanner(){
+  const banner=document.getElementById('api-missing-banner');
+  if(!banner)return;
+  const hasKey=!!(serpApiKey||localStorage.getItem(LS_SERPAPI));
+  banner.style.display=hasKey?'none':'flex';
+}
 function loadSettings(){
   const sk=localStorage.getItem(LS_SERPAPI);if(sk){serpApiKey=sk;document.getElementById('serpapi-key-inp').value=sk;document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');}
   const su=localStorage.getItem(LS_SHEET);if(su){sheetUrl=su;document.getElementById('sheet-url-inp').value=su;document.getElementById('sheet-conn-btn').textContent='✅ 연결됨';document.getElementById('sheet-conn-btn').classList.add('ok');}
   setSyncState(sk&&su?'ok':'idle', sk&&su?'설정 완료':'API 키 설정 필요');
+  updateApiBanner();
 }
-function saveSerpApiKey(){const k=document.getElementById('serpapi-key-inp').value.trim();if(!k)return;serpApiKey=k;localStorage.setItem(LS_SERPAPI,k);document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');showToast('✅ SerpApi 키 저장됨');setSyncState('ok','SerpApi 연결됨');}
+function saveSerpApiKey(){const k=document.getElementById('serpapi-key-inp').value.trim();if(!k)return;serpApiKey=k;localStorage.setItem(LS_SERPAPI,k);document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');showToast('✅ SerpApi 키 저장됨');setSyncState('ok','SerpApi 연결됨');updateApiBanner();}
 async function testSheetUrl(){const url=document.getElementById('sheet-url-inp').value.trim();if(!url)return;const btn=document.getElementById('sheet-conn-btn');btn.textContent='확인 중…';try{await fetch(url,{method:'GET',mode:'no-cors'});sheetUrl=url;localStorage.setItem(LS_SHEET,url);btn.textContent='✅ 연결됨';btn.classList.add('ok');showToast('✅ 시트 연결됨');}catch(e){btn.textContent='❌ 실패';}}
-function toggleSettings(){document.getElementById('settings-panel').classList.toggle('show');}
+function toggleSettings(){
+  const panel=document.getElementById('settings-panel');
+  const btn=document.getElementById('api-btn');
+  const isOpen=panel.classList.toggle('show');
+  btn.style.background=isOpen?'rgba(245,166,35,.15)':'';
+  btn.style.borderColor=isOpen?'rgba(245,166,35,.4)':'';
+  btn.style.color=isOpen?'var(--acc)':'';
+  if(isOpen) setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
 function setSyncState(s,m){const bar=document.getElementById('sync-bar');bar.className='sync-bar '+s;document.getElementById('sync-msg').textContent=m;}
 
 // ── SKU 관리 ──
