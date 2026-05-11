@@ -1148,24 +1148,98 @@ async function saveToSheet(){
   const btn=document.getElementById('sheet-save-btn');
   btn.disabled=true;btn.classList.add('ld');
   const g=id=>document.getElementById(id)?document.getElementById(id).value:'';
-  // 이미지는 base64 → 시트에 저장 (Apps Script에서 Drive 업로드 후 URL 기록)
-  const mainImg=analysisResult&&analysisResult._accImg?analysisResult._accImg:'';
+
+  const skuVal=g('sf-sku');
+  const brandVal=g('sf-brand');
+  const modelNameVal=g('sf-modelname');
+  const catVal=g('sf-category');
+  const colorVal=g('sf-color');
+  const noteVal=g('sf-note');
+  const sizeVal=g('sf-size');
+  const realSizeVal=g('sf-realsize');
+  const accVal=g('sf-accessories');
+  const linkVal=g('sf-link');
+
+  // 이미지 — Apps Script 전송용으로 소형 압축 (최대 400px, 품질 0.5)
+  const mainImg=await compressForSheet(analysisResult&&analysisResult._accImg?analysisResult._accImg:'');
+
   const payload={
     action:'save_result',
-    category:g('sf-category'),brand:g('sf-brand'),sku:g('sf-sku'),
-    modelName:g('sf-modelname'),color:g('sf-color'),note:g('sf-note'),
-    size:g('sf-size'),realSize:g('sf-realsize'),accessories:g('sf-accessories'),
-    link:g('sf-link'),
+    category:catVal,brand:brandVal,sku:skuVal,
+    modelName:modelNameVal,color:colorVal,note:noteVal,
+    size:sizeVal,realSize:realSizeVal,accessories:accVal,
+    link:linkVal,
     confidence:(analysisResult?analysisResult.confidence||0:0)+'%',
     imgCount:analysisResult?analysisResult.imgCount||0:0,
     analyzedAt:analysisResult?analysisResult.analyzedAt||'':new Date().toLocaleString('ko-KR'),
-    mainImgBase64:mainImg  // 본품+부속품 전체샷 base64 — Apps Script에서 Drive 저장 후 I열 URL 기록
+    mainImgBase64:mainImg
   };
+
+  // ── Step1: 시트에 저장 ──
+  let sheetOk=false;
   try{
     await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    showToast('📋 시트 저장 완료!');
-  }catch(e){showToast('❌ '+e.message);}
+    sheetOk=true;
+  }catch(e){showToast('❌ 시트 저장 실패: '+e.message);}
+
+  // ── Step2: 로컬 SKU DB에도 upsert (no-cors라 응답 불가하므로 직접 처리) ──
+  if(skuVal){
+    const existIdx=skuDB.findIndex(s=>s.sku===skuVal);
+    const imgArr=analysisResult&&analysisResult._accImg?[analysisResult._accImg]:[];
+    if(existIdx>=0){
+      // 기존 항목 업데이트 — 비어있는 필드만 채움
+      const ex=skuDB[existIdx];
+      if(!ex.brand&&brandVal) ex.brand=brandVal;
+      if(!ex.modelName&&modelNameVal) ex.modelName=modelNameVal;
+      if(!ex.category&&catVal) ex.category=catVal;
+      if(!ex.color&&colorVal) ex.color=colorVal;
+      if(!ex.size&&sizeVal) ex.size=sizeVal;
+      if(!ex.realSize&&realSizeVal) ex.realSize=realSizeVal;
+      if(!ex.accessories&&accVal) ex.accessories=accVal;
+      if(!ex.link&&linkVal) ex.link=linkVal;
+      if(!ex.note&&noteVal) ex.note=noteVal;
+      // 이미지 — 기존에 없으면 추가
+      if(imgArr.length&&(!ex.images||ex.images.length===0)) ex.images=imgArr;
+    } else {
+      // 신규 추가
+      skuDB.unshift({
+        id:'result_'+skuVal+'_'+Date.now(),
+        category:catVal,brand:brandVal,sku:skuVal,
+        modelName:modelNameVal,color:colorVal,
+        line:'',size:sizeVal,realSize:realSizeVal,
+        accessories:accVal,note:noteVal,link:linkVal,
+        images:imgArr
+      });
+    }
+    saveSkuDB();
+    showToast(sheetOk?'📋 시트 저장 + SKU DB 적재 완료!':'✅ SKU DB 적재 완료 (시트 재시도 필요)');
+  } else {
+    if(sheetOk) showToast('📋 시트 저장 완료! (SKU 없어 DB 적재 스킵)');
+  }
+
+  // SKU 관리 탭이 열려있으면 목록 갱신
+  if(document.getElementById('p-sku').classList.contains('show')) renderSkuList();
+
   btn.disabled=false;btn.classList.remove('ld');
+}
+
+// 시트 전송용 이미지 소형 압축 (Apps Script payload 크기 제한 대응)
+function compressForSheet(src){
+  return new Promise(resolve=>{
+    if(!src){resolve('');return;}
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=400;
+      let w=img.width,h=img.height;
+      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
+      else if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg',0.5));
+    };
+    img.onerror=()=>resolve('');
+    img.src=src;
+  });
 }
 
 // ════════════════════════════════════════
