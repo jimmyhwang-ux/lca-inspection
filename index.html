@@ -1136,13 +1136,6 @@ function onSfCat(){const cat=document.getElementById('sff-cat').value,sel=docume
 
 // ── 설정 ──
 function updateApiBanner(){}
-  banner.style.display='flex';
-  const msgEl=document.getElementById('api-banner-msg');
-  if(!msgEl)return;
-  if(!hasImgbb && !hasSerpApi) msgEl.textContent='⚠️ imgbb 키 + SerpApi 키 미설정 — Google Lens 사용 불가';
-  else if(!hasImgbb) msgEl.textContent='⚠️ imgbb 키 미설정 — 이미지 업로드 불가';
-  else msgEl.textContent='⚠️ SerpApi 키 미설정 — Google Lens 검색 불가';
-}
 function loadSettings(){
   const ik=localStorage.getItem(LS_IMGBB);if(ik){imgbbApiKey=ik;const iel=document.getElementById('imgbb-key-inp');if(iel)iel.value=ik;const ibtn=document.getElementById('imgbb-save-btn');if(ibtn){ibtn.textContent='✅ 저장됨';ibtn.classList.add('ok');}}
   const sk=localStorage.getItem(LS_SERPAPI);if(sk){serpApiKey=sk;document.getElementById('serpapi-key-inp').value=sk;document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');}
