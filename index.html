@@ -667,6 +667,7 @@ input[type=file]{display:none}
 //  설정 & 상수
 // ══════════════════════════════════════
 const CLAUDE_PROXY = 'https://lca-proxy.jimmy-hwang.workers.dev';
+const LENS_PROXY   = 'https://lca-proxy.jimmy-hwang.workers.dev/lens'; // /lens 엔드포인트
 const LS_IMGBB    = 'bungae_imgbb_key';
 const LS_KEY      = 'bungae_sku_v5';
 const LS_SHEET    = 'bungae_sheet_url_v2';
@@ -754,41 +755,34 @@ function hideDbCard(){document.getElementById('db-card').classList.remove('show'
 // ══════════════════════════════════════
 
 // STEP1: 이미지 → imgbb 업로드 → 공개 URL
-async function uploadToImgbb(base64Img) {
-  // base64에서 데이터 부분만 추출
-  const base64Data = base64Img.split(',')[1];
-  const formData = new FormData();
-  formData.append('image', base64Data);
-  const imgbbKeyVal = imgbbApiKey || localStorage.getItem(LS_IMGBB) || '';
-  if(!imgbbKeyVal) throw new Error('imgbb API 키 없음 — SKU 관리 → ⚙️ API 설정에서 입력해주세요');
-  formData.append('key', imgbbKeyVal);
+// ★ lca-proxy /lens 엔드포인트를 통해 호출
+// Workers에서: imgbb 업로드 → SerpApi Google Lens → 결과 반환
+// (브라우저에서 SerpApi 직접 호출 불가 → proxy 필수)
+async function callLensProxy(base64Img) {
+  const imgbbKeyVal  = imgbbApiKey  || localStorage.getItem(LS_IMGBB)   || '';
+  const serpKeyVal   = serpApiKey   || localStorage.getItem(LS_SERPAPI) || '';
+  if(!imgbbKeyVal)  throw new Error('imgbb API 키 없음 — SKU 관리 → API 설정에서 입력해주세요');
+  if(!serpKeyVal)   throw new Error('SerpApi 키 없음 — SKU 관리 → API 설정에서 입력해주세요');
 
-  const resp = await fetch('https://api.imgbb.com/1/upload', {
+  // base64 데이터 부분만 추출
+  const base64Data = base64Img.includes(',') ? base64Img.split(',')[1] : base64Img;
+
+  const resp = await fetch(LENS_PROXY, {
     method: 'POST',
-    body: formData
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      imageBase64: base64Data,
+      imgbbKey:    imgbbKeyVal,
+      serpApiKey:  serpKeyVal,
+    })
   });
-  if (!resp.ok) throw new Error('이미지 업로드 실패 (imgbb)');
-  const data = await resp.json();
-  if (!data.success) throw new Error('imgbb 업로드 실패: ' + (data.error?.message || ''));
-  return data.data.url; // 공개 URL
-}
-
-// STEP2: 공개 URL → SerpApi Google Lens API
-async function searchGoogleLens(imageUrl, apiKey) {
-  const params = new URLSearchParams({
-    engine: 'google_lens',
-    url: imageUrl,
-    api_key: apiKey,
-    hl: 'ko',
-    gl: 'kr',
-    type: 'all' // visual_matches + related_content
-  });
-  const resp = await fetch(`https://serpapi.com/search.json?${params}`);
   if (!resp.ok) {
     const err = await resp.json().catch(()=>({}));
-    throw new Error('SerpApi 오류: ' + (err.error || resp.status));
+    throw new Error('Lens proxy 오류: ' + (err.error || resp.status));
   }
-  return await resp.json();
+  const data = await resp.json();
+  if (!data.ok) throw new Error('Lens 검색 실패: ' + (data.error || '알 수 없는 오류'));
+  return data; // { imageUrl, visual_matches, knowledge_graph, related_content, lens_url }
 }
 
 // STEP3: Claude가 Lens 결과를 해석하여 브랜드/모델 추출
@@ -905,13 +899,12 @@ async function startAnalysis() {
   let parsed, lensData, imgUrl;
 
   try {
-    // STEP1: imgbb 업로드
+    // STEP1+2: lca-proxy /lens → imgbb 업로드 + Google Lens 검색 (서버에서 처리)
     await tick(100); setLStep(0);
-    imgUrl = await uploadToImgbb(imgs[0]);
-
-    // STEP2: Google Lens 검색
     await tick(200); setLStep(1);
-    lensData = await searchGoogleLens(imgUrl, apiKey);
+    const lensResult = await callLensProxy(imgs[0]);
+    imgUrl   = lensResult.imageUrl;
+    lensData = lensResult; // visual_matches, knowledge_graph, related_content 포함
 
     // STEP3: DB 조회
     await tick(100); setLStep(2);
@@ -952,8 +945,8 @@ async function startAnalysis() {
     parsed._accImg    = imgs[0];
     parsed._dbAccItems= dbAccItems;
     parsed._lensData  = lensData;
-    parsed._imgUrl    = imgUrl;
-    parsed._lensUrl   = lensData.search_metadata?.google_lens_url ||
+    parsed._imgUrl    = lensResult.imageUrl || imgUrl;
+    parsed._lensUrl   = lensResult.lens_url ||
                         `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imgUrl)}`;
     parsed._bjUrl     = `https://www.bunjang.co.kr/search/products?q=${encodeURIComponent((parsed.brand||'')+(parsed.name?' '+parsed.name:''))}`;
 
