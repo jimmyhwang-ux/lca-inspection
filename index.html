@@ -650,6 +650,7 @@ input[type=file]{display:none}
 //  설정 & 상수
 // ══════════════════════════════════════
 const CLAUDE_PROXY = 'https://lca-proxy.jimmy-hwang.workers.dev';
+const LENS_PROXY   = 'https://lca-proxy.jimmy-hwang.workers.dev/lens';
 const LS_KEY      = 'bungae_sku_v5';
 const LS_SHEET    = 'bungae_sheet_url_v2';
 const SLOT_LABELS = ['라벨/택1','라벨/택2','라벨/택3','로고','원산지'];
@@ -736,7 +737,7 @@ function hideDbCard(){document.getElementById('db-card').classList.remove('show'
 
 // STEP1: 이미지 → imgbb 업로드 → 공개 URL
 // Claude Vision OCR 분석 (Workers 불필요 — lca-proxy 직접 사용)
-async function analyzeWithClaude(allImgs, brand, cat, inputSku, sellerTxt, dbAccItems, dbSmInfo) {
+async function analyzeWithClaude(allImgs, brand, cat, inputSku, sellerTxt, dbAccItems, dbSmInfo, lensResult=null) {
   const dbInfo = dbSmInfo
     ? `[내부 DB]\n모델명: ${dbSmInfo.modelName}\nSKU: ${dbSmInfo.sku||'없음'}\n부속품: ${dbSmInfo.accessories||'없음'}\n특이사항: ${dbSmInfo.note||'없음'}`
     : '[내부 DB] 미등록';
@@ -745,17 +746,31 @@ async function analyzeWithClaude(allImgs, brand, cat, inputSku, sellerTxt, dbAcc
       + dbAccItems.map((it,i)=>`${i+1}. ${it}`).join('\n')
       + `\n판매자 본문: "${sellerTxt||'없음'}"\n분실/없음 언급 → status:"없음"`
     : '[부속품] DB 없음 → accessories 빈 배열';
-  const SYSTEM = `명품 검수 전문가. 이미지 분석 우선순위:
-1순위: 라벨/택 사진 텍스트를 OCR로 읽어 스타일번호·모델번호·브랜드명 추출
-2순위: 로고·하드웨어로 브랜드 확인
-3순위: 전체 디자인으로 제품 계열 추정
-절대금지: 사진에서 확인 안 되는 정보 추측
+
+  // Google Lens 결과 요약 (있을 때만)
+  let lensContext = '';
+  if(lensResult){
+    const kg = lensResult.knowledge_graph;
+    const vm = (lensResult.visual_matches||[]).slice(0,5).map(m=>`  - ${m.title} (${m.source})`).join('\n');
+    const pr = (lensResult.products||[]).slice(0,3).map(p=>`  - ${p.title} $${p.price||'?'}`).join('\n');
+    lensContext = `\n[Google Lens 실제 검색 결과 — 최우선 참고]
+${kg ? `★ Knowledge Graph: ${kg.title||''} / ${kg.description||''}` : ''}
+Visual Matches:\n${vm||'없음'}
+Products:\n${pr||'없음'}
+→ 위 결과를 최우선으로 브랜드/모델명/SKU를 추출하세요.`;
+  }
+
+  const SYSTEM = `명품 검수 전문가. 분석 우선순위:
+1순위: Google Lens 검색 결과 (제공된 경우) — 실제 구글 검색 결과이므로 가장 신뢰
+2순위: 라벨/택 사진 텍스트 OCR → 스타일번호 직접 읽기
+3순위: 로고·하드웨어로 브랜드 확인
+절대금지: 근거 없는 추측
 JSON만 출력(마크다운 없이)`;
+
   const userPrompt = `입력: 브랜드="${brand||'미입력'}" | 카테고리="${cat||'미입력'}" | SKU="${inputSku||'없음'}"
-${dbInfo}
+${dbInfo}${lensContext}
 ${accPrompt}
-[핵심] 라벨/택 사진이 있으면 스타일번호 텍스트를 글자 그대로 읽어주세요.
-{"brand":"(한국어)","brandEn":"","name":"","modelNo":"(OCR 스타일번호)","color":"","realSize":"","confidence":0~100,"accessories":[{"name":"","status":"있음/없음/불확실","reason":"","fromSellerText":false}],"lensQuery":"영문 브랜드+모델명"}`;
+{"brand":"(한국어)","brandEn":"","name":"","modelNo":"(SKU/스타일번호)","color":"","realSize":"","confidence":0~100,"accessories":[{"name":"","status":"있음/없음/불확실","reason":"","fromSellerText":false}],"lensQuery":"영문 브랜드+모델명"}`;
   const content = [];
   allImgs.slice(0,5).forEach(img=>{
     try{content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});}catch(e){}
@@ -782,24 +797,45 @@ async function startAnalysis() {
   const sellerTxt = document.getElementById('sellerTxt').value.trim();
   const validImgs = imgs.filter(Boolean);
 
-  let parsed;
+  const imgbbKeyVal  = imgbbApiKey  || localStorage.getItem(LS_IMGBB)   || '';
+  const serpKeyVal   = serpApiKey   || localStorage.getItem(LS_SERPAPI) || '';
+  const useLens      = !!(imgbbKeyVal && serpKeyVal); // 두 키 모두 있으면 Lens 사용
+
+  let parsed, lensResult = null;
   try {
+    // STEP0: 이미지 준비
     await tick(100); setLStep(0);
 
-    // DB 조회 (SKU 입력값 기준)
+    // STEP1: DB 조회
     await tick(200); setLStep(1);
     let sm = lookupSKU(inputSku);
-    if(!sm && inputSku) { const h=lookupName(inputSku); if(h&&!Array.isArray(h)) sm=h; }
+    if(!sm && inputSku){ const h=lookupName(inputSku); if(h&&!Array.isArray(h)) sm=h; }
     const dbAccRaw   = sm?.accessories?.trim() || '';
     const dbAccItems = dbAccRaw && dbAccRaw !== '없음'
       ? dbAccRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
 
-    // Claude Vision OCR + 제품 식별
+    // STEP2: Google Lens 시각검색 (키 있을 때만)
     await tick(100); setLStep(2);
-    await tick(100); setLStep(3);
-    parsed = await analyzeWithClaude(validImgs, brand, cat, inputSku, sellerTxt, dbAccItems, sm);
+    if(useLens){
+      try {
+        const base64Data = imgs[0].includes(',') ? imgs[0].split(',')[1] : imgs[0];
+        const lensResp = await fetch(LENS_PROXY, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ imageBase64: base64Data, imgbbKey: imgbbKeyVal, serpApiKey: serpKeyVal })
+        });
+        if(lensResp.ok){
+          const d = await lensResp.json();
+          if(d.ok) lensResult = d;
+        }
+      } catch(e){ /* Lens 실패 시 Claude Vision으로 폴백 */ }
+    }
 
-    // 부속품 DB I열 필터링
+    // STEP3: Claude 분석 (Lens 결과 + 이미지 함께 전달)
+    await tick(100); setLStep(3);
+    parsed = await analyzeWithClaude(validImgs, brand, cat, inputSku, sellerTxt, dbAccItems, sm, lensResult);
+
+    // STEP4: 부속품 DB I열 필터링
     await tick(100); setLStep(4);
     if(dbAccItems.length > 0){
       const norm = s => s.toLowerCase().replace(/[\s\/\(\)]/g,'');
@@ -814,12 +850,12 @@ async function startAnalysis() {
       parsed.accessories = [];
     }
 
-    // DB에 모델명이 있고 inputSku 없으면 Claude 결과로 재검색
-    if(!sm && parsed.modelNo) {
+    if(!sm && parsed.modelNo){
       const found = lookupSKU(parsed.modelNo);
-      if(found) { sm = found; }
+      if(found) sm = found;
     }
 
+    const lensQ = parsed.lensQuery || ((parsed.brandEn||parsed.brand||'') + ' ' + (parsed.name||''));
     parsed.brand      = toKo(parsed.brand) || parsed.brand;
     parsed.careNo     = careNo;
     parsed.analyzedAt = new Date().toLocaleString('ko-KR');
@@ -827,9 +863,8 @@ async function startAnalysis() {
     parsed._sm        = sm;
     parsed._accImg    = imgs[0];
     parsed._dbAccItems= dbAccItems;
-    parsed._lensData  = null; // Lens 직접 결과 없음
-    const lensQ = parsed.lensQuery || ((parsed.brandEn||parsed.brand||'') + ' ' + (parsed.name||''));
-    parsed._lensUrl   = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(lensQ)}`;
+    parsed._lensData  = lensResult;
+    parsed._lensUrl   = lensResult?.lens_url || `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(lensQ)}`;
     parsed._bjUrl     = `https://www.bunjang.co.kr/search/products?q=${encodeURIComponent((parsed.brand||'')+(parsed.name?' '+parsed.name:''))}`;
 
   } catch(err) {
