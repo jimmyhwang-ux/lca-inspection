@@ -1,7 +1,11 @@
 {
-  "functions": {
-    "api/inspect.js": {
-      "maxDuration": 30
-    }
-  }
+  "version": 2,
+  "builds": [
+    { "src": "api/inspect.js", "use": "@vercel/node" },
+    { "src": "index.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/inspect", "dest": "/api/inspect.js" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
