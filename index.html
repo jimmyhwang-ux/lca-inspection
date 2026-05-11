@@ -369,7 +369,7 @@ input[type=file]{display:none}
 
     <!-- SerpApi 키 미설정 배너 -->
     <div id="api-missing-banner" style="margin:0 20px;padding:10px 13px;background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.25);border-radius:var(--r3);font-size:11px;color:var(--err);display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <span>⚠️ SerpApi 키 미설정 — Google Lens 사용 불가</span>
+      <span id="api-banner-msg">⚠️ imgbb 키 + SerpApi 키 미설정 — Google Lens 사용 불가</span>
       <button onclick="switchTab('sku');setTimeout(()=>{document.getElementById('settings-panel').classList.add('show');document.getElementById('api-btn').style.background='rgba(245,166,35,.15)';},400)" style="padding:4px 10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.3);border-radius:6px;font-size:10px;font-weight:700;color:var(--err);cursor:pointer;font-family:inherit;white-space:nowrap">설정하기 →</button>
     </div>
     <div class="analyze-wrap">
@@ -656,7 +656,7 @@ input[type=file]{display:none}
 //  설정 & 상수
 // ══════════════════════════════════════
 const CLAUDE_PROXY = 'https://lca-proxy.jimmy-hwang.workers.dev';
-const IMGBB_KEY   = '2e46a85e2e87f6e7e82a3a1e58d0b5f1'; // imgbb 무료 공개키 (교체 가능)
+const LS_IMGBB    = 'bungae_imgbb_key';
 const LS_KEY      = 'bungae_sku_v5';
 const LS_SHEET    = 'bungae_sheet_url_v2';
 const LS_SERPAPI  = 'bungae_serpapi_key';
@@ -676,7 +676,7 @@ const BKO = {'louis vuitton':'루이비통','lv':'루이비통','hermes':'에르
 const toKo = s => s ? (BKO[s.toLowerCase().trim()] || s) : s;
 
 let imgs = Array(6).fill(null);
-let careNo = '', sheetUrl = '', serpApiKey = '';
+let careNo = '', sheetUrl = '', serpApiKey = '', imgbbApiKey = '';
 let analysisResult = null, editedAccs = [], editFieldKey = '';
 let skuImgs = Array(6).fill(null), editingSkuId = null;
 let skuDB = loadSkuDB(), skuFilter = 'all';
@@ -748,7 +748,9 @@ async function uploadToImgbb(base64Img) {
   const base64Data = base64Img.split(',')[1];
   const formData = new FormData();
   formData.append('image', base64Data);
-  formData.append('key', IMGBB_KEY);
+  const imgbbKeyVal = imgbbApiKey || localStorage.getItem(LS_IMGBB) || '';
+  if(!imgbbKeyVal) throw new Error('imgbb API 키 없음 — SKU 관리 → ⚙️ API 설정에서 입력해주세요');
+  formData.append('key', imgbbKeyVal);
 
   const resp = await fetch('https://api.imgbb.com/1/upload', {
     method: 'POST',
@@ -865,10 +867,16 @@ async function startAnalysis() {
   if(!imgs[0]){showToast('전체샷을 먼저 업로드해 주세요');return;}
 
   const apiKey = serpApiKey || localStorage.getItem(LS_SERPAPI) || '';
-  if(!apiKey){
-    showToast('⚙️ SerpApi 키를 먼저 설정해 주세요');
+  const imgbbKey = imgbbApiKey || localStorage.getItem(LS_IMGBB) || '';
+  if(!apiKey || !imgbbKey){
+    const missing = !imgbbKey && !apiKey ? 'imgbb 키 + SerpApi 키' : !imgbbKey ? 'imgbb 키' : 'SerpApi 키';
+    showToast('⚙️ '+missing+'를 먼저 설정해 주세요');
     switchTab('sku');
-    setTimeout(()=>document.getElementById('settings-panel').classList.add('show'),300);
+    setTimeout(()=>{
+      document.getElementById('settings-panel').classList.add('show');
+      const btn2=document.getElementById('api-btn');
+      if(btn2){btn2.style.background='rgba(245,166,35,.15)';btn2.style.borderColor='rgba(245,166,35,.4)';btn2.style.color='var(--acc)';}
+    },400);
     return;
   }
 
@@ -1225,15 +1233,24 @@ function onSfCat(){const cat=document.getElementById('sff-cat').value,sel=docume
 function updateApiBanner(){
   const banner=document.getElementById('api-missing-banner');
   if(!banner)return;
-  const hasKey=!!(serpApiKey||localStorage.getItem(LS_SERPAPI));
-  banner.style.display=hasKey?'none':'flex';
+  const hasSerpApi=!!(serpApiKey||localStorage.getItem(LS_SERPAPI));
+  const hasImgbb=!!(imgbbApiKey||localStorage.getItem(LS_IMGBB));
+  if(hasSerpApi && hasImgbb){banner.style.display='none';return;}
+  banner.style.display='flex';
+  const msgEl=document.getElementById('api-banner-msg');
+  if(!msgEl)return;
+  if(!hasImgbb && !hasSerpApi) msgEl.textContent='⚠️ imgbb 키 + SerpApi 키 미설정 — Google Lens 사용 불가';
+  else if(!hasImgbb) msgEl.textContent='⚠️ imgbb 키 미설정 — 이미지 업로드 불가';
+  else msgEl.textContent='⚠️ SerpApi 키 미설정 — Google Lens 검색 불가';
 }
 function loadSettings(){
+  const ik=localStorage.getItem(LS_IMGBB);if(ik){imgbbApiKey=ik;const iel=document.getElementById('imgbb-key-inp');if(iel)iel.value=ik;const ibtn=document.getElementById('imgbb-save-btn');if(ibtn){ibtn.textContent='✅ 저장됨';ibtn.classList.add('ok');}}
   const sk=localStorage.getItem(LS_SERPAPI);if(sk){serpApiKey=sk;document.getElementById('serpapi-key-inp').value=sk;document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');}
   const su=localStorage.getItem(LS_SHEET);if(su){sheetUrl=su;document.getElementById('sheet-url-inp').value=su;document.getElementById('sheet-conn-btn').textContent='✅ 연결됨';document.getElementById('sheet-conn-btn').classList.add('ok');}
   setSyncState(sk&&su?'ok':'idle', sk&&su?'설정 완료':'API 키 설정 필요');
   updateApiBanner();
 }
+function saveImgbbKey(){const k=document.getElementById('imgbb-key-inp').value.trim();if(!k)return;imgbbApiKey=k;localStorage.setItem(LS_IMGBB,k);const btn=document.getElementById('imgbb-save-btn');if(btn){btn.textContent='✅ 저장됨';btn.classList.add('ok');}showToast('✅ imgbb 키 저장됨');updateApiBanner();}
 function saveSerpApiKey(){const k=document.getElementById('serpapi-key-inp').value.trim();if(!k)return;serpApiKey=k;localStorage.setItem(LS_SERPAPI,k);document.getElementById('serpapi-save-btn').textContent='✅ 저장됨';document.getElementById('serpapi-save-btn').classList.add('ok');showToast('✅ SerpApi 키 저장됨');setSyncState('ok','SerpApi 연결됨');updateApiBanner();}
 async function testSheetUrl(){const url=document.getElementById('sheet-url-inp').value.trim();if(!url)return;const btn=document.getElementById('sheet-conn-btn');btn.textContent='확인 중…';try{await fetch(url,{method:'GET',mode:'no-cors'});sheetUrl=url;localStorage.setItem(LS_SHEET,url);btn.textContent='✅ 연결됨';btn.classList.add('ok');showToast('✅ 시트 연결됨');}catch(e){btn.textContent='❌ 실패';}}
 function toggleSettings(){
