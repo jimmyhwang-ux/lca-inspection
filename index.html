@@ -10,16 +10,12 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:15px;min-height:100vh;padding-bottom:100px}
-
-/* Header */
 .header{text-align:center;padding:28px 20px 20px}
 .header h1{font-size:22px;font-weight:800;margin-bottom:6px}
 .header p{font-size:13px;color:#666;line-height:1.5}
-
-/* Photo slots */
 .photo-wrap{padding:0 16px;margin-bottom:8px}
 .slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:16px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:10px}
-.slot-big:hover,.slot-big:active{border-color:#ff6b2b}
+.slot-big:hover{border-color:#ff6b2b}
 .slot-big.filled{border-style:solid;border-color:#333}
 .slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:8px;padding:32px 20px;width:100%}
 .slot-big.filled .slot-inner{display:none}
@@ -37,17 +33,12 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .slot-sub{font-size:10px;color:#444;text-align:center}
 .rm-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;background:rgba(0,0,0,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;z-index:2;color:#fff;border:none}
 input[type=file]{display:none}
-
 .hint{font-size:12px;color:#444;padding:8px 20px 16px;line-height:1.6}
-
-/* CTA */
 .cta-wrap{padding:0 16px;margin-bottom:24px}
 .btn-main{width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s}
 .btn-main:hover{background:#ff8c55}
 .btn-main:active{transform:scale(.98)}
 .btn-main:disabled{background:#1a1a1a;color:#444;cursor:not-allowed;transform:none}
-
-/* Loading */
 #screen-loading{padding:0 20px}
 .loading-center{display:flex;flex-direction:column;align-items:center;padding:52px 0 40px;gap:14px}
 .spinner{width:44px;height:44px;border:3px solid #222;border-top-color:#ff6b2b;border-radius:50%;animation:spin 1s linear infinite}
@@ -63,11 +54,7 @@ input[type=file]{display:none}
 .step-desc{font-size:11px;color:#444;margin-top:1px}
 .step-st{font-size:15px;margin-left:auto}
 .sp{display:inline-block;animation:spin 1s linear infinite}
-
-/* Result */
 #screen-result{padding:0}
-
-/* 상단 결과 카드 - clothing-flax 스타일 */
 .result-card{background:#111;border-radius:20px;margin:16px;padding:16px;display:flex;gap:14px;align-items:flex-start}
 .result-thumb{width:80px;height:80px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#1a1a1a}
 .result-thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -77,27 +64,18 @@ input[type=file]{display:none}
 .conf-badge.warn{background:#3a2a00;color:#f59e0b}
 .conf-badge.fail{background:#3a0000;color:#ef4444}
 .result-brand{font-size:12px;color:#ff6b2b;font-weight:600;margin-bottom:3px}
-.result-model{font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1.3}
-.result-name-ko{font-size:12px;color:#555;margin-bottom:8px}
+.result-model{font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1.3;cursor:pointer}
+.result-model:hover{color:#ff6b2b}
+.result-reason{font-size:12px;color:#555;margin-bottom:8px}
 .result-cats{display:flex;gap:6px;flex-wrap:wrap}
 .cat-tag{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;padding:3px 10px;font-size:11px;color:#888}
-
-/* 사이즈/스타일번호 행 */
 .info-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1a1a1a;margin:0 16px 4px;border-radius:12px;overflow:hidden}
 .info-cell{background:#111;padding:14px 16px}
 .info-cell-label{font-size:11px;color:#444;margin-bottom:4px}
 .info-cell-val{font-size:15px;font-weight:700;color:#fff;cursor:pointer}
 .info-cell-val.muted{color:#333;font-weight:400}
 .info-cell-val:hover{color:#ff6b2b}
-
-/* 가격 */
-.price-section{padding:20px 16px 16px;border-top:1px solid #111}
-.price-label{font-size:12px;color:#555;margin-bottom:4px;display:flex;align-items:center;gap:5px}
-.price-val{font-size:28px;font-weight:800;color:#fff;margin-bottom:2px}
-.price-sub{font-size:12px;color:#444}
-
-/* Lens 유사상품 */
-.section-hd{padding:20px 16px 10px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.section-hd{padding:20px 16px 10px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase}
 .lens-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
 .lens-scroll::-webkit-scrollbar{display:none}
 .lens-card{flex-shrink:0;width:130px;background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
@@ -109,39 +87,31 @@ input[type=file]{display:none}
 .lens-src{font-size:10px;color:#444;margin-top:2px}
 
 /* 부속품 */
-.accessories-wrap{margin:0 16px;background:#111;border-radius:14px;overflow:hidden}
-.acc-item{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #1a1a1a}
+.acc-wrap{margin:0 16px;background:#111;border-radius:14px;overflow:hidden}
+.acc-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
 .acc-item:last-child{border-bottom:none}
-.acc-name{font-size:14px;font-weight:600;color:#f0f0f0}
-.acc-status{display:flex;gap:6px}
-.acc-btn{padding:5px 12px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #2a2a2a;background:#1a1a1a;color:#666;transition:all .15s}
-.acc-btn.active-y{background:#1a3a1a;border-color:rgba(34,197,94,.4);color:#22c55e}
-.acc-btn.active-n{background:#3a0000;border-color:rgba(239,68,68,.4);color:#ef4444}
-.acc-btn.active-u{background:#2a2a00;border-color:rgba(245,158,11,.4);color:#f59e0b}
-.acc-add-row{padding:12px 16px;display:flex;gap:8px}
-.acc-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:9px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
+.acc-name{font-size:13px;font-weight:600;color:#f0f0f0;flex:1;min-width:0}
+.acc-select{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:6px 10px;font-size:12px;color:#f0f0f0;outline:none;cursor:pointer;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
+.acc-select.status-y{border-color:rgba(34,197,94,.4);color:#22c55e;background-color:#0a2a0a}
+.acc-select.status-n{border-color:rgba(239,68,68,.4);color:#ef4444;background-color:#2a0a0a}
+.acc-select.status-u{border-color:rgba(245,158,11,.4);color:#f59e0b;background-color:#2a1a00}
+.acc-del{background:none;border:none;color:#333;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
+.acc-del:hover{color:#ef4444}
+.acc-add-row{padding:10px 14px;display:flex;gap:8px;border-top:1px solid #1a1a1a}
+.acc-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
 .acc-input:focus{border-color:#ff6b2b}
-.acc-add-btn{background:#ff6b2b;color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.acc-add-btn{background:#ff6b2b;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 
-/* Bottom bar */
 .bottom-bar{position:sticky;bottom:0;background:linear-gradient(to top,#000 60%,transparent);padding:16px 16px 24px}
 .btn-row{display:flex;gap:8px}
 .btn-sec{flex:1;background:#111;color:#888;border:1px solid #1e1e1e;border-radius:12px;padding:14px;font-size:13px;font-weight:600;cursor:pointer}
 .btn-copy{flex:2;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:13px;font-weight:800;cursor:pointer}
 .btn-copy:hover{background:#ff8c55}
-
-/* Edit */
 .editing-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;padding:2px 0;font-size:15px;font-weight:700;color:#fff;outline:none;font-family:inherit}
-
-/* Toast */
 .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#1a1a1a;border:1px solid #333;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#f0f0f0;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
 .screen{display:none}
 .screen.active{display:block}
-
-/* divider */
-.divider{height:1px;background:#111;margin:0 16px}
 </style>
 </head>
 <body>
@@ -152,7 +122,6 @@ input[type=file]{display:none}
     <h1>번개케어 검수</h1>
     <p>사진으로 브랜드 · 모델명 · 카테고리 · 가격 자동 인식</p>
   </div>
-
   <div class="photo-wrap">
     <div class="slot-big" id="slot-main" onclick="triggerFile('file-main')">
       <img class="preview" id="prev-main" src="" alt="" style="display:none">
@@ -164,7 +133,6 @@ input[type=file]{display:none}
       <button class="rm-btn" id="rm-main" style="display:none" onclick="removePhoto(event,'main')">✕</button>
     </div>
     <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
-
     <div class="slot-grid">
       <div class="slot-sm" id="slot-label1" onclick="triggerFile('file-label1')">
         <img class="preview" id="prev-label1" src="" alt="" style="display:none">
@@ -172,35 +140,30 @@ input[type=file]{display:none}
         <button class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1')">✕</button>
       </div>
       <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
-
       <div class="slot-sm" id="slot-label2" onclick="triggerFile('file-label2')">
         <img class="preview" id="prev-label2" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
         <button class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2')">✕</button>
       </div>
       <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
-
       <div class="slot-sm" id="slot-label3" onclick="triggerFile('file-label3')">
         <img class="preview" id="prev-label3" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
         <button class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3')">✕</button>
       </div>
       <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
-
       <div class="slot-sm" id="slot-logo" onclick="triggerFile('file-logo')">
         <img class="preview" id="prev-logo" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
         <button class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo')">✕</button>
       </div>
       <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
-
       <div class="slot-sm" id="slot-origin" onclick="triggerFile('file-origin')">
         <img class="preview" id="prev-origin" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
         <button class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin')">✕</button>
       </div>
       <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
-
       <div class="slot-sm" id="slot-back" onclick="triggerFile('file-back')">
         <img class="preview" id="prev-back" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
@@ -209,9 +172,7 @@ input[type=file]{display:none}
       <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
     </div>
   </div>
-
   <div class="hint">💡 라벨·로고·원산지 추가사진은 AI 신뢰도를 높입니다</div>
-
   <div class="cta-wrap">
     <button class="btn-main" id="btn-start" onclick="startInspection()" disabled>분석 시작</button>
   </div>
@@ -234,8 +195,6 @@ input[type=file]{display:none}
 
 <!-- STEP 3 -->
 <div id="screen-result" class="screen">
-
-  <!-- 결과 카드 -->
   <div class="result-card">
     <div class="result-thumb">
       <div id="res-thumb"><div class="result-thumb-ph">📦</div></div>
@@ -244,12 +203,11 @@ input[type=file]{display:none}
       <div class="conf-badge" id="conf-badge">신뢰도 —%</div>
       <div class="result-brand" id="r-brand">—</div>
       <div class="result-model" id="r-model" onclick="editField('r-model')">—</div>
-      <div class="result-name-ko" id="r-verdict-reason">—</div>
+      <div class="result-reason" id="r-reason">—</div>
       <div class="result-cats" id="r-cats"></div>
     </div>
   </div>
 
-  <!-- 사이즈 / 스타일번호 -->
   <div class="info-row-grid">
     <div class="info-cell">
       <div class="info-cell-label">사이즈</div>
@@ -261,26 +219,55 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- 가격 -->
-  <div class="price-section" style="padding:16px 16px 12px;margin:0 0 4px">
-    <div class="price-label">💰 참고 가격</div>
-    <div class="price-val" id="r-price">—</div>
+  <!-- 부속품 (참고가격 위치) -->
+  <div class="section-hd">🔧 부속품 검수</div>
+  <div class="acc-wrap">
+    <div id="acc-list"></div>
+    <div class="acc-add-row">
+      <select class="acc-input" id="acc-select">
+        <option value="">-- 부속품 선택 --</option>
+        <option>없음</option>
+        <option>열쇠 1개</option>
+        <option>열쇠 2개</option>
+        <option>자물쇠</option>
+        <option>자물쇠 커버 (키벨)</option>
+        <option>네임택</option>
+        <option>면장 스트랩</option>
+        <option>잠을 스트랩</option>
+        <option>레더 스트랩</option>
+        <option>체인 스트랩</option>
+        <option>패브릭 스트랩</option>
+        <option>스트랩패드</option>
+        <option>이너파우치</option>
+        <option>참장식</option>
+        <option>핸들 홀더 (손잡이 고정)</option>
+        <option>거울</option>
+        <option>키드지갑</option>
+        <option>미니파우치</option>
+        <option>속지갑 1개</option>
+        <option>속지갑 2개</option>
+        <option>훅 클로저</option>
+        <option>밑판</option>
+        <option>발착형 키링</option>
+        <option>리본</option>
+        <option>더스트백</option>
+        <option>보증서</option>
+        <option>박스</option>
+        <option>케어택</option>
+        <option>브랜드택</option>
+        <option>여분단추</option>
+        <option>여분링크</option>
+        <option>크라운</option>
+        <option>여분끈</option>
+      </select>
+      <button class="acc-add-btn" onclick="addAccessory()">추가</button>
+    </div>
   </div>
 
-  <!-- Google Lens 유사상품 -->
+  <!-- Google Lens -->
   <div class="section-hd">🔍 Google Lens 유사 상품</div>
   <div class="lens-scroll" id="lens-results">
     <div style="font-size:12px;color:#444;padding:8px">검색 결과 없음</div>
-  </div>
-
-  <!-- 부속품 -->
-  <div class="section-hd">🔧 부속품 검수</div>
-  <div class="accessories-wrap" id="acc-list"></div>
-  <div style="margin:0 16px 4px;background:#111;border-radius:0 0 14px 14px;overflow:hidden" id="acc-add-wrap">
-    <div class="acc-add-row">
-      <input class="acc-input" id="acc-input" type="text" placeholder="부속품 추가...">
-      <button class="acc-add-btn" onclick="addAccessory()">추가</button>
-    </div>
   </div>
 
   <div style="height:16px"></div>
@@ -297,8 +284,7 @@ input[type=file]{display:none}
 
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
-let resultData={}, uploadedUrl='';
-let accessories=[];
+let resultData={}, accessories=[];
 
 function triggerFile(id){document.getElementById(id).click()}
 function loadPhoto(input,key){
@@ -309,8 +295,7 @@ function loadPhoto(input,key){
     const prev=document.getElementById('prev-'+key);
     prev.src=e.target.result;prev.style.display='block';
     document.getElementById('slot-'+key).classList.add('filled');
-    const rm=document.getElementById('rm-'+key);
-    if(rm)rm.style.display='flex';
+    const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
     updateBtn();
   };
   reader.readAsDataURL(input.files[0]);
@@ -356,7 +341,6 @@ async function startInspection(){
     setStep(1,'done');setStep(2,'active');
     await delay(300);setStep(2,'done');setStep(3,'active');
     const data=await res.json();
-    uploadedUrl=data.imageUrl;
     setStep(3,'done');setStep(4,'active');
     await delay(400);setStep(4,'done');
     resultData=data;
@@ -371,40 +355,33 @@ function renderResult(){
   const{analysis,visualMatches=[]}=resultData;
   const conf=analysis.confidence||0;
 
-  // 신뢰도 배지
   const badge=document.getElementById('conf-badge');
   badge.textContent='신뢰도 '+conf+'%';
-  if(analysis.verdict==='pass') badge.className='conf-badge';
-  else if(analysis.verdict==='review') badge.className='conf-badge warn';
-  else badge.className='conf-badge fail';
+  badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
 
-  // 썸네일
   if(photos.main){
     document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block">`;
   }
-
-  // 브랜드/모델
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model').textContent=analysis.model_name||'—';
-  document.getElementById('r-verdict-reason').textContent=analysis.verdict_reason||'';
+  document.getElementById('r-reason').textContent=analysis.verdict_reason||'';
 
-  // 카테고리 태그
   const cats=[];
-  if(analysis.category) cats.push(analysis.category);
-  if(analysis.color) cats.push(analysis.color);
-  if(analysis.origin) cats.push(analysis.origin);
+  if(analysis.category)cats.push(analysis.category);
+  if(analysis.color)cats.push(analysis.color);
+  if(analysis.origin)cats.push(analysis.origin);
   document.getElementById('r-cats').innerHTML=cats.map(c=>`<div class="cat-tag">${c}</div>`).join('');
 
-  // 사이즈/SKU
   const sizeEl=document.getElementById('r-size');
-  const skuEl=document.getElementById('r-sku');
   sizeEl.textContent=analysis.size||'—';
   sizeEl.className='info-cell-val'+(analysis.size?'':' muted');
+  const skuEl=document.getElementById('r-sku');
   skuEl.textContent=analysis.sku||'—';
   skuEl.className='info-cell-val'+(analysis.sku?'':' muted');
 
-  // 가격
-  document.getElementById('r-price').textContent=analysis.price_range||'—';
+  // 부속품 기본값
+  accessories=getDefaultAcc(analysis.category).map(n=>({name:n,status:''}));
+  renderAcc();
 
   // Lens
   const lensEl=document.getElementById('lens-results');
@@ -420,50 +397,45 @@ function renderResult(){
         </div></div>`;
     }).join('');
   }
-
-  // 부속품 기본값
-  const defaultAcc = getDefaultAccessories(analysis.category);
-  accessories = defaultAcc.map(name=>({name, status:'?'}));
-  renderAccessories();
-
   showScreen('result');
 }
 
-function getDefaultAccessories(category){
-  const cat=(category||'').toLowerCase();
-  if(cat.includes('가방')||cat.includes('bag')){
-    return['더스트백','보증서','열쇠/자물쇠','스트랩','박스'];
-  } else if(cat.includes('시계')||cat.includes('watch')){
+function getDefaultAcc(cat){
+  const c=(cat||'').toLowerCase();
+  if(c.includes('가방')||c.includes('지갑')||c.includes('bag'))
+    return['더스트백','보증서','열쇠 1개','자물쇠','스트랩'];
+  if(c.includes('시계')||c.includes('watch'))
     return['보증서','박스','여분링크','크라운'];
-  } else if(cat.includes('의류')||cat.includes('clothes')){
+  if(c.includes('의류')||c.includes('cloth'))
     return['케어택','브랜드택','여분단추'];
-  } else if(cat.includes('신발')||cat.includes('shoes')){
+  if(c.includes('신발')||c.includes('shoe'))
     return['박스','여분끈','보증서'];
-  }
-  return['박스','보증서'];
+  return['더스트백','보증서','박스'];
 }
 
-function renderAccessories(){
-  const list=document.getElementById('acc-list');
-  if(!accessories.length){list.innerHTML='';return;}
-  list.innerHTML=accessories.map((a,i)=>`
+function renderAcc(){
+  document.getElementById('acc-list').innerHTML=accessories.map((a,i)=>`
     <div class="acc-item">
       <div class="acc-name">${a.name}</div>
-      <div class="acc-status">
-        <button class="acc-btn ${a.status==='Y'?'active-y':''}" onclick="setAcc(${i},'Y')">있음</button>
-        <button class="acc-btn ${a.status==='N'?'active-n':''}" onclick="setAcc(${i},'N')">없음</button>
-        <button class="acc-btn ${a.status==='?'?'active-u':''}" onclick="setAcc(${i},'?')">불확실</button>
-      </div>
+      <select class="acc-select ${a.status==='Y'?'status-y':a.status==='N'?'status-n':a.status==='?'?'status-u':''}"
+        onchange="setAcc(${i},this.value);this.className='acc-select '+(this.value==='Y'?'status-y':this.value==='N'?'status-n':this.value==='?'?'status-u':'')">
+        <option value="" ${!a.status?'selected':''}>선택</option>
+        <option value="Y" ${a.status==='Y'?'selected':''}>있음</option>
+        <option value="N" ${a.status==='N'?'selected':''}>없음</option>
+        <option value="?" ${a.status==='?'?'selected':''}>불확실</option>
+      </select>
+      <button class="acc-del" onclick="delAcc(${i})">✕</button>
     </div>`).join('');
 }
-function setAcc(i,status){accessories[i].status=status;renderAccessories();}
+function setAcc(i,v){accessories[i].status=v;}
+function delAcc(i){accessories.splice(i,1);renderAcc();}
 function addAccessory(){
-  const input=document.getElementById('acc-input');
-  const name=input.value.trim();
+  const sel=document.getElementById('acc-select');
+  const name=sel.value;
   if(!name)return;
-  accessories.push({name,status:'?'});
-  input.value='';
-  renderAccessories();
+  accessories.push({name,status:''});
+  sel.value='';
+  renderAcc();
 }
 
 function editField(id){
@@ -473,25 +445,24 @@ function editField(id){
   el.querySelector('input').focus();
 }
 function saveField(id,input){
-  const val=input.value.trim()||'—';
-  document.getElementById(id).textContent=val;
+  document.getElementById(id).textContent=input.value.trim()||'—';
 }
 
 function copyResult(){
   const a=resultData.analysis||{};
   const vk={pass:'합격',review:'검수자 확인 필요',fail:'불합격'};
-  const accText=accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'불확실'}`).join(', ');
+  const accText=accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':a.status==='?'?'불확실':'미확인'}`).join('\n');
   const text=[
     '[번개케어 검수 결과]',
-    '판정: '+(vk[a.verdict]||'—')+' (신뢰도 '+conf+'%)',
+    '판정: '+(vk[a.verdict]||'—')+' (신뢰도 '+(a.confidence||0)+'%)',
     '브랜드: '+(a.brand||'—'),
     '모델명: '+(a.model_name||'—'),
     'SKU: '+(a.sku||'—'),
     '색상: '+(a.color||'—'),
-    '참고가격: '+(a.price_range||'—'),
-    '부속품: '+accText
+    '',
+    '[부속품]',
+    accText
   ].join('\n');
-  const conf=a.confidence||0;
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
 }
 
@@ -507,8 +478,7 @@ function resetAll(){
     if(slot)slot.classList.remove('filled');
     if(fi)fi.value='';
   });
-  uploadedUrl='';resultData='';accessories=[];
-  updateBtn();showScreen('shoot');
+  resultData={};accessories=[];updateBtn();showScreen('shoot');
 }
 function toast(msg,ms=2200){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
