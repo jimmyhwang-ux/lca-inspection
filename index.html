@@ -310,7 +310,7 @@ textarea.fi:focus{border-color:var(--acc)}
 .field-modal input:focus{border-color:var(--acc)}
 .toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(28,28,28,.96);border:.5px solid var(--bdr2);color:var(--txt);padding:10px 18px;border-radius:24px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;pointer-events:none;backdrop-filter:blur(16px)}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-input[type=file]{display:none}
+input[type=file]{position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0}
 </style>
 </head>
 <body>
@@ -329,15 +329,17 @@ input[type=file]{display:none}
     </div>
 
     <div class="photo-wrap">
-      <div class="main-slot req" id="sl0" onclick="tF(0)" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDR(event)">
+      <label for="f0" style="display:block;width:100%">
+      <div class="main-slot req" id="sl0" ondragover="oDO(event)" ondragleave="oDL(event)" ondrop="oDR(event)">
         <div class="slot-icon">📦</div>
         <div class="slot-label">본품 + 부속품 전체샷</div>
         <div class="slot-sub">필수 · 탭하거나 드래그</div>
         <div class="req-pill">필수</div>
       </div>
+      </label>
     </div>
 
-    <div class="extra-hint">💡 라벨/택 사진 추가 → Google Lens 정확도 ↑</div>
+    <div class="extra-hint">💡 라벨/택 사진 추가 시 스타일번호 OCR → 정확도 ↑↑</div>
     <div class="extra-grid" id="extra-slots"></div>
 
     <div class="input-sec">
@@ -1103,9 +1105,15 @@ function doReset(){
 
 // ── 이미지 슬롯 ──
 function compress(file,cb,maxPx=1200){const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');let w=img.width,h=img.height;if(w>h){if(w>maxPx){h=Math.round(h*maxPx/w);w=maxPx;}}else if(h>maxPx){w=Math.round(w*maxPx/h);h=maxPx;}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',.85));};img.src=ev.target.result;};r.readAsDataURL(file);}
-function tF(i){document.getElementById('f'+i).click();}
+function tF(i){const el=document.getElementById('f'+i);if(el)el.click();}
 function onFile(i,e){const f=e.target.files[0];if(!f)return;compress(f,src=>{if(i===0)setSlot0(src);else setExtraSlot(i,src);});e.target.value='';}
-function setSlot0(src){imgs[0]=src;const sl=document.getElementById('sl0');sl.innerHTML=`<img src="${src}" alt=""><div class="main-x" onclick="removeImg0(event)">✕</div>`;sl.classList.add('filled');sl.classList.remove('req');}
+function setSlot0(src){
+  imgs[0]=src;
+  const sl=document.getElementById('sl0');
+  sl.innerHTML='<img src="'+src+'" alt=""><div class="main-x" onclick="removeImg0(event)">✕</div>';
+  sl.classList.add('filled');sl.classList.remove('req');
+  // label[for=f0]이 여전히 감싸고 있으므로 탭하면 파일 선택 가능
+}
 function removeImg0(e){e&&e.stopPropagation();imgs[0]=null;const sl=document.getElementById('sl0');sl.innerHTML=`<div class="slot-icon">📦</div><div class="slot-label">본품 + 부속품 전체샷</div><div class="slot-sub">필수 · 탭하거나 드래그</div><div class="req-pill">필수</div>`;sl.classList.remove('filled');sl.classList.add('req');document.getElementById('f0').value='';}
 function setExtraSlot(i,src){imgs[i]=src;const sl=document.getElementById('esl'+i);if(!sl)return;sl.innerHTML=`<img src="${src}" alt=""><div class="ex-x" onclick="removeExtra(${i},event)">✕</div>`;sl.classList.add('filled');}
 function removeExtra(i,e){e&&e.stopPropagation();imgs[i]=null;const sl=document.getElementById('esl'+i);if(!sl)return;sl.innerHTML=`<span class="es-ico">📷</span><span class="es-lbl">${SLOT_LABELS[i-1]||'추가'}</span>`;sl.classList.remove('filled');document.getElementById('f'+i).value='';}
