@@ -323,7 +323,7 @@ input[type=file]{display:none}
     <div class="pg-hdr">
       <div>
         <div class="pg-title">사진으로<em> 검수</em></div>
-        <div class="pg-sub">Google Lens 시각검색 → 내부 DB → 부속품 판정</div>
+        <div class="pg-sub">라벨/택 사진 추가 시 스타일번호 OCR → 정확도 ↑↑</div>
       </div>
       <div class="care-btn" id="careBadge" onclick="openMod('care-modal')">케어번호</div>
     </div>
@@ -366,14 +366,10 @@ input[type=file]{display:none}
       </div>
     </div>
 
-    <!-- SerpApi 키 미설정 배너 -->
-    <div id="api-missing-banner" style="margin:0 20px;padding:10px 13px;background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.25);border-radius:var(--r3);font-size:11px;color:var(--err);display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <span id="api-banner-msg">⚠️ imgbb 키 + SerpApi 키 미설정 — Google Lens 사용 불가</span>
-      <button onclick="switchTab('sku');setTimeout(()=>{scrollToSettings();},400)" style="padding:4px 10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.3);border-radius:6px;font-size:10px;font-weight:700;color:var(--err);cursor:pointer;font-family:inherit;white-space:nowrap">설정하기 →</button>
-    </div>
+
     <div class="analyze-wrap">
       <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">
-        <div class="sp"></div><span id="analyze-txt">🔍 Google Lens 검수 시작 →</span>
+        <div class="sp"></div><span id="analyze-txt">🔍 검수 시작 →</span>
       </button>
     </div>
   </div>
@@ -382,13 +378,13 @@ input[type=file]{display:none}
   <div id="s2" style="display:none;flex:1">
     <div class="loading-wrap">
       <div class="loading-icon">🔍</div>
-      <div class="loading-title">Google Lens 검색 중</div>
-      <div class="loading-sub">실제 Google 시각검색 → 상위 결과 분석<br>내부 DB 대조 → 부속품 판정</div>
+      <div class="loading-title">AI 검수 중</div>
+      <div class="loading-sub">라벨/택 OCR → 모델 식별 → DB 대조 → 부속품 판정</div>
       <div class="steps-card">
-        <div class="lstep" id="ls0"><div class="lstep-dot" id="ld0">1</div><span>이미지 업로드</span></div>
-        <div class="lstep" id="ls1"><div class="lstep-dot" id="ld1">2</div><span>Google Lens 시각검색</span></div>
-        <div class="lstep" id="ls2"><div class="lstep-dot" id="ld2">3</div><span>상위 결과 분석</span></div>
-        <div class="lstep" id="ls3"><div class="lstep-dot" id="ld3">4</div><span>내부 DB 대조</span></div>
+        <div class="lstep" id="ls0"><div class="lstep-dot" id="ld0">1</div><span>이미지 준비</span></div>
+        <div class="lstep" id="ls1"><div class="lstep-dot" id="ld1">2</div><span>라벨/택 OCR 분석</span></div>
+        <div class="lstep" id="ls2"><div class="lstep-dot" id="ld2">3</div><span>DB 조회</span></div>
+        <div class="lstep" id="ls3"><div class="lstep-dot" id="ld3">4</div><span>모델 식별</span></div>
         <div class="lstep" id="ls4"><div class="lstep-dot" id="ld4">5</div><span>부속품 판정</span></div>
       </div>
     </div>
@@ -667,11 +663,8 @@ input[type=file]{display:none}
 //  설정 & 상수
 // ══════════════════════════════════════
 const CLAUDE_PROXY = 'https://lca-proxy.jimmy-hwang.workers.dev';
-const LENS_PROXY   = 'https://lca-proxy.jimmy-hwang.workers.dev/lens'; // /lens 엔드포인트
-const LS_IMGBB    = 'bungae_imgbb_key';
 const LS_KEY      = 'bungae_sku_v5';
 const LS_SHEET    = 'bungae_sheet_url_v2';
-const LS_SERPAPI  = 'bungae_serpapi_key';
 const SLOT_LABELS = ['라벨/택1','라벨/택2','라벨/택3','로고','원산지'];
 const STD_ACCS    = ['레더 스트랩','체인 스트랩','숄더스트랩','패브릭 스트랩','이너파우치','미니파우치','자물쇠','열쇠','자물쇠/열쇠 세트','키퍼(스트랩 후프)','훅 클로저','키벨','참 장식','핸들 홀더','밑판','네임택','리본','체결끈','여분 링크'];
 
@@ -755,135 +748,41 @@ function hideDbCard(){document.getElementById('db-card').classList.remove('show'
 // ══════════════════════════════════════
 
 // STEP1: 이미지 → imgbb 업로드 → 공개 URL
-// ★ lca-proxy /lens 엔드포인트를 통해 호출
-// Workers에서: imgbb 업로드 → SerpApi Google Lens → 결과 반환
-// (브라우저에서 SerpApi 직접 호출 불가 → proxy 필수)
-async function callLensProxy(base64Img) {
-  const imgbbKeyVal  = imgbbApiKey  || localStorage.getItem(LS_IMGBB)   || '';
-  const serpKeyVal   = serpApiKey   || localStorage.getItem(LS_SERPAPI) || '';
-  if(!imgbbKeyVal)  throw new Error('imgbb API 키 없음 — SKU 관리 → API 설정에서 입력해주세요');
-  if(!serpKeyVal)   throw new Error('SerpApi 키 없음 — SKU 관리 → API 설정에서 입력해주세요');
-
-  // base64 데이터 부분만 추출
-  const base64Data = base64Img.includes(',') ? base64Img.split(',')[1] : base64Img;
-
-  const resp = await fetch(LENS_PROXY, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      imageBase64: base64Data,
-      imgbbKey:    imgbbKeyVal,
-      serpApiKey:  serpKeyVal,
-    })
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(()=>({}));
-    throw new Error('Lens proxy 오류: ' + (err.error || resp.status));
-  }
-  const data = await resp.json();
-  if (!data.ok) throw new Error('Lens 검색 실패: ' + (data.error || '알 수 없는 오류'));
-  return data; // { imageUrl, visual_matches, knowledge_graph, related_content, lens_url }
-}
-
-// STEP3: Claude가 Lens 결과를 해석하여 브랜드/모델 추출
-async function interpretLensResults(lensData, inputSku, brand, cat, sellerTxt, dbAccItems, dbSmInfo, allImgs) {
-  // visual_matches 상위 5개 정리
-  const matches = (lensData.visual_matches || []).slice(0, 7).map((m, i) => ({
-    rank: i+1,
-    title: m.title,
-    source: m.source,
-    link: m.link,
-    thumbnail: m.thumbnail
-  }));
-
-  // related_content (Google이 추측하는 제품명/카테고리)
-  const related = (lensData.related_content || []).slice(0, 5).map(r => r.query);
-
-  // knowledge_graph가 있으면 (가장 정확)
-  const kg = lensData.knowledge_graph;
-
-  const lensContext = `[Google Lens 시각검색 결과]
-${kg ? `★ Knowledge Graph (가장 신뢰): ${kg.title || ''} | ${kg.description || ''}` : ''}
-Related 검색어: ${related.join(', ') || '없음'}
-Visual Matches 상위 ${matches.length}건:
-${matches.map(m=>`  ${m.rank}. ${m.title} (${m.source})`).join('\n')}`;
-
+// Claude Vision OCR 분석 (Workers 불필요 — lca-proxy 직접 사용)
+async function analyzeWithClaude(allImgs, brand, cat, inputSku, sellerTxt, dbAccItems, dbSmInfo) {
   const dbInfo = dbSmInfo
-    ? `[내부 DB 정보]\n모델명: ${dbSmInfo.modelName}\nSKU: ${dbSmInfo.sku||'없음'}\n부속품 I열: ${dbSmInfo.accessories||'없음'}\n특이사항: ${dbSmInfo.note||'없음'}`
-    : '[내부 DB] 해당 SKU 미등록';
-
-  const accSection = dbAccItems.length > 0
-    ? `[부속품 판정 - DB I열 ${dbAccItems.length}개만 판정, 추가 금지]\n${dbAccItems.map((it,i)=>`${i+1}. ${it}`).join('\n')}\n판매자 본문: "${sellerTxt||'없음'}"`
-    : '[부속품] DB I열 없음 → accessories 빈 배열';
-
-  const userPrompt = `당신은 명품 검수 전문가입니다.
-
-${lensContext}
-
-입력 정보: 브랜드="${brand||'미입력'}" | 카테고리="${cat||'미입력'}" | SKU입력="${inputSku||'없음'}"
-
+    ? `[내부 DB]\n모델명: ${dbSmInfo.modelName}\nSKU: ${dbSmInfo.sku||'없음'}\n부속품: ${dbSmInfo.accessories||'없음'}\n특이사항: ${dbSmInfo.note||'없음'}`
+    : '[내부 DB] 미등록';
+  const accPrompt = dbAccItems.length > 0
+    ? `[부속품 판정 — 아래 ${dbAccItems.length}개만, 추가 금지]\n`
+      + dbAccItems.map((it,i)=>`${i+1}. ${it}`).join('\n')
+      + `\n판매자 본문: "${sellerTxt||'없음'}"\n분실/없음 언급 → status:"없음"`
+    : '[부속품] DB 없음 → accessories 빈 배열';
+  const SYSTEM = `명품 검수 전문가. 이미지 분석 우선순위:
+1순위: 라벨/택 사진 텍스트를 OCR로 읽어 스타일번호·모델번호·브랜드명 추출
+2순위: 로고·하드웨어로 브랜드 확인
+3순위: 전체 디자인으로 제품 계열 추정
+절대금지: 사진에서 확인 안 되는 정보 추측
+JSON만 출력(마크다운 없이)`;
+  const userPrompt = `입력: 브랜드="${brand||'미입력'}" | 카테고리="${cat||'미입력'}" | SKU="${inputSku||'없음'}"
 ${dbInfo}
-
-${accSection}
-
-[지시사항]
-1. Google Lens 결과(특히 Knowledge Graph, Related 검색어, 상위 매칭)를 최우선으로 사용하여 브랜드/모델 식별
-2. 내부 DB 정보가 있으면 대조 확인
-3. 부속품은 DB I열 항목만 판정 (사진에서 보이는지 여부)
-4. confidence: Lens 결과가 명확할수록 높게 (Knowledge Graph 있으면 90+)
-
-JSON만 출력:
-{
-  "brand":"(한국어)",
-  "brandEn":"",
-  "name":"(모델명)",
-  "modelNo":"(스타일번호/SKU, 모름이면 '')",
-  "color":"",
-  "realSize":"",
-  "confidence":0~100,
-  "accessories":[{"name":"DB I열 항목명","status":"있음/없음/불확실","reason":"근거","fromSellerText":false}],
-  "lensQuery":"브랜드+모델 영문 검색어"
-}`;
-
+${accPrompt}
+[핵심] 라벨/택 사진이 있으면 스타일번호 텍스트를 글자 그대로 읽어주세요.
+{"brand":"(한국어)","brandEn":"","name":"","modelNo":"(OCR 스타일번호)","color":"","realSize":"","confidence":0~100,"accessories":[{"name":"","status":"있음/없음/불확실","reason":"","fromSellerText":false}],"lensQuery":"영문 브랜드+모델명"}`;
   const content = [];
-  // 이미지도 같이 전달 (부속품 판정용)
-  allImgs.slice(0, 3).forEach(img => {
+  allImgs.slice(0,5).forEach(img=>{
     try{content.push({type:'image',source:{type:'base64',media_type:img.split(';')[0].split(':')[1],data:img.split(',')[1]}});}catch(e){}
   });
-  content.push({type:'text', text: userPrompt});
-
-  const resp = await fetch(CLAUDE_PROXY, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
-      messages: [{role:'user', content}]
-    })
-  });
+  content.push({type:'text',text:userPrompt});
+  const resp = await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:SYSTEM,messages:[{role:'user',content}]})});
   if(!resp.ok) throw new Error('Claude API 오류 '+resp.status);
   const data = await resp.json();
   if(data.error) throw new Error(JSON.stringify(data.error));
   return JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
 }
 
-// ── 메인 분석 ──
 async function startAnalysis() {
   if(!imgs[0]){showToast('전체샷을 먼저 업로드해 주세요');return;}
-
-  const apiKey = serpApiKey || localStorage.getItem(LS_SERPAPI) || '';
-  const imgbbKey = imgbbApiKey || localStorage.getItem(LS_IMGBB) || '';
-  if(!apiKey || !imgbbKey){
-    const missing = !imgbbKey && !apiKey ? 'imgbb 키 + SerpApi 키' : !imgbbKey ? 'imgbb 키' : 'SerpApi 키';
-    showToast('⚙️ '+missing+'를 먼저 설정해 주세요');
-    switchTab('sku');
-    setTimeout(()=>{
-      // settings panel always visible
-      const btn2=document.getElementById('api-btn');
-      if(btn2){btn2.style.background='rgba(245,166,35,.15)';btn2.style.borderColor='rgba(245,166,35,.4)';btn2.style.color='var(--acc)';}
-    },400);
-    return;
-  }
 
   const btn = document.getElementById('analyzeBtn');
   btn.disabled=true; btn.classList.add('ld');
@@ -896,36 +795,27 @@ async function startAnalysis() {
   const sellerTxt = document.getElementById('sellerTxt').value.trim();
   const validImgs = imgs.filter(Boolean);
 
-  let parsed, lensData, imgUrl;
-
+  let parsed;
   try {
-    // STEP1+2: lca-proxy /lens → imgbb 업로드 + Google Lens 검색 (서버에서 처리)
     await tick(100); setLStep(0);
+
+    // DB 조회 (SKU 입력값 기준)
     await tick(200); setLStep(1);
-    const lensResult = await callLensProxy(imgs[0]);
-    imgUrl   = lensResult.imageUrl;
-    lensData = lensResult; // visual_matches, knowledge_graph, related_content 포함
-
-    // STEP3: DB 조회
-    await tick(100); setLStep(2);
     let sm = lookupSKU(inputSku);
-    if(!sm && lensData.knowledge_graph) {
-      // KG 제목에서 SKU 추측 검색
-      const kgTitle = lensData.knowledge_graph.title || '';
-      sm = lookupName(kgTitle);
-      if(Array.isArray(sm)) sm = null;
-    }
+    if(!sm && inputSku) { const h=lookupName(inputSku); if(h&&!Array.isArray(h)) sm=h; }
     const dbAccRaw   = sm?.accessories?.trim() || '';
-    const dbAccItems = dbAccRaw && dbAccRaw !== '없음' ? dbAccRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const dbAccItems = dbAccRaw && dbAccRaw !== '없음'
+      ? dbAccRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
 
-    // STEP4: Claude 해석
+    // Claude Vision OCR + 제품 식별
+    await tick(100); setLStep(2);
     await tick(100); setLStep(3);
-    parsed = await interpretLensResults(lensData, inputSku, brand, cat, sellerTxt, dbAccItems, sm, validImgs);
+    parsed = await analyzeWithClaude(validImgs, brand, cat, inputSku, sellerTxt, dbAccItems, sm);
 
-    // STEP5: 부속품 필터링
+    // 부속품 DB I열 필터링
     await tick(100); setLStep(4);
     if(dbAccItems.length > 0){
-      const norm = s => s.toLowerCase().replace(/\s/g,'').replace(/[\/\(\)]/g,'');
+      const norm = s => s.toLowerCase().replace(/[\s\/\(\)]/g,'');
       parsed.accessories = dbAccItems.map(dbItem => {
         const match = (parsed.accessories||[]).find(a =>
           norm(a.name).includes(norm(dbItem.split(' ')[0])) ||
@@ -937,6 +827,12 @@ async function startAnalysis() {
       parsed.accessories = [];
     }
 
+    // DB에 모델명이 있고 inputSku 없으면 Claude 결과로 재검색
+    if(!sm && parsed.modelNo) {
+      const found = lookupSKU(parsed.modelNo);
+      if(found) { sm = found; }
+    }
+
     parsed.brand      = toKo(parsed.brand) || parsed.brand;
     parsed.careNo     = careNo;
     parsed.analyzedAt = new Date().toLocaleString('ko-KR');
@@ -944,16 +840,15 @@ async function startAnalysis() {
     parsed._sm        = sm;
     parsed._accImg    = imgs[0];
     parsed._dbAccItems= dbAccItems;
-    parsed._lensData  = lensData;
-    parsed._imgUrl    = lensResult.imageUrl || imgUrl;
-    parsed._lensUrl   = lensResult.lens_url ||
-                        `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imgUrl)}`;
+    parsed._lensData  = null; // Lens 직접 결과 없음
+    const lensQ = parsed.lensQuery || ((parsed.brandEn||parsed.brand||'') + ' ' + (parsed.name||''));
+    parsed._lensUrl   = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(lensQ)}`;
     parsed._bjUrl     = `https://www.bunjang.co.kr/search/products?q=${encodeURIComponent((parsed.brand||'')+(parsed.name?' '+parsed.name:''))}`;
 
   } catch(err) {
     showStep(1);
     btn.disabled=false; btn.classList.remove('ld');
-    document.getElementById('analyze-txt').textContent='🔍 Google Lens 검수 시작 →';
+    document.getElementById('analyze-txt').textContent='🔍 검수 시작 →';
     showToast('❌ '+err.message);
     return;
   }
@@ -964,7 +859,7 @@ async function startAnalysis() {
   buildAddAccDropdown();
   showStep(3);
   btn.disabled=false; btn.classList.remove('ld');
-  document.getElementById('analyze-txt').textContent='🔍 Google Lens 검수 시작 →';
+  document.getElementById('analyze-txt').textContent='🔍 검수 시작 →';
 }
 
 // ── 결과 렌더링 ──
@@ -1234,12 +1129,7 @@ function onCatChange(){const cat=document.getElementById('sel-cat').value,sel=do
 function onSfCat(){const cat=document.getElementById('sff-cat').value,sel=document.getElementById('sff-brand');sel.innerHTML='<option value="">선택</option>';if(cat&&BM[cat])BM[cat].forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;sel.appendChild(o);});}
 
 // ── 설정 ──
-function updateApiBanner(){
-  const banner=document.getElementById('api-missing-banner');
-  if(!banner)return;
-  const hasSerpApi=!!(serpApiKey||localStorage.getItem(LS_SERPAPI));
-  const hasImgbb=!!(imgbbApiKey||localStorage.getItem(LS_IMGBB));
-  if(hasSerpApi && hasImgbb){banner.style.display='none';return;}
+function updateApiBanner(){}
   banner.style.display='flex';
   const msgEl=document.getElementById('api-banner-msg');
   if(!msgEl)return;
