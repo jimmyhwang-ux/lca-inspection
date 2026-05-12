@@ -569,10 +569,98 @@ function addAccessory(){
 }
 function editField(id){
   const el=document.getElementById(id);const cur=el.textContent;
-  el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)">`;
+  const trigger=(id==='r-model'||id==='r-model-ko'||id==='r-sku')?'oninput="onResultFieldInput(this,''+id+'')"':'';
+  el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
   el.querySelector('input').focus();
 }
 function saveField(id,input){document.getElementById(id).textContent=input.value.trim()||'—';}
+
+// 타이핑 멈추면 DB 자동 조회
+let _dbSearchTimer=null;
+function onResultFieldInput(input,id){
+  clearTimeout(_dbSearchTimer);
+  const val=input.value.trim();
+  if(!val||val.length<2)return;
+  _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
+}
+
+async function searchDbFromField(fieldId,val){
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list_sku'})
+    });
+    const j=await res.json();
+    if(!j.success||!j.data)return;
+    const list=j.data;
+    const v=val.toLowerCase();
+    let match=null;
+
+    // SKU 코드로 조회
+    if(fieldId==='r-sku'){
+      match=list.find(i=>(i.sku_code||'').toLowerCase()===v);
+    }
+    // 모델명으로 조회 (영문/한글)
+    if(!match&&(fieldId==='r-model'||fieldId==='r-model-ko')){
+      match=list.find(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
+      if(!match) match=list.find(i=>
+        (i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
+        (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
+      );
+    }
+
+    if(match) applyDbMatch(match);
+  }catch(e){console.warn('자동조회 실패',e);}
+}
+
+function applyDbMatch(item){
+  // 결과 화면에 DB 정보 반영
+  if(item.brand) document.getElementById('r-brand').textContent=item.brand;
+  if(item.model_name_ko||item.model_name) document.getElementById('r-model-ko').textContent=item.model_name_ko||item.model_name;
+  if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
+  if(item.sku_code){
+    document.getElementById('r-sku').textContent=item.sku_code;
+    document.getElementById('r-sku').className='info-cell-val';
+  }
+
+  // DB 매칭 배너 업데이트
+  const dbWrap=document.getElementById('db-match-wrap');
+  const accList=(item.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+  dbWrap.innerHTML=`
+    <div class="db-match-card">
+      <div class="db-match-header">
+        <span class="db-match-badge">✅ DB 매칭</span>
+        <span style="font-size:11px;color:#22c55e">수동 입력으로 찾았어요</span>
+      </div>
+      <div class="db-match-body">
+        ${item.ref_image_url?`<img class="db-match-img" src="${item.ref_image_url}" alt="">`:'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
+        <div class="db-match-info">
+          <strong>${item.model_name_ko||item.model_name||'—'}</strong><br>
+          SKU: ${item.sku_code||'—'}<br>
+          ${accList?'부속품: '+accList:''}
+        </div>
+      </div>
+    </div>`;
+
+  // 부속품도 자동 채우기
+  if(item.accessories&&item.accessories.length){
+    accessories=item.accessories.map(a=>({name:a.name,status:a.status||''}));
+    renderAcc();
+  }
+
+  // resultData에도 반영 (결과이동 시 사용)
+  if(!resultData.analysis) resultData.analysis={};
+  Object.assign(resultData.analysis,{
+    brand:item.brand||resultData.analysis.brand,
+    model_name:item.model_name||resultData.analysis.model_name,
+    model_name_ko:item.model_name_ko||resultData.analysis.model_name_ko,
+    sku:item.sku_code||resultData.analysis.sku,
+    category:item.category||resultData.analysis.category,
+    color:item.color||resultData.analysis.color,
+  });
+
+  toast('✅ DB 매칭됨: '+(item.model_name_ko||item.model_name||''));
+}
 
 function openSkuOnly(){
   switchSkuTab('list');
