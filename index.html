@@ -143,6 +143,19 @@ input[type=file]{display:none}
 .sku-empty{text-align:center;padding:40px 20px;color:#444;font-size:14px}
 .screen{display:none}
 .screen.active{display:block}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.lightbox.open{opacity:1;pointer-events:all}
+.lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px}
+.lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+.edit-modal.open{opacity:1;pointer-events:all}
+.edit-sheet{background:#111;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .25s}
+.edit-modal.open .edit-sheet{transform:translateY(0)}
+.edit-sheet-handle{width:36px;height:4px;background:#2a2a2a;border-radius:2px;margin:0 auto 16px}
+.edit-field-row{margin-bottom:12px}
+.edit-field-label{font-size:11px;color:#444;margin-bottom:5px}
+.edit-field-input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 13px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
+.edit-field-input:focus{border-color:#ff6b2b}
 </style>
 </head>
 <body>
@@ -338,6 +351,29 @@ input[type=file]{display:none}
     <div id="sku-list-wrap"><div class="sku-empty">불러오는 중...</div></div>
   </div>
   <div style="height:40px"></div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<div class="edit-modal" id="edit-modal">
+  <div class="edit-sheet">
+    <div class="edit-sheet-handle"></div>
+    <div style="font-size:15px;font-weight:800;margin-bottom:16px">SKU 수정</div>
+    <div class="edit-field-row"><div class="edit-field-label">브랜드</div><input class="edit-field-input" id="ef-brand" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">모델명 (한글)</div><input class="edit-field-input" id="ef-model-ko" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">모델명 (영문)</div><input class="edit-field-input" id="ef-model" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">카테고리</div><input class="edit-field-input" id="ef-cat" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">컬러</div><input class="edit-field-input" id="ef-color" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">실측 사이즈</div><input class="edit-field-input" id="ef-size" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">사이즈 명칭</div><input class="edit-field-input" id="ef-size-name" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">스타일 번호</div><input class="edit-field-input" id="ef-sku" type="text"></div>
+    <input type="hidden" id="ef-id">
+    <button class="btn-main" style="margin-top:8px" onclick="saveEditSku()">저장</button>
+    <button class="btn-sec" style="width:100%;margin-top:8px;padding:13px" onclick="closeEditModal()">취소</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -621,8 +657,13 @@ function renderSkuList(list){
     const vColor=item.verdict==='pass'?'#22c55e':item.verdict==='fail'?'#ef4444':'#f59e0b';
     const vText=item.verdict==='pass'?'합격':item.verdict==='fail'?'불합격':'확인필요';
     return `<div class="sku-list-item" style="cursor:pointer" onclick="toggleSkuDetail(${i})">
-      <button class="sku-list-del" onclick="event.stopPropagation();deleteSku('${item.id}')">✕</button>
-      <div class="sku-list-brand">${item.brand||'—'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div class="sku-list-brand">${item.brand||'—'}</div>
+        <div style="display:flex;gap:6px">
+          <button style="background:none;border:1px solid #2a2a2a;border-radius:6px;color:#ff6b2b;font-size:11px;padding:3px 8px;cursor:pointer;font-weight:600" onclick="event.stopPropagation();openEditModal(${i})">수정</button>
+          <button class="sku-list-del" onclick="event.stopPropagation();deleteSku('${item.id}')">✕</button>
+        </div>
+      </div>
       <div class="sku-list-model">${item.model_name_ko||item.model_name||'—'}</div>
       <div class="sku-list-model-en">${item.model_name||''}</div>
       <div class="sku-list-meta">
@@ -632,7 +673,7 @@ function renderSkuList(list){
         ${item.verdict?`<span class="sku-meta-tag" style="color:${vColor}">${vText}</span>`:''}
       </div>
       <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
-        ${item.ref_image_url?`<img src="${item.ref_image_url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">`:''}
+        ${item.ref_image_url?`<img src="${item.ref_image_url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${item.ref_image_url}')" alt="">`:''}
         <div style="font-size:11px;color:#444;margin-bottom:4px">상세 정보</div>
         <div style="font-size:12px;color:#aaa;line-height:1.8">
           ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
@@ -649,6 +690,51 @@ function renderSkuList(list){
 function toggleSkuDetail(i){
   const el=document.getElementById('sku-detail-'+i);
   if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function openLightbox(url){
+  document.getElementById('lightbox-img').src=url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
+
+function openEditModal(i){
+  const item=skuListAll[i];
+  if(!item)return;
+  document.getElementById('ef-id').value=item.id;
+  document.getElementById('ef-brand').value=item.brand||'';
+  document.getElementById('ef-model-ko').value=item.model_name_ko||'';
+  document.getElementById('ef-model').value=item.model_name||'';
+  document.getElementById('ef-cat').value=item.category||'';
+  document.getElementById('ef-color').value=item.color||'';
+  document.getElementById('ef-size').value=item.size_actual||'';
+  document.getElementById('ef-size-name').value=item.size_label||'';
+  document.getElementById('ef-sku').value=item.sku_code||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeEditModal(){document.getElementById('edit-modal').classList.remove('open');}
+
+async function saveEditSku(){
+  const id=document.getElementById('ef-id').value;
+  const data={
+    brand:document.getElementById('ef-brand').value,
+    model_name_ko:document.getElementById('ef-model-ko').value,
+    model_name:document.getElementById('ef-model').value,
+    category:document.getElementById('ef-cat').value,
+    color:document.getElementById('ef-color').value,
+    size_actual:document.getElementById('ef-size').value,
+    size_label:document.getElementById('ef-size-name').value,
+    sku_code:document.getElementById('ef-sku').value,
+  };
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku',skuData:{id,...data}})
+    });
+    const j=await res.json();
+    if(j.success){toast('✅ 수정되었습니다');closeEditModal();loadSkuList();}
+    else throw new Error(j.error);
+  }catch(e){toast('❌ 수정 실패: '+e.message);}
 }
 
 function filterSkuList(){
