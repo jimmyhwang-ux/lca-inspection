@@ -3,84 +3,88 @@ export default async function handler(req, res) {
 
   const { imageBase64, imageMime, extras = {}, action, skuData } = req.body;
 
-  const IMGBB_KEY     = process.env.IMGBB_KEY;
-  const SERP_KEY      = process.env.SERP_KEY;
-  const CLAUDE_KEY    = process.env.CLAUDE_KEY;
-  const SUPABASE_URL  = process.env.SUPABASE_URL;
-  const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_KEY;
+  const IMGBB_KEY    = process.env.IMGBB_KEY;
+  const SERP_KEY     = process.env.SERP_KEY;
+  const CLAUDE_KEY   = process.env.CLAUDE_KEY;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-  const sbFetch = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const sb = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': opts.prefer || 'return=representation',
+      'Prefer': opts.prefer ?? 'return=representation',
       ...(opts.headers || {})
     }
   });
 
-  // ── SKU 적재 액션 ──────────────────────────────────
-  if (action === 'save_sku') {
-    try {
-      const r = await sbFetch('sku_items', {
-        method: 'POST',
-        prefer: 'return=representation',
-        body: JSON.stringify(skuData)
-      });
-      const d = await r.json();
-      return res.status(200).json({ success: true, data: d });
-    } catch (e) {
-      return res.status(500).json({ success: false, error: e.message });
-    }
-  }
-
-  // ── SKU 목록 조회 액션 ─────────────────────────────
-  if (action === 'list_sku') {
-    try {
-      const r = await sbFetch('sku_items?select=*&order=created_at.desc&limit=100');
-      const d = await r.json();
-      return res.status(200).json({ success: true, data: d });
-    } catch (e) {
-      return res.status(500).json({ success: false, error: e.message });
-    }
-  }
-
-  // ── SKU 수정 액션 ──────────────────────────────────
-  if (action === 'update_sku') {
-    try {
-      const { id, ...fields } = skuData;
-      const r = await sbFetch(`sku_items?id=eq.${id}`, {
-        method: 'PATCH',
-        prefer: 'return=representation',
-        body: JSON.stringify(fields)
-      });
-      const d = await r.json();
-      return res.status(200).json({ success: true, data: d });
-    } catch (e) {
-      return res.status(500).json({ success: false, error: e.message });
-    }
-  }
-
-  // ── SKU 삭제 액션 ──────────────────────────────────
-  if (action === 'delete_sku') {
-    try {
-      await sbFetch(`sku_items?id=eq.${skuData.id}`, { method: 'DELETE', prefer: '' });
-      return res.status(200).json({ success: true });
-    } catch (e) {
-      return res.status(500).json({ success: false, error: e.message });
-    }
-  }
-
-  // ── 메인 검수 플로우 ───────────────────────────────
-  if (!imageBase64) return res.status(400).json({ error: '이미지가 없습니다' });
-
-  try {
-    // 1. imgbb + Claude 동시 실행
+  // imgbb 업로드 헬퍼
+  const uploadImgbb = async (b64) => {
     const form = new URLSearchParams();
     form.append('key', IMGBB_KEY);
-    form.append('image', imageBase64);
+    form.append('image', b64);
+    const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+    const j = await r.json();
+    if (!j.success) throw new Error('imgbb 실패');
+    return j.data.url;
+  };
 
+  // ── SKU 저장 ──────────────────────────────────────
+  if (action === 'save_sku') {
+    try {
+      // 추가 이미지들 업로드
+      let extra_images = skuData.extra_images || [];
+      if (skuData.newImageBase64) {
+        const url = await uploadImgbb(skuData.newImageBase64);
+        extra_images = [...extra_images, url];
+      }
+      const payload = { ...skuData, extra_images };
+      delete payload.newImageBase64;
+      const r = await sb('sku_items', { method: 'POST', body: JSON.stringify(payload) });
+      const d = await r.json();
+      return res.status(200).json({ success: true, data: d });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  // ── SKU 목록 ──────────────────────────────────────
+  if (action === 'list_sku') {
+    try {
+      const r = await sb('sku_items?select=*&order=created_at.desc&limit=200');
+      const d = await r.json();
+      return res.status(200).json({ success: true, data: d });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  // ── SKU 수정 ──────────────────────────────────────
+  if (action === 'update_sku') {
+    try {
+      const { id, newImageBase64, ...fields } = skuData;
+      // 새 이미지 추가
+      if (newImageBase64) {
+        const url = await uploadImgbb(newImageBase64);
+        fields.extra_images = [...(fields.extra_images || []), url];
+        if (!fields.ref_image_url) fields.ref_image_url = url;
+      }
+      const r = await sb(`sku_items?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(fields) });
+      const d = await r.json();
+      return res.status(200).json({ success: true, data: d });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  // ── SKU 삭제 ──────────────────────────────────────
+  if (action === 'delete_sku') {
+    try {
+      await sb(`sku_items?id=eq.${skuData.id}`, { method: 'DELETE', prefer: '' });
+      return res.status(200).json({ success: true });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  // ── 메인 검수 ─────────────────────────────────────
+  if (!imageBase64) return res.status(400).json({ error: '이미지 없음' });
+
+  try {
     const imageContents = [
       { type: 'image', source: { type: 'base64', media_type: imageMime || 'image/jpeg', data: imageBase64 } },
       { type: 'text', text: '본품 전체샷' }
@@ -92,15 +96,11 @@ export default async function handler(req, res) {
       }
     }
 
-    const [imgbbRes, claudeRes] = await Promise.all([
-      fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form }),
+    const [imageUrl, claudeRes] = await Promise.all([
+      uploadImgbb(imageBase64),
       fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': CLAUDE_KEY,
-          'anthropic-version': '2023-06-01'
-        },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 1024,
@@ -109,99 +109,73 @@ export default async function handler(req, res) {
 verdict: pass/review/fail, confidence: 0-100 정수`,
           messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답' }] }]
         })
-      })
+      }).then(r => r.json())
     ]);
 
-    const imgbbJson = await imgbbRes.json();
-    if (!imgbbJson.success) throw new Error('imgbb 업로드 실패');
-    const imageUrl = imgbbJson.data.url;
-
-    const claudeJson = await claudeRes.json();
-    if (claudeJson.error) throw new Error('Claude 오류: ' + claudeJson.error.message);
-    const raw = claudeJson.content?.[0]?.text?.trim() || '{}';
+    if (claudeRes.error) throw new Error('Claude 오류: ' + claudeRes.error.message);
+    const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // 2. Supabase DB 조회 - 전체 가져온 후 JS에서 유사도 매칭
+    // DB 매칭 — 전체 가져온 후 JS 유사도 매칭
     let dbMatch = null;
-    if (analysis.brand) {
-      try {
-        const dbRes = await sbFetch('sku_items?select=*&limit=500');
-        const dbData = await dbRes.json();
-        if (Array.isArray(dbData) && dbData.length > 0) {
-          const aiBrand   = (analysis.brand || '').toLowerCase().trim();
-          const aiModel   = (analysis.model_name || '').toLowerCase().trim();
-          const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
-          const aiSku     = (analysis.sku || '').toLowerCase().trim();
+    try {
+      const dbRes = await sb('sku_items?select=*&limit=500');
+      const dbData = await dbRes.json();
+      if (Array.isArray(dbData) && dbData.length > 0) {
+        const aiBrand   = (analysis.brand || '').toLowerCase().trim();
+        const aiModel   = (analysis.model_name || '').toLowerCase().trim();
+        const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
+        const aiSku     = (analysis.sku || '').toLowerCase().trim();
 
-          let bestScore = 0;
-          for (const item of dbData) {
-            let score = 0;
-            const dbBrand   = (item.brand || '').toLowerCase().trim();
-            const dbModel   = (item.model_name || '').toLowerCase().trim();
-            const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
-            const dbSku     = (item.sku_code || '').toLowerCase().trim();
+        let best = 0;
+        for (const item of dbData) {
+          const dbBrand   = (item.brand || '').toLowerCase().trim();
+          const dbModel   = (item.model_name || '').toLowerCase().trim();
+          const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
+          const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-            // 브랜드 불일치면 무조건 스킵
-            if (!dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
+          // 브랜드 불일치 → 스킵
+          if (aiBrand && dbBrand && !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
 
-            // SKU 코드 완전 일치 → 즉시 매칭
-            if (aiSku && dbSku && aiSku === dbSku) { bestScore = 200; dbMatch = item; break; }
+          // SKU 완전 일치 → 즉시 확정
+          if (aiSku && dbSku && aiSku === dbSku) { dbMatch = item; break; }
 
-            // 모델명 매칭 (필수 조건)
-            let modelScore = 0;
-            if (aiModel && dbModel) {
-              if (aiModel === dbModel) modelScore = 80;
-              else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) modelScore = 50;
-              else {
-                // 의미있는 단어(2글자 이상)만 비교
-                const w1 = aiModel.split(/\s+/).filter(w => w.length >= 2);
-                const w2 = dbModel.split(/\s+/).filter(w => w.length >= 2);
-                const overlap = w1.filter(w => w2.includes(w)).length;
-                // 겹치는 단어가 전체의 절반 이상이어야 점수 부여
-                const ratio = w1.length > 0 ? overlap / w1.length : 0;
-                if (ratio >= 0.5) modelScore = Math.round(ratio * 40);
+          let score = 0;
+          // 영문 모델명
+          if (aiModel && dbModel) {
+            if (aiModel === dbModel) score = 100;
+            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 60;
+            else {
+              const w1 = aiModel.split(' ').filter(w => w.length >= 2);
+              const w2 = dbModel.split(' ').filter(w => w.length >= 2);
+              if (w1.length > 0) {
+                const hits = w1.filter(w => w2.includes(w)).length;
+                const ratio = hits / w1.length;
+                if (ratio >= 0.6) score = Math.round(ratio * 50);
               }
             }
-
-            // 한글 모델명 매칭
-            let modelKoScore = 0;
-            if (aiModelKo && dbModelKo) {
-              if (aiModelKo === dbModelKo) modelKoScore = 60;
-              else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) modelKoScore = 35;
-            }
-
-            score = Math.max(modelScore, modelKoScore);
-
-            // 모델명 매칭 점수가 40점 이상일 때만 후보로 인정
-            if (score >= 40 && score > bestScore) {
-              bestScore = score;
-              dbMatch = item;
-            }
           }
-        }
-      } catch (e) { console.warn('DB 조회 실패:', e.message); }
-    }
+          // 한글 모델명
+          if (aiModelKo && dbModelKo) {
+            if (aiModelKo === dbModelKo) score = Math.max(score, 90);
+            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
+          }
 
-    // 3. SerpApi Google Lens (별도, 실패 무관)
+          if (score >= 50 && score > best) { best = score; dbMatch = item; }
+        }
+      }
+    } catch (e) { console.warn('DB skip:', e.message); }
+
+    // Google Lens
     let visualMatches = [];
     try {
-      const serpRes = await fetch(
-        `https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`
-      );
-      const lensData = await serpRes.json();
-      visualMatches = lensData.visual_matches || [];
-    } catch (e) { console.warn('SerpApi skip'); }
+      const s = await fetch(`https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`);
+      const j = await s.json();
+      visualMatches = j.visual_matches || [];
+    } catch (e) { console.warn('Lens skip'); }
 
-    return res.status(200).json({
-      success: true,
-      imageUrl,
-      analysis,
-      dbMatch,
-      visualMatches: visualMatches.slice(0, 12)
-    });
-
+    return res.status(200).json({ success: true, imageUrl, analysis, dbMatch, visualMatches: visualMatches.slice(0, 12) });
   } catch (err) {
-    console.error('error:', err.message);
     return res.status(500).json({ success: false, error: err.message });
   }
 }
