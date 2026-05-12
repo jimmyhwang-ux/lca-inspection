@@ -105,17 +105,42 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const raw = claudeJson.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // 2. Supabase DB 조회 (브랜드 + 모델명 매칭)
+    // 2. Supabase DB 조회 - 브랜드 검색 후 유사도 매칭
     let dbMatch = null;
-    if (analysis.brand && analysis.model_name) {
+    if (analysis.brand) {
       try {
         const brand = encodeURIComponent(analysis.brand);
-        const model = encodeURIComponent(analysis.model_name);
-        const dbRes = await sbFetch(
-          `sku_items?brand=ilike.${brand}&model_name=ilike.${model}&limit=1`
-        );
+        const dbRes = await sbFetch(`sku_items?brand=ilike.*${brand}*&limit=20`);
         const dbData = await dbRes.json();
-        if (Array.isArray(dbData) && dbData.length > 0) dbMatch = dbData[0];
+        if (Array.isArray(dbData) && dbData.length > 0) {
+          const aiModel = (analysis.model_name || '').toLowerCase();
+          const aiModelKo = (analysis.model_name_ko || '').toLowerCase();
+          const aiSku = (analysis.sku || '').toLowerCase();
+          let bestScore = 0;
+          for (const item of dbData) {
+            let score = 0;
+            const dbModel = (item.model_name || '').toLowerCase();
+            const dbModelKo = (item.model_name_ko || '').toLowerCase();
+            const dbSku = (item.sku_code || '').toLowerCase();
+            if (aiSku && dbSku && aiSku === dbSku) score += 100;
+            if (aiModel && dbModel) {
+              if (aiModel === dbModel) score += 80;
+              else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score += 50;
+              else {
+                const w1 = aiModel.split(/\s+/);
+                const w2 = dbModel.split(/\s+/);
+                const overlap = w1.filter(w => w2.includes(w)).length;
+                score += overlap * 15;
+              }
+            }
+            if (aiModelKo && dbModelKo) {
+              if (aiModelKo === dbModelKo) score += 60;
+              else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score += 30;
+            }
+            if (score > bestScore) { bestScore = score; dbMatch = item; }
+          }
+          if (bestScore < 20) dbMatch = null;
+        }
       } catch (e) { console.warn('DB 조회 실패:', e.message); }
     }
 
