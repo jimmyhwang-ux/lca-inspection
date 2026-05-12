@@ -14,21 +14,22 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .header h1{font-size:19px;font-weight:800;margin-bottom:4px}
 .header p{font-size:12px;color:#666;line-height:1.4}
 .photo-wrap{padding:0 16px;margin-bottom:6px}
-.slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:120px}.slot-big.filled{min-height:0;aspect-ratio:4/3}
+.slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:120px}
 .slot-big:hover{border-color:#ff6b2b}
-.slot-big.filled{border-style:solid;border-color:#333}
+.slot-big.filled{border-style:solid;border-color:#333;min-height:0;aspect-ratio:4/3}
 .slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 16px;width:100%}
 .slot-big.filled .slot-inner{display:none}
-.slot-big img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:12px;z-index:1}.slot-big.filled img.preview{display:block}
+.slot-big img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:12px;z-index:1}
+.slot-big.filled img.preview{display:block}
 .slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .slot-sm{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:12px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s}
 .slot-sm:hover{border-color:#ff6b2b}
 .slot-sm.filled{border-style:solid;border-color:#333}
-.slot-sm img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:10px;z-index:1}.slot-sm.filled img.preview{display:block}
+.slot-sm img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:10px;z-index:1}
+.slot-sm.filled img.preview{display:block}
 .slot-sm .slot-inner{display:flex;flex-direction:column;align-items:center;gap:4px}
 .slot-sm.filled .slot-inner{display:none}
 .slot-icon{font-size:20px;opacity:.5}
-.slot-sm .slot-icon{font-size:16px}
 .slot-label{font-size:10px;font-weight:600;color:#666;text-align:center;line-height:1.3}
 .slot-sub{font-size:9px;color:#444;text-align:center}
 .rm-btn{position:absolute;top:5px;right:5px;width:20px;height:20px;background:rgba(0,0,0,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;z-index:2;color:#fff;border:none}
