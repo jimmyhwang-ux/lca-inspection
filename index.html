@@ -64,29 +64,25 @@ input[type=file]{display:none}
 .conf-badge.warn{background:#3a2a00;color:#f59e0b}
 .conf-badge.fail{background:#3a0000;color:#ef4444}
 .result-brand{font-size:12px;color:#ff6b2b;font-weight:600;margin-bottom:3px}
-.result-model{font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1.3;cursor:pointer}
-.result-model:hover{color:#ff6b2b}
 .result-reason{font-size:12px;color:#555;margin-bottom:8px}
 .result-cats{display:flex;gap:6px;flex-wrap:wrap}
 .cat-tag{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;padding:3px 10px;font-size:11px;color:#888}
-.info-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1a1a1a;margin:0 16px 4px;border-radius:12px;overflow:hidden}
-.info-cell{background:#111;padding:14px 16px}
-.info-cell-label{font-size:11px;color:#444;margin-bottom:4px}
-.info-cell-val{font-size:15px;font-weight:700;color:#fff;cursor:pointer}
+.info-row-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a1a1a;margin:0 16px 4px;border-radius:12px;overflow:hidden}
+.info-cell{background:#111;padding:12px 10px}
+.info-cell-label{font-size:10px;color:#444;margin-bottom:4px}
+.info-cell-val{font-size:13px;font-weight:700;color:#fff;cursor:pointer}
 .info-cell-val.muted{color:#333;font-weight:400}
 .info-cell-val:hover{color:#ff6b2b}
-.section-hd{padding:20px 16px 10px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase}
+.section-hd{padding:16px 16px 8px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase}
 .lens-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
 .lens-scroll::-webkit-scrollbar{display:none}
-.lens-card{flex-shrink:0;width:130px;background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.lens-card{flex-shrink:0;width:120px;background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
 .lens-card:hover{border-color:#ff6b2b}
 .lens-card img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#1a1a1a}
-.lens-info{padding:8px 10px}
+.lens-info{padding:7px 9px}
 .lens-title{font-size:11px;font-weight:600;color:#f0f0f0;line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lens-price{font-size:12px;font-weight:800;color:#ff6b2b}
 .lens-src{font-size:10px;color:#444;margin-top:2px}
-
-/* 부속품 */
 .acc-wrap{margin:0 16px;background:#111;border-radius:14px;overflow:hidden}
 .acc-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
 .acc-item:last-child{border-bottom:none}
@@ -99,17 +95,52 @@ input[type=file]{display:none}
 .acc-del:hover{color:#ef4444}
 .acc-add-row{padding:10px 14px;display:flex;gap:8px;border-top:1px solid #1a1a1a}
 .acc-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
-.acc-input:focus{border-color:#ff6b2b}
 .acc-add-btn{background:#ff6b2b;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-
-.bottom-bar{position:sticky;bottom:0;background:linear-gradient(to top,#000 60%,transparent);padding:16px 16px 24px}
-.btn-row{display:flex;gap:8px}
-.btn-sec{flex:1;background:#111;color:#888;border:1px solid #1e1e1e;border-radius:12px;padding:14px;font-size:13px;font-weight:600;cursor:pointer}
-.btn-copy{flex:2;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:13px;font-weight:800;cursor:pointer}
-.btn-copy:hover{background:#ff8c55}
-.editing-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;padding:2px 0;font-size:15px;font-weight:700;color:#fff;outline:none;font-family:inherit}
-.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#1a1a1a;border:1px solid #333;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#f0f0f0;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
+.db-match-card{margin:0 16px 4px;border-radius:12px;overflow:hidden;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.db-match-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)}
+.db-match-badge{background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px}
+.db-match-body{padding:10px 14px;display:flex;gap:12px}
+.db-match-img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#1a1a1a;flex-shrink:0}
+.db-match-info{flex:1;font-size:12px;color:#aaa;line-height:1.7}
+.db-match-info strong{color:#f0f0f0;font-size:13px}
+.db-new-badge{margin:0 16px 4px;border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px}
+.bottom-bar{position:sticky;bottom:0;background:linear-gradient(to top,#000 60%,transparent);padding:14px 16px 20px}
+.btn-row{display:flex;gap:6px}
+.btn-sec{flex:1;background:#111;color:#888;border:1px solid #1e1e1e;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-copy{flex:1;background:#1a1a1a;color:#ff6b2b;border:1px solid rgba(255,107,43,.3);border-radius:12px;padding:13px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-move{flex:2;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;cursor:pointer}
+.btn-move:hover{background:#ff8c55}
+.editing-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;padding:2px 0;font-size:13px;font-weight:700;color:#fff;outline:none;font-family:inherit}
+.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#1c1c1c;border:1px solid #333;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#f0f0f0;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* SKU 탭 */
+#screen-sku{padding:0 16px}
+.sku-topbar{display:flex;align-items:center;gap:10px;padding:16px 0 12px;border-bottom:1px solid #1a1a1a;margin-bottom:14px}
+.sku-back{background:none;border:none;color:#ff6b2b;font-size:22px;cursor:pointer;padding:0 4px;line-height:1}
+.sku-title{font-size:16px;font-weight:800;color:#f0f0f0}
+.sku-tabs{display:flex;gap:6px;margin-bottom:14px}
+.sku-tab{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;border:1px solid #2a2a2a;background:#111;color:#666;transition:all .15s}
+.sku-tab.active{background:#ff6b2b;color:#fff;border-color:#ff6b2b}
+.sku-card{background:#111;border-radius:14px;overflow:hidden;margin-bottom:10px}
+.sku-row{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
+.sku-row:last-child{border-bottom:none}
+.sku-key{font-size:11px;color:#444;width:90px;flex-shrink:0}
+.sku-input{flex:1;background:transparent;border:none;font-size:13px;font-weight:600;color:#f0f0f0;outline:none;font-family:inherit}
+.sku-input::placeholder{color:#333}
+.sku-photos{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.sku-photos::-webkit-scrollbar{display:none}
+.sku-photos img{width:68px;height:68px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #2a2a2a}
+.sku-save-btn{width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px}
+.sku-save-btn:hover{background:#ff8c55}
+.sku-list-item{background:#111;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid #1e1e1e}
+.sku-list-brand{font-size:11px;color:#ff6b2b;font-weight:600;margin-bottom:2px}
+.sku-list-model{font-size:14px;font-weight:700;color:#f0f0f0;margin-bottom:2px}
+.sku-list-model-en{font-size:11px;color:#555;margin-bottom:6px}
+.sku-list-meta{display:flex;gap:8px;flex-wrap:wrap}
+.sku-meta-tag{font-size:10px;color:#666;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:2px 8px}
+.sku-list-del{float:right;background:none;border:none;color:#333;font-size:14px;cursor:pointer;margin-top:-2px}
+.sku-list-del:hover{color:#ef4444}
+.sku-empty{text-align:center;padding:40px 20px;color:#444;font-size:14px}
 .screen{display:none}
 .screen.active{display:block}
 </style>
@@ -120,7 +151,7 @@ input[type=file]{display:none}
 <div id="screen-shoot" class="screen active">
   <div class="header">
     <h1>번개케어 검수</h1>
-    <p>사진으로 브랜드 · 모델명 · 카테고리 · 가격 자동 인식</p>
+    <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
   </div>
   <div class="photo-wrap">
     <div class="slot-big" id="slot-main" onclick="triggerFile('file-main')">
@@ -132,44 +163,44 @@ input[type=file]{display:none}
       </div>
       <button class="rm-btn" id="rm-main" style="display:none" onclick="removePhoto(event,'main')">✕</button>
     </div>
-    <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
+    <input type="file" id="file-main" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'main')">
     <div class="slot-grid">
       <div class="slot-sm" id="slot-label1" onclick="triggerFile('file-label1')">
         <img class="preview" id="prev-label1" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 1</div></div>
         <button class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1')">✕</button>
       </div>
-      <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
+      <input type="file" id="file-label1" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label1')">
       <div class="slot-sm" id="slot-label2" onclick="triggerFile('file-label2')">
         <img class="preview" id="prev-label2" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
         <button class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2')">✕</button>
       </div>
-      <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
+      <input type="file" id="file-label2" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label2')">
       <div class="slot-sm" id="slot-label3" onclick="triggerFile('file-label3')">
         <img class="preview" id="prev-label3" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
         <button class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3')">✕</button>
       </div>
-      <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
+      <input type="file" id="file-label3" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label3')">
       <div class="slot-sm" id="slot-logo" onclick="triggerFile('file-logo')">
         <img class="preview" id="prev-logo" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
         <button class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo')">✕</button>
       </div>
-      <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
+      <input type="file" id="file-logo" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'logo')">
       <div class="slot-sm" id="slot-origin" onclick="triggerFile('file-origin')">
         <img class="preview" id="prev-origin" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
         <button class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin')">✕</button>
       </div>
-      <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
+      <input type="file" id="file-origin" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'origin')">
       <div class="slot-sm" id="slot-back" onclick="triggerFile('file-back')">
         <img class="preview" id="prev-back" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
         <button class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back')">✕</button>
       </div>
-      <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
+      <input type="file" id="file-back" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'back')">
     </div>
   </div>
   <div class="hint">💡 라벨·로고·원산지 추가사진은 AI 신뢰도를 높입니다</div>
@@ -183,83 +214,67 @@ input[type=file]{display:none}
   <div class="loading-center">
     <div class="spinner"></div>
     <div class="loading-title">AI가 분석 중입니다</div>
-    <div class="loading-sub">브랜드·모델명·가격을 찾고 있습니다</div>
+    <div class="loading-sub">브랜드·모델명을 찾고 있습니다</div>
   </div>
   <div class="steps" style="padding:0 20px">
     <div class="step" id="ls1"><div class="step-ic">📤</div><div><div class="step-name">이미지 업로드</div><div class="step-desc">imgbb 호스팅</div></div><div class="step-st" id="ls1s">○</div></div>
     <div class="step" id="ls2"><div class="step-ic">🔎</div><div><div class="step-name">Google Lens 시각 검색</div><div class="step-desc">유사 상품 매칭</div></div><div class="step-st" id="ls2s">○</div></div>
     <div class="step" id="ls3"><div class="step-ic">🤖</div><div><div class="step-name">AI 분석</div><div class="step-desc">브랜드·모델·진위 판정</div></div><div class="step-st" id="ls3s">○</div></div>
-    <div class="step" id="ls4"><div class="step-ic">📋</div><div><div class="step-name">결과 정리</div><div class="step-desc">검수 리포트 작성</div></div><div class="step-st" id="ls4s">○</div></div>
+    <div class="step" id="ls4"><div class="step-ic">🗄️</div><div><div class="step-name">내부 DB 조회</div><div class="step-desc">SKU DB 매칭</div></div><div class="step-st" id="ls4s">○</div></div>
   </div>
 </div>
 
-<!-- STEP 3 -->
+<!-- STEP 3: 결과 -->
 <div id="screen-result" class="screen">
   <div class="result-card">
-    <div class="result-thumb">
-      <div id="res-thumb"><div class="result-thumb-ph">📦</div></div>
-    </div>
+    <div class="result-thumb"><div id="res-thumb"><div class="result-thumb-ph">📦</div></div></div>
     <div class="result-meta">
       <div class="conf-badge" id="conf-badge">신뢰도 —%</div>
       <div class="result-brand" id="r-brand">—</div>
-      <div class="result-model" id="r-model-ko" onclick="editField('r-model-ko')" style="font-size:17px;font-weight:800;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3">—</div>
-      <div id="r-model" onclick="editField('r-model')" style="font-size:12px;color:#555;margin-bottom:6px;cursor:pointer">—</div>
-      <div class="result-reason" id="r-reason">—</div>
+      <div id="r-model-ko" onclick="editField('r-model-ko')" style="font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3">—</div>
+      <div id="r-model" onclick="editField('r-model')" style="font-size:12px;color:#555;margin-bottom:5px;cursor:pointer">—</div>
+      <div class="result-reason" id="r-reason"></div>
       <div class="result-cats" id="r-cats"></div>
     </div>
   </div>
 
+  <!-- DB 매칭 결과 -->
+  <div id="db-match-wrap"></div>
+
+  <!-- 사이즈/명칭/스타일번호 -->
   <div class="info-row-grid">
     <div class="info-cell">
-      <div class="info-cell-label">사이즈</div>
+      <div class="info-cell-label">실측 사이즈 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
       <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')">—</div>
     </div>
     <div class="info-cell">
-      <div class="info-cell-label">스타일 번호</div>
+      <div class="info-cell-label">사이즈 명칭 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
+      <div class="info-cell-val muted" id="r-size-name" onclick="editField('r-size-name')">—</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
       <div class="info-cell-val muted" id="r-sku" onclick="editField('r-sku')">—</div>
     </div>
   </div>
 
-  <!-- 부속품 (참고가격 위치) -->
-  <div class="section-hd">🔧 부속품 검수</div>
+  <!-- 부속품 체크 -->
+  <div class="section-hd">🔧 부속품 체크</div>
   <div class="acc-wrap">
     <div id="acc-list"></div>
     <div class="acc-add-row">
       <select class="acc-input" id="acc-select">
         <option value="">-- 부속품 선택 --</option>
-        <option>없음</option>
-        <option>열쇠 1개</option>
-        <option>열쇠 2개</option>
-        <option>자물쇠</option>
-        <option>자물쇠 커버 (키벨)</option>
-        <option>네임택</option>
-        <option>면장 스트랩</option>
-        <option>잠을 스트랩</option>
-        <option>레더 스트랩</option>
-        <option>체인 스트랩</option>
-        <option>패브릭 스트랩</option>
-        <option>스트랩패드</option>
-        <option>이너파우치</option>
-        <option>참장식</option>
-        <option>핸들 홀더 (손잡이 고정)</option>
-        <option>거울</option>
-        <option>키드지갑</option>
-        <option>미니파우치</option>
-        <option>속지갑 1개</option>
-        <option>속지갑 2개</option>
-        <option>훅 클로저</option>
-        <option>밑판</option>
-        <option>발착형 키링</option>
-        <option>리본</option>
-        <option>더스트백</option>
-        <option>보증서</option>
-        <option>박스</option>
-        <option>케어택</option>
-        <option>브랜드택</option>
-        <option>여분단추</option>
-        <option>여분링크</option>
-        <option>크라운</option>
-        <option>여분끈</option>
+        <option>없음</option><option>열쇠 1개</option><option>열쇠 2개</option>
+        <option>자물쇠</option><option>자물쇠 커버 (키벨)</option><option>네임택</option>
+        <option>면장 스트랩</option><option>잠금 스트랩</option><option>레더 스트랩</option>
+        <option>체인 스트랩</option><option>패브릭 스트랩</option><option>스트랩패드</option>
+        <option>이너파우치</option><option>참장식</option><option>핸들 홀더 (손잡이 고정)</option>
+        <option>거울</option><option>키드지갑</option><option>미니파우치</option>
+        <option>속지갑 1개</option><option>속지갑 2개</option><option>훅 클로저</option>
+        <option>밑판</option><option>탈착형 키링</option><option>리본</option>
+        <option>더스트백</option><option>보증서</option><option>박스</option>
+        <option>케어택</option><option>브랜드택</option><option>여분단추</option>
+        <option>여분링크</option><option>크라운</option><option>여분끈</option>
       </select>
       <button class="acc-add-btn" onclick="addAccessory()">추가</button>
     </div>
@@ -272,20 +287,61 @@ input[type=file]{display:none}
   </div>
 
   <div style="height:16px"></div>
-
   <div class="bottom-bar">
     <div class="btn-row">
-      <button class="btn-sec" onclick="resetAll()">↩ 다시 찍기</button>
-      <button class="btn-copy" onclick="copyResult()">📋 결과 복사</button>
+      <button class="btn-sec" onclick="resetAll()">↩ 다시</button>
+      <button class="btn-copy" onclick="copyResult()">📋 복사</button>
+      <button class="btn-move" onclick="goToSku()">📋 결과 이동 →</button>
     </div>
   </div>
+</div>
+
+<!-- SKU 탭 -->
+<div id="screen-sku" class="screen">
+  <div class="sku-topbar">
+    <button class="sku-back" onclick="showScreen('result')">←</button>
+    <div class="sku-title">SKU 관리</div>
+  </div>
+  <div class="sku-tabs">
+    <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
+    <div class="sku-tab" id="tab-list" onclick="switchSkuTab('list')">목록</div>
+  </div>
+
+  <!-- 적재 탭 -->
+  <div id="sku-save-panel">
+    <div class="sku-photos" id="sku-photo-wrap"></div>
+    <div class="sku-card">
+      <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="sku-model" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">카테고리</div><input class="sku-input" id="sku-cat" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">실측 사이즈</div><input class="sku-input" id="sku-size" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">판정</div><input class="sku-input" id="sku-verdict" type="text" placeholder="—" readonly></div>
+    </div>
+    <div style="font-size:11px;color:#444;margin-bottom:8px;padding:0 2px">부속품 체크</div>
+    <div class="sku-card" id="sku-acc-list" style="margin-bottom:14px"></div>
+    <button class="sku-save-btn" onclick="saveToSupabase()">💾 SKU DB에 저장</button>
+    <button class="btn-sec" style="width:100%;padding:13px;font-size:13px" onclick="copySkuResult()">📋 SKU 복사</button>
+  </div>
+
+  <!-- 목록 탭 -->
+  <div id="sku-list-panel" style="display:none">
+    <div style="margin-bottom:12px">
+      <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuList()">
+    </div>
+    <div id="sku-list-wrap"><div class="sku-empty">불러오는 중...</div></div>
+  </div>
+  <div style="height:40px"></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
-let resultData={}, accessories=[];
+let resultData={}, accessories=[], skuListAll=[];
 
 function triggerFile(id){document.getElementById(id).click()}
 function loadPhoto(input,key){
@@ -293,15 +349,11 @@ function loadPhoto(input,key){
   const file=input.files[0];
   const reader=new FileReader();
   reader.onload=e=>{
-    // 이미지 압축
     const img=new Image();
     img.onload=()=>{
       const MAX=1200;
-      let w=img.width, h=img.height;
-      if(w>MAX||h>MAX){
-        if(w>h){h=Math.round(h*MAX/w);w=MAX;}
-        else{w=Math.round(w*MAX/h);h=MAX;}
-      }
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
       const canvas=document.createElement('canvas');
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
@@ -319,8 +371,7 @@ function loadPhoto(input,key){
 }
 function removePhoto(e,key){
   e.stopPropagation();photos[key]=null;
-  const prev=document.getElementById('prev-'+key);
-  prev.src='';prev.style.display='none';
+  const prev=document.getElementById('prev-'+key);prev.src='';prev.style.display='none';
   document.getElementById('slot-'+key).classList.remove('filled');
   const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='none';
   document.getElementById('file-'+key).value='';updateBtn();
@@ -369,13 +420,11 @@ async function startInspection(){
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
 function renderResult(){
-  const{analysis,visualMatches=[]}=resultData;
+  const{analysis,visualMatches=[],dbMatch}=resultData;
   const conf=analysis.confidence||0;
-
   const badge=document.getElementById('conf-badge');
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
-
   if(photos.main){
     document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block">`;
   }
@@ -383,25 +432,53 @@ function renderResult(){
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||analysis.model_name||'—';
   document.getElementById('r-model').textContent=analysis.model_name||'—';
   document.getElementById('r-reason').textContent=analysis.verdict_reason||'';
-
   const cats=[];
   if(analysis.category)cats.push(analysis.category);
   if(analysis.color)cats.push(analysis.color);
   if(analysis.origin)cats.push(analysis.origin);
   document.getElementById('r-cats').innerHTML=cats.map(c=>`<div class="cat-tag">${c}</div>`).join('');
 
+  // DB 매칭 표시
+  const dbWrap=document.getElementById('db-match-wrap');
+  if(dbMatch){
+    const accList=(dbMatch.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+    dbWrap.innerHTML=`
+      <div class="db-match-card">
+        <div class="db-match-header">
+          <span class="db-match-badge">✅ DB 매칭</span>
+          <span style="font-size:11px;color:#22c55e">내부 SKU DB에서 찾았어요</span>
+        </div>
+        <div class="db-match-body">
+          ${dbMatch.ref_image_url?`<img class="db-match-img" src="${dbMatch.ref_image_url}" alt="">`:'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
+          <div class="db-match-info">
+            <strong>${dbMatch.model_name_ko||dbMatch.model_name||'—'}</strong><br>
+            SKU: ${dbMatch.sku_code||'—'}<br>
+            ${accList?'부속품: '+accList:''}
+          </div>
+        </div>
+      </div>`;
+    // DB 값으로 자동 채우기
+    if(dbMatch.sku_code){
+      document.getElementById('r-sku').textContent=dbMatch.sku_code;
+      document.getElementById('r-sku').className='info-cell-val';
+    }
+    if(dbMatch.accessories&&dbMatch.accessories.length){
+      accessories=dbMatch.accessories.map(a=>({name:a.name,status:a.status||''}));
+      renderAcc();
+    }
+  } else {
+    dbWrap.innerHTML=`<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>`;
+    accessories=[];renderAcc();
+  }
+
   const sizeEl=document.getElementById('r-size');
   sizeEl.textContent=analysis.size||'—';
   sizeEl.className='info-cell-val'+(analysis.size?'':' muted');
+  document.getElementById('r-size-name').textContent='—';
+  document.getElementById('r-size-name').className='info-cell-val muted';
   const skuEl=document.getElementById('r-sku');
-  skuEl.textContent=analysis.sku||'—';
-  skuEl.className='info-cell-val'+(analysis.sku?'':' muted');
+  if(!dbMatch){skuEl.textContent=analysis.sku||'—';skuEl.className='info-cell-val'+(analysis.sku?'':' muted');}
 
-  // 부속품 초기화 (비움 - 사용자가 직접 추가)
-  accessories=[];
-  renderAcc();
-
-  // Lens
   const lensEl=document.getElementById('lens-results');
   if(visualMatches.length){
     lensEl.innerHTML=visualMatches.slice(0,10).map(m=>{
@@ -436,39 +513,164 @@ function setAcc(i,v){accessories[i].status=v;}
 function delAcc(i){accessories.splice(i,1);renderAcc();}
 function addAccessory(){
   const sel=document.getElementById('acc-select');
-  const name=sel.value;
-  if(!name)return;
-  accessories.push({name,status:''});
-  sel.value='';
-  renderAcc();
+  const name=sel.value;if(!name)return;
+  accessories.push({name,status:''});sel.value='';renderAcc();
 }
-
 function editField(id){
-  const el=document.getElementById(id);
-  const cur=el.textContent;
+  const el=document.getElementById(id);const cur=el.textContent;
   el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)">`;
   el.querySelector('input').focus();
 }
-function saveField(id,input){
-  document.getElementById(id).textContent=input.value.trim()||'—';
+function saveField(id,input){document.getElementById(id).textContent=input.value.trim()||'—';}
+
+function goToSku(){
+  const a=resultData.analysis||{};
+  document.getElementById('sku-brand').value=document.getElementById('r-brand').textContent.replace('—','');
+  document.getElementById('sku-model-ko').value=document.getElementById('r-model-ko').textContent.replace('—','');
+  document.getElementById('sku-model').value=document.getElementById('r-model').textContent.replace('—','');
+  document.getElementById('sku-cat').value=a.category||'';
+  document.getElementById('sku-color').value=a.color||'';
+  document.getElementById('sku-size').value=document.getElementById('r-size').textContent.replace('—','');
+  document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
+  document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
+  document.getElementById('sku-verdict').value=a.verdict==='pass'?'합격':a.verdict==='fail'?'불합격':'검수자 확인 필요';
+  const photoWrap=document.getElementById('sku-photo-wrap');
+  photoWrap.innerHTML=['main','label1','label2','label3','logo','origin','back']
+    .filter(k=>photos[k])
+    .map(k=>`<img src="${photos[k].dataUrl}" alt="">`)
+    .join('');
+  const accList=document.getElementById('sku-acc-list');
+  if(accessories.length){
+    accList.innerHTML=accessories.map(a=>{
+      const cls=a.status==='Y'?'#22c55e':a.status==='N'?'#ef4444':'#f59e0b';
+      const txt=a.status==='Y'?'있음':a.status==='N'?'없음':'미확인';
+      return`<div class="sku-row" style="justify-content:space-between">
+        <div style="font-size:13px;font-weight:600;color:#f0f0f0">${a.name}</div>
+        <div style="font-size:12px;font-weight:700;color:${cls}">${txt}</div>
+      </div>`;
+    }).join('');
+  } else {
+    accList.innerHTML='<div style="padding:14px 16px;font-size:12px;color:#444">부속품 없음</div>';
+  }
+  switchSkuTab('save');
+  showScreen('sku');
+}
+
+async function saveToSupabase(){
+  const data={
+    brand:document.getElementById('sku-brand').value,
+    model_name:document.getElementById('sku-model').value,
+    model_name_ko:document.getElementById('sku-model-ko').value,
+    category:document.getElementById('sku-cat').value,
+    color:document.getElementById('sku-color').value,
+    size_actual:document.getElementById('sku-size').value,
+    size_label:document.getElementById('sku-size-name').value,
+    sku_code:document.getElementById('sku-sku').value,
+    accessories:accessories,
+    ref_image_url:resultData.imageUrl||'',
+    verdict:resultData.analysis?.verdict||'',
+    confidence:resultData.analysis?.confidence||0
+  };
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'save_sku',skuData:data})
+    });
+    const j=await res.json();
+    if(j.success){toast('✅ SKU DB에 저장되었습니다');}
+    else throw new Error(j.error);
+  }catch(e){toast('❌ 저장 실패: '+e.message);}
+}
+
+function switchSkuTab(tab){
+  document.getElementById('tab-save').className='sku-tab'+(tab==='save'?' active':'');
+  document.getElementById('tab-list').className='sku-tab'+(tab==='list'?' active':'');
+  document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
+  document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
+  if(tab==='list')loadSkuList();
+}
+
+async function loadSkuList(){
+  document.getElementById('sku-list-wrap').innerHTML='<div class="sku-empty">불러오는 중...</div>';
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list_sku'})
+    });
+    const j=await res.json();
+    skuListAll=j.data||[];
+    renderSkuList(skuListAll);
+  }catch(e){
+    document.getElementById('sku-list-wrap').innerHTML='<div class="sku-empty">불러오기 실패</div>';
+  }
+}
+
+function renderSkuList(list){
+  const wrap=document.getElementById('sku-list-wrap');
+  if(!list.length){wrap.innerHTML='<div class="sku-empty">등록된 SKU가 없습니다</div>';return;}
+  wrap.innerHTML=list.map(item=>`
+    <div class="sku-list-item">
+      <button class="sku-list-del" onclick="deleteSku('${item.id}')">✕</button>
+      <div class="sku-list-brand">${item.brand||'—'}</div>
+      <div class="sku-list-model">${item.model_name_ko||item.model_name||'—'}</div>
+      <div class="sku-list-model-en">${item.model_name||''}</div>
+      <div class="sku-list-meta">
+        ${item.category?`<span class="sku-meta-tag">${item.category}</span>`:''}
+        ${item.color?`<span class="sku-meta-tag">${item.color}</span>`:''}
+        ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span>`:''}
+        ${item.verdict?`<span class="sku-meta-tag" style="color:${item.verdict==='pass'?'#22c55e':item.verdict==='fail'?'#ef4444':'#f59e0b'}">${item.verdict==='pass'?'합격':item.verdict==='fail'?'불합격':'확인필요'}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function filterSkuList(){
+  const q=document.getElementById('sku-search').value.toLowerCase();
+  const filtered=skuListAll.filter(i=>
+    (i.brand||'').toLowerCase().includes(q)||
+    (i.model_name||'').toLowerCase().includes(q)||
+    (i.model_name_ko||'').toLowerCase().includes(q)
+  );
+  renderSkuList(filtered);
+}
+
+async function deleteSku(id){
+  if(!confirm('삭제하시겠습니까?'))return;
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'delete_sku',skuData:{id}})
+    });
+    const j=await res.json();
+    if(j.success){toast('✅ 삭제되었습니다');loadSkuList();}
+    else throw new Error(j.error);
+  }catch(e){toast('❌ 삭제 실패');}
 }
 
 function copyResult(){
   const a=resultData.analysis||{};
   const vk={pass:'합격',review:'검수자 확인 필요',fail:'불합격'};
-  const accText=accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':a.status==='?'?'불확실':'미확인'}`).join('\n');
-  const text=[
-    '[번개케어 검수 결과]',
+  const accText=accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}`).join('\n');
+  const text=['[번개케어 검수 결과]',
     '판정: '+(vk[a.verdict]||'—')+' (신뢰도 '+(a.confidence||0)+'%)',
-    '브랜드: '+(a.brand||'—'),
-    '모델명: '+(a.model_name||'—'),
-    'SKU: '+(a.sku||'—'),
-    '색상: '+(a.color||'—'),
-    '',
-    '[부속품]',
-    accText
-  ].join('\n');
+    '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
+    'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
+}
+
+function copySkuResult(){
+  const text=[
+    '브랜드: '+document.getElementById('sku-brand').value,
+    '모델명(한글): '+document.getElementById('sku-model-ko').value,
+    '모델명(영문): '+document.getElementById('sku-model').value,
+    '카테고리: '+document.getElementById('sku-cat').value,
+    '컬러: '+document.getElementById('sku-color').value,
+    '실측사이즈: '+document.getElementById('sku-size').value,
+    '사이즈명칭: '+document.getElementById('sku-size-name').value,
+    '스타일번호: '+document.getElementById('sku-sku').value,
+    '','[부속품]',
+    ...accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}`)
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(()=>toast('✅ SKU 복사됨'));
 }
 
 function resetAll(){
