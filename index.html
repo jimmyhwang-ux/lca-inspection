@@ -16,15 +16,15 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .photo-wrap{padding:0 16px;margin-bottom:6px}
 .slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px}
 .slot-big:hover{border-color:#ff6b2b}
-.slot-big.filled{border-style:solid;border-color:#333}.slot-big.filled img.preview{display:block}.slot-big.filled input[type=file]{z-index:1;pointer-events:none}
+.slot-big.filled{border-style:solid;border-color:#333}
 .slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 16px;width:100%}
 .slot-big.filled .slot-inner{display:none}
-.slot-big img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:12px;z-index:3}
+.slot-big img.preview{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:12px}
 .slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .slot-sm{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:12px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s}
 .slot-sm:hover{border-color:#ff6b2b}
-.slot-sm.filled{border-style:solid;border-color:#333}.slot-sm.filled img.preview{display:block}.slot-sm.filled input[type=file]{z-index:1;pointer-events:none}
-.slot-sm img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:10px;z-index:3}
+.slot-sm.filled{border-style:solid;border-color:#333}
+.slot-sm img.preview{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:10px}
 .slot-sm .slot-inner{display:flex;flex-direction:column;align-items:center;gap:4px}
 .slot-sm.filled .slot-inner{display:none}
 .slot-icon{font-size:20px;opacity:.5}
@@ -32,7 +32,7 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .slot-label{font-size:10px;font-weight:600;color:#666;text-align:center;line-height:1.3}
 .slot-sub{font-size:9px;color:#444;text-align:center}
 .rm-btn{position:absolute;top:5px;right:5px;width:20px;height:20px;background:rgba(0,0,0,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;z-index:2;color:#fff;border:none}
-input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
+input[type=file]{display:none}
 .hint{font-size:11px;color:#444;padding:6px 16px 10px;line-height:1.5}
 .cta-wrap{padding:0 16px;margin-bottom:16px}
 .btn-main{width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s}
@@ -167,53 +167,53 @@ input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;curs
     <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
   </div>
   <div class="photo-wrap">
-    <div class="slot-big" id="slot-main" style="position:relative">
-      <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
-      <img class="preview" id="prev-main" src="" alt="">
+    <div class="slot-big" id="slot-main" onclick="triggerFile('file-main')">
+      <img class="preview" id="prev-main" src="" alt="" style="display:none">
       <div class="slot-inner">
         <div class="slot-icon">📦</div>
         <div class="slot-label">본품 + 부속품 전체샷</div>
         <div class="slot-sub">필수 · Google Lens 검색에 사용</div>
       </div>
-      <button class="rm-btn" id="rm-main" style="display:none;z-index:4" onclick="removePhoto(event,'main')">✕</button>
+      <button class="rm-btn" id="rm-main" style="display:none" onclick="removePhoto(event,'main')">✕</button>
     </div>
+    <input type="file" id="file-main" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'main')">
     <div class="slot-grid">
-      <div class="slot-sm" id="slot-label1" style="position:relative">
-        <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
-        <img class="preview" id="prev-label1" src="" alt="">
+      <div class="slot-sm" id="slot-label1" onclick="triggerFile('file-label1')">
+        <img class="preview" id="prev-label1" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 1</div></div>
-        <button class="rm-btn" id="rm-label1" style="display:none;z-index:4" onclick="removePhoto(event,'label1')">✕</button>
+        <button class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1')">✕</button>
       </div>
-      <div class="slot-sm" id="slot-label2" style="position:relative">
-        <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
-        <img class="preview" id="prev-label2" src="" alt="">
+      <input type="file" id="file-label1" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label1')">
+      <div class="slot-sm" id="slot-label2" onclick="triggerFile('file-label2')">
+        <img class="preview" id="prev-label2" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
-        <button class="rm-btn" id="rm-label2" style="display:none;z-index:4" onclick="removePhoto(event,'label2')">✕</button>
+        <button class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2')">✕</button>
       </div>
-      <div class="slot-sm" id="slot-label3" style="position:relative">
-        <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
-        <img class="preview" id="prev-label3" src="" alt="">
+      <input type="file" id="file-label2" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label2')">
+      <div class="slot-sm" id="slot-label3" onclick="triggerFile('file-label3')">
+        <img class="preview" id="prev-label3" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
-        <button class="rm-btn" id="rm-label3" style="display:none;z-index:4" onclick="removePhoto(event,'label3')">✕</button>
+        <button class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3')">✕</button>
       </div>
-      <div class="slot-sm" id="slot-logo" style="position:relative">
-        <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
-        <img class="preview" id="prev-logo" src="" alt="">
+      <input type="file" id="file-label3" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label3')">
+      <div class="slot-sm" id="slot-logo" onclick="triggerFile('file-logo')">
+        <img class="preview" id="prev-logo" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
-        <button class="rm-btn" id="rm-logo" style="display:none;z-index:4" onclick="removePhoto(event,'logo')">✕</button>
+        <button class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo')">✕</button>
       </div>
-      <div class="slot-sm" id="slot-origin" style="position:relative">
-        <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
-        <img class="preview" id="prev-origin" src="" alt="">
+      <input type="file" id="file-logo" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'logo')">
+      <div class="slot-sm" id="slot-origin" onclick="triggerFile('file-origin')">
+        <img class="preview" id="prev-origin" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
-        <button class="rm-btn" id="rm-origin" style="display:none;z-index:4" onclick="removePhoto(event,'origin')">✕</button>
+        <button class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin')">✕</button>
       </div>
-      <div class="slot-sm" id="slot-back" style="position:relative">
-        <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
-        <img class="preview" id="prev-back" src="" alt="">
+      <input type="file" id="file-origin" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'origin')">
+      <div class="slot-sm" id="slot-back" onclick="triggerFile('file-back')">
+        <img class="preview" id="prev-back" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
-        <button class="rm-btn" id="rm-back" style="display:none;z-index:4" onclick="removePhoto(event,'back')">✕</button>
+        <button class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back')">✕</button>
       </div>
+      <input type="file" id="file-back" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'back')">
     </div>
   </div>
   <div class="hint">💡 라벨·로고·원산지 추가사진은 AI 신뢰도를 높입니다</div>
@@ -411,7 +411,7 @@ function loadPhoto(input,key){
       const dataUrl=canvas.toDataURL('image/jpeg',0.8);
       photos[key]={file,dataUrl};
       const prev=document.getElementById('prev-'+key);
-      prev.src=dataUrl;
+      prev.src=dataUrl;prev.style.display='block';
       document.getElementById('slot-'+key).classList.add('filled');
       const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
       updateBtn();
@@ -421,13 +421,11 @@ function loadPhoto(input,key){
   reader.readAsDataURL(file);
 }
 function removePhoto(e,key){
-  e.stopPropagation();e.preventDefault();photos[key]=null;
-  const prev=document.getElementById('prev-'+key);
-  prev.src='';prev.style.display='none';
+  e.stopPropagation();photos[key]=null;
+  const prev=document.getElementById('prev-'+key);prev.src='';prev.style.display='none';
   document.getElementById('slot-'+key).classList.remove('filled');
   const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='none';
-  const fi=document.getElementById('file-'+key);
-  if(fi){fi.value='';fi.style.zIndex='2';fi.style.pointerEvents='auto';}
+  document.getElementById('file-'+key).value='';
   updateBtn();
 }
 function updateBtn(){document.getElementById('btn-start').disabled=!photos.main;}
