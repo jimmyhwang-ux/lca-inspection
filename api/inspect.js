@@ -46,6 +46,22 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── SKU 수정 액션 ──────────────────────────────────
+  if (action === 'update_sku') {
+    try {
+      const { id, ...fields } = skuData;
+      const r = await sbFetch(`sku_items?id=eq.${id}`, {
+        method: 'PATCH',
+        prefer: 'return=representation',
+        body: JSON.stringify(fields)
+      });
+      const d = await r.json();
+      return res.status(200).json({ success: true, data: d });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: e.message });
+    }
+  }
+
   // ── SKU 삭제 액션 ──────────────────────────────────
   if (action === 'delete_sku') {
     try {
@@ -105,41 +121,56 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const raw = claudeJson.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // 2. Supabase DB 조회 - 브랜드 검색 후 유사도 매칭
+    // 2. Supabase DB 조회 - 전체 가져온 후 JS에서 유사도 매칭
     let dbMatch = null;
     if (analysis.brand) {
       try {
-        const brand = encodeURIComponent(analysis.brand);
-        const dbRes = await sbFetch(`sku_items?brand=ilike.*${brand}*&limit=20`);
+        // 전체 목록 가져와서 JS에서 매칭 (인코딩 이슈 우회)
+        const dbRes = await sbFetch('sku_items?select=*&limit=500');
         const dbData = await dbRes.json();
         if (Array.isArray(dbData) && dbData.length > 0) {
-          const aiModel = (analysis.model_name || '').toLowerCase();
-          const aiModelKo = (analysis.model_name_ko || '').toLowerCase();
-          const aiSku = (analysis.sku || '').toLowerCase();
+          const aiBrand  = (analysis.brand || '').toLowerCase().trim();
+          const aiModel  = (analysis.model_name || '').toLowerCase().trim();
+          const aiModelKo= (analysis.model_name_ko || '').toLowerCase().trim();
+          const aiSku    = (analysis.sku || '').toLowerCase().trim();
+
           let bestScore = 0;
           for (const item of dbData) {
             let score = 0;
-            const dbModel = (item.model_name || '').toLowerCase();
-            const dbModelKo = (item.model_name_ko || '').toLowerCase();
-            const dbSku = (item.sku_code || '').toLowerCase();
+            const dbBrand   = (item.brand || '').toLowerCase().trim();
+            const dbModel   = (item.model_name || '').toLowerCase().trim();
+            const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
+            const dbSku     = (item.sku_code || '').toLowerCase().trim();
+
+            // 브랜드 불일치면 스킵
+            if (!dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
+
+            // SKU 코드 완전 일치 → 최고점
             if (aiSku && dbSku && aiSku === dbSku) score += 100;
+
+            // 모델명 매칭
             if (aiModel && dbModel) {
               if (aiModel === dbModel) score += 80;
               else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score += 50;
               else {
-                const w1 = aiModel.split(/\s+/);
-                const w2 = dbModel.split(/\s+/);
+                const w1 = aiModel.split(/\s+/).filter(w => w.length > 1);
+                const w2 = dbModel.split(/\s+/).filter(w => w.length > 1);
                 const overlap = w1.filter(w => w2.includes(w)).length;
-                score += overlap * 15;
+                if (overlap > 0) score += overlap * 15;
               }
             }
+            // 한글 모델명 매칭
             if (aiModelKo && dbModelKo) {
               if (aiModelKo === dbModelKo) score += 60;
               else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score += 30;
             }
+            // 브랜드만이라도 일치하면 기본 5점
+            score += 5;
+
             if (score > bestScore) { bestScore = score; dbMatch = item; }
           }
-          if (bestScore < 20) dbMatch = null;
+          // 10점 미만은 매칭 실패
+          if (bestScore < 10) dbMatch = null;
         }
       } catch (e) { console.warn('DB 조회 실패:', e.message); }
     }
