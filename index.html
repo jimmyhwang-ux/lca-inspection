@@ -132,44 +132,44 @@ input[type=file]{display:none}
       </div>
       <button class="rm-btn" id="rm-main" style="display:none" onclick="removePhoto(event,'main')">✕</button>
     </div>
-    <input type="file" id="file-main" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'main')">
+    <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
     <div class="slot-grid">
       <div class="slot-sm" id="slot-label1" onclick="triggerFile('file-label1')">
         <img class="preview" id="prev-label1" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 1</div></div>
         <button class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1')">✕</button>
       </div>
-      <input type="file" id="file-label1" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label1')">
+      <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
       <div class="slot-sm" id="slot-label2" onclick="triggerFile('file-label2')">
         <img class="preview" id="prev-label2" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
         <button class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2')">✕</button>
       </div>
-      <input type="file" id="file-label2" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label2')">
+      <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
       <div class="slot-sm" id="slot-label3" onclick="triggerFile('file-label3')">
         <img class="preview" id="prev-label3" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
         <button class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3')">✕</button>
       </div>
-      <input type="file" id="file-label3" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'label3')">
+      <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
       <div class="slot-sm" id="slot-logo" onclick="triggerFile('file-logo')">
         <img class="preview" id="prev-logo" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
         <button class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo')">✕</button>
       </div>
-      <input type="file" id="file-logo" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'logo')">
+      <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
       <div class="slot-sm" id="slot-origin" onclick="triggerFile('file-origin')">
         <img class="preview" id="prev-origin" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
         <button class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin')">✕</button>
       </div>
-      <input type="file" id="file-origin" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'origin')">
+      <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
       <div class="slot-sm" id="slot-back" onclick="triggerFile('file-back')">
         <img class="preview" id="prev-back" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
         <button class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back')">✕</button>
       </div>
-      <input type="file" id="file-back" accept="image/jpeg,image/png,image/heic,image/heif" onchange="loadPhoto(this,'back')">
+      <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
     </div>
   </div>
   <div class="hint">💡 라벨·로고·원산지 추가사진은 AI 신뢰도를 높입니다</div>
@@ -290,16 +290,32 @@ let resultData={}, accessories=[];
 function triggerFile(id){document.getElementById(id).click()}
 function loadPhoto(input,key){
   if(!input.files[0])return;
+  const file=input.files[0];
   const reader=new FileReader();
   reader.onload=e=>{
-    photos[key]={file:input.files[0],dataUrl:e.target.result};
-    const prev=document.getElementById('prev-'+key);
-    prev.src=e.target.result;prev.style.display='block';
-    document.getElementById('slot-'+key).classList.add('filled');
-    const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
-    updateBtn();
+    // 이미지 압축
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=1200;
+      let w=img.width, h=img.height;
+      if(w>MAX||h>MAX){
+        if(w>h){h=Math.round(h*MAX/w);w=MAX;}
+        else{w=Math.round(w*MAX/h);h=MAX;}
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.8);
+      photos[key]={file,dataUrl};
+      const prev=document.getElementById('prev-'+key);
+      prev.src=dataUrl;prev.style.display='block';
+      document.getElementById('slot-'+key).classList.add('filled');
+      const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
+      updateBtn();
+    };
+    img.src=e.target.result;
   };
-  reader.readAsDataURL(input.files[0]);
+  reader.readAsDataURL(file);
 }
 function removePhoto(e,key){
   e.stopPropagation();photos[key]=null;
