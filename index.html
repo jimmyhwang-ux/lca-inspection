@@ -174,8 +174,8 @@ input[type=file]{display:none}
         <div class="slot-label">본품 + 부속품 전체샷</div>
         <div class="slot-sub">필수 · Google Lens 검색에 사용</div>
       </div>
-      <button class="rm-btn" id="rm-main" style="display:none" onclick="removePhoto(event,'main')">✕</button>
-    </div>
+      <button class="rm-btn" id="rm-main" style="display:none" onclick="removePhoto(event,'main');return false;">✕</button>
+    </label>
     <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
     <div class="slot-grid">
       <label class="slot-sm" id="slot-label1" for="file-label1" style="cursor:pointer">
