@@ -205,7 +205,10 @@ input[type=file]{display:none}
   </div>
   <div class="hint">💡 라벨·로고·원산지 추가사진은 AI 신뢰도를 높입니다</div>
   <div class="cta-wrap">
-    <button class="btn-main" id="btn-start" onclick="startInspection()" disabled>분석 시작</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-main" id="btn-start" onclick="startInspection()" disabled style="flex:3">분석 시작</button>
+      <button onclick="openSkuOnly()" style="flex:1;background:#1a1a1a;color:#ff6b2b;border:1px solid rgba(255,107,43,.3);border-radius:14px;padding:17px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">SKU 관리</button>
+    </div>
   </div>
 </div>
 
@@ -523,6 +526,11 @@ function editField(id){
 }
 function saveField(id,input){document.getElementById(id).textContent=input.value.trim()||'—';}
 
+function openSkuOnly(){
+  switchSkuTab('list');
+  showScreen('sku');
+  document.querySelector('.sku-back').onclick=()=>showScreen('shoot');
+}
 function goToSku(){
   const a=resultData.analysis||{};
   document.getElementById('sku-brand').value=document.getElementById('r-brand').textContent.replace('—','');
