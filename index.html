@@ -169,7 +169,7 @@ input[type=file]{display:none}
   </div>
   <div class="photo-wrap">
     <div class="slot-big" id="slot-main" onclick="document.getElementById('file-main').click()">
-      <img class="preview" id="prev-main" src="" alt="" style="display:none">
+      <img class="preview" id="prev-main" src="" alt="">
       <div class="slot-inner">
         <div class="slot-icon">📦</div>
         <div class="slot-label">본품 + 부속품 전체샷</div>
@@ -180,37 +180,37 @@ input[type=file]{display:none}
     <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
     <div class="slot-grid">
       <div class="slot-sm" id="slot-label1" onclick="document.getElementById('file-label1').click()">
-        <img class="preview" id="prev-label1" src="" alt="" style="display:none">
+        <img class="preview" id="prev-label1" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 1</div></div>
         <button type="button" class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1')">✕</button>
       </div>
       <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
       <div class="slot-sm" id="slot-label2" onclick="document.getElementById('file-label2').click()">
-        <img class="preview" id="prev-label2" src="" alt="" style="display:none">
+        <img class="preview" id="prev-label2" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
         <button type="button" class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2')">✕</button>
       </div>
       <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
       <div class="slot-sm" id="slot-label3" onclick="document.getElementById('file-label3').click()">
-        <img class="preview" id="prev-label3" src="" alt="" style="display:none">
+        <img class="preview" id="prev-label3" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
         <button type="button" class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3')">✕</button>
       </div>
       <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
       <div class="slot-sm" id="slot-logo" onclick="document.getElementById('file-logo').click()">
-        <img class="preview" id="prev-logo" src="" alt="" style="display:none">
+        <img class="preview" id="prev-logo" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
         <button type="button" class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo')">✕</button>
       </div>
       <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
       <div class="slot-sm" id="slot-origin" onclick="document.getElementById('file-origin').click()">
-        <img class="preview" id="prev-origin" src="" alt="" style="display:none">
+        <img class="preview" id="prev-origin" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
         <button type="button" class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin')">✕</button>
       </div>
       <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
       <div class="slot-sm" id="slot-back" onclick="document.getElementById('file-back').click()">
-        <img class="preview" id="prev-back" src="" alt="" style="display:none">
+        <img class="preview" id="prev-back" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
         <button type="button" class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back')">✕</button>
       </div>
@@ -571,7 +571,8 @@ function addAccessory(){
 }
 function editField(id){
   const el=document.getElementById(id);const cur=el.textContent;
-  const trigger=(id==='r-model'||id==='r-model-ko'||id==='r-sku')?'oninput="onResultFieldInput(this,''+id+'')"':'';
+  const isSearch=(id==='r-model'||id==='r-model-ko'||id==='r-sku');
+  const trigger=isSearch?'oninput="onResultFieldInput(this,\''+id+'\')"':'';
   el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
   el.querySelector('input').focus();
 }
