@@ -32,7 +32,7 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .slot-label{font-size:10px;font-weight:600;color:#666;text-align:center;line-height:1.3}
 .slot-sub{font-size:9px;color:#444;text-align:center}
 .rm-btn{position:absolute;top:5px;right:5px;width:20px;height:20px;background:rgba(0,0,0,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;z-index:2;color:#fff;border:none}
-input[type=file]{position:absolute;width:0;height:0;opacity:0;pointer-events:none}
+input[type=file]{display:none}
 .hint{font-size:11px;color:#444;padding:6px 16px 10px;line-height:1.5}
 .cta-wrap{padding:0 16px;margin-bottom:16px}
 .btn-main{width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s}
@@ -167,7 +167,7 @@ input[type=file]{position:absolute;width:0;height:0;opacity:0;pointer-events:non
     <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
   </div>
   <div class="photo-wrap">
-    <div class="slot-big" id="slot-main" onclick="triggerFile('file-main')">
+    <label class="slot-big" id="slot-main" for="file-main" style="cursor:pointer">
       <img class="preview" id="prev-main" src="" alt="" style="display:none">
       <div class="slot-inner">
         <div class="slot-icon">📦</div>
@@ -178,41 +178,41 @@ input[type=file]{position:absolute;width:0;height:0;opacity:0;pointer-events:non
     </div>
     <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
     <div class="slot-grid">
-      <div class="slot-sm" id="slot-label1" onclick="triggerFile('file-label1')">
+      <label class="slot-sm" id="slot-label1" for="file-label1" style="cursor:pointer">
         <img class="preview" id="prev-label1" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 1</div></div>
-        <button class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1')">✕</button>
-      </div>
+        <button class="rm-btn" id="rm-label1" style="display:none" onclick="removePhoto(event,'label1');return false;">✕</button>
+      </label>
       <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
-      <div class="slot-sm" id="slot-label2" onclick="triggerFile('file-label2')">
+      <label class="slot-sm" id="slot-label2" for="file-label2" style="cursor:pointer">
         <img class="preview" id="prev-label2" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
-        <button class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2')">✕</button>
-      </div>
+        <button class="rm-btn" id="rm-label2" style="display:none" onclick="removePhoto(event,'label2');return false;">✕</button>
+      </label>
       <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
-      <div class="slot-sm" id="slot-label3" onclick="triggerFile('file-label3')">
+      <label class="slot-sm" id="slot-label3" for="file-label3" style="cursor:pointer">
         <img class="preview" id="prev-label3" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
-        <button class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3')">✕</button>
-      </div>
+        <button class="rm-btn" id="rm-label3" style="display:none" onclick="removePhoto(event,'label3');return false;">✕</button>
+      </label>
       <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
-      <div class="slot-sm" id="slot-logo" onclick="triggerFile('file-logo')">
+      <label class="slot-sm" id="slot-logo" for="file-logo" style="cursor:pointer">
         <img class="preview" id="prev-logo" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
-        <button class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo')">✕</button>
-      </div>
+        <button class="rm-btn" id="rm-logo" style="display:none" onclick="removePhoto(event,'logo');return false;">✕</button>
+      </label>
       <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
-      <div class="slot-sm" id="slot-origin" onclick="triggerFile('file-origin')">
+      <label class="slot-sm" id="slot-origin" for="file-origin" style="cursor:pointer">
         <img class="preview" id="prev-origin" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
-        <button class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin')">✕</button>
-      </div>
+        <button class="rm-btn" id="rm-origin" style="display:none" onclick="removePhoto(event,'origin');return false;">✕</button>
+      </label>
       <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
-      <div class="slot-sm" id="slot-back" onclick="triggerFile('file-back')">
+      <label class="slot-sm" id="slot-back" for="file-back" style="cursor:pointer">
         <img class="preview" id="prev-back" src="" alt="" style="display:none">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
-        <button class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back')">✕</button>
-      </div>
+        <button class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back');return false;">✕</button>
+      </label>
       <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
     </div>
   </div>
