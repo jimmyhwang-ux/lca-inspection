@@ -16,15 +16,15 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .photo-wrap{padding:0 16px;margin-bottom:6px}
 .slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px}
 .slot-big:hover{border-color:#ff6b2b}
-.slot-big.filled{border-style:solid;border-color:#333}
+.slot-big.filled{border-style:solid;border-color:#333}.slot-big.filled img.preview{display:block}
 .slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 16px;width:100%}
 .slot-big.filled .slot-inner{display:none}
-.slot-big img.preview{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:12px}
+.slot-big img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:12px;z-index:1}
 .slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .slot-sm{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:12px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s}
 .slot-sm:hover{border-color:#ff6b2b}
-.slot-sm.filled{border-style:solid;border-color:#333}
-.slot-sm img.preview{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:10px}
+.slot-sm.filled{border-style:solid;border-color:#333}.slot-sm.filled img.preview{display:block}
+.slot-sm img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:10px;z-index:1}
 .slot-sm .slot-inner{display:flex;flex-direction:column;align-items:center;gap:4px}
 .slot-sm.filled .slot-inner{display:none}
 .slot-icon{font-size:20px;opacity:.5}
@@ -412,7 +412,6 @@ function loadPhoto(input,key){
       photos[key]={file,dataUrl};
       const prev=document.getElementById('prev-'+key);
       prev.src=dataUrl;
-      prev.style.display='block';
       document.getElementById('slot-'+key).classList.add('filled');
       const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
       updateBtn();
