@@ -125,14 +125,13 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     let dbMatch = null;
     if (analysis.brand) {
       try {
-        // 전체 목록 가져와서 JS에서 매칭 (인코딩 이슈 우회)
         const dbRes = await sbFetch('sku_items?select=*&limit=500');
         const dbData = await dbRes.json();
         if (Array.isArray(dbData) && dbData.length > 0) {
-          const aiBrand  = (analysis.brand || '').toLowerCase().trim();
-          const aiModel  = (analysis.model_name || '').toLowerCase().trim();
-          const aiModelKo= (analysis.model_name_ko || '').toLowerCase().trim();
-          const aiSku    = (analysis.sku || '').toLowerCase().trim();
+          const aiBrand   = (analysis.brand || '').toLowerCase().trim();
+          const aiModel   = (analysis.model_name || '').toLowerCase().trim();
+          const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
+          const aiSku     = (analysis.sku || '').toLowerCase().trim();
 
           let bestScore = 0;
           for (const item of dbData) {
@@ -142,35 +141,43 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
             const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-            // 브랜드 불일치면 스킵
+            // 브랜드 불일치면 무조건 스킵
             if (!dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
 
-            // SKU 코드 완전 일치 → 최고점
-            if (aiSku && dbSku && aiSku === dbSku) score += 100;
+            // SKU 코드 완전 일치 → 즉시 매칭
+            if (aiSku && dbSku && aiSku === dbSku) { bestScore = 200; dbMatch = item; break; }
 
-            // 모델명 매칭
+            // 모델명 매칭 (필수 조건)
+            let modelScore = 0;
             if (aiModel && dbModel) {
-              if (aiModel === dbModel) score += 80;
-              else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score += 50;
+              if (aiModel === dbModel) modelScore = 80;
+              else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) modelScore = 50;
               else {
-                const w1 = aiModel.split(/\s+/).filter(w => w.length > 1);
-                const w2 = dbModel.split(/\s+/).filter(w => w.length > 1);
+                // 의미있는 단어(2글자 이상)만 비교
+                const w1 = aiModel.split(/\s+/).filter(w => w.length >= 2);
+                const w2 = dbModel.split(/\s+/).filter(w => w.length >= 2);
                 const overlap = w1.filter(w => w2.includes(w)).length;
-                if (overlap > 0) score += overlap * 15;
+                // 겹치는 단어가 전체의 절반 이상이어야 점수 부여
+                const ratio = w1.length > 0 ? overlap / w1.length : 0;
+                if (ratio >= 0.5) modelScore = Math.round(ratio * 40);
               }
             }
-            // 한글 모델명 매칭
-            if (aiModelKo && dbModelKo) {
-              if (aiModelKo === dbModelKo) score += 60;
-              else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score += 30;
-            }
-            // 브랜드만이라도 일치하면 기본 5점
-            score += 5;
 
-            if (score > bestScore) { bestScore = score; dbMatch = item; }
+            // 한글 모델명 매칭
+            let modelKoScore = 0;
+            if (aiModelKo && dbModelKo) {
+              if (aiModelKo === dbModelKo) modelKoScore = 60;
+              else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) modelKoScore = 35;
+            }
+
+            score = Math.max(modelScore, modelKoScore);
+
+            // 모델명 매칭 점수가 40점 이상일 때만 후보로 인정
+            if (score >= 40 && score > bestScore) {
+              bestScore = score;
+              dbMatch = item;
+            }
           }
-          // 10점 미만은 매칭 실패
-          if (bestScore < 10) dbMatch = null;
         }
       } catch (e) { console.warn('DB 조회 실패:', e.message); }
     }
