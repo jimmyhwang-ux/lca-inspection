@@ -608,9 +608,12 @@ async function loadSkuList(){
 function renderSkuList(list){
   const wrap=document.getElementById('sku-list-wrap');
   if(!list.length){wrap.innerHTML='<div class="sku-empty">등록된 SKU가 없습니다</div>';return;}
-  wrap.innerHTML=list.map(item=>`
-    <div class="sku-list-item">
-      <button class="sku-list-del" onclick="deleteSku('${item.id}')">✕</button>
+  wrap.innerHTML=list.map((item,i)=>{
+    const accText=(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:${a.status==='Y'?'#22c55e':a.status==='N'?'#ef4444':'#888'}">${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}</span>`).join('');
+    const vColor=item.verdict==='pass'?'#22c55e':item.verdict==='fail'?'#ef4444':'#f59e0b';
+    const vText=item.verdict==='pass'?'합격':item.verdict==='fail'?'불합격':'확인필요';
+    return `<div class="sku-list-item" style="cursor:pointer" onclick="toggleSkuDetail(${i})">
+      <button class="sku-list-del" onclick="event.stopPropagation();deleteSku('${item.id}')">✕</button>
       <div class="sku-list-brand">${item.brand||'—'}</div>
       <div class="sku-list-model">${item.model_name_ko||item.model_name||'—'}</div>
       <div class="sku-list-model-en">${item.model_name||''}</div>
@@ -618,9 +621,26 @@ function renderSkuList(list){
         ${item.category?`<span class="sku-meta-tag">${item.category}</span>`:''}
         ${item.color?`<span class="sku-meta-tag">${item.color}</span>`:''}
         ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span>`:''}
-        ${item.verdict?`<span class="sku-meta-tag" style="color:${item.verdict==='pass'?'#22c55e':item.verdict==='fail'?'#ef4444':'#f59e0b'}">${item.verdict==='pass'?'합격':item.verdict==='fail'?'불합격':'확인필요'}</span>`:''}
+        ${item.verdict?`<span class="sku-meta-tag" style="color:${vColor}">${vText}</span>`:''}
       </div>
-    </div>`).join('');
+      <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
+        ${item.ref_image_url?`<img src="${item.ref_image_url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">`:''}
+        <div style="font-size:11px;color:#444;margin-bottom:4px">상세 정보</div>
+        <div style="font-size:12px;color:#aaa;line-height:1.8">
+          ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
+          ${item.size_actual?`실측사이즈: <span style="color:#f0f0f0">${item.size_actual}</span><br>`:''}
+          ${item.sku_code?`스타일번호: <span style="color:#f0f0f0">${item.sku_code}</span><br>`:''}
+          등록일: <span style="color:#f0f0f0">${new Date(item.created_at).toLocaleDateString('ko-KR')}</span>
+        </div>
+        ${accText?`<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${accText}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSkuDetail(i){
+  const el=document.getElementById('sku-detail-'+i);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
 }
 
 function filterSkuList(){
