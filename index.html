@@ -32,7 +32,10 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .slot-label{font-size:10px;font-weight:600;color:#666;text-align:center;line-height:1.3}
 .slot-sub{font-size:9px;color:#444;text-align:center}
 .rm-btn{position:absolute;top:5px;right:5px;width:20px;height:20px;background:rgba(0,0,0,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;z-index:2;color:#fff;border:none}
-input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:3}
+input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
+.slot-big img.preview,.slot-sm img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:3;border-radius:inherit}
+.slot-big.filled input[type=file],.slot-sm.filled input[type=file]{pointer-events:none;z-index:1}
+.slot-big.filled img.preview,.slot-sm.filled img.preview{display:block}
 .hint{font-size:11px;color:#444;padding:6px 16px 10px;line-height:1.5}
 .cta-wrap{padding:0 16px;margin-bottom:16px}
 .btn-main{width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s}
@@ -169,7 +172,7 @@ input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;curs
   <div class="photo-wrap">
     <div class="slot-big" id="slot-main" style="position:relative">
       <input type="file" id="file-main" accept="image/*" onchange="loadPhoto(this,'main')">
-      <img class="preview" id="prev-main" src="" alt="" style="display:none">
+      <img class="preview" id="prev-main" src="" alt="">
       <div class="slot-inner">
         <div class="slot-icon">📦</div>
         <div class="slot-label">본품 + 부속품 전체샷</div>
@@ -180,37 +183,37 @@ input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;curs
     <div class="slot-grid">
       <div class="slot-sm" id="slot-label1" style="position:relative">
         <input type="file" id="file-label1" accept="image/*" onchange="loadPhoto(this,'label1')">
-        <img class="preview" id="prev-label1" src="" alt="" style="display:none">
+        <img class="preview" id="prev-label1" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 1</div></div>
         <button class="rm-btn" id="rm-label1" style="display:none;z-index:4" onclick="removePhoto(event,'label1')">✕</button>
       </div>
       <div class="slot-sm" id="slot-label2" style="position:relative">
         <input type="file" id="file-label2" accept="image/*" onchange="loadPhoto(this,'label2')">
-        <img class="preview" id="prev-label2" src="" alt="" style="display:none">
+        <img class="preview" id="prev-label2" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 2</div></div>
         <button class="rm-btn" id="rm-label2" style="display:none;z-index:4" onclick="removePhoto(event,'label2')">✕</button>
       </div>
       <div class="slot-sm" id="slot-label3" style="position:relative">
         <input type="file" id="file-label3" accept="image/*" onchange="loadPhoto(this,'label3')">
-        <img class="preview" id="prev-label3" src="" alt="" style="display:none">
+        <img class="preview" id="prev-label3" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🏷️</div><div class="slot-label">라벨/택 3</div></div>
         <button class="rm-btn" id="rm-label3" style="display:none;z-index:4" onclick="removePhoto(event,'label3')">✕</button>
       </div>
       <div class="slot-sm" id="slot-logo" style="position:relative">
         <input type="file" id="file-logo" accept="image/*" onchange="loadPhoto(this,'logo')">
-        <img class="preview" id="prev-logo" src="" alt="" style="display:none">
+        <img class="preview" id="prev-logo" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🔤</div><div class="slot-label">로고</div></div>
         <button class="rm-btn" id="rm-logo" style="display:none;z-index:4" onclick="removePhoto(event,'logo')">✕</button>
       </div>
       <div class="slot-sm" id="slot-origin" style="position:relative">
         <input type="file" id="file-origin" accept="image/*" onchange="loadPhoto(this,'origin')">
-        <img class="preview" id="prev-origin" src="" alt="" style="display:none">
+        <img class="preview" id="prev-origin" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🌍</div><div class="slot-label">원산지</div></div>
         <button class="rm-btn" id="rm-origin" style="display:none;z-index:4" onclick="removePhoto(event,'origin')">✕</button>
       </div>
       <div class="slot-sm" id="slot-back" style="position:relative">
         <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
-        <img class="preview" id="prev-back" src="" alt="" style="display:none">
+        <img class="preview" id="prev-back" src="" alt="">
         <div class="slot-inner"><div class="slot-icon">🔄</div><div class="slot-label">후면/내부</div></div>
         <button class="rm-btn" id="rm-back" style="display:none;z-index:4" onclick="removePhoto(event,'back')">✕</button>
       </div>
@@ -412,11 +415,8 @@ function loadPhoto(input,key){
       photos[key]={file,dataUrl};
       const prev=document.getElementById('prev-'+key);
       prev.src=dataUrl;
-      prev.style.cssText='display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;border-radius:inherit';
       const slot=document.getElementById('slot-'+key);
       slot.classList.add('filled');
-      // input을 뒤로 보내서 사진이 보이게
-      input.style.zIndex='1';
       const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
       updateBtn();
     };
@@ -427,11 +427,10 @@ function loadPhoto(input,key){
 function removePhoto(e,key){
   e.stopPropagation();e.preventDefault();photos[key]=null;
   const prev=document.getElementById('prev-'+key);
-  prev.src='';prev.style.cssText='display:none';
+  prev.src='';prev.style.display='none';
   document.getElementById('slot-'+key).classList.remove('filled');
   const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='none';
-  const fi=document.getElementById('file-'+key);
-  fi.value='';fi.style.zIndex='3';
+  document.getElementById('file-'+key).value='';
   updateBtn();
 }
 function updateBtn(){document.getElementById('btn-start').disabled=!photos.main;}
