@@ -336,6 +336,7 @@ input[type=file]{display:none}
       <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">판정</div><input class="sku-input" id="sku-verdict" type="text" placeholder="—" readonly></div>
+      <div class="sku-row" style="align-items:flex-start"><div class="sku-key" style="padding-top:2px">특이사항</div><textarea class="sku-input" id="sku-notes" rows="2" style="resize:vertical;line-height:1.5;padding:2px 0" placeholder="메모..."></textarea></div>
     </div>
     <div style="font-size:11px;color:#444;margin-bottom:8px;padding:0 2px">부속품 체크</div>
     <div class="sku-card" id="sku-acc-list" style="margin-bottom:14px"></div>
@@ -362,6 +363,15 @@ input[type=file]{display:none}
   <div class="edit-sheet">
     <div class="edit-sheet-handle"></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:16px">SKU 수정</div>
+    <div class="edit-field-row">
+      <div class="edit-field-label">사진</div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
+      <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#666;width:fit-content">
+        + 사진 추가
+        <input type="file" id="ef-new-photo" accept="image/jpeg,image/png,image/heic,image/heif" style="display:none" onchange="previewEditPhoto(this)">
+      </label>
+      <div id="ef-new-photo-preview" style="margin-top:6px"></div>
+    </div>
     <div class="edit-field-row"><div class="edit-field-label">브랜드</div><input class="edit-field-input" id="ef-brand" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">모델명 (한글)</div><input class="edit-field-input" id="ef-model-ko" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">모델명 (영문)</div><input class="edit-field-input" id="ef-model" type="text"></div>
@@ -370,7 +380,9 @@ input[type=file]{display:none}
     <div class="edit-field-row"><div class="edit-field-label">실측 사이즈</div><input class="edit-field-input" id="ef-size" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">사이즈 명칭</div><input class="edit-field-input" id="ef-size-name" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">스타일 번호</div><input class="edit-field-input" id="ef-sku" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">특이사항</div><textarea class="edit-field-input" id="ef-notes" rows="3" style="resize:vertical;line-height:1.5" placeholder="스크래치, 오염, 기타 메모..."></textarea></div>
     <input type="hidden" id="ef-id">
+    <input type="hidden" id="ef-extra-images">
     <button class="btn-main" style="margin-top:8px" onclick="saveEditSku()">저장</button>
     <button class="btn-sec" style="width:100%;margin-top:8px;padding:13px" onclick="closeEditModal()">취소</button>
   </div>
@@ -610,8 +622,10 @@ async function saveToSupabase(){
     size_actual:document.getElementById('sku-size').value,
     size_label:document.getElementById('sku-size-name').value,
     sku_code:document.getElementById('sku-sku').value,
+    notes:document.getElementById('sku-notes').value,
     accessories:accessories,
     ref_image_url:resultData.imageUrl||'',
+    extra_images:[],
     verdict:resultData.analysis?.verdict||'',
     confidence:resultData.analysis?.confidence||0
   };
@@ -673,12 +687,14 @@ function renderSkuList(list){
         ${item.verdict?`<span class="sku-meta-tag" style="color:${vColor}">${vText}</span>`:''}
       </div>
       <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
-        ${item.ref_image_url?`<img src="${item.ref_image_url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${item.ref_image_url}')" alt="">`:''}
-        <div style="font-size:11px;color:#444;margin-bottom:4px">상세 정보</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          ${[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).map(url=>`<img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid #2a2a2a" onclick="event.stopPropagation();openLightbox('${url}')" alt="">`).join('')}
+        </div>
         <div style="font-size:12px;color:#aaa;line-height:1.8">
           ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
           ${item.size_actual?`실측사이즈: <span style="color:#f0f0f0">${item.size_actual}</span><br>`:''}
           ${item.sku_code?`스타일번호: <span style="color:#f0f0f0">${item.sku_code}</span><br>`:''}
+          ${item.notes?`특이사항: <span style="color:#f59e0b">${item.notes}</span><br>`:''}
           등록일: <span style="color:#f0f0f0">${new Date(item.created_at).toLocaleDateString('ko-KR')}</span>
         </div>
         ${accText?`<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${accText}</div>`:''}
@@ -710,12 +726,44 @@ function openEditModal(i){
   document.getElementById('ef-size').value=item.size_actual||'';
   document.getElementById('ef-size-name').value=item.size_label||'';
   document.getElementById('ef-sku').value=item.sku_code||'';
+  document.getElementById('ef-notes').value=item.notes||'';
+  // 기존 사진들 표시
+  const imgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean);
+  const unique=[...new Set(imgs)];
+  document.getElementById('ef-extra-images').value=JSON.stringify(unique);
+  document.getElementById('ef-photos-wrap').innerHTML=unique.map(url=>
+    `<img src="${url}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:zoom-in;border:1px solid #2a2a2a" onclick="openLightbox('${url}')" alt="">`
+  ).join('');
+  document.getElementById('ef-new-photo').value='';
+  document.getElementById('ef-new-photo-preview').innerHTML='';
   document.getElementById('edit-modal').classList.add('open');
+}
+function previewEditPhoto(input){
+  if(!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=1200;let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.8);
+      input._dataUrl=dataUrl;
+      document.getElementById('ef-new-photo-preview').innerHTML=
+        `<img src="${dataUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ff6b2b">`;
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 function closeEditModal(){document.getElementById('edit-modal').classList.remove('open');}
 
 async function saveEditSku(){
   const id=document.getElementById('ef-id').value;
+  const photoInput=document.getElementById('ef-new-photo');
+  const newImageBase64=photoInput._dataUrl?photoInput._dataUrl.split(',')[1]:null;
+  const extraImages=JSON.parse(document.getElementById('ef-extra-images').value||'[]');
   const data={
     brand:document.getElementById('ef-brand').value,
     model_name_ko:document.getElementById('ef-model-ko').value,
@@ -725,6 +773,9 @@ async function saveEditSku(){
     size_actual:document.getElementById('ef-size').value,
     size_label:document.getElementById('ef-size-name').value,
     sku_code:document.getElementById('ef-sku').value,
+    notes:document.getElementById('ef-notes').value,
+    extra_images:extraImages,
+    ...(newImageBase64?{newImageBase64}:{})
   };
   try{
     const res=await fetch('/api/inspect',{
