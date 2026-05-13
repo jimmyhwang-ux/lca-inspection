@@ -113,7 +113,7 @@ input[type=file]{display:none}
 .db-match-card{margin:0 16px 4px;border-radius:12px;overflow:hidden;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
 .db-match-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)}
 .db-match-badge{background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px}
-.db-match-body{padding:10px 14px;display:flex;gap:12px}
+.db-match-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
 .db-match-img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#1a1a1a;flex-shrink:0}
 .db-match-info{flex:1;font-size:12px;color:#aaa;line-height:1.7}
 .db-match-info strong{color:#f0f0f0;font-size:13px}
@@ -161,6 +161,13 @@ input[type=file]{display:none}
 .img-slider .sl-arrow.left{left:-8px}
 .img-slider .sl-arrow.right{right:-8px}
 .img-slider .sl-count{position:absolute;bottom:3px;right:4px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;pointer-events:none}
+/* DB 매칭 슬라이더 — 전체 너비 */
+.db-match-slider{position:relative;width:100%;background:#0a2a0a;border-radius:8px;overflow:hidden;margin-bottom:2px}
+.db-match-slider img{width:100%;max-height:180px;object-fit:contain;display:block;cursor:zoom-in;background:#0a2a0a}
+.db-match-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);border:none;color:#fff;font-size:15px;width:24px;height:36px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.db-match-slider .sl-arrow.left{left:4px}
+.db-match-slider .sl-arrow.right{right:4px}
+.db-match-slider .sl-count{position:absolute;bottom:5px;right:7px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px}
 /* SKU 목록 상세 슬라이더 — 가로 전체 */
 .sku-slider{position:relative;width:100%;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-bottom:8px}
 .sku-slider img{width:100%;max-height:200px;object-fit:contain;display:block;cursor:zoom-in;background:#1a1a1a}
@@ -634,15 +641,14 @@ function renderResult(){
       const slId=`dbsl-${idx}`;
       const imgs=dbSliderData[idx].imgs;
       const total=imgs.length;
-      // 슬라이더 HTML — DOM 삽입 후 _sliders 등록은 아래서
+      // 슬라이더 HTML — db-match-slider (full width, 세로 배치)
       const slHtml=total>0?`
-        <div class="img-slider" id="${slId}">
-          <img src="${imgs[0]}" alt="" style="cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
+        <div class="db-match-slider" id="${slId}">
+          <img src="${imgs[0]}" alt="" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
           ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">‹</button>
           <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>
           <span class="sl-count">1/${total}</span>`:''}
-        </div>`
-        :'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>';
+        </div>`:'';
       return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
           <span class="db-match-badge">✅ DB 매칭 ${isMulti?`(${idx+1}/${dbMatches.length})`:''}</span>
@@ -653,8 +659,8 @@ function renderResult(){
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
           <div class="db-match-body">
             ${slHtml}
-            <div class="db-match-info">
-              <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
+            <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7">
+              <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
               SKU: ${m.sku_code||'—'}<br>
               ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
               ${accList?'부속품: '+accList:''}
@@ -909,13 +915,12 @@ function applyDbMatchMulti(items){
     const imgs=multiSlData[idx].imgs;
     const total=imgs.length;
     const slHtml=total>0?`
-      <div class="img-slider" id="${slId}">
-        <img src="${imgs[0]}" alt="" style="cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
+      <div class="db-match-slider" id="${slId}">
+        <img src="${imgs[0]}" alt="" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
         ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">‹</button>
         <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>
         <span class="sl-count">1/${total}</span>`:''}
-      </div>`
-      :'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>';
+      </div>`:'';
     return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
       <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
         <span class="db-match-badge">✅ ${idx+1}/${items.length}</span>
@@ -926,8 +931,8 @@ function applyDbMatchMulti(items){
       <div id="${dbId}" style="display:${idx===0?'block':'none'}">
         <div class="db-match-body">
           ${slHtml}
-          <div class="db-match-info">
-            <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
+          <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7">
+            <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
             SKU: ${m.sku_code||'—'}<br>
             ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
             ${accList?'부속품: '+accList:''}
