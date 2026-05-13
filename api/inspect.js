@@ -34,7 +34,6 @@ export default async function handler(req, res) {
   // ── SKU 저장 ──────────────────────────────────────
   if (action === 'save_sku') {
     try {
-      // 추가 이미지들 업로드
       let extra_images = skuData.extra_images || [];
       if (skuData.newImageBase64) {
         const url = await uploadImgbb(skuData.newImageBase64);
@@ -61,7 +60,6 @@ export default async function handler(req, res) {
   if (action === 'update_sku') {
     try {
       const { id, newImageBase64, ...fields } = skuData;
-      // 새 이미지 추가
       if (newImageBase64) {
         const url = await uploadImgbb(newImageBase64);
         fields.extra_images = [...(fields.extra_images || []), url];
@@ -79,6 +77,34 @@ export default async function handler(req, res) {
       await sb(`sku_items?id=eq.${skuData.id}`, { method: 'DELETE', prefer: '' });
       return res.status(200).json({ success: true });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  // ── 모델명 한글→영문 직역 ─────────────────────────
+  if (action === 'translate_model') {
+    try {
+      const { modelNameKo } = req.body;
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': CLAUDE_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 60,
+          messages: [{
+            role: 'user',
+            content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}`
+          }]
+        })
+      });
+      const j = await r.json();
+      const en = (j.content?.[0]?.text || '').trim().split('\n')[0];
+      return res.status(200).json({ model_name_en: en });
+    } catch (e) {
+      return res.status(500).json({ model_name_en: '' });
+    }
   }
 
   // ── 메인 검수 ─────────────────────────────────────
@@ -116,7 +142,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // DB 매칭 — 전체 가져온 후 JS 유사도 매칭
+    // DB 매칭
     let dbMatch = null;
     try {
       const dbRes = await sb('sku_items?select=*&limit=500');
@@ -134,14 +160,10 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-          // 브랜드 불일치 → 스킵
           if (aiBrand && dbBrand && !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
-
-          // SKU 완전 일치 → 즉시 확정
           if (aiSku && dbSku && aiSku === dbSku) { dbMatch = item; break; }
 
           let score = 0;
-          // 영문 모델명
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
             else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 60;
@@ -155,7 +177,6 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
               }
             }
           }
-          // 한글 모델명
           if (aiModelKo && dbModelKo) {
             if (aiModelKo === dbModelKo) score = Math.max(score, 90);
             else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
