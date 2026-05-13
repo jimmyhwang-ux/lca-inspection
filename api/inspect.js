@@ -79,6 +79,17 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
+  // ── 이미지 단건 업로드 (프론트에서 imgbb에 직접 업로드) ──────────────
+  if (action === 'upload_image') {
+    try {
+      const { imageBase64: b64 } = req.body;
+      const url = await uploadImgbb(b64);
+      return res.status(200).json({ url });
+    } catch (e) {
+      return res.status(500).json({ url: '', error: e.message });
+    }
+  }
+
   // ── 모델명 한글→영문 직역 ─────────────────────────
   if (action === 'translate_model') {
     try {
