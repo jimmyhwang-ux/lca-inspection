@@ -206,6 +206,14 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip'); }
 
+    // dbMatch extra_images 정규화 (null/undefined → 빈 배열)
+    if (dbMatch) {
+      dbMatch = {
+        ...dbMatch,
+        extra_images: Array.isArray(dbMatch.extra_images) ? dbMatch.extra_images : [],
+        ref_image_url: dbMatch.ref_image_url || null,
+      };
+    }
     return res.status(200).json({ success: true, imageUrl, analysis, dbMatch, visualMatches: visualMatches.slice(0, 12) });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
