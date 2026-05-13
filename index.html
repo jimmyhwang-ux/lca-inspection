@@ -155,26 +155,14 @@ input[type=file]{display:none}
 .sku-list-del{float:right;background:none;border:none;color:#333;font-size:14px;cursor:pointer;margin-top:-2px}
 .sku-list-del:hover{color:#ef4444}
 .sku-empty{text-align:center;padding:40px 20px;color:#444;font-size:14px}
-.img-slider{position:relative;width:80px;flex-shrink:0}
-.img-slider img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #2a2a2a;display:block;cursor:zoom-in}
-.img-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);border:none;color:#fff;font-size:13px;width:18px;height:28px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;line-height:1}
-.img-slider .sl-arrow.left{left:-8px}
-.img-slider .sl-arrow.right{right:-8px}
-.img-slider .sl-count{position:absolute;bottom:3px;right:4px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;pointer-events:none}
-/* DB 매칭 슬라이더 — 전체 너비 */
-.db-match-slider{position:relative;width:100%;background:#111;border-radius:8px;overflow:hidden;margin-bottom:2px}
-.db-match-slider img{width:100%;height:auto;max-height:220px;object-fit:contain;display:block;cursor:zoom-in;background:#111}
-.db-match-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);border:none;color:#fff;font-size:15px;width:24px;height:36px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
-.db-match-slider .sl-arrow.left{left:4px}
-.db-match-slider .sl-arrow.right{right:4px}
-.db-match-slider .sl-count{position:absolute;bottom:5px;right:7px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px}
-/* SKU 목록 상세 슬라이더 — 가로 전체 */
-.sku-slider{position:relative;width:100%;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-bottom:8px}
-.sku-slider img{width:100%;max-height:200px;object-fit:contain;display:block;cursor:zoom-in;background:#1a1a1a}
-.sku-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);border:none;color:#fff;font-size:16px;width:26px;height:40px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
-.sku-slider .sl-arrow.left{left:4px}
-.sku-slider .sl-arrow.right{right:4px}
-.sku-slider .sl-count{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.72);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px}
+/* 공용 슬라이더 */
+.sl-box{position:relative;width:100%;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-bottom:8px;cursor:pointer}
+.sl-box img{width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a}
+.sl-box .sl-arrow{position:absolute;top:0;bottom:0;width:36px;background:rgba(0,0,0,.45);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:3;opacity:0;transition:opacity .15s}
+.sl-box:hover .sl-arrow{opacity:1}
+.sl-box .sl-arrow.left{left:0;border-radius:10px 0 0 10px}
+.sl-box .sl-arrow.right{right:0;border-radius:0 10px 10px 0}
+.sl-box .sl-count{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.72);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;pointer-events:none;z-index:3}
 .screen{display:none}
 .screen.active{display:block}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -669,14 +657,7 @@ function renderResult(){
       const slId=`dbsl-${idx}`;
       const imgs=dbSliderData[idx].imgs;
       const total=imgs.length;
-      // 슬라이더 HTML — db-match-slider (full width, 세로 배치)
-      const slHtml=total>0?`
-        <div class="db-match-slider" id="${slId}">
-          <img src="${imgs[0]}" alt="" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
-          ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">‹</button>
-          <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>`:''}
-          <span class="sl-count">${imgs.indexOf?1:1}/${total}</span>
-        </div>`:'';
+      const slHtml=imgs.length?makeSlider(slId,imgs):'';
       return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
           <span class="db-match-badge">✅ DB 매칭 ${isMulti?`(${idx+1}/${dbMatches.length})`:''}</span>
@@ -698,7 +679,7 @@ function renderResult(){
       </div>`;
     }).join('');
     // innerHTML 삽입 후 _sliders 상태 등록
-    dbSliderData.forEach(({id,imgs})=>{if(imgs.length>=1)_sliders[id]={urls:imgs,cur:0};});
+    // _sliders는 makeSlider 호출 시 이미 등록됨
   } // end _renderDbMatchCards
 
     // 단일 매칭이면 자동 적용, 복수면 첫번째만 자동 적용
@@ -943,13 +924,7 @@ function applyDbMatchMulti(items){
     const slId=`dbslm-${idx}`;
     const imgs=multiSlData[idx].imgs;
     const total=imgs.length;
-    const slHtml=total>0?`
-      <div class="db-match-slider" id="${slId}">
-        <img src="${imgs[0]}" alt="" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
-        ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">‹</button>
-        <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>`:''}
-        <span class="sl-count">1/${total}</span>
-      </div>`:'';
+    const slHtml=imgs.length?makeSlider(slId,imgs):'';
     return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
       <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
         <span class="db-match-badge">✅ ${idx+1}/${items.length}</span>
@@ -970,7 +945,7 @@ function applyDbMatchMulti(items){
       </div>
     </div>`;
   }).join('');
-  multiSlData.forEach(({id,imgs})=>{if(imgs.length>=1)_sliders[id]={urls:imgs,cur:0};});
+  // _sliders는 makeSlider 호출 시 이미 등록됨
   toast(`⚠️ SKU 중복 ${items.length}건 — 항목 선택 후 [적용] 버튼을 누르세요`);
 }
 
@@ -1140,7 +1115,7 @@ function renderSkuList(list){
       <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
         ${(()=>{
           const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
-          return allImgs.length?makeSlider('skusl-'+i, allImgs, 'lg'):'';
+          return allImgs.length?makeSlider('skusl-'+i, allImgs):'';
         })()}
         <div style="font-size:12px;color:#aaa;line-height:1.8">
           ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
@@ -1164,24 +1139,20 @@ function toggleSkuDetail(i){
   if(icon)icon.textContent=open?'▴':'▾';
 }
 // ── 공용 이미지 슬라이더 ────────────────────────────────
-const _sliders={}; // sliderId → {urls, cur}
-function makeSlider(sliderId, urls, size='sm'){
-  if(!urls||!urls.length)return'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>';
+const _sliders={};
+function makeSlider(sliderId,urls){
+  if(!urls||!urls.length)return'<div style="text-align:center;padding:20px;opacity:.3;font-size:20px">🗄️</div>';
   _sliders[sliderId]={urls,cur:0};
-  const isLg=size==='lg';
-  const cls=isLg?'sku-slider':'img-slider';
   const total=urls.length;
-  const arrowsHtml=total>1?`
-    <button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${sliderId}',-1)">‹</button>
-    <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${sliderId}',1)">›</button>
-    <span class="sl-count">1/${total}</span>`:
-    (total===1?'':'');
-  return`<div class="${cls}" id="${sliderId}">
+  return`<div class="sl-box" id="${sliderId}">
     <img src="${urls[0]}" alt="" onclick="event.stopPropagation();openLightbox('${urls[0]}')">
-    ${arrowsHtml}
+    ${total>1?`
+    <button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${sliderId}',-1)">‹</button>
+    <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${sliderId}',1)">›</button>`:''}
+    <span class="sl-count">${total>1?'1/'+total:''}</span>
   </div>`;
 }
-function slideImg(sliderId, dir){
+function slideImg(sliderId,dir){
   const s=_sliders[sliderId];if(!s)return;
   s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
   const el=document.getElementById(sliderId);if(!el)return;
