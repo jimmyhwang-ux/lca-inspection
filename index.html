@@ -611,19 +611,26 @@ function renderResult(){
     const first=dbMatches[0];
     dbWrap.innerHTML=dbMatches.map((m,idx)=>{
       const accList=(m.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+      const dbId=`db-detail-${idx}`;
+      const isMulti=dbMatches.length>1;
       return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
-        <div class="db-match-header">
-          <span class="db-match-badge">✅ DB 매칭 ${dbMatches.length>1?`(${idx+1}/${dbMatches.length})`:''}</span>
-          <span style="font-size:11px;color:#22c55e">${m.brand||''} ${m.category||''}</span>
-          ${dbMatches.length>1?`<button onclick="applyDbMatch(skuListAll.find(s=>s.id==='${m.id}')||${JSON.stringify(m)})" style="margin-left:auto;background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer">이 항목 적용</button>`:''}
+        <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
+          <span class="db-match-badge">✅ DB 매칭 ${isMulti?`(${idx+1}/${dbMatches.length})`:''}</span>
+          <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
+          ${isMulti?`<button onclick="event.stopPropagation();applyDbMatchItem(${idx})" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>`:''}
+          <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
         </div>
-        <div class="db-match-body">
-          ${m.ref_image_url?`<img class="db-match-img" src="${m.ref_image_url}" alt="">`:'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
-          <div class="db-match-info">
-            <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
-            SKU: ${m.sku_code||'—'}<br>
-            ${m.size_actual?`실측: ${m.size_actual}`:''} ${m.size_label?`/ 명칭: ${m.size_label}`:''}<br>
-            ${accList?'부속품: '+accList:''}
+        <div id="${dbId}" style="display:${idx===0?'block':'none'}">
+          <div class="db-match-body">
+            ${m.ref_image_url
+              ?`<img class="db-match-img" src="${m.ref_image_url}" alt="" style="cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${m.ref_image_url}')">`
+              :'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
+            <div class="db-match-info">
+              <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
+              SKU: ${m.sku_code||'—'}<br>
+              ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
+              ${accList?'부속품: '+accList:''}
+            </div>
           </div>
         </div>
       </div>`;
@@ -700,7 +707,35 @@ function editField(id){
   el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
   el.querySelector('input').focus();
 }
-function saveField(id,input){document.getElementById(id).textContent=input.value.trim()||'—';}
+function saveField(id,input){
+  const val=input.value.trim()||'—';
+  document.getElementById(id).textContent=val;
+  // 한글 모델명 저장 시 → 영문 자동 변환
+  if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
+}
+
+async function autoTranslateModelName(koName){
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:80,
+        messages:[{
+          role:'user',
+          content:`명품 제품의 한글 모델명을 영문 공식 모델명으로만 변환해줘. 설명 없이 영문명만 한 줄 출력.\n한글명: ${koName}`
+        }]
+      })
+    });
+    const j=await res.json();
+    const enName=(j.content?.[0]?.text||'').trim().split('\n')[0];
+    if(enName&&enName.length<100&&enName!==koName){
+      document.getElementById('r-model').textContent=enName;
+      toast('🔤 영문명 자동 변환: '+enName);
+    }
+  }catch(e){console.warn('영문 변환 실패',e);}
+}
 
 let _dbSearchTimer=null;
 function onResultFieldInput(input,id){
@@ -768,32 +803,53 @@ function applyDbMatch(item){
   toast('✅ DB 매칭됨: '+(item.model_name_ko||item.model_name||''));
 }
 
-// 복수 매칭 — 카드 여러 개 표시, 각각 [이 항목 적용] 버튼
+// 복수 매칭 — 카드 여러 개 표시, 토글 + 클릭 확대
+let _dbMultiItems=[];
 function applyDbMatchMulti(items){
+  _dbMultiItems=items;
   const dbWrap=document.getElementById('db-match-wrap');
   dbWrap.innerHTML=items.map((m,idx)=>{
     const accList=(m.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
-    const safeItem=encodeURIComponent(JSON.stringify(m));
+    const dbId=`db-detail-m${idx}`;
     return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
-      <div class="db-match-header" style="justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="db-match-badge">✅ ${idx+1}/${items.length}</span>
-          <span style="font-size:11px;color:#22c55e">${m.brand||''} · ${m.category||''}</span>
-        </div>
-        <button onclick="applyDbMatch(JSON.parse(decodeURIComponent('${safeItem}')))" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:pointer">적용</button>
+      <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
+        <span class="db-match-badge">✅ ${idx+1}/${items.length}</span>
+        <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
+        <button onclick="event.stopPropagation();applyDbMatch(window._dbMultiItems[${idx}])" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>
+        <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
       </div>
-      <div class="db-match-body">
-        ${m.ref_image_url?`<img class="db-match-img" src="${m.ref_image_url}" alt="">`:'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
-        <div class="db-match-info">
-          <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
-          SKU: ${m.sku_code||'—'}<br>
-          ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
-          ${accList?'부속품: '+accList:''}
+      <div id="${dbId}" style="display:${idx===0?'block':'none'}">
+        <div class="db-match-body">
+          ${m.ref_image_url
+            ?`<img class="db-match-img" src="${m.ref_image_url}" alt="" style="cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${m.ref_image_url}')">`
+            :'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
+          <div class="db-match-info">
+            <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
+            SKU: ${m.sku_code||'—'}<br>
+            ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
+            ${accList?'부속품: '+accList:''}
+          </div>
         </div>
       </div>
     </div>`;
   }).join('');
-  toast(`⚠️ SKU 중복 ${items.length}건 — 항목을 선택해 적용하세요`);
+  toast(`⚠️ SKU 중복 ${items.length}건 — 항목 선택 후 [적용] 버튼을 누르세요`);
+}
+
+// DB 매칭 카드 토글
+function toggleDbDetail(id){
+  const el=document.getElementById(id);
+  const icon=document.getElementById(id+'-icon');
+  if(!el)return;
+  const open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  if(icon)icon.textContent=open?'▴':'▾';
+}
+
+// 렌더링 후 적용 버튼용 헬퍼 (dbMatches 배열 접근)
+function applyDbMatchItem(idx){
+  const items=window._dbMultiItems;
+  if(items&&items[idx])applyDbMatch(items[idx]);
 }
 
 function openSkuOnly(){
