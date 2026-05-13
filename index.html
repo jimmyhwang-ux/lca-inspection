@@ -1232,14 +1232,41 @@ function setSkuCatFilter(cat, btn){
   btn.classList.add('active');
   filterSkuList();
 }
+// 한글 브랜드명 → 영문 매핑
+const BRAND_KO_MAP={
+  '샤넬':'chanel','루이비통':'louis vuitton','에르메스':'hermes','구찌':'gucci',
+  '디올':'dior','크리스챤디올':'dior','프라다':'prada','발렌시아가':'balenciaga',
+  '생로랑':'saint laurent','이브생로랑':'saint laurent','보테가베네타':'bottega veneta',
+  '보테가':'bottega veneta','셀린느':'celine','셀린':'celine','로에베':'loewe',
+  '펜디':'fendi','발렌티노':'valentino','지방시':'givenchy','버버리':'burberry',
+  '몽클레어':'moncler','스톤아일랜드':'stone island','톰브라운':'thom browne',
+  '미우미우':'miu miu','마르지엘라':'maison margiela','메종마르지엘라':'maison margiela',
+  '고야드':'goyard','델보':'delvaux','까르띠에':'cartier','롤렉스':'rolex',
+  '오메가':'omega','태그호이어':'tag heuer','파텍필립':'patek philippe',
+  '오데마피게':'audemars piguet','아이더블유씨':'iwc','브라이틀링':'breitling',
+  '불가리':'bulgari','티파니':'tiffany','반클리프':'van cleef','쇼메':'chaumet',
+  '르메르':'lemaire','끌로에':'chloe','마르니':'marni','질샌더':'jil sander',
+  '무스너클':'moose knuckles','파라점퍼스':'parajumpers','페라가모':'ferragamo',
+  '멀버리':'mulberry','코치':'coach','케이트스페이드':'kate spade',
+};
+
 function filterSkuList(){
-  const q=document.getElementById('sku-search').value.toLowerCase().trim();
+  const raw=document.getElementById('sku-search').value.trim();
+  const q=raw.toLowerCase();
+  // 한글 입력 시 대응하는 영문 브랜드명도 함께 검색
+  const qEn=BRAND_KO_MAP[q]||'';
+
   const filtered=skuListAll.filter(i=>{
-    // 카테고리 정확 매칭 (가방/지갑 저장값과 완전 일치)
     const cat=i.category||'';
     const catOk=_skuCatFilter==='전체'||cat===_skuCatFilter||cat.includes(_skuCatFilter)||_skuCatFilter.includes(cat);
-    // 검색어 없으면 전체 노출
-    const textOk=!q||(i.brand||'').toLowerCase().includes(q)||(i.model_name||'').toLowerCase().includes(q)||(i.model_name_ko||'').toLowerCase().includes(q)||(i.sku_code||'').toLowerCase().includes(q);
+    if(!q) return catOk;
+    const brand=(i.brand||'').toLowerCase();
+    const modelEn=(i.model_name||'').toLowerCase();
+    const modelKo=(i.model_name_ko||'').toLowerCase();
+    const sku=(i.sku_code||'').toLowerCase();
+    const textOk=
+      brand.includes(q)||modelEn.includes(q)||modelKo.includes(q)||sku.includes(q)||
+      (qEn&&brand.includes(qEn)); // 한글→영문 변환 매칭
     return catOk&&textOk;
   });
   renderSkuList(filtered);
