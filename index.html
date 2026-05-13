@@ -614,61 +614,41 @@ function renderResult(){
     ? resultData.dbMatches
     : (resultData.dbMatch ? [resultData.dbMatch] : []);
 
-  // skuListAll에서 extra_images 보완, 없으면 API로 로드 후 렌더
-  async function renderDbMatches(matches){
-    let enriched=matches.map(m=>{
-      if(!m.id)return m;
-      const full=skuListAll.find(s=>s.id===m.id);
-      if(full)return{...full,...m,extra_images:full.extra_images||m.extra_images||[]};
-      return m;
-    });
-    // skuListAll 비어있으면 로드 후 재보완
-    if(!skuListAll.length){
-      try{
-        const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
-        const j=await r.json();
-        if(j.success&&j.data){
-          skuListAll=j.data;
-          enriched=matches.map(m=>{
-            if(!m.id)return m;
-            const full=skuListAll.find(s=>s.id===m.id);
-            if(full)return{...full,...m,extra_images:full.extra_images||m.extra_images||[]};
-            return m;
-          });
-        }
-      }catch(_){}
-    }
-    _renderDbMatchCards(enriched);
-  }
+  // DB매칭 카드 렌더 — extra_images 포함 전체 데이터로
+  function renderDbMatchCards(matches){
+    if(!matches.length) return;
+    const first=matches[0];
+    // 사이즈·부속품 자동 적용
+    if(first.sku_code){document.getElementById('r-sku').textContent=first.sku_code;document.getElementById('r-sku').className='info-cell-val';}
+    if(first.size_actual){const el=document.getElementById('r-size');el.textContent=first.size_actual;el.className='info-cell-val';}
+    if(first.size_label){const el=document.getElementById('r-size-name');el.textContent=first.size_label;el.className='info-cell-val';}
+    if(first.accessories&&first.accessories.length){accessories=first.accessories.map(a=>({name:a.name,status:a.status||''}));renderAcc();}
 
-  if(dbMatches.length){
-    renderDbMatches(dbMatches);
-    const first=dbMatches[0];
-    // 슬라이더 ID 사전 생성 (innerHTML 렌더 후 초기화용)
-  function _renderDbMatchCards(dbMatches){
-    const dbSliderData=dbMatches.map((m,idx)=>{
-      const imgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
-      return{id:`dbsl-${idx}`,imgs};
-    });
-    dbWrap.innerHTML=dbMatches.map((m,idx)=>{
+    dbWrap.innerHTML=matches.map((m,idx)=>{
+      const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+      const total=allImgs.length;
+      const slId=`dbsl-${idx}`;
       const accList=(m.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
       const dbId=`db-detail-${idx}`;
-      const isMulti=dbMatches.length>1;
-      const slId=`dbsl-${idx}`;
-      const imgs=dbSliderData[idx].imgs;
-      const total=imgs.length;
-      const slHtml=imgs.length?makeSlider(slId,imgs):'';
+      const isMulti=matches.length>1;
+      // 슬라이더 HTML 인라인 생성
+      const slHtml=total>0?`<div class="sl-box" id="${slId}">
+          <img src="${allImgs[0]}" onclick="event.stopPropagation();openLightbox('${allImgs[0]}')" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a">
+          ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">&#8249;</button>
+          <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">&#8250;</button>`:''}
+          <span class="sl-count">${total>1?`1/${total}`:''}</span>
+        </div>`:'<div style="text-align:center;padding:20px;font-size:20px;opacity:.3">🗄️</div>';
       return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
-          <span class="db-match-badge">✅ DB 매칭 ${isMulti?`(${idx+1}/${dbMatches.length})`:''}</span>
+          <span class="db-match-badge">✅ DB 매칭 ${isMulti?`(${idx+1}/${matches.length})`:''}</span>
           <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
-          ${isMulti?`<button onclick="event.stopPropagation();applyDbMatchItem(${idx})" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>`:''}
+          ${isMulti?`<button onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}])" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>`:''}
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
         </div>
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
           <div class="db-match-body">
             ${slHtml}
-            <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7">
+            <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7;margin-top:4px">
               <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
               SKU: ${m.sku_code||'—'}<br>
               ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
@@ -678,24 +658,38 @@ function renderResult(){
         </div>
       </div>`;
     }).join('');
-    // innerHTML 삽입 후 _sliders 상태 등록
-    // _sliders는 makeSlider 호출 시 이미 등록됨
-  } // end _renderDbMatchCards
+    // innerHTML 삽입 후 _sliders 등록
+    matches.forEach((m,idx)=>{
+      const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+      if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
+    });
+  }
 
-    // 단일 매칭이면 자동 적용, 복수면 첫번째만 자동 적용
-    if(first.sku_code){
-      document.getElementById('r-sku').textContent=first.sku_code;
-      document.getElementById('r-sku').className='info-cell-val';
+  if(dbMatches.length){
+    // extra_images 보완: skuListAll에서 같은 id 찾아 병합
+    async function loadAndRender(){
+      let enriched=dbMatches.map(m=>{
+        const full=skuListAll.find(s=>s.id===m.id);
+        return full?{...full,...m,extra_images:[...(full.extra_images||[]),...(m.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i)}:m;
+      });
+      if(!skuListAll.length){
+        try{
+          const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
+          const j=await r.json();
+          if(j.success&&j.data){
+            skuListAll=j.data;
+            enriched=dbMatches.map(m=>{
+              const full=skuListAll.find(s=>s.id===m.id);
+              return full?{...full,...m,extra_images:[...(full.extra_images||[]),...(m.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i)}:m;
+            });
+          }
+        }catch(_){}
+      }
+      window._dbEnriched=enriched;
+      renderDbMatchCards(enriched);
     }
-    // 실측사이즈·사이즈명칭 DB에서 끌어오기
-    const sizeEl=document.getElementById('r-size');
-    if(first.size_actual){sizeEl.textContent=first.size_actual;sizeEl.className='info-cell-val';}
-    const sizeNameEl=document.getElementById('r-size-name');
-    if(first.size_label){sizeNameEl.textContent=first.size_label;sizeNameEl.className='info-cell-val';}
-    if(first.accessories&&first.accessories.length){
-      accessories=first.accessories.map(a=>({name:a.name,status:a.status||''}));
-      renderAcc();
-    }
+    loadAndRender();
+
   } else {
     dbWrap.innerHTML=`<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>`;
     accessories=[];renderAcc();
