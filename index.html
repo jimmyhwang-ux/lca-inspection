@@ -622,14 +622,42 @@ function renderResult(){
 
   // DB 매칭 표시 — 복수 매칭 지원
   const dbWrap=document.getElementById('db-match-wrap');
-  // dbMatch가 배열이면 그대로, 단일 객체면 배열로 변환
   const dbMatches=Array.isArray(resultData.dbMatches)
     ? resultData.dbMatches
     : (resultData.dbMatch ? [resultData.dbMatch] : []);
 
+  // skuListAll에서 extra_images 보완, 없으면 API로 로드 후 렌더
+  async function renderDbMatches(matches){
+    let enriched=matches.map(m=>{
+      if(!m.id)return m;
+      const full=skuListAll.find(s=>s.id===m.id);
+      if(full)return{...full,...m,extra_images:full.extra_images||m.extra_images||[]};
+      return m;
+    });
+    // skuListAll 비어있으면 로드 후 재보완
+    if(!skuListAll.length){
+      try{
+        const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
+        const j=await r.json();
+        if(j.success&&j.data){
+          skuListAll=j.data;
+          enriched=matches.map(m=>{
+            if(!m.id)return m;
+            const full=skuListAll.find(s=>s.id===m.id);
+            if(full)return{...full,...m,extra_images:full.extra_images||m.extra_images||[]};
+            return m;
+          });
+        }
+      }catch(_){}
+    }
+    _renderDbMatchCards(enriched);
+  }
+
   if(dbMatches.length){
+    renderDbMatches(dbMatches);
     const first=dbMatches[0];
     // 슬라이더 ID 사전 생성 (innerHTML 렌더 후 초기화용)
+  function _renderDbMatchCards(dbMatches){
     const dbSliderData=dbMatches.map((m,idx)=>{
       const imgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
       return{id:`dbsl-${idx}`,imgs};
@@ -671,6 +699,7 @@ function renderResult(){
     }).join('');
     // innerHTML 삽입 후 _sliders 상태 등록
     dbSliderData.forEach(({id,imgs})=>{if(imgs.length>=1)_sliders[id]={urls:imgs,cur:0};});
+  } // end _renderDbMatchCards
 
     // 단일 매칭이면 자동 적용, 복수면 첫번째만 자동 적용
     if(first.sku_code){
