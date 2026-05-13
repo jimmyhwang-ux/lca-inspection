@@ -162,8 +162,8 @@ input[type=file]{display:none}
 .img-slider .sl-arrow.right{right:-8px}
 .img-slider .sl-count{position:absolute;bottom:3px;right:4px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;pointer-events:none}
 /* DB 매칭 슬라이더 — 전체 너비 */
-.db-match-slider{position:relative;width:100%;background:#0a2a0a;border-radius:8px;overflow:hidden;margin-bottom:2px}
-.db-match-slider img{width:100%;max-height:180px;object-fit:contain;display:block;cursor:zoom-in;background:#0a2a0a}
+.db-match-slider{position:relative;width:100%;background:#111;border-radius:8px;overflow:hidden;margin-bottom:2px}
+.db-match-slider img{width:100%;height:auto;max-height:220px;object-fit:contain;display:block;cursor:zoom-in;background:#111}
 .db-match-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);border:none;color:#fff;font-size:15px;width:24px;height:36px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
 .db-match-slider .sl-arrow.left{left:4px}
 .db-match-slider .sl-arrow.right{right:4px}
@@ -646,8 +646,8 @@ function renderResult(){
         <div class="db-match-slider" id="${slId}">
           <img src="${imgs[0]}" alt="" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
           ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">‹</button>
-          <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>
-          <span class="sl-count">1/${total}</span>`:''}
+          <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>`:''}
+          <span class="sl-count">${imgs.indexOf?1:1}/${total}</span>
         </div>`:'';
       return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
@@ -670,7 +670,7 @@ function renderResult(){
       </div>`;
     }).join('');
     // innerHTML 삽입 후 _sliders 상태 등록
-    dbSliderData.forEach(({id,imgs})=>{if(imgs.length>1)_sliders[id]={urls:imgs,cur:0};});
+    dbSliderData.forEach(({id,imgs})=>{if(imgs.length>=1)_sliders[id]={urls:imgs,cur:0};});
 
     // 단일 매칭이면 자동 적용, 복수면 첫번째만 자동 적용
     if(first.sku_code){
@@ -918,8 +918,8 @@ function applyDbMatchMulti(items){
       <div class="db-match-slider" id="${slId}">
         <img src="${imgs[0]}" alt="" onclick="event.stopPropagation();openLightbox('${imgs[0]}')">
         ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">‹</button>
-        <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>
-        <span class="sl-count">1/${total}</span>`:''}
+        <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">›</button>`:''}
+        <span class="sl-count">1/${total}</span>
       </div>`:'';
     return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
       <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
@@ -941,7 +941,7 @@ function applyDbMatchMulti(items){
       </div>
     </div>`;
   }).join('');
-  multiSlData.forEach(({id,imgs})=>{if(imgs.length>1)_sliders[id]={urls:imgs,cur:0};});
+  multiSlData.forEach(({id,imgs})=>{if(imgs.length>=1)_sliders[id]={urls:imgs,cur:0};});
   toast(`⚠️ SKU 중복 ${items.length}건 — 항목 선택 후 [적용] 버튼을 누르세요`);
 }
 
