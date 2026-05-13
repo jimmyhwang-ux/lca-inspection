@@ -114,7 +114,7 @@ input[type=file]{display:none}
 .db-match-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)}
 .db-match-badge{background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px}
 .db-match-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
-.db-match-img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#1a1a1a;flex-shrink:0}
+
 .db-match-info{flex:1;font-size:12px;color:#aaa;line-height:1.7}
 .db-match-info strong{color:#f0f0f0;font-size:13px}
 .db-new-badge{margin:0 16px 4px;border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px}
@@ -900,16 +900,34 @@ function applyDbMatch(item){
   if(item.size_label){document.getElementById('r-size-name').textContent=item.size_label;document.getElementById('r-size-name').className='info-cell-val';}
   const dbWrap=document.getElementById('db-match-wrap');
   const accList=(item.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+  // skuListAll에서 extra_images 보완
+  const fullItem=skuListAll.find(s=>s.id===item.id)||item;
+  const allImgs=[
+    ...(fullItem.ref_image_url?[fullItem.ref_image_url]:[]),
+    ...(item.ref_image_url?[item.ref_image_url]:[]),
+    ...(fullItem.extra_images||[]),
+    ...(item.extra_images||[])
+  ].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+  const total=allImgs.length;
+  const slId='dbsl-apply';
+  if(total>1) _sliders[slId]={urls:allImgs,cur:0};
+  const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a">
+    <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="openLightbox('${allImgs[0]}')">
+    ${total>1?`<button onclick="slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
+    <button onclick="slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
+    <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
+    :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;padding:2px 6px;border-radius:5px">1/1</span>'}
+  </div>`:'';
   dbWrap.innerHTML=`
     <div class="db-match-card">
       <div class="db-match-header">
         <span class="db-match-badge">✅ DB 매칭</span>
         <span style="font-size:11px;color:#22c55e">수동 입력으로 찾았어요</span>
       </div>
-      <div class="db-match-body">
-        ${item.ref_image_url?`<img class="db-match-img" src="${item.ref_image_url}" alt="">`:'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
-        <div class="db-match-info">
-          <strong>${item.model_name_ko||item.model_name||'—'}</strong><br>
+      <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
+        ${slHtml}
+        <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7">
+          <strong style="color:#f0f0f0;font-size:13px">${item.model_name_ko||item.model_name||'—'}</strong><br>
           SKU: ${item.sku_code||'—'}<br>
           ${item.size_actual?`실측: ${item.size_actual}`:''}${item.size_label?` / 명칭: ${item.size_label}`:''}<br>
           ${accList?'부속품: '+accList:''}
