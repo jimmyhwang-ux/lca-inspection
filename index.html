@@ -752,99 +752,7 @@ function saveField(id,input){
 }
 
 async function autoTranslateModelName(koName){
-  // 0차: 내장 한글→영문 사전 (오프라인 즉시 매핑)
-  const DICT={
-    // 루이비통
-    '포쉐트 악세수아':'Pochette Accessoires','포쉐트 악세수아르':'Pochette Accessoires',
-    '네버풀 mm':'Neverfull MM','네버풀 gm':'Neverfull GM','네버풀 pm':'Neverfull PM',
-    '온더고 mm':'On The Go MM','온더고 gm':'On The Go GM','온더고 pm':'On The Go PM',
-    '카퓌신 mm':'Capucines MM','카퓌신 bb':'Capucines BB','카퓌신 pm':'Capucines PM',
-    '알마 bb':'Alma BB','알마 mm':'Alma MM','알마 pm':'Alma PM',
-    '스피디 25':'Speedy 25','스피디 30':'Speedy 30','스피디 35':'Speedy 35','스피디 반둘리에르 25':'Speedy Bandouliere 25','스피디 반둘리에르 30':'Speedy Bandouliere 30',
-    '팔라스':'Pallas','멀티포쉐트 악세수아':'Multi Pochette Accessoires',
-    '트위스트 mm':'Twist MM','트위스트 pm':'Twist PM',
-    '모노그램 캔버스 탑 핸들백':'Monogram Canvas Top Handle Bag',
-    // 샤넬
-    '클래식 플랩 미디엄':'Classic Flap Medium','클래식 플랩 라지':'Classic Flap Large','클래식 플랩 스몰':'Classic Flap Small','클래식 플랩 미니':'Classic Flap Mini',
-    '보이 샤넬 미디엄':'Boy Chanel Medium','보이 샤넬 스몰':'Boy Chanel Small','보이 샤넬 라지':'Boy Chanel Large',
-    '가브리엘 백':'Gabrielle Bag','코코 핸들 스몰':'Coco Handle Small','코코 핸들 미디엄':'Coco Handle Medium',
-    '19 백 라지':'19 Bag Large','19 백 미디엄':'19 Bag Medium','19 백 스몰':'19 Bag Small',
-    '22 백 라지':'22 Bag Large','22 백 미디엄':'22 Bag Medium','22 백 스몰':'22 Bag Small','22 백 미니':'22 Bag Mini',
-    '플랩백 미디엄':'Flap Bag Medium','플랩백 스몰':'Flap Bag Small',
-    // 에르메스
-    '버킨 25':'Birkin 25','버킨 30':'Birkin 30','버킨 35':'Birkin 35','버킨 40':'Birkin 40',
-    '켈리 25':'Kelly 25','켈리 28':'Kelly 28','켈리 32':'Kelly 32','켈리 35':'Kelly 35',
-    '컨스탄스 18':'Constance 18','컨스탄스 24':'Constance 24',
-    '에블린 pm':'Evelyne PM','에블린 gm':'Evelyne GM','에블린 tpm':'Evelyne TPM',
-    '린디 26':'Lindy 26','린디 30':'Lindy 30',
-    '피코탱 18':'Picotin 18','피코탱 22':'Picotin 22',
-    // 구찌
-    '오피디아 스몰':'Ophidia Small','오피디아 미디엄':'Ophidia Medium','오피디아 gg 스몰':'Ophidia GG Small',
-    '마몬트 스몰':'Marmont Small','마몬트 미디엄':'Marmont Medium','마몬트 미니':'Marmont Mini',
-    '디오니소스 스몰':'Dionysus Small','디오니소스 미디엄':'Dionysus Medium',
-    '뱀부 핸들':'Bamboo Handle Bag',
-    // 디올
-    '새들 백 미디엄':'Saddle Bag Medium','새들 백 스몰':'Saddle Bag Small','새들 백 미니':'Saddle Bag Mini',
-    '레이디 디올 미디엄':'Lady Dior Medium','레이디 디올 스몰':'Lady Dior Small','레이디 디올 라지':'Lady Dior Large','레이디 디올 미니':'Lady Dior Mini',
-    '30 몽테뉴':'30 Montaigne','30 몽떼뉴':'30 Montaigne',
-    '북 토트 스몰':'Book Tote Small','북 토트 미디엄':'Book Tote Medium','북 토트 라지':'Book Tote Large',
-    // 보테가 베네타
-    '조디 스몰':'Jodie Small','조디 미디엄':'Jodie Medium','조디 미니':'Jodie Mini',
-    '아르코 33':'Arco 33','아르코 48':'Arco 48',
-    '카세트':'Cassette Bag',
-    // 셀린느
-    '트리오페 스몰':'Triomphe Small','트리오페 미디엄':'Triomphe Medium',
-    '루가게 스몰':'Luggage Small','루가게 미디엄':'Luggage Medium','루가게 미니':'Luggage Mini',
-    '클래식 박스 백':'Classic Box Bag',
-    // 생로랑
-    '루루 스몰':'Loulou Small','루루 미디엄':'Loulou Medium',
-    '케이트 스몰':'Kate Small','케이트 미디엄':'Kate Medium','케이트 라지':'Kate Large',
-    '솔페리노 스몰':'Solfering Small','솔페리노 미디엄':'Solfering Medium',
-    // 발렌시아가
-    '시티 백':'City Bag','클래식 시티':'Classic City',
-    '호글라스 스몰':'Hourglass Small','호글라스 미디엄':'Hourglass Medium','모래시계 스몰':'Hourglass Small','모래시계 미디엄':'Hourglass Medium',
-    // 프라다
-    '갈레리아 스몰':'Galleria Small','갈레리아 미디엄':'Galleria Medium','갈레리아 라지':'Galleria Large',
-    '사피아노 라지':'Saffiano Large','사피아노 스몰':'Saffiano Small',
-    // 로에베
-    '퍼즐 백 스몰':'Puzzle Bag Small','퍼즐 백 미디엄':'Puzzle Bag Medium',
-    '플라멩코 스몰':'Flamenco Small','플라멩코 미니':'Flamenco Mini',
-    '바스켓 백':'Basket Bag',
-    // 고야드
-    '생루이 pm':'Saint Louis PM','생루이 gm':'Saint Louis GM',
-    '벨베데레 pm':'Belvedere PM','벨베데레 mm':'Belvedere MM',
-  };
-  const key=koName.toLowerCase().trim();
-  if(DICT[key]){
-    document.getElementById('r-model').textContent=DICT[key];
-    toast('🔤 영문명: '+DICT[key]);
-    return;
-  }
-  // 부분 매칭
-  const partial=Object.entries(DICT).find(([k])=>key.includes(k)||k.includes(key));
-  if(partial){
-    document.getElementById('r-model').textContent=partial[1];
-    toast('🔤 영문명(유사): '+partial[1]);
-    return;
-  }
-
-  // 1차: /api/inspect translate_model 프록시 시도
-  try{
-    const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'translate_model',modelNameKo:koName})
-    });
-    if(res.ok){
-      const j=await res.json();
-      const en=(j.model_name_en||j.modelNameEn||'').trim().split('\n')[0];
-      if(en&&en!==koName&&en.length<120){
-        document.getElementById('r-model').textContent=en;
-        toast('🔤 영문명: '+en);
-        return;
-      }
-    }
-  }catch(_){}
-  // 2차: DB에서 같은 한글명 가진 항목의 영문명 찾기
+  // DB에서 같은 한글명 가진 항목의 영문명 먼저 찾기
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -861,7 +769,27 @@ async function autoTranslateModelName(koName){
       }
     }
   }catch(_){}
-  toast('⚠️ 영문명 매핑 없음 — 직접 입력해주세요');
+  // DB에 없으면 한글을 영어로 직역
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'translate_model',
+        modelNameKo:koName,
+        prompt:`다음 텍스트를 한국어에서 영어로 직역해줘. 브랜드명이나 고유명사는 그대로 두고, 설명 없이 영문 번역만 한 줄로 출력.\n입력: ${koName}`
+      })
+    });
+    if(res.ok){
+      const j=await res.json();
+      const en=(j.model_name_en||j.modelNameEn||'').trim().split('\n')[0];
+      if(en&&en!==koName&&en.length<120){
+        document.getElementById('r-model').textContent=en;
+        toast('🔤 영문명: '+en);
+        return;
+      }
+    }
+  }catch(_){}
+  // 조용히 실패 — 영문명은 빈 칸 유지, 직접 입력
 }
 
 let _dbSearchTimer=null;
