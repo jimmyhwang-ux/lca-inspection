@@ -1109,17 +1109,17 @@ function openEditModal(i){
   document.getElementById('ef-new-photo-preview').innerHTML='';
   document.getElementById('edit-modal').classList.add('open');
 }
-function previewEditPhotos(input){
+async function previewEditPhotos(input){
   if(!input.files.length)return;
   const existing=JSON.parse(document.getElementById('ef-extra-images').value||'[]');
-  const remaining=20-existing.length;
+  const alreadyAdded=(input._dataUrls||[]).length;
+  const remaining=20-existing.length-alreadyAdded;
   if(remaining<=0){toast('사진은 최대 20장까지 추가 가능해요');return;}
   const files=[...input.files].slice(0,remaining);
   if(files.length<input.files.length) toast(`최대 20장 제한 — ${files.length}장만 추가됩니다`);
-  const wrap=document.getElementById('ef-new-photo-preview');
-  wrap.innerHTML='';
-  input._dataUrls=[];
-  files.forEach(file=>{
+
+  // Promise.all로 순서 보장
+  const newDataUrls=await Promise.all(files.map(file=>new Promise(resolve=>{
     const reader=new FileReader();
     reader.onload=e=>{
       const img=new Image();
@@ -1128,17 +1128,27 @@ function previewEditPhotos(input){
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
         const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        const dataUrl=canvas.toDataURL('image/jpeg',0.8);
-        input._dataUrls=(input._dataUrls||[]).concat(dataUrl);
-        const thumb=document.createElement('img');
-        thumb.src=dataUrl;
-        thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #ff6b2b;flex-shrink:0';
-        wrap.appendChild(thumb);
+        resolve(canvas.toDataURL('image/jpeg',0.8));
       };
       img.src=e.target.result;
     };
     reader.readAsDataURL(file);
+  })));
+
+  // 기존 누적에 추가 (덮어쓰기 금지)
+  input._dataUrls=[...(input._dataUrls||[]),...newDataUrls];
+
+  // 미리보기 wrap — flex 나열, 새 사진만 append
+  const wrap=document.getElementById('ef-new-photo-preview');
+  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:6px';
+  newDataUrls.forEach(dataUrl=>{
+    const thumb=document.createElement('img');
+    thumb.src=dataUrl;
+    thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;flex-shrink:0;cursor:zoom-in';
+    thumb.onclick=()=>openLightbox(dataUrl);
+    wrap.appendChild(thumb);
   });
+  toast(`📷 ${newDataUrls.length}장 추가 (총 ${input._dataUrls.length}장)`);
 }
 function closeEditModal(){document.getElementById('edit-modal').classList.remove('open');}
 
