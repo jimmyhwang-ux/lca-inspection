@@ -476,7 +476,7 @@ function processImage(src, key, fileSrc){
     canvas.width=w;canvas.height=h;
     canvas.getContext('2d').drawImage(img,0,0,w,h);
     const dataUrl=canvas.toDataURL('image/jpeg',0.8);
-    photos[key]={file:fileSrc||null,dataUrl};
+    photos[key]={file:fileSrc||null,dataUrl,mime:'image/jpeg'};
     const prev=document.getElementById('prev-'+key);
     if(prev){prev.src=dataUrl;}
     document.getElementById('slot-'+key).classList.add('filled');
@@ -545,7 +545,8 @@ async function startInspection(){
   try{
     setStep(1,'active');
     const base64=photos.main.dataUrl.split(',')[1];
-    const mime=photos.main.file.type||'image/jpeg';
+    // canvas.toDataURL는 항상 jpeg로 변환하므로 mime 고정
+    const mime='image/jpeg';
     const extras={};
     for(const k of['label1','label2','label3','logo','origin','back']){
       if(photos[k])extras[k]=photos[k].dataUrl.split(',')[1];
