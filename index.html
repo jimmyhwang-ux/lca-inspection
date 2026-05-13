@@ -65,8 +65,8 @@ input[type=file]{display:none}
 .sp{display:inline-block;animation:spin 1s linear infinite}
 #screen-result{padding:0}
 .result-card{background:#111;border-radius:20px;margin:16px;padding:16px;display:flex;gap:14px;align-items:flex-start}
-.result-thumb{width:80px;height:80px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center}
-.result-thumb img{width:100%;height:100%;object-fit:contain;display:block;background:#1a1a1a}
+.result-thumb{width:88px;height:88px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;cursor:zoom-in}
+.result-thumb img{width:100%;height:100%;object-fit:cover;display:block;background:#1a1a1a}
 .result-thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.3}
 .result-meta{flex:1;min-width:0}
 .conf-badge{display:inline-flex;align-items:center;gap:5px;background:#1a3a1a;color:#22c55e;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px;margin-bottom:8px}
@@ -576,7 +576,7 @@ function renderResult(){
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
-    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in" onclick="openLightbox('${photos.main.dataUrl}')">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||analysis.model_name||'—';
@@ -704,21 +704,17 @@ function editField(id){
   const el=document.getElementById(id);
   const cur=el.textContent;
 
-  // 실측 사이즈 — 가로/세로/높이 분리 입력
+  // 실측 사이즈 — 가로/세로 분리 입력 (높이 제거)
   if(id==='r-size'){
-    // 기존 값 파싱: "가로20 x 세로15 x 높이8" 또는 숫자만
-    const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||['','',''];
+    const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||['',''];
     el.innerHTML=`
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
         <span style="font-size:9px;color:#666">가로</span>
-        <input class="editing-input" id="sz-w" style="width:36px;text-align:center" value="${nums[0]||''}" placeholder="0">
+        <input class="editing-input" id="sz-w" style="width:40px;text-align:center" type="number" inputmode="decimal" value="${nums[0]||''}" placeholder="0">
         <span style="color:#444;font-size:11px">×</span>
         <span style="font-size:9px;color:#666">세로</span>
-        <input class="editing-input" id="sz-h" style="width:36px;text-align:center" value="${nums[1]||''}" placeholder="0">
-        <span style="color:#444;font-size:11px">×</span>
-        <span style="font-size:9px;color:#666">높이</span>
-        <input class="editing-input" id="sz-d" style="width:36px;text-align:center" value="${nums[2]||''}" placeholder="0">
-        <button onclick="saveSizeField('r-size')" style="background:#ff6b2b;border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:700;margin-left:2px">저장</button>
+        <input class="editing-input" id="sz-h" style="width:40px;text-align:center" type="number" inputmode="decimal" value="${nums[1]||''}" placeholder="0">
+        <button onclick="saveSizeField('r-size')" style="background:#ff6b2b;border:none;color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:700;margin-left:2px">저장</button>
       </div>`;
     document.getElementById('sz-w').focus();
     return;
@@ -729,16 +725,17 @@ function editField(id){
   el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
   const inp=el.querySelector('input');
   inp.focus();
-  // 커서를 맨 뒤로
+  // 커서 맨 뒤 + 더블클릭시 전체선택
   const len=inp.value.length;
   inp.setSelectionRange(len,len);
+  inp.addEventListener('dblclick',()=>inp.select());
 }
 
 function saveSizeField(id){
-  const w=document.getElementById('sz-w')?.value.trim()||'';
-  const h=document.getElementById('sz-h')?.value.trim()||'';
-  const d=document.getElementById('sz-d')?.value.trim()||'';
-  const parts=[w&&`가로 ${w}`,h&&`세로 ${h}`,d&&`높이 ${d}`].filter(Boolean);
+  const w=(document.getElementById('sz-w')?.value||'').trim();
+  const h=(document.getElementById('sz-h')?.value||'').trim();
+  // "가로 W × 세로 H" 형태로 저장, 없는 값은 생략
+  const parts=[w&&`가로 ${w}`,h&&`세로 ${h}`].filter(Boolean);
   const val=parts.length?parts.join(' × '):'—';
   const el=document.getElementById(id);
   el.textContent=val;
@@ -752,7 +749,7 @@ function saveField(id,input){
 }
 
 async function autoTranslateModelName(koName){
-  // DB에서 같은 한글명 가진 항목의 영문명 먼저 찾기
+  // 1차: DB에서 같은 한글명 영문명 찾기
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -769,27 +766,37 @@ async function autoTranslateModelName(koName){
       }
     }
   }catch(_){}
-  // DB에 없으면 한글을 영어로 직역
+  // 2차: Claude API 직접 호출로 직역
   try{
-    const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': window.ANTHROPIC_API_KEY||'',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
-        action:'translate_model',
-        modelNameKo:koName,
-        prompt:`다음 텍스트를 한국어에서 영어로 직역해줘. 브랜드명이나 고유명사는 그대로 두고, 설명 없이 영문 번역만 한 줄로 출력.\n입력: ${koName}`
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:60,
+        messages:[{
+          role:'user',
+          content:`Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.
+Korean: ${koName}`
+        }]
       })
     });
     if(res.ok){
       const j=await res.json();
-      const en=(j.model_name_en||j.modelNameEn||'').trim().split('\n')[0];
-      if(en&&en!==koName&&en.length<120){
+      const en=(j.content?.[0]?.text||'').trim().split('\n')[0];
+      if(en&&en.length>0&&en.length<120){
         document.getElementById('r-model').textContent=en;
         toast('🔤 영문명: '+en);
         return;
       }
     }
   }catch(_){}
-  // 조용히 실패 — 영문명은 빈 칸 유지, 직접 입력
+  // 실패시 조용히 넘김
 }
 
 let _dbSearchTimer=null;
@@ -919,7 +926,10 @@ function goToSku(){
   document.getElementById('sku-model').value=document.getElementById('r-model').textContent.replace('—','');
   document.getElementById('sku-cat').value=a.category||'';
   document.getElementById('sku-color').value=a.color||'';
-  document.getElementById('sku-size').value=document.getElementById('r-size').textContent.replace('—','');
+  // r-size가 편집 중 div가 아닌 텍스트만 추출
+  const rSizeEl=document.getElementById('r-size');
+  const rSizeText=(rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim();
+  document.getElementById('sku-size').value=rSizeText;
   document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
   document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
   document.getElementById('sku-verdict').value=a.verdict==='pass'?'합격':a.verdict==='fail'?'불합격':'검수자 확인 필요';
