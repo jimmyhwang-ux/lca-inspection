@@ -10,6 +10,13 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:15px;min-height:100vh;padding-bottom:100px}
+.app-wrap{max-width:480px;margin:0 auto}
+@media(min-width:600px){
+  .app-wrap{border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;min-height:100vh}
+  .slot-big{min-height:90px}
+  .slot-grid{grid-template-columns:repeat(6,1fr)}
+  .slot-sm{aspect-ratio:1}
+}
 .header{text-align:center;padding:16px 20px 12px}
 .header h1{font-size:19px;font-weight:800;margin-bottom:4px}
 .header p{font-size:12px;color:#666;line-height:1.4}
@@ -166,6 +173,7 @@ input[type=file]{display:none}
 </head>
 <body>
 
+<div class="app-wrap">
 <!-- STEP 1 -->
 <div id="screen-shoot" class="screen active">
   <div class="header">
@@ -413,6 +421,7 @@ input[type=file]{display:none}
   </div>
 </div>
 
+</div><!-- /app-wrap -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -861,25 +870,33 @@ async function loadSkuList(){
 
 function renderSkuList(list){
   const wrap=document.getElementById('sku-list-wrap');
-  if(!list.length){wrap.innerHTML='<div class="sku-empty">등록된 SKU가 없습니다</div>';return;}
+  if(!list.length){
+    const q=document.getElementById('sku-search').value.trim();
+    wrap.innerHTML=`<div class="sku-empty">${q?'검색 결과가 없습니다':'등록된 SKU가 없습니다'}</div>`;
+    return;
+  }
   wrap.innerHTML=list.map((item,i)=>{
     const accText=(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:${a.status==='Y'?'#22c55e':a.status==='N'?'#ef4444':'#888'}">${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}</span>`).join('');
     const vColor=item.verdict==='pass'?'#22c55e':item.verdict==='fail'?'#ef4444':'#f59e0b';
     const vText=item.verdict==='pass'?'합격':item.verdict==='fail'?'불합격':'확인필요';
-    return `<div class="sku-list-item" style="cursor:pointer" onclick="toggleSkuDetail(${i})">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-        <div class="sku-list-brand">${item.brand||'—'}</div>
-        <div style="display:flex;gap:6px">
+    return `<div class="sku-list-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px" onclick="toggleSkuDetail(${i})" style="cursor:pointer">
+        <div>
+          <div class="sku-list-brand">${item.brand||'—'}</div>
+          <div class="sku-list-model">${item.model_name_ko||item.model_name||'—'}</div>
+          <div class="sku-list-model-en">${item.model_name||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <button style="background:none;border:1px solid #2a2a2a;border-radius:6px;color:#ff6b2b;font-size:11px;padding:3px 8px;cursor:pointer;font-weight:600" onclick="event.stopPropagation();openEditModal(${i})">수정</button>
           <button class="sku-list-del" onclick="event.stopPropagation();deleteSku('${item.id}')">✕</button>
+          <span id="sku-toggle-icon-${i}" style="color:#444;font-size:14px;cursor:pointer;padding:2px 4px">▾</span>
         </div>
       </div>
-      <div class="sku-list-model">${item.model_name_ko||item.model_name||'—'}</div>
-      <div class="sku-list-model-en">${item.model_name||''}</div>
-      <div class="sku-list-meta">
+      <div class="sku-list-meta" onclick="toggleSkuDetail(${i})" style="cursor:pointer">
         ${item.category?`<span class="sku-meta-tag">${item.category}</span>`:''}
         ${item.color?`<span class="sku-meta-tag">${item.color}</span>`:''}
         ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span>`:''}
+        ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
         ${item.verdict?`<span class="sku-meta-tag" style="color:${vColor}">${vText}</span>`:''}
       </div>
       <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
@@ -901,7 +918,11 @@ function renderSkuList(list){
 
 function toggleSkuDetail(i){
   const el=document.getElementById('sku-detail-'+i);
-  if(el)el.style.display=el.style.display==='none'?'block':'none';
+  const icon=document.getElementById('sku-toggle-icon-'+i);
+  if(!el)return;
+  const open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  if(icon)icon.textContent=open?'▴':'▾';
 }
 function openLightbox(url){
   document.getElementById('lightbox-img').src=url;
@@ -989,10 +1010,13 @@ function setSkuCatFilter(cat, btn){
   filterSkuList();
 }
 function filterSkuList(){
-  const q=document.getElementById('sku-search').value.toLowerCase();
+  const q=document.getElementById('sku-search').value.toLowerCase().trim();
   const filtered=skuListAll.filter(i=>{
-    const catOk=_skuCatFilter==='전체'||(i.category||'').includes(_skuCatFilter);
-    const textOk=!q||(i.brand||'').toLowerCase().includes(q)||(i.model_name||'').toLowerCase().includes(q)||(i.model_name_ko||'').toLowerCase().includes(q);
+    // 카테고리 정확 매칭 (가방/지갑 저장값과 완전 일치)
+    const cat=i.category||'';
+    const catOk=_skuCatFilter==='전체'||cat===_skuCatFilter||cat.includes(_skuCatFilter)||_skuCatFilter.includes(cat);
+    // 검색어 없으면 전체 노출
+    const textOk=!q||(i.brand||'').toLowerCase().includes(q)||(i.model_name||'').toLowerCase().includes(q)||(i.model_name_ko||'').toLowerCase().includes(q)||(i.sku_code||'').toLowerCase().includes(q);
     return catOk&&textOk;
   });
   renderSkuList(filtered);
