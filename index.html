@@ -66,7 +66,7 @@ input[type=file]{display:none}
 #screen-result{padding:0}
 .result-card{background:#111;border-radius:20px;margin:16px;padding:16px;display:flex;gap:14px;align-items:flex-start}
 .result-thumb{width:88px;height:88px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;cursor:zoom-in}
-.result-thumb img{width:100%;height:100%;object-fit:cover;display:block;background:#1a1a1a}
+.result-thumb img{width:100%;height:100%;object-fit:contain;display:block;background:#1a1a1a}
 .result-thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.3}
 .result-meta{flex:1;min-width:0}
 .conf-badge{display:inline-flex;align-items:center;gap:5px;background:#1a3a1a;color:#22c55e;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px;margin-bottom:8px}
@@ -731,12 +731,13 @@ function editField(id){
   inp.addEventListener('dblclick',()=>inp.select());
 }
 
+let _sizeVal='';
 function saveSizeField(id){
   const w=(document.getElementById('sz-w')?.value||'').trim();
   const h=(document.getElementById('sz-h')?.value||'').trim();
-  // "가로 W × 세로 H" 형태로 저장, 없는 값은 생략
   const parts=[w&&`가로 ${w}`,h&&`세로 ${h}`].filter(Boolean);
   const val=parts.length?parts.join(' × '):'—';
+  _sizeVal=val==='—'?'':val; // 전역 저장
   const el=document.getElementById(id);
   el.textContent=val;
   el.className='info-cell-val'+(val==='—'?' muted':'');
@@ -766,29 +767,15 @@ async function autoTranslateModelName(koName){
       }
     }
   }catch(_){}
-  // 2차: Claude API 직접 호출로 직역
+  // 2차: 백엔드 /api/inspect translate_model 프록시 호출
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key': window.ANTHROPIC_API_KEY||'',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001',
-        max_tokens:60,
-        messages:[{
-          role:'user',
-          content:`Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.
-Korean: ${koName}`
-        }]
-      })
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'translate_model',modelNameKo:koName})
     });
     if(res.ok){
       const j=await res.json();
-      const en=(j.content?.[0]?.text||'').trim().split('\n')[0];
+      const en=(j.model_name_en||'').trim().split('\n')[0];
       if(en&&en.length>0&&en.length<120){
         document.getElementById('r-model').textContent=en;
         toast('🔤 영문명: '+en);
@@ -796,7 +783,7 @@ Korean: ${koName}`
       }
     }
   }catch(_){}
-  // 실패시 조용히 넘김
+  toast('⚠️ 영문 변환 실패 — 직접 입력해 주세요');
 }
 
 let _dbSearchTimer=null;
@@ -926,9 +913,9 @@ function goToSku(){
   document.getElementById('sku-model').value=document.getElementById('r-model').textContent.replace('—','');
   document.getElementById('sku-cat').value=a.category||'';
   document.getElementById('sku-color').value=a.color||'';
-  // r-size가 편집 중 div가 아닌 텍스트만 추출
+  // 저장된 사이즈 값 우선, 없으면 텍스트에서 추출
   const rSizeEl=document.getElementById('r-size');
-  const rSizeText=(rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim();
+  const rSizeText=_sizeVal||((rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim());
   document.getElementById('sku-size').value=rSizeText;
   document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
   document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
