@@ -576,7 +576,7 @@ function renderResult(){
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
-    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in" onclick="openLightbox('${photos.main.dataUrl}')">`;
+    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-in;background:#1a1a1a" onclick="openLightbox('${photos.main.dataUrl}')">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||analysis.model_name||'—';
@@ -704,19 +704,30 @@ function editField(id){
   const el=document.getElementById(id);
   const cur=el.textContent;
 
-  // 실측 사이즈 — 가로/세로 분리 입력 (높이 제거)
+  // 실측 사이즈 — 가로/세로 inline, 저장버튼 없이 blur시 자동저장
   if(id==='r-size'){
     const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||['',''];
-    el.innerHTML=`
-      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap">
         <span style="font-size:9px;color:#666">가로</span>
-        <input class="editing-input" id="sz-w" style="width:40px;text-align:center" type="number" inputmode="decimal" value="${nums[0]||''}" placeholder="0">
-        <span style="color:#444;font-size:11px">×</span>
+        <input id="sz-w" style="width:38px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[0]||''}" placeholder="0">
+        <span style="color:#444;font-size:11px;margin:0 1px">×</span>
         <span style="font-size:9px;color:#666">세로</span>
-        <input class="editing-input" id="sz-h" style="width:40px;text-align:center" type="number" inputmode="decimal" value="${nums[1]||''}" placeholder="0">
-        <button onclick="saveSizeField('r-size')" style="background:#ff6b2b;border:none;color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:700;margin-left:2px">저장</button>
-      </div>`;
-    document.getElementById('sz-w').focus();
+        <input id="sz-h" style="width:38px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[1]||''}" placeholder="0">
+      </span>`;
+    const szW=document.getElementById('sz-w');
+    const szH=document.getElementById('sz-h');
+    // blur시 둘 다 값 확인 후 자동저장 (다른 input으로 이동해도 값 유지)
+    const doSave=()=>{
+      // 포커스가 sz-w↔sz-h 사이 이동이면 저장 안 함
+      setTimeout(()=>{
+        const focus=document.activeElement;
+        if(focus===szW||focus===szH)return;
+        saveSizeField('r-size');
+      },150);
+    };
+    szW.addEventListener('blur',doSave);
+    szH.addEventListener('blur',doSave);
+    szW.focus();
     return;
   }
 
