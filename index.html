@@ -155,6 +155,19 @@ input[type=file]{display:none}
 .sku-list-del{float:right;background:none;border:none;color:#333;font-size:14px;cursor:pointer;margin-top:-2px}
 .sku-list-del:hover{color:#ef4444}
 .sku-empty{text-align:center;padding:40px 20px;color:#444;font-size:14px}
+.img-slider{position:relative;width:80px;flex-shrink:0}
+.img-slider img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #2a2a2a;display:block;cursor:zoom-in}
+.img-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);border:none;color:#fff;font-size:13px;width:18px;height:28px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;line-height:1}
+.img-slider .sl-arrow.left{left:-8px}
+.img-slider .sl-arrow.right{right:-8px}
+.img-slider .sl-count{position:absolute;bottom:3px;right:4px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;pointer-events:none}
+/* SKU 목록 상세 슬라이더 — 가로 전체 */
+.sku-slider{position:relative;width:100%;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-bottom:8px}
+.sku-slider img{width:100%;max-height:200px;object-fit:contain;display:block;cursor:zoom-in;background:#1a1a1a}
+.sku-slider .sl-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);border:none;color:#fff;font-size:16px;width:26px;height:40px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.sku-slider .sl-arrow.left{left:4px}
+.sku-slider .sl-arrow.right{right:4px}
+.sku-slider .sl-count{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.72);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px}
 .screen{display:none}
 .screen.active{display:block}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -622,9 +635,10 @@ function renderResult(){
         </div>
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
           <div class="db-match-body">
-            ${m.ref_image_url
-              ?`<img class="db-match-img" src="${m.ref_image_url}" alt="" style="cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${m.ref_image_url}')">`
-              :'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
+            ${(()=>{
+              const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+              return makeSlider('dbsl-'+idx+'-'+Date.now()%10000, allImgs, 'sm');
+            })()}
             <div class="db-match-info">
               <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
               SKU: ${m.sku_code||'—'}<br>
@@ -880,9 +894,10 @@ function applyDbMatchMulti(items){
       </div>
       <div id="${dbId}" style="display:${idx===0?'block':'none'}">
         <div class="db-match-body">
-          ${m.ref_image_url
-            ?`<img class="db-match-img" src="${m.ref_image_url}" alt="" style="cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${m.ref_image_url}')">`
-            :'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>'}
+          ${(()=>{
+            const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+            return makeSlider('dbslm-'+idx+'-'+Date.now()%10000, allImgs, 'sm');
+          })()}
           <div class="db-match-info">
             <strong>${m.model_name_ko||m.model_name||'—'}</strong><br>
             SKU: ${m.sku_code||'—'}<br>
@@ -1060,9 +1075,10 @@ function renderSkuList(list){
         ${item.verdict?`<span class="sku-meta-tag" style="color:${vColor}">${vText}</span>`:''}
       </div>
       <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-          ${[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).map(url=>`<img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid #2a2a2a" onclick="event.stopPropagation();openLightbox('${url}')" alt="">`).join('')}
-        </div>
+        ${(()=>{
+          const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+          return allImgs.length?makeSlider('skusl-'+i, allImgs, 'lg'):'';
+        })()}
         <div style="font-size:12px;color:#aaa;line-height:1.8">
           ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
           ${item.size_actual?`실측사이즈: <span style="color:#f0f0f0">${item.size_actual}</span><br>`:''}
@@ -1084,6 +1100,36 @@ function toggleSkuDetail(i){
   el.style.display=open?'block':'none';
   if(icon)icon.textContent=open?'▴':'▾';
 }
+// ── 공용 이미지 슬라이더 ────────────────────────────────
+const _sliders={}; // sliderId → {urls, cur}
+function makeSlider(sliderId, urls, size='sm'){
+  if(!urls||!urls.length)return'<div class="db-match-img" style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3">🗄️</div>';
+  _sliders[sliderId]={urls,cur:0};
+  const isLg=size==='lg';
+  const cls=isLg?'sku-slider':'img-slider';
+  const total=urls.length;
+  const arrowsHtml=total>1?`
+    <button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${sliderId}',-1)">‹</button>
+    <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${sliderId}',1)">›</button>
+    <span class="sl-count">1/${total}</span>`:
+    (total===1?'':'');
+  return`<div class="${cls}" id="${sliderId}">
+    <img src="${urls[0]}" alt="" onclick="event.stopPropagation();openLightbox('${urls[0]}')">
+    ${arrowsHtml}
+  </div>`;
+}
+function slideImg(sliderId, dir){
+  const s=_sliders[sliderId];if(!s)return;
+  s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
+  const el=document.getElementById(sliderId);if(!el)return;
+  const img=el.querySelector('img');
+  const cnt=el.querySelector('.sl-count');
+  const url=s.urls[s.cur];
+  img.src=url;
+  img.onclick=e=>{e.stopPropagation();openLightbox(url);};
+  if(cnt)cnt.textContent=`${s.cur+1}/${s.urls.length}`;
+}
+
 function openLightbox(url){
   document.getElementById('lightbox-img').src=url;
   document.getElementById('lightbox').classList.add('open');
