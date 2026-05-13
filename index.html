@@ -94,8 +94,13 @@ input[type=file]{display:none}
 .acc-select.status-u{border-color:rgba(245,158,11,.4);color:#f59e0b;background-color:#2a1a00}
 .acc-del{background:none;border:none;color:#333;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
 .acc-del:hover{color:#ef4444}
-.acc-add-row{padding:10px 14px;display:flex;gap:8px;border-top:1px solid #1a1a1a}
-.acc-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
+/* 카테고리 탭 */
+.acc-add-row{padding:12px 14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid #1a1a1a}
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.cat-btn{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:#666;cursor:pointer;transition:all .15s;white-space:nowrap}
+.cat-btn.active{background:#ff6b2b;border-color:#ff6b2b;color:#fff}
+.acc-bottom-row{display:flex;gap:8px}
+.acc-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 .acc-add-btn{background:#ff6b2b;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .db-match-card{margin:0 16px 4px;border-radius:12px;overflow:hidden;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
 .db-match-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)}
@@ -279,21 +284,32 @@ input[type=file]{display:none}
   <div class="acc-wrap">
     <div id="acc-list"></div>
     <div class="acc-add-row">
-      <select class="acc-input" id="acc-select">
-        <option value="">-- 부속품 선택 --</option>
-        <option>없음</option><option>열쇠 1개</option><option>열쇠 2개</option>
-        <option>자물쇠</option><option>자물쇠 커버 (키벨)</option><option>네임택</option>
-        <option>면장 스트랩</option><option>잠금 스트랩</option><option>레더 스트랩</option>
-        <option>체인 스트랩</option><option>패브릭 스트랩</option><option>스트랩패드</option>
-        <option>이너파우치</option><option>참장식</option><option>핸들 홀더 (손잡이 고정)</option>
-        <option>거울</option><option>키드지갑</option><option>미니파우치</option>
-        <option>속지갑 1개</option><option>속지갑 2개</option><option>훅 클로저</option>
-        <option>밑판</option><option>탈착형 키링</option><option>리본</option>
-        <option>더스트백</option><option>보증서</option><option>박스</option>
-        <option>케어택</option><option>브랜드택</option><option>여분단추</option>
-        <option>여분링크</option><option>크라운</option><option>여분끈</option>
-      </select>
-      <button class="acc-add-btn" onclick="addAccessory()">추가</button>
+      <!-- 카테고리 탭 -->
+      <div class="cat-tabs" id="cat-tabs">
+        <button class="cat-btn active" onclick="setCat('가방/지갑',this)">가방/지갑</button>
+        <button class="cat-btn" onclick="setCat('주얼리',this)">주얼리</button>
+        <button class="cat-btn" onclick="setCat('의류',this)">의류</button>
+        <button class="cat-btn" onclick="setCat('신발',this)">신발</button>
+        <button class="cat-btn" onclick="setCat('시계',this)">시계</button>
+      </div>
+      <!-- 부속품 선택 + 추가 -->
+      <div class="acc-bottom-row">
+        <select class="acc-input" id="acc-select">
+          <option value="">-- 부속품 선택 --</option>
+          <option>열쇠 1개</option><option>열쇠 2개</option>
+          <option>자물쇠</option><option>자물쇠 커버 (키벨)</option><option>네임택</option>
+          <option>연장 스트랩</option><option>핸들 스트랩</option>
+          <option>레더 스트랩</option><option>체인 스트랩</option><option>패브릭 스트랩</option><option>스트랩패드</option>
+          <option>키퍼(스트랩 후프) 1개</option><option>키퍼(스트랩 후프) 2개</option>
+          <option>키퍼(스트랩 후프) 3개</option><option>키퍼(스트랩 후프) 4개</option>
+          <option>이너파우치</option><option>참장식</option><option>핸들 홀더 (손잡이 고정)</option>
+          <option>거울</option><option>키드지갑</option><option>미니파우치</option>
+          <option>속지갑 1개</option><option>속지갑 2개</option><option>훅 클로저</option>
+          <option>밑판</option><option>탈착형 키링</option><option>리본</option>
+          <option>여분단추</option><option>여분링크</option><option>여분끈</option>
+        </select>
+        <button class="acc-add-btn" onclick="addAccessory()">추가</button>
+      </div>
     </div>
   </div>
 
@@ -395,6 +411,40 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 
+// ── 카테고리별 부속품 맵 ──────────────────────────────
+const ACC_MAP = {
+  '가방/지갑': [
+    '열쇠 1개','열쇠 2개','자물쇠','자물쇠 커버 (키벨)','네임택',
+    '연장 스트랩','핸들 스트랩','레더 스트랩','체인 스트랩','패브릭 스트랩','스트랩패드',
+    '키퍼(스트랩 후프) 1개','키퍼(스트랩 후프) 2개','키퍼(스트랩 후프) 3개','키퍼(스트랩 후프) 4개',
+    '이너파우치','참장식','핸들 홀더 (손잡이 고정)',
+    '거울','키드지갑','미니파우치',
+    '속지갑 1개','속지갑 2개','훅 클로저','밑판','탈착형 키링','리본','여분단추','여분링크','여분끈'
+  ],
+  '주얼리': [
+    '클러치(금속형)','클러치(액세서리형)','실크줄','체인','여분 체인'
+  ],
+  '의류': [
+    '벨트','퍼','후드','내피','스롯 래치(칼라용 벨트)','견장','여분단추','크라운'
+  ],
+  '신발': [
+    '슈레이스(신발끈)','인솔','참','듀브레(신발끈 장식)'
+  ],
+  '시계': [
+    '메탈 스트랩/브레이슬릿','레더 스트랩/브레이슬릿','러버 스트랩/브레이슬릿',
+    '세라믹 스트랩/브레이슬릿','커렉터 조정 핀','크라운','여분링크'
+  ]
+};
+
+function setCat(cat, btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const sel = document.getElementById('acc-select');
+  const items = ACC_MAP[cat] || [];
+  sel.innerHTML = '<option value="">-- 부속품 선택 --</option>' +
+    items.map(i => `<option>${i}</option>`).join('');
+}
+
 function triggerFile(id){document.getElementById(id).click()}
 function loadPhoto(input,key){
   if(!input.files[0])return;
@@ -463,8 +513,8 @@ async function startInspection(){
     await delay(300);setStep(2,'done');setStep(3,'active');
     const data=await res.json();
     setStep(3,'done');setStep(4,'active');
-    await delay(400);setStep(4,'done');
     resultData=data;
+    await delay(400);setStep(4,'done');
     await delay(300);renderResult();
   }catch(err){
     console.error(err);toast('❌ '+err.message);showScreen('shoot');
@@ -491,6 +541,18 @@ function renderResult(){
   if(analysis.origin)cats.push(analysis.origin);
   document.getElementById('r-cats').innerHTML=cats.map(c=>`<div class="cat-tag">${c}</div>`).join('');
 
+  // AI가 인식한 카테고리로 탭 자동 선택
+  if(analysis.category){
+    const catMap={'가방':' 가방/지갑','지갑':'가방/지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
+    const matched=Object.entries(catMap).find(([k])=>analysis.category.includes(k));
+    if(matched){
+      const target=matched[1].trim();
+      document.querySelectorAll('.cat-btn').forEach(btn=>{
+        if(btn.textContent===target){setCat(target,btn);}
+      });
+    }
+  }
+
   // DB 매칭 표시
   const dbWrap=document.getElementById('db-match-wrap');
   if(dbMatch){
@@ -510,7 +572,6 @@ function renderResult(){
           </div>
         </div>
       </div>`;
-    // DB 값으로 자동 채우기
     if(dbMatch.sku_code){
       document.getElementById('r-sku').textContent=dbMatch.sku_code;
       document.getElementById('r-sku').className='info-cell-val';
@@ -567,6 +628,7 @@ function delAcc(i){accessories.splice(i,1);renderAcc();}
 function addAccessory(){
   const sel=document.getElementById('acc-select');
   const name=sel.value;if(!name)return;
+  if(accessories.find(a=>a.name===name)){toast('이미 추가된 항목이에요');return;}
   accessories.push({name,status:''});sel.value='';renderAcc();
 }
 function editField(id){
@@ -578,7 +640,6 @@ function editField(id){
 }
 function saveField(id,input){document.getElementById(id).textContent=input.value.trim()||'—';}
 
-// 타이핑 멈추면 DB 자동 조회
 let _dbSearchTimer=null;
 function onResultFieldInput(input,id){
   clearTimeout(_dbSearchTimer);
@@ -598,12 +659,9 @@ async function searchDbFromField(fieldId,val){
     const list=j.data;
     const v=val.toLowerCase();
     let match=null;
-
-    // SKU 코드로 조회
     if(fieldId==='r-sku'){
       match=list.find(i=>(i.sku_code||'').toLowerCase()===v);
     }
-    // 모델명으로 조회 (영문/한글)
     if(!match&&(fieldId==='r-model'||fieldId==='r-model-ko')){
       match=list.find(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
       if(!match) match=list.find(i=>
@@ -611,13 +669,11 @@ async function searchDbFromField(fieldId,val){
         (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
       );
     }
-
     if(match) applyDbMatch(match);
   }catch(e){console.warn('자동조회 실패',e);}
 }
 
 function applyDbMatch(item){
-  // 결과 화면에 DB 정보 반영
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
   if(item.model_name_ko||item.model_name) document.getElementById('r-model-ko').textContent=item.model_name_ko||item.model_name;
   if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
@@ -625,8 +681,6 @@ function applyDbMatch(item){
     document.getElementById('r-sku').textContent=item.sku_code;
     document.getElementById('r-sku').className='info-cell-val';
   }
-
-  // DB 매칭 배너 업데이트
   const dbWrap=document.getElementById('db-match-wrap');
   const accList=(item.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
   dbWrap.innerHTML=`
@@ -644,14 +698,10 @@ function applyDbMatch(item){
         </div>
       </div>
     </div>`;
-
-  // 부속품도 자동 채우기
   if(item.accessories&&item.accessories.length){
     accessories=item.accessories.map(a=>({name:a.name,status:a.status||''}));
     renderAcc();
   }
-
-  // resultData에도 반영 (결과이동 시 사용)
   if(!resultData.analysis) resultData.analysis={};
   Object.assign(resultData.analysis,{
     brand:item.brand||resultData.analysis.brand,
@@ -661,7 +711,6 @@ function applyDbMatch(item){
     category:item.category||resultData.analysis.category,
     color:item.color||resultData.analysis.color,
   });
-
   toast('✅ DB 매칭됨: '+(item.model_name_ko||item.model_name||''));
 }
 
@@ -798,7 +847,6 @@ function toggleSkuDetail(i){
   const el=document.getElementById('sku-detail-'+i);
   if(el)el.style.display=el.style.display==='none'?'block':'none';
 }
-
 function openLightbox(url){
   document.getElementById('lightbox-img').src=url;
   document.getElementById('lightbox').classList.add('open');
@@ -806,8 +854,7 @@ function openLightbox(url){
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
 
 function openEditModal(i){
-  const item=skuListAll[i];
-  if(!item)return;
+  const item=skuListAll[i];if(!item)return;
   document.getElementById('ef-id').value=item.id;
   document.getElementById('ef-brand').value=item.brand||'';
   document.getElementById('ef-model-ko').value=item.model_name_ko||'';
@@ -818,7 +865,6 @@ function openEditModal(i){
   document.getElementById('ef-size-name').value=item.size_label||'';
   document.getElementById('ef-sku').value=item.sku_code||'';
   document.getElementById('ef-notes').value=item.notes||'';
-  // 기존 사진들 표시
   const imgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean);
   const unique=[...new Set(imgs)];
   document.getElementById('ef-extra-images').value=JSON.stringify(unique);
