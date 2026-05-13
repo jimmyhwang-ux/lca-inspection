@@ -65,8 +65,8 @@ input[type=file]{display:none}
 .sp{display:inline-block;animation:spin 1s linear infinite}
 #screen-result{padding:0}
 .result-card{background:#111;border-radius:20px;margin:16px;padding:16px;display:flex;gap:14px;align-items:flex-start}
-.result-thumb{width:80px;height:80px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#1a1a1a}
-.result-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.result-thumb{width:80px;height:80px;flex-shrink:0;border-radius:12px;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center}
+.result-thumb img{width:100%;height:100%;object-fit:contain;display:block;background:#1a1a1a}
 .result-thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.3}
 .result-meta{flex:1;min-width:0}
 .conf-badge{display:inline-flex;align-items:center;gap:5px;background:#1a3a1a;color:#22c55e;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px;margin-bottom:8px}
@@ -358,7 +358,7 @@ input[type=file]{display:none}
       <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="sku-model" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">카테고리</div><input class="sku-input" id="sku-cat" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—"></div>
-      <div class="sku-row"><div class="sku-key">실측 사이즈</div><input class="sku-input" id="sku-size" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">실측 사이즈</div><input class="sku-input" id="sku-size" type="text" placeholder="가로 _ × 세로 _ × 높이 _"></div>
       <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">판정</div><input class="sku-input" id="sku-verdict" type="text" placeholder="—" readonly></div>
@@ -701,11 +701,44 @@ function addAccessory(){
   accessories.push({name,status:''});sel.value='';renderAcc();
 }
 function editField(id){
-  const el=document.getElementById(id);const cur=el.textContent;
+  const el=document.getElementById(id);
+  const cur=el.textContent;
+
+  // 실측 사이즈 — 가로/세로/높이 분리 입력
+  if(id==='r-size'){
+    // 기존 값 파싱: "가로20 x 세로15 x 높이8" 또는 숫자만
+    const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||['','',''];
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <span style="font-size:9px;color:#666">가로</span>
+        <input class="editing-input" id="sz-w" style="width:36px;text-align:center" value="${nums[0]||''}" placeholder="0">
+        <span style="color:#444;font-size:11px">×</span>
+        <span style="font-size:9px;color:#666">세로</span>
+        <input class="editing-input" id="sz-h" style="width:36px;text-align:center" value="${nums[1]||''}" placeholder="0">
+        <span style="color:#444;font-size:11px">×</span>
+        <span style="font-size:9px;color:#666">높이</span>
+        <input class="editing-input" id="sz-d" style="width:36px;text-align:center" value="${nums[2]||''}" placeholder="0">
+        <button onclick="saveSizeField('r-size')" style="background:#ff6b2b;border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:700;margin-left:2px">저장</button>
+      </div>`;
+    document.getElementById('sz-w').focus();
+    return;
+  }
+
   const isSearch=(id==='r-model'||id==='r-model-ko'||id==='r-sku');
   const trigger=isSearch?'oninput="onResultFieldInput(this,\''+id+'\')"':'';
   el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
   el.querySelector('input').focus();
+}
+
+function saveSizeField(id){
+  const w=document.getElementById('sz-w')?.value.trim()||'';
+  const h=document.getElementById('sz-h')?.value.trim()||'';
+  const d=document.getElementById('sz-d')?.value.trim()||'';
+  const parts=[w&&`가로 ${w}`,h&&`세로 ${h}`,d&&`높이 ${d}`].filter(Boolean);
+  const val=parts.length?parts.join(' × '):'—';
+  const el=document.getElementById(id);
+  el.textContent=val;
+  el.className='info-cell-val'+(val==='—'?' muted':'');
 }
 function saveField(id,input){
   const val=input.value.trim()||'—';
@@ -715,26 +748,40 @@ function saveField(id,input){
 }
 
 async function autoTranslateModelName(koName){
+  // 1차: /api/inspect translate_model 프록시 시도
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:80,
-        messages:[{
-          role:'user',
-          content:`명품 제품의 한글 모델명을 영문 공식 모델명으로만 변환해줘. 설명 없이 영문명만 한 줄 출력.\n한글명: ${koName}`
-        }]
-      })
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'translate_model',modelNameKo:koName})
+    });
+    if(res.ok){
+      const j=await res.json();
+      const en=(j.model_name_en||j.modelNameEn||'').trim().split('\n')[0];
+      if(en&&en!==koName&&en.length<120){
+        document.getElementById('r-model').textContent=en;
+        toast('🔤 영문명: '+en);
+        return;
+      }
+    }
+  }catch(_){}
+  // 2차: DB에서 같은 한글명 가진 항목의 영문명 찾기
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list_sku'})
     });
     const j=await res.json();
-    const enName=(j.content?.[0]?.text||'').trim().split('\n')[0];
-    if(enName&&enName.length<100&&enName!==koName){
-      document.getElementById('r-model').textContent=enName;
-      toast('🔤 영문명 자동 변환: '+enName);
+    if(j.success&&j.data){
+      const v=koName.toLowerCase();
+      const match=j.data.find(i=>(i.model_name_ko||'').toLowerCase()===v);
+      if(match?.model_name){
+        document.getElementById('r-model').textContent=match.model_name;
+        toast('🔤 영문명(DB): '+match.model_name);
+        return;
+      }
     }
-  }catch(e){console.warn('영문 변환 실패',e);}
+  }catch(_){}
+  toast('⚠️ 영문명 자동 변환 실패 — 직접 입력 필요');
 }
 
 let _dbSearchTimer=null;
