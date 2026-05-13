@@ -631,13 +631,14 @@ function renderResult(){
       const accList=(m.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
       const dbId=`db-detail-${idx}`;
       const isMulti=matches.length>1;
-      // 슬라이더 HTML 인라인 생성
-      const slHtml=total>0?`<div class="sl-box" id="${slId}">
-          <img src="${allImgs[0]}" onclick="event.stopPropagation();openLightbox('${allImgs[0]}')" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a">
-          ${total>1?`<button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${slId}',-1)">&#8249;</button>
-          <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${slId}',1)">&#8250;</button>`:''}
-          <span class="sl-count">${total>1?`1/${total}`:''}</span>
-        </div>`:'<div style="text-align:center;padding:20px;font-size:20px;opacity:.3">🗄️</div>';
+      const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a;cursor:pointer">
+          <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${allImgs[0]}')">
+          ${total>1?`
+          <button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
+          <button onclick="event.stopPropagation();slideImg('${slId}',1)"  style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
+          <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
+          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'}
+        </div>`:'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">🗄️</div>';
       return`<div class="db-match-card" style="${idx>0?'margin-top:6px':''}">
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
           <span class="db-match-badge">✅ DB 매칭 ${isMulti?`(${idx+1}/${matches.length})`:''}</span>
@@ -646,7 +647,7 @@ function renderResult(){
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
         </div>
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
-          <div class="db-match-body">
+          <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
             ${slHtml}
             <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7;margin-top:4px">
               <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
@@ -798,6 +799,16 @@ function saveField(id,input){
   document.getElementById(id).textContent=val;
   // 한글 모델명 저장 시 → 영문 자동 변환
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
+  // 모델명(한글/영문) 또는 스타일번호를 지우면 DB매칭 카드 초기화 → 새 SKU 적재 가능
+  if((id==='r-model-ko'||id==='r-model'||id==='r-sku')&&val==='—'){
+    const dbWrap=document.getElementById('db-match-wrap');
+    if(dbWrap){
+      dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
+    }
+    window._dbEnriched=[];
+    accessories=[];
+    renderAcc();
+  }
 }
 
 async function autoTranslateModelName(koName){
@@ -1109,7 +1120,18 @@ function renderSkuList(list){
       <div id="sku-detail-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
         ${(()=>{
           const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
-          return allImgs.length?makeSlider('skusl-'+i, allImgs):'';
+          return allImgs.length?(()=>{
+            const slId='skusl-'+i;
+            const total=allImgs.length;
+            _sliders[slId]={urls:allImgs,cur:0};
+            return `<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
+              <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${allImgs[0]}')">
+              ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
+              <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
+              <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
+              :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;padding:2px 6px;border-radius:5px">1/1</span>'}
+            </div>`;
+          })():'';
         })()}
         <div style="font-size:12px;color:#aaa;line-height:1.8">
           ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
@@ -1149,12 +1171,10 @@ function makeSlider(sliderId,urls){
 function slideImg(sliderId,dir){
   const s=_sliders[sliderId];if(!s)return;
   s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
-  const el=document.getElementById(sliderId);if(!el)return;
-  const img=el.querySelector('img');
-  const cnt=el.querySelector('.sl-count');
   const url=s.urls[s.cur];
-  img.src=url;
-  img.onclick=e=>{e.stopPropagation();openLightbox(url);};
+  const img=document.getElementById(sliderId+'-img');
+  const cnt=document.getElementById(sliderId+'-cnt');
+  if(img){img.src=url;img.onclick=e=>{e.stopPropagation();openLightbox(url);};}
   if(cnt)cnt.textContent=`${s.cur+1}/${s.urls.length}`;
 }
 
