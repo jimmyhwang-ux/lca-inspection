@@ -879,6 +879,8 @@ function editField(id){
   const trigger=isSearch?'oninput="onResultFieldInput(this,\''+id+'\')"':'';
   el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
   const inp=el.querySelector('input');
+  // 사용자 직접 편집 플래그 ON
+  window._userEditingField=true;
   inp.focus();
   const len=inp.value.length;
   inp.setSelectionRange(len,len);
@@ -897,22 +899,25 @@ function saveSizeField(id){
   el.className='info-cell-val'+(val==='—'?' muted':'');
 }
 function saveField(id,input){
+  window._userEditingField=false;
   const val=input.value.trim()||'—';
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
   // 모델명 변경 시 Google Images 재검색
   if((id==='r-model-ko'||id==='r-model')){
-    // 모델명 변경 시 DB 카드 초기화 후 재검색
-    const dbWrap=document.getElementById('db-match-wrap');
-    if(dbWrap){
-      dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
-    }
-    window._dbEnriched=[];
-    accessories=[];
-    renderAcc();
-    if(val!=='—'){
-      const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
-      reSearchByModel(brand, val);
+    // 사용자가 직접 수정한 경우에만 DB 카드 초기화 (렌더링 중 자동 세팅은 제외)
+    if(window._userEditingField){
+      const dbWrap=document.getElementById('db-match-wrap');
+      if(dbWrap){
+        dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
+      }
+      window._dbEnriched=[];
+      accessories=[];
+      renderAcc();
+      if(val!=='—'){
+        const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
+        reSearchByModel(brand, val);
+      }
     }
   }
   if(id==='r-sku'&&val==='—'){
