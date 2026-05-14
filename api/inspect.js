@@ -461,19 +461,16 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-          // SKU 완전 일치 → 브랜드 무관하게 최우선 매칭
+          // SKU 완전 일치 → 최우선 (브랜드 무관)
           if (aiSku && dbSku && aiSku === dbSku) {
             candidates.push({ item, score: 200 }); continue;
           }
 
-          // 브랜드 필터 — 단, 브랜드가 없거나 모델명 완전 일치 시 제외
-          const brandMismatch = aiBrand && dbBrand &&
-            !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand);
-
           let score = 0;
+          // 영문 모델명 매칭
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
-            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 60;
+            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
             else {
               const w1 = aiModel.split(' ').filter(w => w.length >= 2);
               const w2 = dbModel.split(' ').filter(w => w.length >= 2);
@@ -484,15 +481,18 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
               }
             }
           }
+          // 한글 모델명 매칭 (브랜드 무관하게 적용)
           if (aiModelKo && dbModelKo) {
             if (aiModelKo === dbModelKo) score = Math.max(score, 90);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
+            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 60);
           }
 
-          // 브랜드 불일치 시 완전 일치(score>=90)만 허용, 부분 일치는 제외
-          if (brandMismatch && score < 90) continue;
+          // 브랜드 일치 보너스
+          if (aiBrand && dbBrand && (dbBrand.includes(aiBrand) || aiBrand.includes(dbBrand))) {
+            score = Math.min(score + 20, 190);
+          }
 
-          if (score >= 50) candidates.push({ item, score: brandMismatch ? score - 10 : score });
+          if (score >= 50) candidates.push({ item, score });
         }
 
         if (candidates.length > 0) {
