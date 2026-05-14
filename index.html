@@ -971,7 +971,7 @@ function editField(id){
         const focus=document.activeElement;
         if(focus===szW||focus===szH)return;
         saveSizeField('r-size');
-      },150);
+      },300);
     };
     szW.addEventListener('blur',doSave);
     szH.addEventListener('blur',doSave);
