@@ -749,16 +749,28 @@ function renderResult(){
       }catch(_){}
       skuListAll=freshList;
 
-      // 각 매칭 아이템에 freshList에서 notes/extra_images 보완
+      // 각 매칭 아이템 보완
       const enriched=dbMatches.map(m=>{
+        // 1) id로 정확히 매칭
         const full=freshList.find(s=>String(s.id)===String(m.id));
-        const notes=full?(full.notes||''):(m.notes||'');
-        const extra_images=full
-          ?[...(full.extra_images||[]),...(m.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i)
-          :(m.extra_images||[]);
-        const ref_image_url=full?(full.ref_image_url||m.ref_image_url||''):(m.ref_image_url||'');
-        console.log('[notes확인]',{id:m.id, notes, full_notes:full?.notes, m_notes:m.notes});
-        return{...(full||{}),...m,notes:notes,extra_images:extra_images,ref_image_url:ref_image_url};
+        // 2) 같은 브랜드+모델명 중 notes 있는 아이템 찾기 (id 관계없이)
+        const sameModel=freshList.filter(s=>
+          s.brand===m.brand &&
+          (s.model_name===m.model_name || s.model_name_ko===m.model_name_ko)
+        );
+        const withNotes=sameModel.find(s=>s.notes&&s.notes.trim());
+        // 3) notes: notes있는 동명아이템 우선 → id매칭 아이템 → m 자체
+        const notes=(withNotes?.notes||full?.notes||m.notes||'').trim();
+        const extra_images=(full||m).extra_images||[];
+        const ref_image_url=(full||m).ref_image_url||'';
+        console.log('[notes최종]',{
+          id:m.id,
+          model:m.model_name_ko,
+          notes,
+          withNotes_id:withNotes?.id,
+          withNotes_notes:withNotes?.notes
+        });
+        return{...(full||{}),...m,notes,extra_images,ref_image_url};
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
