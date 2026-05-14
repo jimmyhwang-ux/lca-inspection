@@ -245,8 +245,32 @@ export default async function handler(req, res) {
       }
       const payload = { ...skuData, extra_images };
       delete payload.newImageBase64;
-      const r = await sb('sku_items', { method: 'POST', body: JSON.stringify(payload) });
-      const d = await r.json();
+      // site_url: DB 컬럼 없으면 에러 방지 — 일단 전송하고 에러 시 제거 후 재시도
+      if (payload.site_url === undefined) payload.site_url = '';
+      const r = await sb('sku_items', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Prefer': 'return=representation' }
+      });
+      const text = await r.text();
+      if (!r.ok) {
+        let errMsg = text;
+        try { errMsg = JSON.parse(text)?.message || text; } catch(_) {}
+        // site_url 컬럼 없는 경우 제거 후 재시도
+        if (r.status === 400 && errMsg.includes('site_url')) {
+          delete payload.site_url;
+          const r2 = await sb('sku_items', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Prefer': 'return=representation' }
+          });
+          const text2 = await r2.text();
+          if (!r2.ok) return res.status(200).json({ success: false, error: `저장 실패: ${text2}` });
+          return res.status(200).json({ success: true, data: text2 ? JSON.parse(text2) : [] });
+        }
+        return res.status(200).json({ success: false, error: `Supabase 오류 ${r.status}: ${errMsg}` });
+      }
+      const d = text ? JSON.parse(text) : [];
       return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
@@ -269,8 +293,19 @@ export default async function handler(req, res) {
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
-      const r = await sb(`sku_items?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(fields) });
-      const d = await r.json();
+      if (!fields.site_url) fields.site_url = '';
+      const r = await sb(`sku_items?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(fields),
+        headers: { 'Prefer': 'return=representation' }
+      });
+      const text = await r.text();
+      if (!r.ok) {
+        let errMsg = text;
+        try { errMsg = JSON.parse(text)?.message || text; } catch(_) {}
+        return res.status(200).json({ success: false, error: `Supabase 오류 ${r.status}: ${errMsg}` });
+      }
+      const d = text ? JSON.parse(text) : [];
       return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
