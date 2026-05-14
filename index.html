@@ -677,6 +677,8 @@ function renderResult(){
     if(!matches.length) return;
     const dbWrap=document.getElementById('db-match-wrap');
     if(!dbWrap) return;
+    // 카드 데이터를 전역에 저장 (버튼 클릭 시 참조)
+    window._cardMatches=matches;
 
     dbWrap.innerHTML=matches.map((m,idx)=>{
       const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
@@ -695,7 +697,7 @@ function renderResult(){
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
           <span class="db-match-badge">&#10003; DB ${isMulti?`${idx+1}/${matches.length}`:''}</span>
           <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
-          <button id="apply-btn-${idx}" onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}],'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>
+          <button id="apply-btn-${idx}" onclick="event.stopPropagation();applyCardMatch(${idx},'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'&#9652;':'&#9662;'}</span>
         </div>
         <div style="padding:4px 14px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1060,17 +1062,17 @@ async function searchDbFromField(fieldId,val){
   }catch(e){console.warn('자동조회 실패',e);}
 }
 
+// _cardMatches에서 안전하게 꺼내서 적용
+function applyCardMatch(idx, cardId){
+  const matches = window._cardMatches;
+  if(!matches||!matches[idx]){
+    toast('❌ 카드 데이터 없음');
+    return;
+  }
+  applyDbMatch(matches[idx], cardId);
+}
+
 function applyDbMatch(item, cardId){
-  console.log('[DBG] applyDbMatch item:', JSON.stringify({
-    sku_code: item.sku_code,
-    size_actual: item.size_actual,
-    size_label: item.size_label,
-    acc_len: (item.accessories||[]).length,
-    cardId: cardId
-  }));
-  const _rSku = document.getElementById('r-sku');
-  const _rSize = document.getElementById('r-size');
-  console.log('[DBG] DOM before:', _rSku?.textContent, _rSize?.textContent);
   // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
