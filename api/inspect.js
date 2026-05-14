@@ -20,7 +20,6 @@ export default async function handler(req, res) {
     }
   });
 
-  // imgbb 업로드 헬퍼
   const uploadImgbb = async (b64) => {
     const form = new URLSearchParams();
     form.append('key', IMGBB_KEY);
@@ -31,7 +30,104 @@ export default async function handler(req, res) {
     return j.data.url;
   };
 
-  // ── SKU 저장 ──────────────────────────────────────
+  // ── 사이즈 파싱 헬퍼 ──────────────────────────────────────────────────
+  function parseSizeFromText(text) {
+    if (!text) return null;
+    // 패턴1: "25.5 x 20 x 6.5 cm", "25×20×6cm", "25*20*6 cm"
+    const p1 = text.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm)?\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm)?(?:\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm)?)?(?:\s*(cm|mm))?/i);
+    if (p1) {
+      const parts = [p1[1], p1[2], p1[3]].filter(Boolean).map(v => v.replace(',', '.'));
+      const unit = p1[4] || (text.toLowerCase().includes('mm') ? 'mm' : 'cm');
+      return parts.join(' × ') + ' ' + unit;
+    }
+    // 패턴2: "W25 H20 D6", "W:25cm H:20cm D:6cm"
+    const p2 = text.match(/[WwLl][:\s]?(\d{1,3}(?:[.,]\d)?)\s*(?:cm|mm)?.{0,8}[HhDd][:\s]?(\d{1,3}(?:[.,]\d)?)/i);
+    if (p2) return p2[1].replace(',','.') + ' × ' + p2[2].replace(',','.') + ' cm';
+    return null;
+  }
+
+  function parseSizeNameFromText(text) {
+    if (!text) return null;
+    const m = text.match(/\b(nano|micro|baby|mini|petite|small|medium|large|xl|maxi|pm|mm|gm|tpm|bph|xs|xxs)\b/i);
+    return m ? m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() : null;
+  }
+
+  function majority(arr) {
+    if (!arr.length) return null;
+    const freq = {};
+    for (const v of arr) freq[v] = (freq[v] || 0) + 1;
+    const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+    // 최다 등장값이 2개 이상일 때만 신뢰
+    return sorted[0][1] >= 2 ? sorted[0][0] : sorted[0][0];
+  }
+
+  // 페이지에서 사이즈 관련 텍스트 추출 (HTML → 후보 텍스트 블록들)
+  function extractSizeTexts(html) {
+    // script/style 제거
+    const clean = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ');
+    // 사이즈 관련 키워드 주변 텍스트 추출
+    const candidates = [];
+    const keywords = /\b(size|dimension|measurement|치수|사이즈|크기|실측|가로|세로|높이|width|height|depth|length)\b/gi;
+    let m;
+    while ((m = keywords.exec(clean)) !== null) {
+      const snippet = clean.slice(Math.max(0, m.index - 30), m.index + 120);
+      candidates.push(snippet);
+    }
+    // 숫자×숫자 패턴 직접 검색
+    const directRe = /\d{1,3}\s*[x×*]\s*\d{1,3}/g;
+    let dm;
+    while ((dm = directRe.exec(clean)) !== null) {
+      candidates.push(clean.slice(Math.max(0, dm.index - 20), dm.index + 80));
+    }
+    return candidates;
+  }
+
+  // ── fetch_size 액션 ───────────────────────────────────────────────────
+  if (action === 'fetch_size') {
+    const { visualMatchLinks = [], brand, modelNameKo, modelNameEn } = req.body;
+    const results = { sizes: [], sizeNames: [], sources: [] };
+
+    // 링크 최대 8개 병렬 fetch (타임아웃 4초)
+    const links = visualMatchLinks.slice(0, 8);
+    await Promise.allSettled(links.map(async (link) => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 4000);
+        const r = await fetch(link, {
+          signal: controller.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }
+        });
+        clearTimeout(timer);
+        if (!r.ok) return;
+        const html = await r.text();
+        const texts = extractSizeTexts(html);
+        for (const t of texts) {
+          const sz = parseSizeFromText(t);
+          const sn = parseSizeNameFromText(t);
+          if (sz) { results.sizes.push(sz); results.sources.push(new URL(link).hostname); }
+          if (sn) results.sizeNames.push(sn);
+        }
+      } catch (_) {}
+    }));
+
+    // 중복 기준 다수결
+    const finalSize = majority(results.sizes) || null;
+    const finalSizeName = majority(results.sizeNames) || null;
+
+    return res.status(200).json({
+      success: true,
+      size: finalSize,
+      size_label: finalSizeName,
+      sources: [...new Set(results.sources)],
+      raw_sizes: results.sizes,         // 디버그용
+    });
+  }
+
+  // ── SKU 저장 ──────────────────────────────────────────────────────────
   if (action === 'save_sku') {
     try {
       let extra_images = skuData.extra_images || [];
@@ -47,7 +143,7 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── SKU 목록 ──────────────────────────────────────
+  // ── SKU 목록 ──────────────────────────────────────────────────────────
   if (action === 'list_sku') {
     try {
       const r = await sb('sku_items?select=*&order=created_at.desc&limit=200');
@@ -56,7 +152,7 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── SKU 수정 ──────────────────────────────────────
+  // ── SKU 수정 ──────────────────────────────────────────────────────────
   if (action === 'update_sku') {
     try {
       const { id, newImageBase64, ...fields } = skuData;
@@ -71,7 +167,7 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── SKU 삭제 ──────────────────────────────────────
+  // ── SKU 삭제 ──────────────────────────────────────────────────────────
   if (action === 'delete_sku') {
     try {
       await sb(`sku_items?id=eq.${skuData.id}`, { method: 'DELETE', prefer: '' });
@@ -79,46 +175,35 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── 이미지 단건 업로드 (프론트에서 imgbb에 직접 업로드) ──────────────
+  // ── 이미지 단건 업로드 ────────────────────────────────────────────────
   if (action === 'upload_image') {
     try {
       const { imageBase64: b64 } = req.body;
       const url = await uploadImgbb(b64);
       return res.status(200).json({ url });
-    } catch (e) {
-      return res.status(500).json({ url: '', error: e.message });
-    }
+    } catch (e) { return res.status(500).json({ url: '', error: e.message }); }
   }
 
-  // ── 모델명 한글→영문 직역 ─────────────────────────
+  // ── 모델명 한글→영문 ──────────────────────────────────────────────────
   if (action === 'translate_model') {
     try {
       const { modelNameKo } = req.body;
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': CLAUDE_KEY,
-          'anthropic-version': '2023-06-01'
-        },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 60,
-          messages: [{
-            role: 'user',
-            content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}`
-          }]
+          messages: [{ role: 'user', content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}` }]
         })
       });
       const j = await r.json();
       const en = (j.content?.[0]?.text || '').trim().split('\n')[0];
       return res.status(200).json({ model_name_en: en });
-    } catch (e) {
-      return res.status(500).json({ model_name_en: '' });
-    }
+    } catch (e) { return res.status(500).json({ model_name_en: '' }); }
   }
 
-  // ── 메인 검수 ─────────────────────────────────────
+  // ── 메인 검수 ─────────────────────────────────────────────────────────
   if (!imageBase64) return res.status(400).json({ error: '이미지 없음' });
 
   try {
@@ -163,18 +248,14 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const aiModel   = (analysis.model_name || '').toLowerCase().trim();
         const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
         const aiSku     = (analysis.sku || '').toLowerCase().trim();
-
-        // 1단계: 모든 후보 점수 계산
         const candidates = [];
         for (const item of dbData) {
           const dbBrand   = (item.brand || '').toLowerCase().trim();
           const dbModel   = (item.model_name || '').toLowerCase().trim();
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
-
           if (aiBrand && dbBrand && !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
-          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({item, score: 200}); continue; }
-
+          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({ item, score: 200 }); continue; }
           let score = 0;
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
@@ -193,14 +274,11 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             if (aiModelKo === dbModelKo) score = Math.max(score, 90);
             else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
           }
-          if (score >= 50) candidates.push({item, score});
+          if (score >= 50) candidates.push({ item, score });
         }
-
-        // 2단계: 최고점 후보 중 notes 있는 것 우선 선택
         if (candidates.length > 0) {
           const maxScore = Math.max(...candidates.map(c => c.score));
           const topCandidates = candidates.filter(c => c.score === maxScore);
-          // notes 있는 아이템 우선, 없으면 첫 번째
           const withNotes = topCandidates.find(c => c.item.notes && c.item.notes.trim());
           dbMatch = (withNotes || topCandidates[0]).item;
         }
@@ -215,7 +293,78 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip'); }
 
-    // dbMatch extra_images 정규화 (null/undefined → 빈 배열)
+    // ── 렌즈 결과에서 사이즈 자동 파싱 (백그라운드) ──────────────────
+    let lensSize = null;
+    let lensSizeName = null;
+    let lensSizeSources = [];
+    try {
+      const links = visualMatches
+        .map(m => m.link)
+        .filter(Boolean)
+        .slice(0, 8);
+
+      const sizeResults = [];
+      const nameResults = [];
+
+      await Promise.allSettled(links.map(async (link) => {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 4000);
+          const r = await fetch(link, {
+            signal: controller.signal,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
+          });
+          clearTimeout(timer);
+          if (!r.ok) return;
+          const html = await r.text();
+
+          // HTML → 텍스트 정제
+          const clean = html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ');
+
+          // 사이즈 키워드 주변 텍스트 추출
+          const sizeKeyRe = /\b(size|dimension|measurement|치수|사이즈|크기|실측|가로|세로|높이|width|height|depth|length|specifications?)\b/gi;
+          let m2;
+          while ((m2 = sizeKeyRe.exec(clean)) !== null) {
+            const snippet = clean.slice(Math.max(0, m2.index - 30), m2.index + 150);
+            const sz = parseSizeFromText(snippet);
+            const sn = parseSizeNameFromText(snippet);
+            if (sz) { sizeResults.push(sz); lensSizeSources.push(new URL(link).hostname); }
+            if (sn) nameResults.push(sn);
+          }
+          // 숫자×숫자 패턴 직접 검색
+          const directRe = /\d{1,3}\s*[x×*]\s*\d{1,3}/g;
+          let dm;
+          while ((dm = directRe.exec(clean)) !== null) {
+            const snippet = clean.slice(Math.max(0, dm.index - 20), dm.index + 80);
+            const sz = parseSizeFromText(snippet);
+            if (sz) { sizeResults.push(sz); lensSizeSources.push(new URL(link).hostname); }
+          }
+        } catch (_) {}
+      }));
+
+      // 다수결: 2개 이상 일치 우선, 없으면 첫 번째
+      if (sizeResults.length > 0) {
+        const freq = {};
+        for (const v of sizeResults) freq[v] = (freq[v] || 0) + 1;
+        const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+        lensSize = sorted[0][0];
+      }
+      if (nameResults.length > 0) {
+        const freq = {};
+        for (const v of nameResults) freq[v] = (freq[v] || 0) + 1;
+        lensSizeName = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+      }
+      lensSizeSources = [...new Set(lensSizeSources)];
+    } catch (e) { console.warn('Lens size parse skip:', e.message); }
+
+    // analysis에 렌즈 사이즈 병합 (AI가 못 찾았을 때만)
+    if (!analysis.size && lensSize) analysis.size = lensSize;
+    if (!analysis.size_label && lensSizeName) analysis.size_label = lensSizeName;
+
     if (dbMatch) {
       dbMatch = {
         ...dbMatch,
@@ -223,7 +372,18 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         ref_image_url: dbMatch.ref_image_url || null,
       };
     }
-    return res.status(200).json({ success: true, imageUrl, analysis, dbMatch, visualMatches: visualMatches.slice(0, 12) });
+
+    return res.status(200).json({
+      success: true,
+      imageUrl,
+      analysis,
+      dbMatch,
+      visualMatches: visualMatches.slice(0, 12),
+      // 렌즈 파싱 결과 별도 반환 (프론트에서 출처 배지 표시용)
+      lensSize,
+      lensSizeName,
+      lensSizeSources,
+    });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
