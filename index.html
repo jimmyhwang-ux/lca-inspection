@@ -712,7 +712,7 @@ function renderResult(){
           ${isMulti?`<button onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}])" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>`:''}
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
         </div>
-        ${(()=>{const fullN=(typeof m.notes==='string'&&m.notes.trim())?m.notes.trim():((skuListAll.find(s=>s.id===m.id)||{}).notes||'').trim();return fullN?`<div style="padding:4px 14px 6px;font-size:11px;color:#f59e0b">📝 ${fullN}</div>`:''})()}
+        ${m.notes?`<div style="padding:4px 14px 6px;font-size:11px;color:#f59e0b">📝 ${m.notes}</div>`:''}
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
           <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
             ${slHtml}
@@ -721,7 +721,7 @@ function renderResult(){
               SKU: ${m.sku_code||'—'}<br>
               ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
               ${accList?'부속품: '+accList+`<br>`:''}
-              ${(()=>{const n=(typeof m.notes==='string'&&m.notes.trim())?m.notes.trim():((skuListAll.find(s=>s.id===m.id)||{}).notes||'').trim();return n?`<span style="color:#f59e0b;font-size:11px">📝 ${n}</span>`:''})()}
+              ${m.notes?`<span style="color:#f59e0b;font-size:11px">📝 ${m.notes}</span>`:''}
             </div>
           </div>
         </div>
@@ -756,11 +756,16 @@ function renderResult(){
 
       const finalEnriched=dbMatches.map(m=>{
         const full=findFull(m.id);
+        // full DB 아이템의 notes 추출 (null/undefined 안전 처리)
+        const dbNotes = full ? (String(full.notes||'').trim()) : '';
+        const matchNotes = String(m.notes||'').trim();
+        // DB 전체 조회 notes 우선, 없으면 매칭 결과 notes
+        const finalNotes = dbNotes || matchNotes;
+
+        console.log('[DB매칭 notes]', {id:m.id, dbNotes, matchNotes, finalNotes});
+
         if(!full){
-          return{...m,
-            extra_images:Array.isArray(m.extra_images)?m.extra_images:[],
-            notes:m.notes||''
-          };
+          return{...m, extra_images:Array.isArray(m.extra_images)?m.extra_images:[], notes:finalNotes};
         }
         const merged=[
           ...(full.ref_image_url?[full.ref_image_url]:[]),
@@ -768,16 +773,12 @@ function renderResult(){
           ...(full.extra_images||[]),
           ...(m.extra_images||[])
         ].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-        // notes: full DB 값 최우선
-        const realNotes=(full.notes&&String(full.notes).trim())
-          ? String(full.notes).trim()
-          : (m.notes&&String(m.notes).trim())||'';
         return{
           ...full,
           ...m,
           ref_image_url:full.ref_image_url||m.ref_image_url||null,
           extra_images:merged.slice(1),
-          notes:realNotes
+          notes:finalNotes  // ← 반드시 마지막에, 스프레드로 덮이지 않도록
         };
       });
       window._dbEnriched=finalEnriched;
