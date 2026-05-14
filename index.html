@@ -1071,53 +1071,59 @@ async function searchDbFromField(fieldId,val){
 }
 
 function applyDbMatch(item, cardId){
-  // ── 1. 결과 화면 셀 업데이트 ──────────────────────────────────
+  // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
   if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
 
-  // SKU — 항상 반영
   const skuEl=document.getElementById('r-sku');
   skuEl.textContent=item.sku_code||'—';
   skuEl.className='info-cell-val'+(item.sku_code?'':' muted');
-  // 실측 사이즈 — 항상 반영
+
   const sizeEl=document.getElementById('r-size');
   sizeEl.textContent=item.size_actual||'—';
   sizeEl.className='info-cell-val'+(item.size_actual?'':' muted');
-  // 사이즈 명칭 — 항상 반영
+  // AI 배지 제거 후 재적용
+  sizeEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
+
   const sizeNameEl=document.getElementById('r-size-name');
   sizeNameEl.textContent=item.size_label||'—';
   sizeNameEl.className='info-cell-val'+(item.size_label?'':' muted');
+  sizeNameEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
 
-  // ── 2. 부속품 업데이트 ───────────────────────────────────────
-  if(item.accessories&&item.accessories.length){
-    accessories=item.accessories.map(a=>({name:a.name,status:a.status||''}));
-    renderAcc();
-  }
+  // ── 2. 부속품 강제 업데이트 ──────────────────────────────────
+  accessories=(item.accessories||[]).map(a=>({name:a.name,status:a.status||''}));
+  renderAcc();
 
-  // ── 3. 카드 하이라이트 (DOM 건드리지 않고 스타일만) ─────────────
-  document.querySelectorAll('.db-match-card').forEach(c=>{
-    c.style.border='1px solid rgba(34,197,94,.15)';
-    c.style.background='rgba(34,197,94,.02)';
-    c.style.opacity='0.45';
+  // ── 3. 카드 하이라이트 ────────────────────────────────────────
+  const allCards=document.querySelectorAll('#db-match-wrap .db-match-card');
+  allCards.forEach(c=>{
+    c.setAttribute('style', c.getAttribute('style')||'');
+    c.style.cssText='border:1px solid rgba(34,197,94,.15);background:rgba(34,197,94,.02);opacity:0.4;border-radius:12px;overflow:hidden;margin-bottom:4px;'+(c.style.marginTop?'margin-top:'+c.style.marginTop+';':'');
   });
-  const selectedCard = cardId ? document.getElementById(cardId) : null;
-  if(selectedCard){
-    selectedCard.style.border='2px solid #22c55e';
-    selectedCard.style.background='rgba(34,197,94,.15)';
-    selectedCard.style.opacity='1';
-    // 적용 버튼 텍스트 변경
-    const applyBtn = selectedCard.querySelector('button[onclick*="applyDbMatch"]');
-    if(applyBtn){ applyBtn.textContent='✓ 적용됨'; applyBtn.style.background='#22c55e'; applyBtn.style.color='#000'; }
-    // 나머지 카드 적용 버튼 복원
-    document.querySelectorAll('.db-match-card').forEach(c=>{
-      if(c===selectedCard) return;
-      const btn=c.querySelector('button[onclick*="applyDbMatch"]');
-      if(btn){ btn.textContent='적용'; btn.style.background='#1a3a1a'; btn.style.color='#22c55e'; }
+  const sel = cardId ? document.getElementById(cardId) : (allCards.length===1 ? allCards[0] : null);
+  if(sel){
+    sel.style.cssText='border:2px solid #22c55e;background:rgba(34,197,94,.12);opacity:1;border-radius:12px;overflow:hidden;margin-bottom:4px;';
+    // 버튼 상태 변경
+    sel.querySelectorAll('button').forEach(btn=>{
+      if(btn.textContent.includes('적용')||btn.textContent.includes('✓')){
+        btn.textContent='✓ 적용됨';
+        btn.style.cssText='background:#22c55e;border:none;color:#000;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px';
+      }
     });
   } else {
-    document.querySelectorAll('.db-match-card').forEach(c=>{ c.style.opacity='1'; });
+    allCards.forEach(c=>{ c.style.opacity='1'; });
   }
+  // 다른 카드 버튼 복원
+  allCards.forEach(c=>{
+    if(c===sel) return;
+    c.querySelectorAll('button').forEach(btn=>{
+      if(btn.textContent.includes('✓')){
+        btn.textContent='적용';
+        btn.style.cssText='background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px';
+      }
+    });
+  });
 
   // ── 4. resultData 동기화 ─────────────────────────────────────
   if(!resultData.analysis) resultData.analysis={};
