@@ -509,6 +509,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
     let lensSize = null;
     let lensSizeName = null;
     let lensSizeSources = [];
+    let lensSku = null;
     try {
       const brand   = analysis.brand || '';
       const modelEn = analysis.model_name || '';
@@ -556,6 +557,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
 
             for (const txt of texts) {
               const sz = parseSizeFromText(txt);
+              if (!lensSku) lensSku = parseSkuFromText(txt, brand);
               if (!sz) continue;
               const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
               const src = result.displayed_link || new URL(result.link || 'https://x.com').hostname;
