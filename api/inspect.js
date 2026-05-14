@@ -164,7 +164,8 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
         const aiSku     = (analysis.sku || '').toLowerCase().trim();
 
-        let best = 0;
+        // 1단계: 모든 후보 점수 계산
+        const candidates = [];
         for (const item of dbData) {
           const dbBrand   = (item.brand || '').toLowerCase().trim();
           const dbModel   = (item.model_name || '').toLowerCase().trim();
@@ -172,7 +173,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
           if (aiBrand && dbBrand && !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
-          if (aiSku && dbSku && aiSku === dbSku) { dbMatch = item; break; }
+          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({item, score: 200}); continue; }
 
           let score = 0;
           if (aiModel && dbModel) {
@@ -192,10 +193,16 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             if (aiModelKo === dbModelKo) score = Math.max(score, 90);
             else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
           }
+          if (score >= 50) candidates.push({item, score});
+        }
 
-          if (score >= 50 && score > best) { best = score; dbMatch = item; }
-          // 동점이면 notes 있는 아이템 우선
-          else if (score >= 50 && score === best && item.notes && !dbMatch.notes) { dbMatch = item; }
+        // 2단계: 최고점 후보 중 notes 있는 것 우선 선택
+        if (candidates.length > 0) {
+          const maxScore = Math.max(...candidates.map(c => c.score));
+          const topCandidates = candidates.filter(c => c.score === maxScore);
+          // notes 있는 아이템 우선, 없으면 첫 번째
+          const withNotes = topCandidates.find(c => c.item.notes && c.item.notes.trim());
+          dbMatch = (withNotes || topCandidates[0]).item;
         }
       }
     } catch (e) { console.warn('DB skip:', e.message); }
