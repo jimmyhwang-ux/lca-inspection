@@ -745,6 +745,12 @@ function renderResult(){
         if(j.success&&j.data) skuListAll=j.data;
       }catch(_){}
 
+      // ★ 디버그 — 브라우저 콘솔에서 확인
+      console.group('🔍 DB 매칭 notes 디버그');
+      console.log('dbMatches:', JSON.stringify(dbMatches.map(m=>({id:m.id,notes:m.notes}))));
+      console.log('skuListAll notes:', JSON.stringify(skuListAll.map(s=>({id:s.id,notes:s.notes}))));
+      console.groupEnd();
+
       // id 타입 무시 비교로 매칭 (String 변환)
       const findFull = (id) => skuListAll.find(s=>String(s.id)===String(id));
 
