@@ -758,7 +758,7 @@ function renderResult(){
           :(m.extra_images||[]);
         const ref_image_url=full?(full.ref_image_url||m.ref_image_url||''):(m.ref_image_url||'');
         console.log('[notes확인]',{id:m.id, notes, full_notes:full?.notes, m_notes:m.notes});
-        return{...m,...(full||{}),notes,extra_images,ref_image_url};
+        return{...(full||{}),...m,notes:notes,extra_images:extra_images,ref_image_url:ref_image_url};
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
