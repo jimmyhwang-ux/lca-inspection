@@ -398,6 +398,7 @@ input[type=file]{display:none}
     </div>
     <button class="sku-save-btn" onclick="saveToSupabase()">💾 SKU DB에 저장</button>
     <button class="btn-sec" style="width:100%;padding:13px;font-size:13px" onclick="copySkuResult()">📋 SKU 복사</button>
+    <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #2a2a2a;color:#444;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
   </div>
 
   <div id="sku-list-panel" style="display:none">
@@ -1222,22 +1223,41 @@ function addSkuAcc(){
 }
 
 async function saveToSupabase(){
-  const data={
-    brand:document.getElementById('sku-brand').value,
-    model_name:document.getElementById('sku-model').value,
-    model_name_ko:document.getElementById('sku-model-ko').value,
-    category:document.getElementById('sku-cat').value,
-    color:document.getElementById('sku-color').value,
-    size_actual:document.getElementById('sku-size').value,
-    size_label:document.getElementById('sku-size-name').value,
-    sku_code:document.getElementById('sku-sku').value,
-    site_url:document.getElementById('sku-url').value,
-    notes:document.getElementById('sku-notes').value,
-    accessories:accessories.map(a=>({name:a.name,status:a.status||'Y'})),
-    ref_image_url:resultData.imageUrl||'',
-    extra_images:[],
-  };
+  const btn=document.querySelector('.sku-save-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ 저장 중...';}
   try{
+    // 사진 imgbb 업로드
+    const photoKeys=['main','label1','label2','label3','logo','origin','back'];
+    const uploadedUrls=[];
+    for(const k of photoKeys){
+      if(!photos[k]) continue;
+      try{
+        const res=await fetch('/api/inspect',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'upload_image',imageBase64:photos[k].dataUrl.split(',')[1]})
+        });
+        const j=await res.json();
+        if(j.url) uploadedUrls.push(j.url);
+      }catch(_){}
+    }
+    const ref_image_url=uploadedUrls[0]||resultData.imageUrl||'';
+    const extra_images=uploadedUrls.slice(1);
+
+    const data={
+      brand:document.getElementById('sku-brand').value,
+      model_name:document.getElementById('sku-model').value,
+      model_name_ko:document.getElementById('sku-model-ko').value,
+      category:document.getElementById('sku-cat').value,
+      color:document.getElementById('sku-color').value,
+      size_actual:document.getElementById('sku-size').value,
+      size_label:document.getElementById('sku-size-name').value,
+      sku_code:document.getElementById('sku-sku').value,
+      site_url:document.getElementById('sku-url').value,
+      notes:document.getElementById('sku-notes').value,
+      accessories:accessories.map(a=>({name:a.name,status:a.status||'Y'})),
+      ref_image_url,
+      extra_images,
+    };
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'save_sku',skuData:data})
@@ -1247,9 +1267,12 @@ async function saveToSupabase(){
       toast('✅ SKU DB에 저장되었습니다');
       const savedCat=document.getElementById('sku-cat').value||'전체';
       setTimeout(()=>switchSkuTab('list', savedCat), 600);
-    }
-    else throw new Error(j.error);
-  }catch(e){toast('❌ 저장 실패: '+e.message);}
+    } else throw new Error(j.error||'저장 실패');
+  }catch(e){
+    toast('❌ 저장 실패: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='💾 SKU DB에 저장';}
+  }
 }
 
 function switchSkuTab(tab, autoCat){
@@ -1322,7 +1345,7 @@ function renderSkuList(list){
           </div>
           ${(item.accessories||[]).length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:''}
           ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#888;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
-          <div id="sku-detail-${i}" style="display:block;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
+          <div id="sku-detail-${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
             ${(()=>{
               const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
               return allImgs.length?(()=>{
@@ -1660,6 +1683,22 @@ function copyResult(){
     '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
     'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
+}
+
+function clearSkuForm(){
+  if(!confirm('입력 내용을 모두 초기화하시겠습니까?'))return;
+  ['sku-brand','sku-model-ko','sku-model','sku-cat','sku-color',
+   'sku-size','sku-size-name','sku-sku','sku-url','sku-notes'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  // 사진 초기화
+  const pw=document.getElementById('sku-photo-wrap');
+  if(pw) pw.innerHTML='';
+  // 부속품 초기화
+  accessories=[];
+  renderSkuAccList();
+  toast('🗑 초기화되었습니다');
 }
 
 function copySkuResult(){
