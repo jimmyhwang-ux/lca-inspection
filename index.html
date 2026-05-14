@@ -903,6 +903,10 @@ function renderResult(){
     } else {
       sizeNameEl2.textContent='—';sizeNameEl2.className='info-cell-val muted';
     }
+  }
+
+  // 스타일번호: DB 매칭 여부 무관하게 항상 표시
+  if(!dbMatches.length){
     const _finalSku=analysis.sku||_lensSku||'';
     skuEl.textContent=_finalSku||'—';
     skuEl.className='info-cell-val'+(_finalSku?'':' muted');
@@ -1156,8 +1160,7 @@ async function searchDbFromField(fieldId,val){
         (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
       );
     }
-    if(matches.length===1) applyDbMatch(matches[0]);
-    else if(matches.length>1) applyDbMatchMulti(matches);
+    if(matches.length>=1) renderDbMatchCards(matches);
   }catch(e){console.warn('자동조회 실패',e);}
 }
 
