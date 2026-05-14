@@ -740,16 +740,22 @@ function renderResult(){
       skuListAll=freshList;
 
       const enriched=dbMatches.map(m=>{
+        // freshList에서 동일 ID 찾아서 최신 데이터로 보완
         const full=freshList.find(s=>String(s.id)===String(m.id));
-        const sameModel=freshList.filter(s=>
-          s.brand===m.brand &&
-          (s.model_name===m.model_name || s.model_name_ko===m.model_name_ko)
-        );
-        const withNotes=sameModel.find(s=>s.notes&&s.notes.trim());
-        const notes=(withNotes?.notes||full?.notes||m.notes||'').trim();
-        const extra_images=(full||m).extra_images||[];
-        const ref_image_url=(full||m).ref_image_url||'';
-        return{...(full||{}),...m,notes,extra_images,ref_image_url};
+        // full 우선, m으로 보완 (m이 full을 덮어쓰지 않도록)
+        const merged={
+          ...m,
+          // full의 값이 있으면 우선 사용
+          size_actual: full?.size_actual||m.size_actual||'',
+          size_label:  full?.size_label ||m.size_label ||'',
+          sku_code:    full?.sku_code   ||m.sku_code   ||'',
+          notes:       (full?.notes||m.notes||'').trim(),
+          accessories: full?.accessories||m.accessories||[],
+          extra_images:(full?.extra_images||m.extra_images||[]),
+          ref_image_url:(full?.ref_image_url||m.ref_image_url||''),
+          site_url:    full?.site_url   ||m.site_url   ||'',
+        };
+        return merged;
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
