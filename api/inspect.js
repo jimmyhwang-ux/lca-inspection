@@ -430,18 +430,20 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
     let lensSku = null;
     try {
       const brand = analysis.brand || '';
-      // 렌즈 타이틀 전체 텍스트
       const lensTitles = visualMatches.slice(0, 10)
         .map(m => m.title || '').join(' ');
-      // 스타일번호 파싱 (타이틀에서)
+      // 스타일번호 파싱
       lensSku = parseSkuFromText(lensTitles, brand);
+      // 사이즈 명칭 파싱 (렌즈 타이틀에서 MM/PM/GM/Small 등)
+      if (!lensSizeName) lensSizeName = parseSizeNameFromText(lensTitles);
     } catch (e) { console.warn('Lens SKU skip:', e.message); }
 
 
 
 
-    // 스타일번호: 렌즈에서 파싱된 경우만 보완
+    // 렌즈 파싱 결과 보완
     if (!analysis.sku && lensSku) analysis.sku = lensSku;
+    if (!analysis.size_label && lensSizeName) analysis.size_label = lensSizeName;
 
     // DB 매칭
     let dbMatch = null;
