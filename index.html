@@ -738,41 +738,41 @@ function renderResult(){
     // extra_images 보완: skuListAll에서 같은 id 찾아 병합
     // skuListAll 없으면 먼저 로드 후 extra_images 병합
     async function loadAndRender(){
-      // skuListAll이 비어있으면 먼저 로드
-      if(!skuListAll.length){
-        try{
-          const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
-          const j=await r.json();
-          if(j.success&&j.data) skuListAll=j.data;
-        }catch(_){}
-      }
-      // skuListAll에서 같은 id 찾아 extra_images 병합
-      const enriched=dbMatches.map(m=>{
-        const full=skuListAll.find(s=>s.id===m.id);
-        if(!full) return{...m, extra_images: Array.isArray(m.extra_images)?m.extra_images:[], notes: m.notes||''};
+      // 항상 최신 SKU 목록 로드 (캐시 무시)
+      try{
+        const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
+        const j=await r.json();
+        if(j.success&&j.data) skuListAll=j.data;
+      }catch(_){}
+
+      // id 타입 무시 비교로 매칭 (String 변환)
+      const findFull = (id) => skuListAll.find(s=>String(s.id)===String(id));
+
+      const finalEnriched=dbMatches.map(m=>{
+        const full=findFull(m.id);
+        if(!full){
+          return{...m,
+            extra_images:Array.isArray(m.extra_images)?m.extra_images:[],
+            notes:m.notes||''
+          };
+        }
         const merged=[
           ...(full.ref_image_url?[full.ref_image_url]:[]),
           ...(m.ref_image_url?[m.ref_image_url]:[]),
           ...(full.extra_images||[]),
           ...(m.extra_images||[])
         ].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-        // notes: full(DB 전체 조회) 우선, 없으면 m(매칭 결과) 사용
-        const _fn = typeof full.notes === 'string' ? full.notes.trim() : '';
-        const _mn = typeof m.notes === 'string' ? m.notes.trim() : '';
-        const finalNotes = _fn || _mn;
+        // notes: full DB 값 최우선
+        const realNotes=(full.notes&&String(full.notes).trim())
+          ? String(full.notes).trim()
+          : (m.notes&&String(m.notes).trim())||'';
         return{
           ...full,
           ...m,
-          ref_image_url: full.ref_image_url||m.ref_image_url||null,
-          extra_images: merged.slice(1),
-          notes: finalNotes   // 반드시 마지막에 덮어쓰기
+          ref_image_url:full.ref_image_url||m.ref_image_url||null,
+          extra_images:merged.slice(1),
+          notes:realNotes
         };
-      });
-      // notes 최종 보정 — full DB item의 notes를 반드시 사용
-      const finalEnriched = enriched.map(em => {
-        const dbItem = skuListAll.find(s => s.id === em.id);
-        const realNotes = (dbItem && dbItem.notes) ? String(dbItem.notes).trim() : (em.notes ? String(em.notes).trim() : '');
-        return { ...em, notes: realNotes };
       });
       window._dbEnriched=finalEnriched;
       renderDbMatchCards(finalEnriched);
