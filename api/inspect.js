@@ -229,43 +229,9 @@ export default async function handler(req, res) {
   }
 
   // ── fetch_size 액션 ───────────────────────────────────────────────────
+  // fetch_size: 사이즈는 SKU DB에서 관리 — 이 액션은 미사용
   if (action === 'fetch_size') {
-    const { brand, modelNameKo, modelNameEn } = req.body;
-    try {
-      const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-5',
-          max_tokens: 150,
-          messages: [{
-            role: 'user',
-            content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
-브랜드: ${brand}
-모델명: ${modelNameEn || modelNameKo}
-
-규칙:
-- 공식 사이즈가 확실히 알려진 경우만 기재
-- 추측이나 유사 모델 사이즈 절대 금지
-- 모델명이 불명확하거나 여러 사이즈가 있으면 size를 null로
-- JSON만 응답, 다른 텍스트 금지
-
-응답: {"size":"가로 × 세로 × 높이 cm 또는 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 또는 null"}\``
-          }]
-        })
-      });
-      const cj = await claudeQ.json();
-      const raw = (cj.content?.[0]?.text || '').trim().replace(/```json|```/g, '');
-      const parsed = JSON.parse(raw);
-      return res.status(200).json({
-        success: true,
-        size: (parsed.size && parsed.size !== 'null') ? parsed.size : null,
-        size_label: (parsed.size_label && parsed.size_label !== 'null') ? parsed.size_label : null,
-        sources: ['claude_ai'],
-      });
-    } catch (e) {
-      return res.status(200).json({ success: true, size: null, size_label: null, sources: [] });
-    }
+    return res.status(200).json({ success: true, size: null, size_label: null, sources: [] });
   }
 
 
@@ -344,54 +310,13 @@ export default async function handler(req, res) {
         price:     img.price || null,
       }));
 
-      // 사이즈 파싱도 병행 (링크 fetch)
-      // 이미지 검색 결과 타이틀에서 사이즈 파싱 시도
-      let imgLensSize = null, imgLensSizeName = null;
-      for (const img of images) {
-        const txt = [img.title, img.snippet].filter(Boolean).join(' ');
-        if (!imgLensSize) imgLensSize = parseSizeFromText(txt);
-        if (!imgLensSizeName) imgLensSizeName = parseSizeNameFromText(txt);
-        if (imgLensSize && imgLensSizeName) break;
-      }
-
-      // 타이틀에서 못 찾으면 Claude 질의
-      if (!imgLensSize) {
-        try {
-          const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-            body: JSON.stringify({
-              model: 'claude-sonnet-4-5',
-              max_tokens: 150,
-              messages: [{
-                role: 'user',
-                content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
-브랜드: ${brand}
-모델명: ${modelName}
-
-규칙:
-- 공식 사이즈가 확실히 알려진 경우만 기재
-- 추측이나 유사 모델 사이즈 절대 금지
-- 모델명이 불명확하거나 여러 사이즈가 있으면 size를 null로
-- JSON만 응답, 다른 텍스트 금지
-
-응답: {"size":"가로 × 세로 × 높이 cm 또는 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 또는 null"}`
-              }]
-            })
-          });
-          const cj = await claudeQ.json();
-          const raw = (cj.content?.[0]?.text || '').trim().replace(/\`\`\`json|\`\`\`/g, '');
-          const parsed = JSON.parse(raw);
-          if (parsed.size && parsed.size !== 'null') imgLensSize = parsed.size;
-          if (parsed.size_label && parsed.size_label !== 'null') imgLensSizeName = parsed.size_label;
-        } catch (_) {}
-      }
+      // 사이즈는 SKU DB에서 관리 — 자동 추출 안함
 
       return res.status(200).json({
         success: true,
         visualMatches: images,
-        lensSize:     imgLensSize || null,
-        lensSizeName: imgLensSizeName || null,
+        lensSize:     null,
+        lensSizeName: null,
       });
     } catch (e) {
       return res.status(500).json({ success: false, error: e.message });
@@ -507,127 +432,25 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip'); }
 
-    // ── 사이즈 추출: 여러 사이트 스니펫에서 동일값 다수결 ──────────────
+    // ── 스타일번호: 렌즈 타이틀에서 파싱 ─────────────────────────────
+    // 사이즈/사이즈명칭은 SKU DB 매칭에서만 가져옴 (자동 추출 제거)
     let lensSize = null;
     let lensSizeName = null;
     let lensSizeSources = [];
     let lensSku = null;
     try {
-      const brand   = analysis.brand || '';
-      const modelEn = analysis.model_name || '';
-      const modelKo = analysis.model_name_ko || '';
-      const query   = `${brand} ${modelEn || modelKo}`.trim();
-
-      // 렌즈 타이틀에서 사이즈명칭 힌트
-      const lensHint = visualMatches.slice(0, 6).map(m => m.title || '').join(' ');
-      const sizeNameFromLens = parseSizeNameFromText(lensHint);
-
-      if (query.length > 3) {
-        // 신뢰할 수 있는 리셀/공식 사이트 대상으로 site: 검색
-        const trustedSites = [
-          'therealreal.com', 'vestiairecollective.com', 'farfetch.com',
-          'rebag.com', 'fashionphile.com', 'ssense.com', 'mytheresa.com',
-          'net-a-porter.com', 'matches.com', 'saksfifthavenue.com'
-        ];
-        const siteQuery = trustedSites.map(s => `site:${s}`).join(' OR ');
-        const searchQuery = `"${query}" size dimensions cm (${siteQuery})`;
-
-        const sizeHits = []; // {sz, sn, src}
-
-        try {
-          const url = `https://serpapi.com/search?engine=google&q=${encodeURIComponent(searchQuery)}&gl=us&hl=en&num=10&api_key=${SERP_KEY}`;
-          const r = await fetch(url);
-          const j = await r.json();
-
-          const modelWords = (modelEn || modelKo).toLowerCase()
-            .split(' ').filter(w => w.length > 2);
-
-          for (const result of (j.organic_results || []).slice(0, 10)) {
-            const snippetLower = (result.snippet || '').toLowerCase();
-            const titleLower   = (result.title || '').toLowerCase();
-            // 모델명 관련성 확인 (50% 이상 단어 포함)
-            const relevant = modelWords.length === 0 ||
-              modelWords.filter(w => snippetLower.includes(w) || titleLower.includes(w)).length
-              >= Math.ceil(modelWords.length * 0.5);
-            if (!relevant) continue;
-
-            const texts = [
-              result.snippet,
-              result.title,
-              (result.rich_snippet?.top?.extensions || []).join(' ')
-            ].filter(Boolean);
-
-            for (const txt of texts) {
-              const sz = parseSizeFromText(txt);
-              if (!lensSku) lensSku = parseSkuFromText(txt, brand);
-              if (!sz) continue;
-              const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
-              const src = result.displayed_link || new URL(result.link || 'https://x.com').hostname;
-              // cm 직접 기재 여부 플래그
-              const isCmDirect = /\d\s*cm/i.test(txt);
-              sizeHits.push({ sz, sn, src, isCmDirect });
-            }
-          }
-
-          // answer_box / knowledge_graph도 확인
-          const ab = j.answer_box;
-          if (ab) {
-            const txt = [ab.answer, ab.snippet, ab.result].filter(Boolean).join(' ');
-            const sz = parseSizeFromText(txt);
-            if (sz) sizeHits.push({ sz, sn: parseSizeNameFromText(txt) || sizeNameFromLens, src: 'answer_box' });
-          }
-        } catch (e) { console.warn('Site search skip:', e.message); }
-
-        // ── 다수결: cm 직접값 우선, 2개 이상 출처 일치 채택 ──
-        if (sizeHits.length > 0) {
-          // cm 직접 기재된 것만 우선 필터
-          const cmDirect = sizeHits.filter(h => h.isCmDirect);
-          const pool = cmDirect.length > 0 ? cmDirect : sizeHits;
-
-          const freq = {};
-          for (const h of pool) {
-            if (!freq[h.sz]) freq[h.sz] = { count: 0, sn: h.sn, srcs: [] };
-            freq[h.sz].count++;
-            if (!freq[h.sz].srcs.includes(h.src)) freq[h.sz].srcs.push(h.src);
-          }
-          const sorted = Object.entries(freq).sort((a, b) => b[1].count - a[1].count);
-          // 2개 이상 다른 출처에서 일치한 값 우선
-          const consensus = sorted.find(([, v]) => v.srcs.length >= 2);
-          const best = consensus || sorted[0];
-          lensSize = best[0];
-          lensSizeName = best[1].sn || sizeNameFromLens || null;
-          lensSizeSources = best[1].srcs.slice(0, 3);
-        }
-
-        // ── 폴백: Shopping 스니펫 ──────────────────────────────────
-        if (!lensSize) {
-          try {
-            const shopUrl = `https://serpapi.com/search?engine=google_shopping&q=${encodeURIComponent('"' + query + '" size cm')}&gl=us&hl=en&api_key=${SERP_KEY}`;
-            const shopRes = await fetch(shopUrl);
-            const shopJson = await shopRes.json();
-            for (const item of (shopJson.shopping_results || []).slice(0, 8)) {
-              const txt = [item.title, item.description, item.snippet].filter(Boolean).join(' ');
-              const sz = parseSizeFromText(txt);
-              if (sz) {
-                lensSize = sz;
-                lensSizeName = parseSizeNameFromText(txt) || sizeNameFromLens;
-                lensSizeSources.push('google_shopping');
-                break;
-              }
-            }
-          } catch (e) { console.warn('Shopping skip:', e.message); }
-        }
-
-        // 렌즈 타이틀에서 사이즈명칭만 보완
-        if (!lensSizeName && sizeNameFromLens) lensSizeName = sizeNameFromLens;
-      }
-    } catch (e) { console.warn('Size fetch skip:', e.message); }
+      const brand = analysis.brand || '';
+      // 렌즈 타이틀 전체 텍스트
+      const lensTitles = visualMatches.slice(0, 10)
+        .map(m => m.title || '').join(' ');
+      // 스타일번호 파싱 (타이틀에서)
+      lensSku = parseSkuFromText(lensTitles, brand);
+    } catch (e) { console.warn('Lens SKU skip:', e.message); }
 
 
 
-    // analysis에 렌즈 파싱 결과 병합 (AI가 못 찾았을 때만)
-    if (!analysis.size && lensSize) analysis.size = lensSize;
-    if (!analysis.size_label && lensSizeName) analysis.size_label = lensSizeName;
+
+    // 스타일번호: 렌즈에서 파싱된 경우만 보완
     if (!analysis.sku && lensSku) analysis.sku = lensSku;
 
     if (dbMatch) {
