@@ -673,14 +673,14 @@ function renderResult(){
     const _rSizeEl=document.getElementById('r-size');
     const _rSizeNameEl=document.getElementById('r-size-name');
     if(first.size_actual){_rSizeEl.textContent=first.size_actual;_rSizeEl.className='info-cell-val';}
-    else if(_aiSize){
-      _rSizeEl.textContent=_aiSize;_rSizeEl.className='info-cell-val';
+    else if(_finalSize){
+      _rSizeEl.textContent=_finalSize;_rSizeEl.className='info-cell-val';
       const lbl=_rSizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
       if(lbl&&!lbl.querySelector('.ai-badge'))lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
     }
     if(first.size_label){_rSizeNameEl.textContent=first.size_label;_rSizeNameEl.className='info-cell-val';}
-    else if(_aiSizeName){
-      const sv=_aiSizeName;
+    else if(_finalSizeName){
+      const sv=_finalSizeName;
       _rSizeNameEl.textContent=sv;_rSizeNameEl.className='info-cell-val';
       const lbl2=_rSizeNameEl.closest('.info-cell')?.querySelector('.info-cell-label');
       if(lbl2&&!lbl2.querySelector('.ai-badge'))lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
@@ -769,10 +769,45 @@ function renderResult(){
   // 백엔드 키명 정규화 — 다양한 필드명 커버
   const _aiSize=analysis.size_actual||analysis.size||analysis.dimensions||analysis.size_mm||'';
   const _aiSizeName=analysis.size_label||analysis.sizeName||analysis.size_name||analysis.model_size||'';
+
+  // ── Google Lens 결과에서 사이즈/명칭 파싱 ─────────────────
+  function extractSizeFromLens(matches){
+    // 사이즈 패턴: "22 x 13 x 6", "22cm x 13", "W22 H13 D6", "22×13×6" 등
+    const sizeRe=/(\d{1,3}(?:[.,]\d)?)\s*(?:cm|mm)?\s*[x×]\s*(\d{1,3}(?:[.,]\d)?)\s*(?:cm|mm)?(?:\s*[x×]\s*(\d{1,3}(?:[.,]\d)?)\s*(?:cm|mm)?)?/i;
+    // 사이즈명칭 패턴: Mini, Small, Medium, Large, Nano, Micro, Baby 등
+    const nameRe=/(nano|micro|baby|mini|small|medium|large|xl|maxi|pm|mm|gm|tpm|bph)/i;
+    // 치수 단위 포함 패턴 (예: "22 x 14 x 5 cm")
+    const sizeWithUnitRe=/(\d{1,3})\s*[x×]\s*(\d{1,3})(?:\s*[x×]\s*(\d{1,3}))?\s*(cm|mm)/i;
+
+    let foundSize='', foundSizeName='';
+    const texts=[
+      ...(matches||[]).map(m=>m.title||''),
+      ...(matches||[]).map(m=>m.snippet||m.description||''),
+    ];
+    for(const txt of texts){
+      if(!foundSize){
+        const m1=txt.match(sizeWithUnitRe)||txt.match(sizeRe);
+        if(m1){
+          const parts=[m1[1],m1[2],m1[3]].filter(Boolean);
+          const unit=(sizeWithUnitRe.exec(txt)||[])[4]||'cm';
+          foundSize=parts.join(' × ')+' '+unit;
+        }
+      }
+      if(!foundSizeName){
+        const m2=txt.match(nameRe);
+        if(m2) foundSizeName=m2[1].charAt(0).toUpperCase()+m2[1].slice(1).toLowerCase();
+      }
+      if(foundSize&&foundSizeName) break;
+    }
+    return{size:foundSize,sizeName:foundSizeName};
+  }
+  const _lensExtracted=extractSizeFromLens(visualMatches);
+  const _finalSize=_aiSize||_lensExtracted.size;
+  const _finalSizeName=_aiSizeName||_lensExtracted.sizeName;
   if(!dbMatches.length){
     // AI 분석 사이즈 자동 세팅 + AI 배지
-    if(_aiSize){
-      sizeEl.textContent=_aiSize;
+    if(_finalSize){
+      sizeEl.textContent=_finalSize;
       sizeEl.className='info-cell-val';
       sizeEl.title='AI 자동 추출 — 탭하여 수정';
       const lbl=sizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
@@ -780,8 +815,8 @@ function renderResult(){
     } else {
       sizeEl.textContent='—';sizeEl.className='info-cell-val muted';
     }
-    if(_aiSizeName){
-      const sv=_aiSizeName;
+    if(_finalSizeName){
+      const sv=_finalSizeName;
       sizeNameEl2.textContent=sv;
       sizeNameEl2.className='info-cell-val';
       const lbl2=sizeNameEl2.closest('.info-cell')?.querySelector('.info-cell-label');
