@@ -637,6 +637,64 @@ async function startInspection(){
 }
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
+
+// ── renderDbMatchCards ──────────────────────────────────
+function renderDbMatchCards(matches){
+  if(!matches.length) return;
+  const dbWrap=document.getElementById('db-match-wrap');
+  if(!dbWrap) return;
+  // 카드 데이터를 전역에 저장 (버튼 클릭 시 참조)
+  window._cardMatches=matches;
+
+  dbWrap.innerHTML=matches.map((m,idx)=>{
+    const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+    const total=allImgs.length;
+    const slId=`dbsl-${idx}`;
+    const accList=(m.accessories||[]).map(a=>a.name).join(', ');
+    const dbId=`db-detail-${idx}`;
+    const isMulti=matches.length>1;
+    const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a">
+        <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${allImgs[0]}')">
+        ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
+        <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
+        <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`:'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'}
+      </div>`:'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">&#128452;</div>';
+    return`<div class="db-match-card" id="db-card-${idx}" style="${idx>0?'margin-top:6px':''}">
+      <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
+        <span class="db-match-badge">&#10003; DB ${isMulti?`${idx+1}/${matches.length}`:''}</span>
+        <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
+        <button id="apply-btn-${idx}" onclick="event.stopPropagation();applyCardMatch(${idx},'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>
+        <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'&#9652;':'&#9662;'}</span>
+      </div>
+      <div style="padding:4px 14px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${m.notes?`<span style="font-size:11px;color:#f59e0b">&#128196; ${m.notes}</span>`:''}
+        ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 7px;text-decoration:none">&#128279; 사이트</a>`:''}
+      </div>
+      <div id="${dbId}" style="display:${idx===0?'block':'none'}">
+        <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
+          ${slHtml}
+          <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7;margin-top:4px">
+            <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
+            SKU: ${m.sku_code||'—'}<br>
+            ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
+            ${accList?'부속품: '+accList+'<br>':''}
+            ${m.notes?`<span style="color:#f59e0b;font-size:11px;display:block;margin-top:4px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b">&#128196; 특이사항: ${m.notes}</span>`:''}
+            ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 7px;text-decoration:none">&#128279; 사이트</a>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  matches.forEach((m,idx)=>{
+    const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+    if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
+  });
+
+  // 첫 번째 카드 자동 적용 (동기)
+  applyDbMatch(matches[0],'db-card-0');
+}
+
 function renderResult(){
   const{analysis,visualMatches=[],dbMatch}=resultData;
   const conf=analysis.confidence||0;
@@ -672,62 +730,6 @@ function renderResult(){
     ? resultData.dbMatches
     : (resultData.dbMatch ? [resultData.dbMatch] : []);
 
-  // ── renderDbMatchCards ──────────────────────────────────
-  function renderDbMatchCards(matches){
-    if(!matches.length) return;
-    const dbWrap=document.getElementById('db-match-wrap');
-    if(!dbWrap) return;
-    // 카드 데이터를 전역에 저장 (버튼 클릭 시 참조)
-    window._cardMatches=matches;
-
-    dbWrap.innerHTML=matches.map((m,idx)=>{
-      const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
-      const total=allImgs.length;
-      const slId=`dbsl-${idx}`;
-      const accList=(m.accessories||[]).map(a=>a.name).join(', ');
-      const dbId=`db-detail-${idx}`;
-      const isMulti=matches.length>1;
-      const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a">
-          <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${allImgs[0]}')">
-          ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
-          <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
-          <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`:'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'}
-        </div>`:'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">&#128452;</div>';
-      return`<div class="db-match-card" id="db-card-${idx}" style="${idx>0?'margin-top:6px':''}">
-        <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
-          <span class="db-match-badge">&#10003; DB ${isMulti?`${idx+1}/${matches.length}`:''}</span>
-          <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
-          <button id="apply-btn-${idx}" onclick="event.stopPropagation();applyCardMatch(${idx},'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>
-          <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'&#9652;':'&#9662;'}</span>
-        </div>
-        <div style="padding:4px 14px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          ${m.notes?`<span style="font-size:11px;color:#f59e0b">&#128196; ${m.notes}</span>`:''}
-          ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 7px;text-decoration:none">&#128279; 사이트</a>`:''}
-        </div>
-        <div id="${dbId}" style="display:${idx===0?'block':'none'}">
-          <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
-            ${slHtml}
-            <div class="db-match-info" style="font-size:12px;color:#aaa;line-height:1.7;margin-top:4px">
-              <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
-              SKU: ${m.sku_code||'—'}<br>
-              ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
-              ${accList?'부속품: '+accList+'<br>':''}
-              ${m.notes?`<span style="color:#f59e0b;font-size:11px;display:block;margin-top:4px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b">&#128196; 특이사항: ${m.notes}</span>`:''}
-              ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 7px;text-decoration:none">&#128279; 사이트</a>`:''}
-            </div>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-
-    matches.forEach((m,idx)=>{
-      const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
-      if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
-    });
-
-    // 첫 번째 카드 자동 적용 (동기)
-    applyDbMatch(matches[0],'db-card-0');
-  }
 
   if(dbMatches.length){
     const dbWrapRef=document.getElementById('db-match-wrap');
