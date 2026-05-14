@@ -506,6 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
+window._appVer='1778772461';
+console.error('APP VERSION: 1778772461');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -653,8 +655,6 @@ function applyCardMatch(idx, cardId){
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
-  // 확인용 toast
-  if(typeof toast==='function') toast('🔧 applyDbMatch 실행: '+(item.sku_code||'no sku'), 1000);
 
   // ── 1. 브랜드/모델명 ─────────────────────────────────────────
   const rBrand = document.getElementById('r-brand');
@@ -774,8 +774,12 @@ function renderDbMatchCards(matches){
     if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
   });
 
-  // 첫 번째 카드 자동 적용 (동기)
-  applyDbMatch(matches[0],'db-card-0');
+  // 첫 번째 카드 자동 적용
+  try {
+    applyDbMatch(matches[0],'db-card-0');
+  } catch(e) {
+    console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
+  }
 }
 
 function renderResult(){
@@ -995,12 +999,13 @@ function saveSizeField(id){
   el.className='info-cell-val'+(val==='—'?' muted':'');
 }
 function saveField(id,input){
+  const _wasEditing=window._userEditingField;
   window._userEditingField=false;
   const val=input.value.trim()||'—';
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
-  // 모델명 변경 시 Google Images 재검색
-  if((id==='r-model-ko'||id==='r-model')&&window._userEditingField&&val!=='—'){
+  // 모델명 변경 시 Google Images 재검색 (사용자가 직접 수정한 경우만)
+  if((id==='r-model-ko'||id==='r-model')&&_wasEditing&&val!=='—'){
     const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
     reSearchByModel(brand, val);
   }
