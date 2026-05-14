@@ -194,6 +194,8 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           }
 
           if (score >= 50 && score > best) { best = score; dbMatch = item; }
+          // 동점이면 notes 있는 아이템 우선
+          else if (score >= 50 && score === best && item.notes && !dbMatch.notes) { dbMatch = item; }
         }
       }
     } catch (e) { console.warn('DB skip:', e.message); }
