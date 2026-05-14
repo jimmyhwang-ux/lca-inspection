@@ -774,89 +774,10 @@ function renderResult(){
   const _lensSizeName=resultData.lensSizeName||'';
   const _lensSources=(resultData.lensSizeSources||[]).slice(0,3);
 
-  // ── 브랜드+모델명으로 내장 사이즈 DB 매칭 ─────────────────
-  const KNOWN_SIZES={
-    'dior saddle bag':{s:'25.5 × 20 × 6.5 cm',n:''},'dior saddle':{s:'25.5 × 20 × 6.5 cm',n:''},
-    'dior mini saddle':{s:'19 × 16 × 4.5 cm',n:'Mini'},'dior micro saddle':{s:'12 × 7.5 × 3 cm',n:'Micro'},
-    'dior bobby':{s:'27 × 20 × 8 cm',n:'Medium'},'dior bobby small':{s:'21 × 16 × 8 cm',n:'Small'},
-    'dior book tote':{s:'41.5 × 35 × 18 cm',n:'Large'},'dior small book tote':{s:'36.5 × 28 × 17.5 cm',n:'Small'},
-    'dior mini book tote':{s:'26 × 22 × 14 cm',n:'Mini'},
-    'dior lady dior':{s:'24 × 20 × 11 cm',n:'Medium'},'dior lady dior small':{s:'20 × 17 × 8 cm',n:'Small'},
-    'dior lady dior mini':{s:'17 × 15 × 7 cm',n:'Mini'},'dior 30 montaigne':{s:'24 × 17 × 8 cm',n:''},
-    'louis vuitton neverfull mm':{s:'32 × 29 × 17 cm',n:'MM'},'louis vuitton neverfull gm':{s:'39 × 35 × 19 cm',n:'GM'},
-    'louis vuitton neverfull pm':{s:'26 × 20 × 11 cm',n:'PM'},'lv neverfull mm':{s:'32 × 29 × 17 cm',n:'MM'},
-    'lv neverfull gm':{s:'39 × 35 × 19 cm',n:'GM'},'lv neverfull pm':{s:'26 × 20 × 11 cm',n:'PM'},
-    'lv speedy 25':{s:'25 × 19 × 15 cm',n:'25'},'lv speedy 30':{s:'30 × 21 × 17 cm',n:'30'},
-    'lv alma bb':{s:'23.5 × 17.5 × 11.5 cm',n:'BB'},'lv alma pm':{s:'31.5 × 25 × 15 cm',n:'PM'},
-    'lv onthego mm':{s:'35 × 27 × 14 cm',n:'MM'},'lv onthego gm':{s:'41 × 34 × 19 cm',n:'GM'},
-    'lv pochette metis':{s:'25 × 19 × 7 cm',n:''},'lv dauphine mm':{s:'25 × 17 × 9 cm',n:'MM'},
-    'lv capucines bb':{s:'27 × 18 × 9 cm',n:'BB'},'lv capucines mm':{s:'31.5 × 20 × 11 cm',n:'MM'},
-    'lv twist mm':{s:'23 × 17 × 9.5 cm',n:'MM'},'lv montsouris':{s:'30 × 29 × 15 cm',n:''},
-    'chanel classic flap small':{s:'25 × 15.5 × 6.5 cm',n:'Small'},'chanel classic flap medium':{s:'28 × 18.5 × 7 cm',n:'Medium'},
-    'chanel classic flap large':{s:'30.5 × 20.5 × 8 cm',n:'Large'},'chanel 2.55 reissue 226':{s:'24 × 15.5 × 6 cm',n:'226'},
-    'chanel boy small':{s:'20 × 12.5 × 7 cm',n:'Small'},'chanel boy medium':{s:'25 × 16 × 9 cm',n:'Medium'},
-    'chanel boy large':{s:'30 × 18 × 10 cm',n:'Large'},'chanel woc':{s:'19 × 12.5 × 3.5 cm',n:'WOC'},
-    'chanel 19 small':{s:'26 × 16 × 9 cm',n:'Small'},'chanel 19 medium':{s:'30 × 20 × 10 cm',n:'Medium'},
-    'hermes birkin 25':{s:'25 × 20 × 13 cm',n:'25'},'hermes birkin 30':{s:'30 × 22 × 16 cm',n:'30'},
-    'hermes birkin 35':{s:'35 × 25 × 18 cm',n:'35'},'hermes kelly 25':{s:'25 × 22 × 10 cm',n:'25'},
-    'hermes kelly 28':{s:'28 × 22 × 10 cm',n:'28'},'hermes kelly 32':{s:'32 × 23 × 10.5 cm',n:'32'},
-    'hermes constance 18':{s:'18 × 14 × 5 cm',n:'18'},'hermes constance 24':{s:'24 × 18 × 5 cm',n:'24'},
-    'hermes picotin 18':{s:'18 × 19 × 13 cm',n:'18'},'hermes picotin 22':{s:'22 × 23 × 15.5 cm',n:'22'},
-    'hermes evelyne pm':{s:'29 × 28 × 8 cm',n:'PM'},'hermes evelyne tpm':{s:'21 × 18 × 6 cm',n:'TPM'},
-    'gucci marmont small':{s:'26 × 15 × 7 cm',n:'Small'},'gucci marmont medium':{s:'30 × 18 × 8 cm',n:'Medium'},
-    'gucci marmont mini':{s:'18 × 12 × 6 cm',n:'Mini'},'gucci dionysus small':{s:'28 × 18 × 9 cm',n:'Small'},
-    'gucci dionysus mini':{s:'20 × 14.5 × 5.5 cm',n:'Mini'},'gucci horsebit 1955 small':{s:'24 × 17 × 9 cm',n:'Small'},
-    'prada galleria small':{s:'28 × 20 × 12 cm',n:'Small'},'prada galleria medium':{s:'32 × 24 × 15 cm',n:'Medium'},
-    'prada re-edition 2005':{s:'22 × 18 × 6 cm',n:''},'prada re-edition 2000':{s:'20 × 11.5 × 5 cm',n:'Mini'},
-    'prada cleo':{s:'27 × 19 × 6.5 cm',n:'Medium'},
-    'balenciaga city':{s:'38 × 25 × 11 cm',n:''},'balenciaga hourglass small':{s:'23 × 13 × 10 cm',n:'Small'},
-    'celine luggage micro':{s:'27 × 27 × 13 cm',n:'Micro'},'celine triomphe':{s:'22 × 16.5 × 7.5 cm',n:''},
-    'celine 16 small':{s:'27 × 21 × 9 cm',n:'Small'},
-    'saint laurent loulou small':{s:'21 × 13.5 × 6.5 cm',n:'Small'},'ysl loulou small':{s:'21 × 13.5 × 6.5 cm',n:'Small'},
-    'bottega veneta pouch':{s:'37 × 20 × 0.5 cm',n:''},'bottega veneta cassette':{s:'26 × 18 × 5.5 cm',n:''},
-    'loewe puzzle small':{s:'24 × 17 × 11 cm',n:'Small'},'loewe puzzle medium':{s:'29 × 21 × 12 cm',n:'Medium'},
-    'fendi baguette':{s:'27 × 6 × 13 cm',n:''},'fendi peekaboo small':{s:'30 × 26 × 13 cm',n:'Small'},
-    'goyard saint louis pm':{s:'43 × 26 × 13 cm',n:'PM'},'goyard saint louis gm':{s:'57 × 40 × 19 cm',n:'GM'},
-  };
-  function lookupKnownSize(brand,modelKo,modelEn,lensMatches){
-    const b=(brand||'').toLowerCase();
-    const en=(modelEn||'').toLowerCase();
-    const ko=(modelKo||'').toLowerCase()
-      .replace(/새들\s?백/,'saddle bag').replace(/새들/,'saddle')
-      .replace(/미니/,'mini').replace(/스몰/,'small').replace(/미디엄/,'medium')
-      .replace(/라지/,'large').replace(/마이크로/,'micro').replace(/나노/,'nano')
-      .replace(/레이디\s?디올/,'lady dior').replace(/북\s?토트/,'book tote')
-      .replace(/버킨/,'birkin').replace(/켈리/,'kelly').replace(/네버풀/,'neverfull')
-      .replace(/클래식\s?플랩/,'classic flap').replace(/보이/,'boy').replace(/마몽트/,'marmont');
-    const combos=[b+' '+en, b+' '+ko, en, ko].map(s=>s.trim()).filter(Boolean);
-    for(const combo of combos){
-      for(const [key,val] of Object.entries(KNOWN_SIZES)){
-        if(combo.includes(key)||key.includes(combo.replace(/[^a-z0-9 ]/g,'').trim()))
-          return{size:val.s,name:val.n};
-      }
-    }
-    // 렌즈 타이틀에서 키 매칭
-    const lensTexts=(lensMatches||[]).map(m=>(m.title||'').toLowerCase());
-    for(const txt of lensTexts){
-      for(const [key,val] of Object.entries(KNOWN_SIZES)){
-        if(txt.includes(key)) return{size:val.s,name:val.n};
-      }
-    }
-    // 렌즈 타이틀에서 직접 치수 파싱
-    const sizeRe=/(\d{1,3})\s*[x×]\s*(\d{1,3})(?:\s*[x×]\s*(\d{1,3}))?\s*(cm|mm)/i;
-    const nameRe=/(nano|micro|baby|mini|small|medium|large|maxi|pm|mm|gm|tpm|bph)/i;
-    let fs='',fn='';
-    for(const txt of [...lensTexts,...(lensMatches||[]).map(m=>(m.snippet||m.description||'').toLowerCase())]){
-      if(!fs){const m1=txt.match(sizeRe);if(m1){const p=[m1[1],m1[2],m1[3]].filter(Boolean);fs=p.join(' × ')+' '+m1[4];}}
-      if(!fn){const m2=txt.match(nameRe);if(m2)fn=m2[1].charAt(0).toUpperCase()+m2[1].slice(1);}
-      if(fs&&fn)break;
-    }
-    return{size:fs,name:fn};
-  }
-  const _looked=lookupKnownSize(analysis.brand,analysis.model_name_ko,analysis.model_name,visualMatches);
-  // 우선순위: AI분석 > 내장DB > 백엔드 렌즈파싱 > 프론트 렌즈파싱
-  const _finalSize=_aiSize||_looked.size||_lensSize||'';
-  const _finalSizeName=_aiSizeName||_looked.name||_lensSizeName||'';
+  // ── 사이즈 우선순위: AI분석 > 백엔드 렌즈 파싱 (다수결) ─────────────
+  // 내장DB 제거 — 부분매칭 오류로 잘못된 사이즈 반환 문제
+  const _finalSize=_aiSize||_lensSize||'';
+  const _finalSizeName=_aiSizeName||_lensSizeName||'';
   // 렌즈 파싱으로 채워진 경우 출처 표시용 플래그
   const _sizeFromLens=!_aiSize&&!_looked.size&&!!_lensSize;
   const _sizeNameFromLens=!_aiSizeName&&!_looked.name&&!!_lensSizeName;
@@ -890,7 +811,7 @@ function renderResult(){
       }
     }catch(_){}
   }
-  // 내장DB에서 사이즈 못 찾았을 때만 백엔드 조회
+  // 백엔드 lensSize 없을 때 fetch_size 액션으로 보완 요청
   if(!_finalSize||!_finalSizeName){
     fetchSizeFromBackend(analysis.brand, analysis.model_name_ko, analysis.model_name);
   }
@@ -1011,6 +932,11 @@ function saveField(id,input){
   const val=input.value.trim()||'—';
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
+  // 모델명 변경 시 Google Images 재검색
+  if((id==='r-model-ko'||id==='r-model')&&val!=='—'){
+    const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
+    reSearchByModel(brand, val);
+  }
   if((id==='r-model-ko'||id==='r-model'||id==='r-sku')&&val==='—'){
     const dbWrap=document.getElementById('db-match-wrap');
     if(dbWrap){
@@ -1020,6 +946,75 @@ function saveField(id,input){
     accessories=[];
     renderAcc();
   }
+}
+
+// ── 모델명 변경 시 Google Images 재검색 ─────────────────────────────
+let _reSearchTimer=null;
+async function reSearchByModel(brand, modelName){
+  clearTimeout(_reSearchTimer);
+  _reSearchTimer=setTimeout(async()=>{
+    const lensEl=document.getElementById('lens-results');
+    const lensHd=document.querySelector('.section-hd');
+    // 헤더 로딩 표시
+    if(lensHd) lensHd.innerHTML='🔍 GOOGLE 이미지 재검색 중... <span class="sp" style="font-size:12px">⏳</span>';
+    lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 중...</div>';
+    try{
+      const res=await fetch('/api/inspect',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'search_by_model',brand,modelName})
+      });
+      const j=await res.json();
+      if(!j.success) throw new Error(j.error);
+
+      // 렌즈 결과 업데이트
+      const matches=j.visualMatches||[];
+      if(matches.length){
+        lensEl.innerHTML=matches.map(m=>{
+          const price=m.price?(typeof m.price==='object'?m.price.extracted_price||m.price.raw||'':m.price):'';
+          return`<div class="lens-card" onclick="window.open('${m.link}','_blank')">
+            <img src="${m.thumbnail||''}" alt="" onerror="this.style.display='none'">
+            <div class="lens-info">
+              <div class="lens-title">${m.title||'—'}</div>
+              ${price?`<div class="lens-price">${price}</div>`:''}
+              <div class="lens-src">${m.source||''}</div>
+            </div></div>`;
+        }).join('');
+      } else {
+        lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 결과 없음</div>';
+      }
+
+      // 헤더 복원
+      if(lensHd) lensHd.innerHTML=`🔍 GOOGLE 이미지 — <span style="color:#ff6b2b;font-size:10px">${brand} ${modelName}</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+          <button onclick="slideLens(1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+        </div>`;
+
+      // 사이즈도 같이 왔으면 반영 (비어있을 때만)
+      if(j.lensSize){
+        const sEl=document.getElementById('r-size');
+        if(sEl.textContent==='—'||sEl.textContent===''){
+          sEl.textContent=j.lensSize; sEl.className='info-cell-val';
+          const lbl=sEl.closest('.info-cell')?.querySelector('.info-cell-label');
+          if(lbl&&!lbl.querySelector('.ai-badge'))
+            lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
+        }
+      }
+      if(j.lensSizeName){
+        const snEl=document.getElementById('r-size-name');
+        if(snEl.textContent==='—'||snEl.textContent===''){
+          snEl.textContent=j.lensSizeName; snEl.className='info-cell-val';
+          const lbl2=snEl.closest('.info-cell')?.querySelector('.info-cell-label');
+          if(lbl2&&!lbl2.querySelector('.ai-badge'))
+            lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
+        }
+      }
+      toast('🔍 '+matches.length+'개 이미지 재검색 완료');
+    }catch(e){
+      lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">재검색 실패: '+e.message+'</div>';
+      if(lensHd) lensHd.innerHTML='🔍 GOOGLE LENS 유사 상품 <div style="display:flex;gap:6px"><button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button><button onclick="slideLens(1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button></div>';
+    }
+  }, 800); // 800ms 디바운스 — 연속 수정 시 마지막 것만 검색
 }
 
 async function autoTranslateModelName(koName){
