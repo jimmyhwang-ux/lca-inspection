@@ -921,10 +921,8 @@ async function reSearchByModel(brand, modelName){
   clearTimeout(_reSearchTimer);
   _reSearchTimer=setTimeout(async()=>{
     const lensEl=document.getElementById('lens-results');
-    const lensHd=document.querySelector('.section-hd');
     // 헤더 로딩 표시
-    if(lensHd) lensHd.innerHTML='🔍 GOOGLE 이미지 재검색 중... <span class="sp" style="font-size:12px">⏳</span>';
-    lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 중...</div>';
+        lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 중...</div>';
     try{
       const res=await fetch('/api/inspect',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -950,12 +948,7 @@ async function reSearchByModel(brand, modelName){
         lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 결과 없음</div>';
       }
 
-      // 헤더 복원
-      if(lensHd) lensHd.innerHTML=`🔍 GOOGLE 이미지 — <span style="color:#ff6b2b;font-size:10px">${brand} ${modelName}</span>
-        <div style="display:flex;gap:6px">
-          <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
-          <button onclick="slideLens(1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
-        </div>`;
+
 
       // 사이즈도 같이 왔으면 반영 (비어있을 때만)
       if(j.lensSize){
@@ -979,7 +972,7 @@ async function reSearchByModel(brand, modelName){
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">재검색 실패: '+e.message+'</div>';
-      if(lensHd) lensHd.innerHTML='🔍 GOOGLE LENS 유사 상품 <div style="display:flex;gap:6px"><button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button><button onclick="slideLens(1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button></div>';
+
     }
   }, 800); // 800ms 디바운스 — 연속 수정 시 마지막 것만 검색
 }
