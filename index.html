@@ -779,8 +779,8 @@ function renderResult(){
   const _finalSize=_aiSize||_lensSize||'';
   const _finalSizeName=_aiSizeName||_lensSizeName||'';
   // 렌즈 파싱으로 채워진 경우 출처 표시용 플래그
-  const _sizeFromLens=!_aiSize&&!_looked.size&&!!_lensSize;
-  const _sizeNameFromLens=!_aiSizeName&&!_looked.name&&!!_lensSizeName;
+  const _sizeFromLens=!_aiSize&&!!_lensSize;
+  const _sizeNameFromLens=!_aiSizeName&&!!_lensSizeName;
 
   // ── 내장DB 미매칭 시 백엔드에 사이즈 조회 요청 ─────────────
   async function fetchSizeFromBackend(brand,modelKo,modelEn){
