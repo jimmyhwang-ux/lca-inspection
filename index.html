@@ -901,11 +901,21 @@ function saveField(id,input){
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
   // 모델명 변경 시 Google Images 재검색
-  if((id==='r-model-ko'||id==='r-model')&&val!=='—'){
-    const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
-    reSearchByModel(brand, val);
+  if((id==='r-model-ko'||id==='r-model')){
+    // 모델명 변경 시 DB 카드 초기화 후 재검색
+    const dbWrap=document.getElementById('db-match-wrap');
+    if(dbWrap){
+      dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
+    }
+    window._dbEnriched=[];
+    accessories=[];
+    renderAcc();
+    if(val!=='—'){
+      const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
+      reSearchByModel(brand, val);
+    }
   }
-  if((id==='r-model-ko'||id==='r-model'||id==='r-sku')&&val==='—'){
+  if(id==='r-sku'&&val==='—'){
     const dbWrap=document.getElementById('db-match-wrap');
     if(dbWrap){
       dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
@@ -1053,6 +1063,14 @@ function applyDbMatch(item, cardId){
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
   if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
 
+  // 인라인 편집 중인 input 요소 있으면 먼저 제거
+  ['r-sku','r-size','r-size-name'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.querySelector('input,span')){
+      el.innerHTML='';
+    }
+  });
+
   const skuEl=document.getElementById('r-sku');
   skuEl.textContent=item.sku_code||'—';
   skuEl.className='info-cell-val'+(item.sku_code?'':' muted');
@@ -1060,7 +1078,6 @@ function applyDbMatch(item, cardId){
   const sizeEl=document.getElementById('r-size');
   sizeEl.textContent=item.size_actual||'—';
   sizeEl.className='info-cell-val'+(item.size_actual?'':' muted');
-  // AI 배지 제거 후 재적용
   sizeEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
 
   const sizeNameEl=document.getElementById('r-size-name');
