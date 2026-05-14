@@ -683,6 +683,8 @@ function renderResult(){
   // DB매칭 카드 렌더 — extra_images 포함 전체 데이터로
   function renderDbMatchCards(matches){
     if(!matches.length) return;
+    const dbWrap=document.getElementById('db-match-wrap'); // 항상 새로 가져오기
+    if(!dbWrap) return;
     const first=matches[0];
     // 사이즈·부속품 자동 적용
     if(first.sku_code){document.getElementById('r-sku').textContent=first.sku_code;document.getElementById('r-sku').className='info-cell-val';}
@@ -735,6 +737,8 @@ function renderResult(){
   }
 
   if(dbMatches.length){
+    const dbWrapRef=document.getElementById('db-match-wrap'); // async 전에 캡처
+    dbWrapRef.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#444">DB 데이터 로딩 중...</div>';
     (async()=>{
       // SKU 전체 목록 항상 새로 로드
       let freshList=[];
