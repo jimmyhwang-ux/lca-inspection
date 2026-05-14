@@ -82,6 +82,8 @@ input[type=file]{display:none}
 .info-cell-val{font-size:13px;font-weight:700;color:#fff;cursor:pointer}
 .info-cell-val.muted{color:#333;font-weight:400}
 .info-cell-val:hover{color:#ff6b2b}
+.ai-badge{cursor:default;vertical-align:middle}
+.info-cell-val[title]:hover::after{content:attr(title);position:absolute;background:#1c1c1c;color:#aaa;font-size:10px;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;margin-top:18px;margin-left:-20px}
 .section-hd{padding:16px 16px 8px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase}
 .lens-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
 .lens-scroll::-webkit-scrollbar{display:none}
@@ -363,6 +365,7 @@ input[type=file]{display:none}
       <div class="sku-row"><div class="sku-key">실측 사이즈</div><input class="sku-input" id="sku-size" type="text" placeholder="가로 _ × 세로 _ × 높이 _"></div>
       <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">사이트 URL</div><input class="sku-input" id="sku-url" type="url" placeholder="https://..."></div>
       <div class="sku-row" style="align-items:flex-start"><div class="sku-key" style="padding-top:2px">특이사항</div><textarea class="sku-input" id="sku-notes" rows="2" style="resize:vertical;line-height:1.5;padding:2px 0" placeholder="메모..."></textarea></div>
     </div>
     <div style="font-size:11px;color:#444;margin-bottom:8px;padding:0 2px">부속품 체크</div>
@@ -440,6 +443,7 @@ input[type=file]{display:none}
     <div class="edit-field-row"><div class="edit-field-label">실측 사이즈</div><input class="edit-field-input" id="ef-size" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">사이즈 명칭</div><input class="edit-field-input" id="ef-size-name" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">스타일 번호</div><input class="edit-field-input" id="ef-sku" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">사이트 URL</div><input class="edit-field-input" id="ef-url" type="url" placeholder="https://..."></div>
     <div class="edit-field-row"><div class="edit-field-label">특이사항</div><textarea class="edit-field-input" id="ef-notes" rows="3" style="resize:vertical;line-height:1.5" placeholder="스크래치, 오염, 기타 메모..."></textarea></div>
     <input type="hidden" id="ef-id">
     <input type="hidden" id="ef-extra-images">
@@ -666,8 +670,21 @@ function renderResult(){
     if(!dbWrap) return;
     const first=matches[0];
     if(first.sku_code){document.getElementById('r-sku').textContent=first.sku_code;document.getElementById('r-sku').className='info-cell-val';}
-    if(first.size_actual){const el=document.getElementById('r-size');el.textContent=first.size_actual;el.className='info-cell-val';}
-    if(first.size_label){const el=document.getElementById('r-size-name');el.textContent=first.size_label;el.className='info-cell-val';}
+    const _rSizeEl=document.getElementById('r-size');
+    const _rSizeNameEl=document.getElementById('r-size-name');
+    if(first.size_actual){_rSizeEl.textContent=first.size_actual;_rSizeEl.className='info-cell-val';}
+    else if(analysis.size){
+      _rSizeEl.textContent=analysis.size;_rSizeEl.className='info-cell-val';
+      const lbl=_rSizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
+      if(lbl&&!lbl.querySelector('.ai-badge'))lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+    }
+    if(first.size_label){_rSizeNameEl.textContent=first.size_label;_rSizeNameEl.className='info-cell-val';}
+    else if(analysis.size_label||analysis.sizeName){
+      const sv=analysis.size_label||analysis.sizeName||'';
+      _rSizeNameEl.textContent=sv;_rSizeNameEl.className='info-cell-val';
+      const lbl2=_rSizeNameEl.closest('.info-cell')?.querySelector('.info-cell-label');
+      if(lbl2&&!lbl2.querySelector('.ai-badge'))lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+    }
     if(first.accessories&&first.accessories.length){accessories=first.accessories.map(a=>({name:a.name,status:a.status||''}));renderAcc();}
 
     dbWrap.innerHTML=matches.map((m,idx)=>{
@@ -747,11 +764,30 @@ function renderResult(){
   }
 
   const sizeEl=document.getElementById('r-size');
-  if(!dbMatches.length){sizeEl.textContent=analysis.size||'—';sizeEl.className='info-cell-val'+(analysis.size?'':' muted');}
   const sizeNameEl2=document.getElementById('r-size-name');
-  if(!dbMatches.length){sizeNameEl2.textContent='—';sizeNameEl2.className='info-cell-val muted';}
   const skuEl=document.getElementById('r-sku');
-  if(!dbMatches.length){skuEl.textContent=analysis.sku||'—';skuEl.className='info-cell-val'+(analysis.sku?'':' muted');}
+  if(!dbMatches.length){
+    // AI 분석 사이즈 자동 세팅 + AI 배지
+    if(analysis.size){
+      sizeEl.textContent=analysis.size;
+      sizeEl.className='info-cell-val';
+      sizeEl.title='AI 자동 추출 — 탭하여 수정';
+      const lbl=sizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
+      if(lbl&&!lbl.querySelector('.ai-badge'))lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+    } else {
+      sizeEl.textContent='—';sizeEl.className='info-cell-val muted';
+    }
+    if(analysis.size_label||analysis.sizeName){
+      const sv=analysis.size_label||analysis.sizeName||'';
+      sizeNameEl2.textContent=sv;
+      sizeNameEl2.className='info-cell-val';
+      const lbl2=sizeNameEl2.closest('.info-cell')?.querySelector('.info-cell-label');
+      if(lbl2&&!lbl2.querySelector('.ai-badge'))lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+    } else {
+      sizeNameEl2.textContent='—';sizeNameEl2.className='info-cell-val muted';
+    }
+    skuEl.textContent=analysis.sku||'—';skuEl.className='info-cell-val'+(analysis.sku?'':' muted');
+  }
 
   const lensEl=document.getElementById('lens-results');
   if(visualMatches.length){
@@ -1046,6 +1082,8 @@ function goToSku(){
   document.getElementById('sku-size').value=rSizeText;
   document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
   document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
+  const _dbFirst=(window._dbEnriched&&window._dbEnriched[0])||{};
+  document.getElementById('sku-url').value=_dbFirst.site_url||'';
   const photoWrap=document.getElementById('sku-photo-wrap');
   photoWrap.innerHTML=['main','label1','label2','label3','logo','origin','back']
     .filter(k=>photos[k])
@@ -1099,6 +1137,7 @@ async function saveToSupabase(){
     size_actual:document.getElementById('sku-size').value,
     size_label:document.getElementById('sku-size-name').value,
     sku_code:document.getElementById('sku-sku').value,
+    site_url:document.getElementById('sku-url').value,
     notes:document.getElementById('sku-notes').value,
     accessories:accessories.map(a=>({name:a.name,status:a.status||'Y'})),
     ref_image_url:resultData.imageUrl||'',
@@ -1185,9 +1224,10 @@ function renderSkuList(list){
             ${item.color?`<span class="sku-meta-tag">${item.color}</span>`:''}
             ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span>`:''}
             ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
+            ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
           </div>
           ${(item.accessories||[]).length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:''}
-          ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b">📝 ${item.notes}</div>`:''}
+          ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#888;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
           <div id="sku-detail-${i}" style="display:block;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
             ${(()=>{
               const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
@@ -1208,6 +1248,7 @@ function renderSkuList(list){
               ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
               ${item.size_actual?`실측사이즈: <span style="color:#f0f0f0">${item.size_actual}</span><br>`:''}
               ${item.sku_code?`스타일번호: <span style="color:#f0f0f0">${item.sku_code}</span><br>`:''}
+              ${item.site_url?`사이트: <a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="color:#007aff">${item.site_url.replace(/^https?:\/\//,'').slice(0,40)}</a><br>`:''}
               ${item.notes?`특이사항: <span style="color:#f59e0b">${item.notes}</span><br>`:''}
               등록일: <span style="color:#f0f0f0">${new Date(item.created_at).toLocaleDateString('ko-KR')}</span>
             </div>
@@ -1277,6 +1318,7 @@ function openEditModal(i){
   document.getElementById('ef-size').value=item.size_actual||'';
   document.getElementById('ef-size-name').value=item.size_label||'';
   document.getElementById('ef-sku').value=item.sku_code||'';
+  document.getElementById('ef-url').value=item.site_url||'';
   document.getElementById('ef-notes').value=item.notes||'';
   const imgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean);
   const unique=[...new Set(imgs)];
@@ -1410,6 +1452,7 @@ async function saveEditSku(){
     size_actual:document.getElementById('ef-size').value,
     size_label:document.getElementById('ef-size-name').value,
     sku_code:document.getElementById('ef-sku').value,
+    site_url:document.getElementById('ef-url').value,
     notes:document.getElementById('ef-notes').value,
     accessories:efAccs,
     extra_images:allImages,
