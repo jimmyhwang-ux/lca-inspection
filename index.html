@@ -287,7 +287,15 @@ input[type=file]{display:none}
       <div class="info-cell-val muted" id="r-size-name" onclick="editField('r-size-name')">—</div>
     </div>
     <div class="info-cell">
-      <div class="info-cell-label">스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
+      <div class="info-cell-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></span>
+        <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#444;display:flex;align-items:center" id="sku-search-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </button>
+      </div>
       <div class="info-cell-val muted" id="r-sku" onclick="editField('r-sku')">—</div>
     </div>
   </div>
@@ -1683,6 +1691,14 @@ function copyResult(){
     '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
     'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
+}
+
+function searchSkuOnGoogle(){
+  const brand=document.getElementById('r-brand')?.textContent?.replace('—','').trim()||'';
+  const sku=document.getElementById('r-sku')?.textContent?.replace('—','').trim()||'';
+  if(!sku){toast('⚠️ 스타일 번호를 먼저 입력해 주세요');return;}
+  const query=brand?`${brand} ${sku}`:sku;
+  window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`,'_blank');
 }
 
 function clearSkuForm(){
