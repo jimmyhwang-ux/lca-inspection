@@ -182,8 +182,8 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 80,
+          model: 'claude-sonnet-4-5',
+          max_tokens: 150,
           messages: [{
             role: 'user',
             content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
@@ -307,8 +307,8 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
             body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
-              max_tokens: 80,
+              model: 'claude-sonnet-4-5',
+              max_tokens: 150,
               messages: [{
                 role: 'user',
                 content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
@@ -485,32 +485,39 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
         // 2단계: Shopping에서 못 찾으면 Claude에게 직접 질의
         if (!lensSize) {
           try {
+            // 렌즈 타이틀을 컨텍스트로 활용
+            const lensTitles = visualMatches.slice(0, 6)
+              .map(m => m.title).filter(Boolean).join(' / ');
             const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
               body: JSON.stringify({
-                model: 'claude-haiku-4-5-20251001',
-                max_tokens: 80,
+                model: 'claude-sonnet-4-5',
+                max_tokens: 150,
                 messages: [{
                   role: 'user',
-                  content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
+                  content: `명품 가방 공식 사이즈를 알려줘. JSON만 응답.
+
 브랜드: ${brand}
 모델명: ${modelEn || modelKo}
+Google Lens 유사상품 타이틀: ${lensTitles}
 
-규칙:
-- 공식 사이즈가 확실히 알려진 경우만 기재
-- 추측이나 유사 모델 사이즈 절대 금지
-- 모델명이 불명확하거나 여러 사이즈가 있으면 size를 null로
-- JSON만 응답, 다른 텍스트 금지
+지시사항:
+- 위 정보를 바탕으로 정확한 모델과 사이즈 variant를 판단해
+- Dior Book Tote처럼 Small/Medium/Large가 있으면 렌즈 타이틀에서 힌트를 찾아
+- 공식 브랜드 공개 사이즈 기준으로 답해
+- 단위는 반드시 cm
+- 확실하지 않으면 null
 
-응답: {"size":"가로 × 세로 × 높이 cm 또는 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 또는 null"}`
+응답형식(JSON만): {"size":"가로 × 세로 × 높이 cm","size_label":"Small/Medium/Large 등","confidence":"high/medium/low"}`
                 }]
               })
             });
             const cj = await claudeQ.json();
-            const raw = (cj.content?.[0]?.text || '').trim().replace(/```json|```/g, '');
+            const raw = (cj.content?.[0]?.text || '').trim().replace(/\`\`\`json|\`\`\`/g, '').trim();
             const parsed = JSON.parse(raw);
-            if (parsed.size && parsed.size !== 'null') {
+            // confidence가 low면 채택 안함
+            if (parsed.size && parsed.size !== 'null' && parsed.confidence !== 'low') {
               lensSize = parsed.size;
               lensSizeSources.push('claude_ai');
             }
