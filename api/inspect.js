@@ -31,18 +31,63 @@ export default async function handler(req, res) {
   };
 
   // ── 사이즈 파싱 헬퍼 ──────────────────────────────────────────────────
+  // 인치 → cm 변환 (소수점 1자리 반올림)
+  function inchToCm(val) {
+    return Math.round(parseFloat(val) * 2.54 * 10) / 10;
+  }
+
+  // 숫자 파싱 + 인치면 cm 변환
+  function normVal(numStr, isInch) {
+    const n = parseFloat(numStr.replace(',', '.'));
+    if (isNaN(n)) return null;
+    return isInch ? inchToCm(n) : n;
+  }
+
   function parseSizeFromText(text) {
     if (!text) return null;
-    // 패턴1: "25.5 x 20 x 6.5 cm", "25×20×6cm", "25*20*6 cm"
-    const p1 = text.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm)?\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm)?(?:\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm)?)?(?:\s*(cm|mm))?/i);
+
+    // 인치 여부 판단
+    const hasInch = /\d\s*(?:in|inch|inches|"|″)/i.test(text);
+    const hasCm   = /\d\s*cm/i.test(text);
+    const hasMm   = /\d\s*mm/i.test(text);
+    const isInch  = hasInch && !hasCm;
+
+    // 패턴1: "25.5 x 20 x 6.5 cm/in", "25×20×6", "9.8" x 7.9""
+    const p1 = text.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm|in|inch|inches|"|″)?\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm|in|inch|inches|"|″)?(?:\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm|in|inch|inches|"|″)?)?(?:\s*(cm|mm|in|inch|inches))?/i);
     if (p1) {
-      const parts = [p1[1], p1[2], p1[3]].filter(Boolean).map(v => v.replace(',', '.'));
-      const unit = p1[4] || (text.toLowerCase().includes('mm') ? 'mm' : 'cm');
-      return parts.join(' × ') + ' ' + unit;
+      const rawUnit = (p1[4] || '').toLowerCase();
+      const unitIsInch = isInch || rawUnit.startsWith('in') || rawUnit === '"';
+      const unitIsMm   = hasMm && !hasCm && !unitIsInch;
+      const parts = [p1[1], p1[2], p1[3]]
+        .filter(Boolean)
+        .map(v => {
+          const n = normVal(v, unitIsInch);
+          if (n === null) return null;
+          // mm → cm
+          if (unitIsMm) return Math.round(n / 10 * 10) / 10;
+          return n;
+        })
+        .filter(v => v !== null);
+      if (parts.length < 2) return null;
+      // 소수점 정리: .0 이면 정수로
+      const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
+      return parts.map(fmt).join(' × ') + ' cm';
     }
-    // 패턴2: "W25 H20 D6", "W:25cm H:20cm D:6cm"
-    const p2 = text.match(/[WwLl][:\s]?(\d{1,3}(?:[.,]\d)?)\s*(?:cm|mm)?.{0,8}[HhDd][:\s]?(\d{1,3}(?:[.,]\d)?)/i);
-    if (p2) return p2[1].replace(',','.') + ' × ' + p2[2].replace(',','.') + ' cm';
+
+    // 패턴2: "W25 H20 D6", "W:9.8in H:7.9in"
+    const p2 = text.match(/[WwLl][:\s]?(\d{1,3}(?:[.,]\d{1,2})?)(\s*(?:cm|mm|in|inch|inches|"|″))?.{0,10}[HhDd][:\s]?(\d{1,3}(?:[.,]\d{1,2})?)(\s*(?:cm|mm|in|inch|inches|"|″))?/i);
+    if (p2) {
+      const u1 = (p2[2] || '').toLowerCase().trim();
+      const u2 = (p2[4] || '').toLowerCase().trim();
+      const inch1 = isInch || u1.startsWith('in') || u1 === '"';
+      const inch2 = isInch || u2.startsWith('in') || u2 === '"';
+      const w = normVal(p2[1], inch1);
+      const h = normVal(p2[3], inch2);
+      if (!w || !h) return null;
+      const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
+      return fmt(w) + ' × ' + fmt(h) + ' cm';
+    }
+
     return null;
   }
 
@@ -182,6 +227,74 @@ export default async function handler(req, res) {
       const url = await uploadImgbb(b64);
       return res.status(200).json({ url });
     } catch (e) { return res.status(500).json({ url: '', error: e.message }); }
+  }
+
+  // ── 모델명으로 Google Images 재검색 ────────────────────────────────────
+  if (action === 'search_by_model') {
+    try {
+      const { brand, modelName } = req.body;
+      const query = [brand, modelName].filter(Boolean).join(' ');
+      if (!query) return res.status(400).json({ success: false, error: 'query 없음' });
+
+      const url = `https://serpapi.com/search?engine=google_images&q=${encodeURIComponent(query)}&gl=us&hl=en&api_key=${SERP_KEY}`;
+      const r = await fetch(url);
+      const j = await r.json();
+      const images = (j.images_results || []).slice(0, 12).map(img => ({
+        title:     img.title || '',
+        link:      img.link  || img.original || '',
+        thumbnail: img.thumbnail || img.original || '',
+        source:    img.source || (img.link ? new URL(img.link).hostname : ''),
+        price:     img.price || null,
+      }));
+
+      // 사이즈 파싱도 병행 (링크 fetch)
+      const sizeResults = [];
+      const nameResults = [];
+      await Promise.allSettled(images.slice(0, 6).map(async (img) => {
+        if (!img.link) return;
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 3500);
+          const pr = await fetch(img.link, {
+            signal: controller.signal,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }
+          });
+          clearTimeout(timer);
+          if (!pr.ok) return;
+          const html = await pr.text();
+          const clean = html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ');
+          const keyRe = /\b(size|dimension|measurement|치수|사이즈|width|height|depth)\b/gi;
+          let m;
+          while ((m = keyRe.exec(clean)) !== null) {
+            const snippet = clean.slice(Math.max(0, m.index - 30), m.index + 150);
+            const sz = parseSizeFromText(snippet);
+            const sn = parseSizeNameFromText(snippet);
+            if (sz) sizeResults.push(sz);
+            if (sn) nameResults.push(sn);
+          }
+        } catch (_) {}
+      }));
+
+      const majority = (arr) => {
+        if (!arr.length) return null;
+        const freq = {};
+        for (const v of arr) freq[v] = (freq[v] || 0) + 1;
+        return Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+      };
+
+      return res.status(200).json({
+        success: true,
+        visualMatches: images,
+        lensSize:      majority(sizeResults) || null,
+        lensSizeName:  majority(nameResults) || null,
+      });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: e.message });
+    }
   }
 
   // ── 모델명 한글→영문 ──────────────────────────────────────────────────
