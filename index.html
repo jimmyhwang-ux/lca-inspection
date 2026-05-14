@@ -753,6 +753,10 @@ function renderResult(){
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
+      // renderDbMatchCards 내 setTimeout과 별개로 여기서도 직접 호출 보장
+      setTimeout(()=>{
+        if(enriched.length>0) applyDbMatch(enriched[0],'db-card-0');
+      }, 200);
     })();
 
   } else {
