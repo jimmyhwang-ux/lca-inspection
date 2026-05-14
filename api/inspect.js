@@ -52,6 +52,34 @@ export default async function handler(req, res) {
     const hasMm   = /\d\s*mm/i.test(text);
     const isInch  = hasInch && !hasCm;
 
+    // 패턴0: "W:25.5cm H:20cm", "H: 20cm x W: 25.5cm", "Width: 9.8in Height: 7.9in" (레이블 명시형)
+    {
+      // Width/Height/Depth 풀네임을 단일 문자로 정규화
+      const normText = text
+        .replace(/width/gi,'W').replace(/height/gi,'H').replace(/depth/gi,'D')
+        .replace(/length/gi,'L').replace(/large/gi,'');
+      const labelRe = /([WHDLwhd])\s*:?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|mm|in|inch|inches)?/gi;
+      const labelMap = {};
+      let lm;
+      while ((lm = labelRe.exec(normText)) !== null) {
+        const key = lm[1].toLowerCase();
+        const unit = (lm[3] || '').toLowerCase();
+        const inchU = isInch || unit.startsWith('in');
+        const mmU = unit === 'mm';
+        let val = parseFloat(lm[2].replace(',', '.'));
+        if (inchU) val = inchToCm(val);
+        else if (mmU) val = Math.round(val / 10 * 10) / 10;
+        labelMap[key] = val;
+      }
+      const wVal = labelMap['w'] || labelMap['l'];
+      const hVal = labelMap['h'];
+      if (wVal && hVal) {
+        const dVal = labelMap['d'];
+        const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
+        return [wVal, hVal, dVal].filter(Boolean).map(fmt).join(' × ') + ' cm';
+      }
+    }
+
     // 패턴1: "25.5 x 20 x 6.5 cm/in", "25×20×6", "9.8" x 7.9""
     const p1 = text.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm|in|inch|inches|"|″)?\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm|in|inch|inches|"|″)?(?:\s*[x×*]\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:cm|mm|in|inch|inches|"|″)?)?(?:\s*(cm|mm|in|inch|inches))?/i);
     if (p1) {
@@ -74,18 +102,33 @@ export default async function handler(req, res) {
       return parts.map(fmt).join(' × ') + ' cm';
     }
 
-    // 패턴2: "W25 H20 D6", "W:9.8in H:7.9in"
-    const p2 = text.match(/[WwLl][:\s]?(\d{1,3}(?:[.,]\d{1,2})?)(\s*(?:cm|mm|in|inch|inches|"|″))?.{0,10}[HhDd][:\s]?(\d{1,3}(?:[.,]\d{1,2})?)(\s*(?:cm|mm|in|inch|inches|"|″))?/i);
+    // 패턴2: "W25 H20 D6", "W:9.8in H:7.9in", "H:20cm x W:25cm" (순서 무관)
+    const p2 = text.match(/[WwLlHhDd][:\s]?(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|mm|in|inch|inches|"|″)?.{0,15}[WwLlHhDd][:\s]?(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|mm|in|inch|inches|"|″)?/i);
     if (p2) {
       const u1 = (p2[2] || '').toLowerCase().trim();
       const u2 = (p2[4] || '').toLowerCase().trim();
       const inch1 = isInch || u1.startsWith('in') || u1 === '"';
       const inch2 = isInch || u2.startsWith('in') || u2 === '"';
-      const w = normVal(p2[1], inch1);
-      const h = normVal(p2[3], inch2);
-      if (!w || !h) return null;
+      const mm1 = u1 === 'mm'; const mm2 = u2 === 'mm';
+      let v1 = normVal(p2[1], inch1); if (mm1 && v1) v1 = Math.round(v1/10*10)/10;
+      let v2 = normVal(p2[3], inch2); if (mm2 && v2) v2 = Math.round(v2/10*10)/10;
+      if (!v1 || !v2) return null;
       const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
-      return fmt(w) + ' × ' + fmt(h) + ' cm';
+      return fmt(v1) + ' × ' + fmt(v2) + ' cm';
+    }
+
+    // 패턴3: "9.8 inches wide by 7.9 inches tall", "25cm wide by 20cm tall"
+    const p3 = text.match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|mm|in|inch|inches)?\s*(?:wide|width|long|length).{0,25}?(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|mm|in|inch|inches)?\s*(?:tall|high|height|deep|depth)/i);
+    if (p3) {
+      const u1 = (p3[2] || '').toLowerCase();
+      const u2 = (p3[4] || '').toLowerCase();
+      const inch1 = isInch || u1.startsWith('in');
+      const inch2 = isInch || u2.startsWith('in');
+      const v1 = normVal(p3[1], inch1);
+      const v2 = normVal(p3[3], inch2);
+      if (!v1 || !v2) return null;
+      const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
+      return fmt(v1) + ' × ' + fmt(v2) + ' cm';
     }
 
     return null;
