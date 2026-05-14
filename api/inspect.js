@@ -470,41 +470,58 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
       if (query.length > 3) {
         // ── 1순위: SerpAPI 일반검색 스니펫에서 파싱 ──────────────────
         try {
-          const searchUrl = `https://serpapi.com/search?engine=google&q=${encodeURIComponent(query + ' official size dimensions cm')}&gl=us&hl=en&num=5&api_key=${SERP_KEY}`;
+          // 정확한 모델명으로 검색 — 큰따옴표로 exact match 유도
+          const exactQuery = `"${query}" size dimensions cm`;
+          const searchUrl = `https://serpapi.com/search?engine=google&q=${encodeURIComponent(exactQuery)}&gl=us&hl=en&num=8&api_key=${SERP_KEY}`;
           const searchRes = await fetch(searchUrl);
           const searchJson = await searchRes.json();
 
           const candidates = [];
-          // organic results 스니펫
-          for (const r of (searchJson.organic_results || []).slice(0, 6)) {
-            const texts = [r.snippet, r.title, (r.rich_snippet?.top?.extensions || []).join(' ')].filter(Boolean);
-            for (const txt of texts) {
-              const sz = parseSizeFromText(txt);
-              const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
-              if (sz) candidates.push({ sz, sn, src: r.displayed_link || 'google' });
-            }
+
+          // 스니펫에서 파싱할 때 모델명 포함 여부 검증
+          const modelWords = (modelEn || modelKo).toLowerCase().split(' ').filter(w => w.length > 2);
+
+          const addIfValid = (txt, src) => {
+            if (!txt) return;
+            const sz = parseSizeFromText(txt);
+            if (!sz) return;
+            const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
+            // 파싱된 값 기본 검증: 가로가 세로보다 크거나 같아야 함 (대부분 가방은 가로>세로)
+            const nums = sz.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+            if (nums.length >= 2 && nums[0] < 5) return; // 너무 작은 값 제외
+            candidates.push({ sz, sn, src });
+          };
+
+          // answer box (가장 신뢰도 높음)
+          const ab = searchJson.answer_box;
+          if (ab) {
+            [ab.answer, ab.snippet, ab.result].filter(Boolean).forEach(t => addIfValid(t, 'answer_box'));
           }
           // knowledge graph
           const kg = searchJson.knowledge_graph;
-          if (kg) {
-            const kgText = JSON.stringify(kg);
-            const sz = parseSizeFromText(kgText);
-            if (sz) candidates.push({ sz, sn: parseSizeNameFromText(kgText), src: 'knowledge_graph' });
-          }
-          // answer box
-          const ab = searchJson.answer_box;
-          if (ab) {
-            const abText = [ab.answer, ab.snippet, ab.result].filter(Boolean).join(' ');
-            const sz = parseSizeFromText(abText);
-            if (sz) candidates.push({ sz, sn: parseSizeNameFromText(abText), src: 'answer_box' });
+          if (kg) addIfValid(JSON.stringify(kg), 'knowledge_graph');
+
+          // organic results — 모델명 포함된 스니펫 우선
+          for (const r of (searchJson.organic_results || []).slice(0, 8)) {
+            const snippetLower = (r.snippet || '').toLowerCase();
+            const titleLower   = (r.title || '').toLowerCase();
+            // 모델명 단어가 스니펫/타이틀에 포함된 결과만 사용
+            const relevant = modelWords.length === 0 ||
+              modelWords.filter(w => snippetLower.includes(w) || titleLower.includes(w)).length >= Math.ceil(modelWords.length * 0.5);
+            if (!relevant) continue;
+            const texts = [r.snippet, r.title, (r.rich_snippet?.top?.extensions || []).join(' ')].filter(Boolean);
+            texts.forEach(t => addIfValid(t, r.displayed_link || 'google'));
           }
 
           if (candidates.length > 0) {
-            // 다수결: 같은 사이즈 2개 이상이면 채택, 아니면 첫 번째
+            // 다수결: 같은 사이즈 2개 이상이면 채택, 아니면 answer_box/knowledge_graph 우선
             const freq = {};
             for (const c of candidates) freq[c.sz] = (freq[c.sz] || 0) + 1;
             const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-            lensSize = sorted[0][0];
+            // 2개 이상 일치 또는 신뢰소스(answer_box/knowledge_graph)에서 나온 것 채택
+            const trusted = candidates.find(c => c.src === 'answer_box' || c.src === 'knowledge_graph');
+            const majority = sorted[0][1] >= 2 ? sorted[0][0] : null;
+            lensSize = majority || trusted?.sz || sorted[0][0];
             const matched = candidates.find(c => c.sz === lensSize);
             lensSizeName = matched?.sn || sizeNameFromLens || null;
             lensSizeSources = [...new Set(candidates.map(c => c.src))].slice(0, 3);
