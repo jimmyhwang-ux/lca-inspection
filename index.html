@@ -677,24 +677,8 @@ function renderResult(){
     if(!matches.length) return;
     const dbWrap=document.getElementById('db-match-wrap');
     if(!dbWrap) return;
+    // 첫 번째 카드 자동 적용 — applyDbMatch로 통일
     const first=matches[0];
-    if(first.sku_code){document.getElementById('r-sku').textContent=first.sku_code;document.getElementById('r-sku').className='info-cell-val';}
-    const _rSizeEl=document.getElementById('r-size');
-    const _rSizeNameEl=document.getElementById('r-size-name');
-    if(first.size_actual){_rSizeEl.textContent=first.size_actual;_rSizeEl.className='info-cell-val';}
-    else if(_finalSize){
-      _rSizeEl.textContent=_finalSize;_rSizeEl.className='info-cell-val';
-      const lbl=_rSizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
-      if(lbl&&!lbl.querySelector('.ai-badge'))lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
-    }
-    if(first.size_label){_rSizeNameEl.textContent=first.size_label;_rSizeNameEl.className='info-cell-val';}
-    else if(_finalSizeName){
-      const sv=_finalSizeName;
-      _rSizeNameEl.textContent=sv;_rSizeNameEl.className='info-cell-val';
-      const lbl2=_rSizeNameEl.closest('.info-cell')?.querySelector('.info-cell-label');
-      if(lbl2&&!lbl2.querySelector('.ai-badge'))lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
-    }
-    if(first.accessories&&first.accessories.length){accessories=first.accessories.map(a=>({name:a.name,status:a.status||''}));renderAcc();}
 
     // 렌더 완료 후 첫 번째 카드 자동 하이라이트 (setTimeout으로 DOM 생성 후)
     setTimeout(()=>{
@@ -752,6 +736,8 @@ function renderResult(){
       const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
       if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
     });
+    // 첫 번째 카드 자동 적용 (DOM 생성 후)
+    setTimeout(()=>applyDbMatch(first,'db-card-0'), 80);
   }
 
   if(dbMatches.length){
@@ -1097,31 +1083,18 @@ function applyDbMatch(item, cardId){
 
   // ── 3. 카드 하이라이트 ────────────────────────────────────────
   const allCards=document.querySelectorAll('#db-match-wrap .db-match-card');
-  allCards.forEach(c=>{
-    c.setAttribute('style', c.getAttribute('style')||'');
-    c.style.cssText='border:1px solid rgba(34,197,94,.15);background:rgba(34,197,94,.02);opacity:0.4;border-radius:12px;overflow:hidden;margin-bottom:4px;'+(c.style.marginTop?'margin-top:'+c.style.marginTop+';':'');
-  });
   const sel = cardId ? document.getElementById(cardId) : (allCards.length===1 ? allCards[0] : null);
-  if(sel){
-    sel.style.cssText='border:2px solid #22c55e;background:rgba(34,197,94,.12);opacity:1;border-radius:12px;overflow:hidden;margin-bottom:4px;';
-    // 버튼 상태 변경
-    sel.querySelectorAll('button').forEach(btn=>{
-      if(btn.textContent.includes('적용')||btn.textContent.includes('✓')){
-        btn.textContent='✓ 적용됨';
-        btn.style.cssText='background:#22c55e;border:none;color:#000;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px';
-      }
-    });
-  } else {
-    allCards.forEach(c=>{ c.style.opacity='1'; });
-  }
-  // 다른 카드 버튼 복원
   allCards.forEach(c=>{
-    if(c===sel) return;
+    const isSelected = (c===sel);
+    c.style.border = isSelected ? '2px solid #22c55e' : '1px solid rgba(34,197,94,.15)';
+    c.style.background = isSelected ? 'rgba(34,197,94,.12)' : 'rgba(34,197,94,.02)';
+    c.style.opacity = isSelected ? '1' : '0.45';
+    // 버튼 상태
     c.querySelectorAll('button').forEach(btn=>{
-      if(btn.textContent.includes('✓')){
-        btn.textContent='적용';
-        btn.style.cssText='background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px';
-      }
+      if(!btn.getAttribute('onclick')?.includes('applyDbMatch')) return;
+      btn.textContent = isSelected ? '✓ 적용됨' : '적용';
+      btn.style.background = isSelected ? '#22c55e' : '#1a3a1a';
+      btn.style.color = isSelected ? '#000' : '#22c55e';
     });
   });
 
