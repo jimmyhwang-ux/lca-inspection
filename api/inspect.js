@@ -453,81 +453,93 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip'); }
 
-    // ── 사이즈 자동 추출: SerpAPI Shopping 검색 → Claude 질의 ──────────
+    // ── 사이즈 자동 추출: SerpAPI 검색 스니펫 파싱 ──────────────────────
     let lensSize = null;
     let lensSizeName = null;
     let lensSizeSources = [];
     try {
-      const brand = analysis.brand || '';
-      const modelEn = analysis.model_name || '';
-      const modelKo = analysis.model_name_ko || '';
-      const query = `${brand} ${modelEn || modelKo}`.trim();
+      const brand    = analysis.brand || '';
+      const modelEn  = analysis.model_name || '';
+      const modelKo  = analysis.model_name_ko || '';
+      const query    = `${brand} ${modelEn || modelKo}`.trim();
+      // 렌즈 타이틀에서 사이즈명칭 힌트 추출
+      const lensHint = visualMatches.slice(0, 6)
+        .map(m => m.title || '').join(' ');
+      const sizeNameFromLens = parseSizeNameFromText(lensHint);
 
       if (query.length > 3) {
-        // 1단계: SerpAPI Shopping으로 스펙 검색
-        let shoppingText = '';
+        // ── 1순위: SerpAPI 일반검색 스니펫에서 파싱 ──────────────────
         try {
-          const shopUrl = `https://serpapi.com/search?engine=google_shopping&q=${encodeURIComponent(query + ' size dimensions cm')}&gl=us&hl=en&api_key=${SERP_KEY}`;
-          const shopRes = await fetch(shopUrl);
-          const shopJson = await shopRes.json();
-          const items = shopJson.shopping_results || [];
-          // 상품 설명에서 사이즈 텍스트 추출
-          for (const item of items.slice(0, 5)) {
-            const txt = [item.title, item.description, item.snippet].filter(Boolean).join(' ');
-            const sz = parseSizeFromText(txt);
-            const sn = parseSizeNameFromText(txt);
-            if (sz) { lensSize = sz; lensSizeSources.push('google_shopping'); }
-            if (sn && !lensSizeName) lensSizeName = sn;
-            if (lensSize) break;
-          }
-        } catch (e) { console.warn('Shopping skip:', e.message); }
+          const searchUrl = `https://serpapi.com/search?engine=google&q=${encodeURIComponent(query + ' official size dimensions cm')}&gl=us&hl=en&num=5&api_key=${SERP_KEY}`;
+          const searchRes = await fetch(searchUrl);
+          const searchJson = await searchRes.json();
 
-        // 2단계: Shopping에서 못 찾으면 Claude에게 직접 질의
+          const candidates = [];
+          // organic results 스니펫
+          for (const r of (searchJson.organic_results || []).slice(0, 6)) {
+            const texts = [r.snippet, r.title, (r.rich_snippet?.top?.extensions || []).join(' ')].filter(Boolean);
+            for (const txt of texts) {
+              const sz = parseSizeFromText(txt);
+              const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
+              if (sz) candidates.push({ sz, sn, src: r.displayed_link || 'google' });
+            }
+          }
+          // knowledge graph
+          const kg = searchJson.knowledge_graph;
+          if (kg) {
+            const kgText = JSON.stringify(kg);
+            const sz = parseSizeFromText(kgText);
+            if (sz) candidates.push({ sz, sn: parseSizeNameFromText(kgText), src: 'knowledge_graph' });
+          }
+          // answer box
+          const ab = searchJson.answer_box;
+          if (ab) {
+            const abText = [ab.answer, ab.snippet, ab.result].filter(Boolean).join(' ');
+            const sz = parseSizeFromText(abText);
+            if (sz) candidates.push({ sz, sn: parseSizeNameFromText(abText), src: 'answer_box' });
+          }
+
+          if (candidates.length > 0) {
+            // 다수결: 같은 사이즈 2개 이상이면 채택, 아니면 첫 번째
+            const freq = {};
+            for (const c of candidates) freq[c.sz] = (freq[c.sz] || 0) + 1;
+            const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+            lensSize = sorted[0][0];
+            const matched = candidates.find(c => c.sz === lensSize);
+            lensSizeName = matched?.sn || sizeNameFromLens || null;
+            lensSizeSources = [...new Set(candidates.map(c => c.src))].slice(0, 3);
+          }
+        } catch (e) { console.warn('Search snippet skip:', e.message); }
+
+        // ── 2순위: SerpAPI Shopping 타이틀/설명 파싱 ─────────────────
         if (!lensSize) {
           try {
-            // 렌즈 타이틀을 컨텍스트로 활용
-            const lensTitles = visualMatches.slice(0, 6)
-              .map(m => m.title).filter(Boolean).join(' / ');
-            const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-              body: JSON.stringify({
-                model: 'claude-sonnet-4-5',
-                max_tokens: 150,
-                messages: [{
-                  role: 'user',
-                  content: `명품 가방 공식 사이즈를 알려줘. JSON만 응답.
-
-브랜드: ${brand}
-모델명: ${modelEn || modelKo}
-Google Lens 유사상품 타이틀: ${lensTitles}
-
-지시사항:
-- 위 정보를 바탕으로 정확한 모델과 사이즈 variant를 판단해
-- Dior Book Tote처럼 Small/Medium/Large가 있으면 렌즈 타이틀에서 힌트를 찾아
-- 공식 브랜드 공개 사이즈 기준으로 답해
-- 단위는 반드시 cm
-- 확실하지 않으면 null
-
-응답형식(JSON만): {"size":"가로 × 세로 × 높이 cm","size_label":"Small/Medium/Large 등","confidence":"high/medium/low"}`
-                }]
-              })
-            });
-            const cj = await claudeQ.json();
-            const raw = (cj.content?.[0]?.text || '').trim().replace(/\`\`\`json|\`\`\`/g, '').trim();
-            const parsed = JSON.parse(raw);
-            // confidence가 low면 채택 안함
-            if (parsed.size && parsed.size !== 'null' && parsed.confidence !== 'low') {
-              lensSize = parsed.size;
-              lensSizeSources.push('claude_ai');
+            const shopUrl = `https://serpapi.com/search?engine=google_shopping&q=${encodeURIComponent(query + ' size cm')}&gl=us&hl=en&api_key=${SERP_KEY}`;
+            const shopRes = await fetch(shopUrl);
+            const shopJson = await shopRes.json();
+            for (const item of (shopJson.shopping_results || []).slice(0, 8)) {
+              const txt = [item.title, item.description, item.snippet].filter(Boolean).join(' ');
+              const sz = parseSizeFromText(txt);
+              const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
+              if (sz) { lensSize = sz; lensSizeName = sn; lensSizeSources.push('google_shopping'); break; }
             }
-            if (parsed.size_label && parsed.size_label !== 'null') {
-              lensSizeName = parsed.size_label;
-            }
-          } catch (e) { console.warn('Claude size skip:', e.message); }
+          } catch (e) { console.warn('Shopping skip:', e.message); }
         }
+
+        // ── 3순위: 렌즈 타이틀 직접 파싱 ────────────────────────────
+        if (!lensSize) {
+          for (const m of visualMatches.slice(0, 10)) {
+            const txt = [m.title, m.snippet].filter(Boolean).join(' ');
+            const sz = parseSizeFromText(txt);
+            if (sz) { lensSize = sz; lensSizeName = parseSizeNameFromText(txt) || sizeNameFromLens; lensSizeSources.push('lens_title'); break; }
+          }
+        }
+
+        // 렌즈 타이틀에서 사이즈명칭만 얻은 경우 보완
+        if (!lensSizeName && sizeNameFromLens) lensSizeName = sizeNameFromLens;
       }
     } catch (e) { console.warn('Size fetch skip:', e.message); }
+
 
     // analysis에 렌즈 사이즈 병합 (AI가 못 찾았을 때만)
     if (!analysis.size && lensSize) analysis.size = lensSize;
