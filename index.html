@@ -712,7 +712,7 @@ function renderResult(){
           ${isMulti?`<button onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}])" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>`:''}
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
         </div>
-        ${(()=>{const fullN=m.notes||(skuListAll.find(s=>s.id===m.id)||{}).notes||'';return fullN?`<div style="padding:4px 14px 6px;font-size:11px;color:#f59e0b">📝 ${fullN}</div>`:''})()}
+        ${(()=>{const fullN=(typeof m.notes==='string'&&m.notes.trim())?m.notes.trim():((skuListAll.find(s=>s.id===m.id)||{}).notes||'').trim();return fullN?`<div style="padding:4px 14px 6px;font-size:11px;color:#f59e0b">📝 ${fullN}</div>`:''})()}
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
           <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
             ${slHtml}
@@ -721,7 +721,7 @@ function renderResult(){
               SKU: ${m.sku_code||'—'}<br>
               ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
               ${accList?'부속품: '+accList+`<br>`:''}
-              ${(()=>{const n=m.notes||(skuListAll.find(s=>s.id===m.id)||{}).notes||'';return n?`<span style="color:#f59e0b;font-size:11px">📝 ${n}</span>`:''})()}
+              ${(()=>{const n=(typeof m.notes==='string'&&m.notes.trim())?m.notes.trim():((skuListAll.find(s=>s.id===m.id)||{}).notes||'').trim();return n?`<span style="color:#f59e0b;font-size:11px">📝 ${n}</span>`:''})()}
             </div>
           </div>
         </div>
@@ -756,13 +756,16 @@ function renderResult(){
           ...(full.extra_images||[]),
           ...(m.extra_images||[])
         ].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-        const enrichedNotes=(full.notes||'').trim()||(m.notes||'').trim()||'';
+        // notes: full(DB 전체 조회) 우선, 없으면 m(매칭 결과) 사용
+        const _fn = typeof full.notes === 'string' ? full.notes.trim() : '';
+        const _mn = typeof m.notes === 'string' ? m.notes.trim() : '';
+        const finalNotes = _fn || _mn;
         return{
           ...full,
           ...m,
           ref_image_url: full.ref_image_url||m.ref_image_url||null,
           extra_images: merged.slice(1),
-          notes: enrichedNotes
+          notes: finalNotes   // 반드시 마지막에 덮어쓰기
         };
       });
       window._dbEnriched=enriched;
