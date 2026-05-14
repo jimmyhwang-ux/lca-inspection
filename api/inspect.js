@@ -43,6 +43,15 @@ export default async function handler(req, res) {
     return isInch ? inchToCm(n) : n;
   }
 
+  // 치수값 현실성 검증 — 명품 패션 기준 2~80cm, 비율 8배 이내
+  function isValidDimensions(parts) {
+    const MAX = 80, MIN = 2;
+    if (parts.some(v => v > MAX || v < MIN)) return false;
+    const sorted = [...parts].sort((a, b) => b - a);
+    if (sorted[0] / sorted[sorted.length - 1] > 8) return false;
+    return true;
+  }
+
   function parseSizeFromText(text) {
     if (!text) return null;
 
@@ -75,8 +84,10 @@ export default async function handler(req, res) {
       const hVal = labelMap['h'];
       if (wVal && hVal) {
         const dVal = labelMap['d'];
+        const parts0 = [wVal, hVal, dVal].filter(Boolean);
+        if (!isValidDimensions(parts0)) return null;
         const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
-        return [wVal, hVal, dVal].filter(Boolean).map(fmt).join(' × ') + ' cm';
+        return parts0.map(fmt).join(' × ') + ' cm';
       }
     }
 
@@ -97,7 +108,7 @@ export default async function handler(req, res) {
         })
         .filter(v => v !== null);
       if (parts.length < 2) return null;
-      // 소수점 정리: .0 이면 정수로
+      if (!isValidDimensions(parts)) return null;
       const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
       return parts.map(fmt).join(' × ') + ' cm';
     }
@@ -113,6 +124,7 @@ export default async function handler(req, res) {
       let v1 = normVal(p2[1], inch1); if (mm1 && v1) v1 = Math.round(v1/10*10)/10;
       let v2 = normVal(p2[3], inch2); if (mm2 && v2) v2 = Math.round(v2/10*10)/10;
       if (!v1 || !v2) return null;
+      if (!isValidDimensions([v1, v2])) return null;
       const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
       return fmt(v1) + ' × ' + fmt(v2) + ' cm';
     }
@@ -127,6 +139,7 @@ export default async function handler(req, res) {
       const v1 = normVal(p3[1], inch1);
       const v2 = normVal(p3[3], inch2);
       if (!v1 || !v2) return null;
+      if (!isValidDimensions([v1, v2])) return null;
       const fmt = v => Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
       return fmt(v1) + ' × ' + fmt(v2) + ' cm';
     }
@@ -492,113 +505,114 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip'); }
 
-    // ── 사이즈 자동 추출: SerpAPI 검색 스니펫 파싱 ──────────────────────
+    // ── 사이즈 추출: 여러 사이트 스니펫에서 동일값 다수결 ──────────────
     let lensSize = null;
     let lensSizeName = null;
     let lensSizeSources = [];
     try {
-      const brand    = analysis.brand || '';
-      const modelEn  = analysis.model_name || '';
-      const modelKo  = analysis.model_name_ko || '';
-      const query    = `${brand} ${modelEn || modelKo}`.trim();
-      // 렌즈 타이틀에서 사이즈명칭 힌트 추출
-      const lensHint = visualMatches.slice(0, 6)
-        .map(m => m.title || '').join(' ');
+      const brand   = analysis.brand || '';
+      const modelEn = analysis.model_name || '';
+      const modelKo = analysis.model_name_ko || '';
+      const query   = `${brand} ${modelEn || modelKo}`.trim();
+
+      // 렌즈 타이틀에서 사이즈명칭 힌트
+      const lensHint = visualMatches.slice(0, 6).map(m => m.title || '').join(' ');
       const sizeNameFromLens = parseSizeNameFromText(lensHint);
 
       if (query.length > 3) {
-        // ── 1순위: SerpAPI 일반검색 스니펫에서 파싱 ──────────────────
+        // 신뢰할 수 있는 리셀/공식 사이트 대상으로 site: 검색
+        const trustedSites = [
+          'therealreal.com', 'vestiairecollective.com', 'farfetch.com',
+          'rebag.com', 'fashionphile.com', 'ssense.com', 'mytheresa.com',
+          'net-a-porter.com', 'matches.com', 'saksfifthavenue.com'
+        ];
+        const siteQuery = trustedSites.map(s => `site:${s}`).join(' OR ');
+        const searchQuery = `"${query}" size dimensions cm (${siteQuery})`;
+
+        const sizeHits = []; // {sz, sn, src}
+
         try {
-          // 정확한 모델명으로 검색 — 큰따옴표로 exact match 유도
-          const exactQuery = `"${query}" size dimensions cm`;
-          const searchUrl = `https://serpapi.com/search?engine=google&q=${encodeURIComponent(exactQuery)}&gl=us&hl=en&num=8&api_key=${SERP_KEY}`;
-          const searchRes = await fetch(searchUrl);
-          const searchJson = await searchRes.json();
+          const url = `https://serpapi.com/search?engine=google&q=${encodeURIComponent(searchQuery)}&gl=us&hl=en&num=10&api_key=${SERP_KEY}`;
+          const r = await fetch(url);
+          const j = await r.json();
 
-          const candidates = [];
-          let lensSku = null;
+          const modelWords = (modelEn || modelKo).toLowerCase()
+            .split(' ').filter(w => w.length > 2);
 
-          // 스니펫에서 파싱할 때 모델명 포함 여부 검증
-          const modelWords = (modelEn || modelKo).toLowerCase().split(' ').filter(w => w.length > 2);
-
-          const addIfValid = (txt, src) => {
-            if (!txt) return;
-            const sz = parseSizeFromText(txt);
-            // SKU도 함께 파싱
-            if (!lensSku) lensSku = parseSkuFromText(txt, brand);
-            if (!sz) return;
-            const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
-            const nums = sz.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
-            if (nums.length >= 2 && nums[0] < 5) return;
-            candidates.push({ sz, sn, src });
-          };
-
-          // answer box (가장 신뢰도 높음)
-          const ab = searchJson.answer_box;
-          if (ab) {
-            [ab.answer, ab.snippet, ab.result].filter(Boolean).forEach(t => addIfValid(t, 'answer_box'));
-          }
-          // knowledge graph
-          const kg = searchJson.knowledge_graph;
-          if (kg) addIfValid(JSON.stringify(kg), 'knowledge_graph');
-
-          // organic results — 모델명 포함된 스니펫 우선
-          for (const r of (searchJson.organic_results || []).slice(0, 8)) {
-            const snippetLower = (r.snippet || '').toLowerCase();
-            const titleLower   = (r.title || '').toLowerCase();
-            // 모델명 단어가 스니펫/타이틀에 포함된 결과만 사용
+          for (const result of (j.organic_results || []).slice(0, 10)) {
+            const snippetLower = (result.snippet || '').toLowerCase();
+            const titleLower   = (result.title || '').toLowerCase();
+            // 모델명 관련성 확인 (50% 이상 단어 포함)
             const relevant = modelWords.length === 0 ||
-              modelWords.filter(w => snippetLower.includes(w) || titleLower.includes(w)).length >= Math.ceil(modelWords.length * 0.5);
+              modelWords.filter(w => snippetLower.includes(w) || titleLower.includes(w)).length
+              >= Math.ceil(modelWords.length * 0.5);
             if (!relevant) continue;
-            const texts = [r.snippet, r.title, (r.rich_snippet?.top?.extensions || []).join(' ')].filter(Boolean);
-            texts.forEach(t => addIfValid(t, r.displayed_link || 'google'));
+
+            const texts = [
+              result.snippet,
+              result.title,
+              (result.rich_snippet?.top?.extensions || []).join(' ')
+            ].filter(Boolean);
+
+            for (const txt of texts) {
+              const sz = parseSizeFromText(txt);
+              if (!sz) continue;
+              const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
+              const src = result.displayed_link || new URL(result.link || 'https://x.com').hostname;
+              sizeHits.push({ sz, sn, src });
+            }
           }
 
-          if (candidates.length > 0) {
-            // 다수결: 같은 사이즈 2개 이상이면 채택, 아니면 answer_box/knowledge_graph 우선
-            const freq = {};
-            for (const c of candidates) freq[c.sz] = (freq[c.sz] || 0) + 1;
-            const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-            // 2개 이상 일치 또는 신뢰소스(answer_box/knowledge_graph)에서 나온 것 채택
-            const trusted = candidates.find(c => c.src === 'answer_box' || c.src === 'knowledge_graph');
-            const majority = sorted[0][1] >= 2 ? sorted[0][0] : null;
-            lensSize = majority || trusted?.sz || sorted[0][0];
-            const matched = candidates.find(c => c.sz === lensSize);
-            lensSizeName = matched?.sn || sizeNameFromLens || null;
-            lensSizeSources = [...new Set(candidates.map(c => c.src))].slice(0, 3);
+          // answer_box / knowledge_graph도 확인
+          const ab = j.answer_box;
+          if (ab) {
+            const txt = [ab.answer, ab.snippet, ab.result].filter(Boolean).join(' ');
+            const sz = parseSizeFromText(txt);
+            if (sz) sizeHits.push({ sz, sn: parseSizeNameFromText(txt) || sizeNameFromLens, src: 'answer_box' });
           }
-        } catch (e) { console.warn('Search snippet skip:', e.message); }
+        } catch (e) { console.warn('Site search skip:', e.message); }
 
-        // ── 2순위: SerpAPI Shopping 타이틀/설명 파싱 ─────────────────
+        // ── 다수결: 동일 사이즈가 2개 이상 출처에서 나온 것만 채택 ──
+        if (sizeHits.length > 0) {
+          const freq = {};
+          for (const h of sizeHits) {
+            if (!freq[h.sz]) freq[h.sz] = { count: 0, sn: h.sn, srcs: [] };
+            freq[h.sz].count++;
+            if (!freq[h.sz].srcs.includes(h.src)) freq[h.sz].srcs.push(h.src);
+          }
+          // 2개 이상 출처에서 일치한 값 우선, 없으면 가장 많이 나온 값
+          const sorted = Object.entries(freq).sort((a, b) => b[1].count - a[1].count);
+          const consensus = sorted.find(([, v]) => v.srcs.length >= 2);
+          const best = consensus || sorted[0];
+          lensSize = best[0];
+          lensSizeName = best[1].sn || sizeNameFromLens || null;
+          lensSizeSources = best[1].srcs.slice(0, 3);
+        }
+
+        // ── 폴백: Shopping 스니펫 ──────────────────────────────────
         if (!lensSize) {
           try {
-            const shopUrl = `https://serpapi.com/search?engine=google_shopping&q=${encodeURIComponent(query + ' size cm')}&gl=us&hl=en&api_key=${SERP_KEY}`;
+            const shopUrl = `https://serpapi.com/search?engine=google_shopping&q=${encodeURIComponent('"' + query + '" size cm')}&gl=us&hl=en&api_key=${SERP_KEY}`;
             const shopRes = await fetch(shopUrl);
             const shopJson = await shopRes.json();
             for (const item of (shopJson.shopping_results || []).slice(0, 8)) {
               const txt = [item.title, item.description, item.snippet].filter(Boolean).join(' ');
               const sz = parseSizeFromText(txt);
-              const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
-              if (!lensSku) lensSku = parseSkuFromText(txt, brand);
-              if (sz) { lensSize = sz; lensSizeName = sn; lensSizeSources.push('google_shopping'); break; }
+              if (sz) {
+                lensSize = sz;
+                lensSizeName = parseSizeNameFromText(txt) || sizeNameFromLens;
+                lensSizeSources.push('google_shopping');
+                break;
+              }
             }
           } catch (e) { console.warn('Shopping skip:', e.message); }
         }
 
-        // ── 3순위: 렌즈 타이틀 직접 파싱 ────────────────────────────
-        if (!lensSize) {
-          for (const m of visualMatches.slice(0, 10)) {
-            const txt = [m.title, m.snippet].filter(Boolean).join(' ');
-            const sz = parseSizeFromText(txt);
-            if (!lensSku) lensSku = parseSkuFromText(txt, brand);
-            if (sz) { lensSize = sz; lensSizeName = parseSizeNameFromText(txt) || sizeNameFromLens; lensSizeSources.push('lens_title'); break; }
-          }
-        }
-
-        // 렌즈 타이틀에서 사이즈명칭만 얻은 경우 보완
+        // 렌즈 타이틀에서 사이즈명칭만 보완
         if (!lensSizeName && sizeNameFromLens) lensSizeName = sizeNameFromLens;
       }
     } catch (e) { console.warn('Size fetch skip:', e.message); }
+
 
 
     // analysis에 렌즈 파싱 결과 병합 (AI가 못 찾았을 때만)
