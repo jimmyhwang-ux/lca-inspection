@@ -140,6 +140,45 @@ export default async function handler(req, res) {
     return m ? m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() : null;
   }
 
+  function parseSkuFromText(text, brand) {
+    if (!text) return null;
+    const b = (brand || '').toLowerCase();
+
+    // 브랜드별 스타일번호 패턴
+    const patterns = [
+      // LV: M + 5자리 숫자 (예: M58552, M57790)
+      /\bM\d{5}\b/,
+      // Dior: 영문2-3자 + 숫자3-4자 + 영문3자 + 숫자 (예: 2ESBC293ZH1, 1ADPO093)
+      /\b[0-9][A-Z]{2,4}[A-Z0-9]{3,8}\b/,
+      // Chanel: A + 숫자5자 (예: A01112, A93749)
+      /\bA\d{5}\b/,
+      // Gucci: 숫자6자 (예: 699406, 443497)
+      /\b\d{6}\b/,
+      // Hermès: H + 숫자6자 + 영문 (예: H071748M)
+      /\bH\d{6}[A-Z]?\b/,
+      // Prada: 영문1자 + 숫자4자 (예: B4458, 1BH204)
+      /\b[0-9][A-Z]{2}\d{3}\b/,
+      // 일반 스타일번호: 영문+숫자 혼합 6-12자
+      /\b[A-Z]{1,3}[-_]?\d{4,8}\b/,
+      /\b\d{1,2}[A-Z]{2,4}\d{3,6}[A-Z0-9]{0,4}\b/,
+    ];
+
+    // SKU/Style/Item/Reference 키워드 근처 우선 파싱
+    const keyRe = /\b(style\s*(?:no|number|#)?|sku|item\s*(?:no|number|#)?|reference|ref\s*(?:no)?|model\s*(?:no|number)?)\s*[:#]?\s*([A-Z0-9][A-Z0-9\-_]{4,14})/gi;
+    let km;
+    while ((km = keyRe.exec(text)) !== null) {
+      const candidate = km[2];
+      if (/\d/.test(candidate) && /[A-Z0-9]/.test(candidate)) return candidate;
+    }
+
+    // 브랜드별 패턴 매칭
+    for (const pat of patterns) {
+      const m = text.match(pat);
+      if (m) return m[0];
+    }
+    return null;
+  }
+
   function majority(arr) {
     if (!arr.length) return null;
     const freq = {};
@@ -477,6 +516,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
           const searchJson = await searchRes.json();
 
           const candidates = [];
+          let lensSku = null;
 
           // 스니펫에서 파싱할 때 모델명 포함 여부 검증
           const modelWords = (modelEn || modelKo).toLowerCase().split(' ').filter(w => w.length > 2);
@@ -484,11 +524,12 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
           const addIfValid = (txt, src) => {
             if (!txt) return;
             const sz = parseSizeFromText(txt);
+            // SKU도 함께 파싱
+            if (!lensSku) lensSku = parseSkuFromText(txt, brand);
             if (!sz) return;
             const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
-            // 파싱된 값 기본 검증: 가로가 세로보다 크거나 같아야 함 (대부분 가방은 가로>세로)
             const nums = sz.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
-            if (nums.length >= 2 && nums[0] < 5) return; // 너무 작은 값 제외
+            if (nums.length >= 2 && nums[0] < 5) return;
             candidates.push({ sz, sn, src });
           };
 
@@ -538,6 +579,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
               const txt = [item.title, item.description, item.snippet].filter(Boolean).join(' ');
               const sz = parseSizeFromText(txt);
               const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
+              if (!lensSku) lensSku = parseSkuFromText(txt, brand);
               if (sz) { lensSize = sz; lensSizeName = sn; lensSizeSources.push('google_shopping'); break; }
             }
           } catch (e) { console.warn('Shopping skip:', e.message); }
@@ -548,6 +590,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
           for (const m of visualMatches.slice(0, 10)) {
             const txt = [m.title, m.snippet].filter(Boolean).join(' ');
             const sz = parseSizeFromText(txt);
+            if (!lensSku) lensSku = parseSkuFromText(txt, brand);
             if (sz) { lensSize = sz; lensSizeName = parseSizeNameFromText(txt) || sizeNameFromLens; lensSizeSources.push('lens_title'); break; }
           }
         }
@@ -558,9 +601,10 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
     } catch (e) { console.warn('Size fetch skip:', e.message); }
 
 
-    // analysis에 렌즈 사이즈 병합 (AI가 못 찾았을 때만)
+    // analysis에 렌즈 파싱 결과 병합 (AI가 못 찾았을 때만)
     if (!analysis.size && lensSize) analysis.size = lensSize;
     if (!analysis.size_label && lensSizeName) analysis.size_label = lensSizeName;
+    if (!analysis.sku && lensSku) analysis.sku = lensSku;
 
     if (dbMatch) {
       dbMatch = {
@@ -576,10 +620,10 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
       analysis,
       dbMatch,
       visualMatches: visualMatches.slice(0, 12),
-      // 렌즈 파싱 결과 별도 반환 (프론트에서 출처 배지 표시용)
       lensSize,
       lensSizeName,
       lensSizeSources,
+      lensSku,
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
