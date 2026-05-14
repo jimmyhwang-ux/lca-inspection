@@ -695,7 +695,7 @@ function renderResult(){
         <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
           <span class="db-match-badge">&#10003; DB ${isMulti?`${idx+1}/${matches.length}`:''}</span>
           <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
-          ${isMulti?`<button id="apply-btn-${idx}" onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}],'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>`:''}
+          <button id="apply-btn-${idx}" onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}],'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'&#9652;':'&#9662;'}</span>
         </div>
         <div style="padding:4px 14px 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -723,8 +723,8 @@ function renderResult(){
       if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
     });
 
-    // 첫 번째 카드 자동 적용
-    setTimeout(()=>applyDbMatch(matches[0],'db-card-0'), 100);
+    // 첫 번째 카드 자동 적용 (동기)
+    applyDbMatch(matches[0],'db-card-0');
   }
 
   if(dbMatches.length){
@@ -753,10 +753,7 @@ function renderResult(){
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
-      // renderDbMatchCards 내 setTimeout과 별개로 여기서도 직접 호출 보장
-      setTimeout(()=>{
-        if(enriched.length>0) applyDbMatch(enriched[0],'db-card-0');
-      }, 200);
+
     })();
 
   } else {
@@ -904,21 +901,9 @@ function saveField(id,input){
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
   // 모델명 변경 시 Google Images 재검색
-  if((id==='r-model-ko'||id==='r-model')){
-    // 사용자가 직접 수정한 경우에만 DB 카드 초기화 (렌더링 중 자동 세팅은 제외)
-    if(window._userEditingField){
-      const dbWrap=document.getElementById('db-match-wrap');
-      if(dbWrap){
-        dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
-      }
-      window._dbEnriched=[];
-      accessories=[];
-      renderAcc();
-      if(val!=='—'){
-        const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
-        reSearchByModel(brand, val);
-      }
-    }
+  if((id==='r-model-ko'||id==='r-model')&&window._userEditingField&&val!=='—'){
+    const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
+    reSearchByModel(brand, val);
   }
   if(id==='r-sku'&&val==='—'){
     const dbWrap=document.getElementById('db-match-wrap');
@@ -937,8 +922,15 @@ async function reSearchByModel(brand, modelName){
   clearTimeout(_reSearchTimer);
   _reSearchTimer=setTimeout(async()=>{
     const lensEl=document.getElementById('lens-results');
-    // 헤더 로딩 표시
-        lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 중...</div>';
+    // 모델명 변경 시 DB 카드 초기화
+    const dbWrap=document.getElementById('db-match-wrap');
+    if(dbWrap){
+      dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
+    }
+    window._dbEnriched=[];
+    accessories=[];
+    renderAcc();
+    lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 중...</div>';
     try{
       const res=await fetch('/api/inspect',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -1068,12 +1060,11 @@ function applyDbMatch(item, cardId){
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
   if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
 
-  // 인라인 편집 중인 input 요소 있으면 먼저 제거
+  // 인라인 편집 중인 input/span 자식만 제거 (onclick 유지)
   ['r-sku','r-size','r-size-name'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el&&el.querySelector('input,span')){
-      el.innerHTML='';
-    }
+    if(!el) return;
+    el.querySelectorAll('input,span').forEach(n=>n.remove());
   });
 
   const skuEl=document.getElementById('r-sku');
