@@ -1061,6 +1061,16 @@ async function searchDbFromField(fieldId,val){
 }
 
 function applyDbMatch(item, cardId){
+  console.log('[DBG] applyDbMatch item:', JSON.stringify({
+    sku_code: item.sku_code,
+    size_actual: item.size_actual,
+    size_label: item.size_label,
+    acc_len: (item.accessories||[]).length,
+    cardId: cardId
+  }));
+  const _rSku = document.getElementById('r-sku');
+  const _rSize = document.getElementById('r-size');
+  console.log('[DBG] DOM before:', _rSku?.textContent, _rSize?.textContent);
   // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
