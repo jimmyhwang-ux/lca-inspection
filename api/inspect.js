@@ -186,7 +186,17 @@ export default async function handler(req, res) {
           max_tokens: 80,
           messages: [{
             role: 'user',
-            content: `명품 제품 공식 사이즈 스펙. JSON만 응답, 다른 텍스트 금지.\n브랜드: ${brand}\n모델명: ${modelNameEn || modelNameKo}\n응답형식: {"size":"가로 × 세로 × 높이 cm","size_label":"Mini/Small/Medium 등(없으면null)"}`
+            content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
+브랜드: ${brand}
+모델명: ${modelNameEn || modelNameKo}
+
+규칙:
+- 공식 사이즈가 확실히 알려진 경우만 기재
+- 추측이나 유사 모델 사이즈 절대 금지
+- 모델명이 불명확하거나 여러 사이즈가 있으면 size를 null로
+- JSON만 응답, 다른 텍스트 금지
+
+응답: {"size":"가로 × 세로 × 높이 cm 또는 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 또는 null"}\``
           }]
         })
       });
@@ -301,7 +311,17 @@ export default async function handler(req, res) {
               max_tokens: 80,
               messages: [{
                 role: 'user',
-                content: `명품 제품 공식 사이즈 스펙. JSON만 응답.\n브랜드: ${brand}\n모델명: ${modelName}\n응답: {"size":"가로 × 세로 × 높이 cm","size_label":"Mini/Small/Medium 등(없으면null)"}`
+                content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
+브랜드: ${brand}
+모델명: ${modelName}
+
+규칙:
+- 공식 사이즈가 확실히 알려진 경우만 기재
+- 추측이나 유사 모델 사이즈 절대 금지
+- 모델명이 불명확하거나 여러 사이즈가 있으면 size를 null로
+- JSON만 응답, 다른 텍스트 금지
+
+응답: {"size":"가로 × 세로 × 높이 cm 또는 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 또는 null"}`
               }]
             })
           });
@@ -367,8 +387,8 @@ export default async function handler(req, res) {
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 1024,
           system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
-{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
-verdict: pass/review/fail, confidence: 0-100 정수`,
+{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":"스타일번호(라벨에 보이면)","color":"색상","size":"라벨/태그에 치수가 직접 보일때만 기재(예:11.5x9.5cm), 없으면 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 사이즈명칭(보일때만, 없으면null)","confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
+verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지에서 직접 확인된 경우만 기재, 추측 금지.`,
           messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답' }] }]
         })
       }).then(r => r.json())
@@ -473,10 +493,17 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
                 max_tokens: 80,
                 messages: [{
                   role: 'user',
-                  content: `명품 제품의 공식 사이즈 스펙을 알려줘. JSON만 응답, 다른 텍스트 금지.
+                  content: `너는 명품 스펙 데이터베이스야. 아래 제품의 공식 실측 사이즈를 알려줘.
 브랜드: ${brand}
 모델명: ${modelEn || modelKo}
-응답 형식: {"size":"가로 × 세로 × 높이 cm","size_label":"Mini/Small/Medium 등(없으면null)"}`
+
+규칙:
+- 공식 사이즈가 확실히 알려진 경우만 기재
+- 추측이나 유사 모델 사이즈 절대 금지
+- 모델명이 불명확하거나 여러 사이즈가 있으면 size를 null로
+- JSON만 응답, 다른 텍스트 금지
+
+응답: {"size":"가로 × 세로 × 높이 cm 또는 null","size_label":"Mini/Small/Medium/Large/PM/MM/GM 등 또는 null"}`
                 }]
               })
             });
