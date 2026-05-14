@@ -653,7 +653,7 @@ function renderResult(){
     document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="openLightbox('${photos.main.dataUrl}')">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
-  document.getElementById('r-model-ko').textContent=analysis.model_name_ko||analysis.model_name||'—';
+  document.getElementById('r-model-ko').textContent=analysis.model_name_ko||'—';
   document.getElementById('r-model').textContent=analysis.model_name||'—';
   document.getElementById('r-reason').textContent=analysis.verdict_reason||'';
   const cats=[];
@@ -712,7 +712,7 @@ function renderResult(){
           ${isMulti?`<button onclick="event.stopPropagation();applyDbMatch(window._dbEnriched[${idx}])" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px">적용</button>`:''}
           <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'▴':'▾'}</span>
         </div>
-        ${(()=>{const fullN=(skuListAll.find(s=>s.id===m.id)||m).notes||'';return fullN?`<div style="padding:4px 14px 6px;font-size:11px;color:#f59e0b">📝 ${fullN}</div>`:''})()}
+        ${(()=>{const fullN=m.notes||(skuListAll.find(s=>s.id===m.id)||{}).notes||'';return fullN?`<div style="padding:4px 14px 6px;font-size:11px;color:#f59e0b">📝 ${fullN}</div>`:''})()}
         <div id="${dbId}" style="display:${idx===0?'block':'none'}">
           <div class="db-match-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 14px">
             ${slHtml}
@@ -721,7 +721,7 @@ function renderResult(){
               SKU: ${m.sku_code||'—'}<br>
               ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
               ${accList?'부속품: '+accList+`<br>`:''}
-              ${(()=>{const n=(skuListAll.find(s=>s.id===m.id)||m).notes||'';return n?`<span style="color:#f59e0b;font-size:11px">📝 ${n}</span>`:''})()}
+              ${(()=>{const n=m.notes||(skuListAll.find(s=>s.id===m.id)||{}).notes||'';return n?`<span style="color:#f59e0b;font-size:11px">📝 ${n}</span>`:''})()}
             </div>
           </div>
         </div>
@@ -749,18 +749,20 @@ function renderResult(){
       // skuListAll에서 같은 id 찾아 extra_images 병합
       const enriched=dbMatches.map(m=>{
         const full=skuListAll.find(s=>s.id===m.id);
-        if(!full) return{...m, extra_images: Array.isArray(m.extra_images)?m.extra_images:[]};
+        if(!full) return{...m, extra_images: Array.isArray(m.extra_images)?m.extra_images:[], notes: m.notes||''};
         const merged=[
           ...(full.ref_image_url?[full.ref_image_url]:[]),
           ...(m.ref_image_url?[m.ref_image_url]:[]),
           ...(full.extra_images||[]),
           ...(m.extra_images||[])
         ].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        const enrichedNotes=(full.notes||'').trim()||(m.notes||'').trim()||'';
         return{
-          ...full, ...m,
+          ...full,
+          ...m,
           ref_image_url: full.ref_image_url||m.ref_image_url||null,
           extra_images: merged.slice(1),
-          notes: full.notes||m.notes||''
+          notes: enrichedNotes
         };
       });
       window._dbEnriched=enriched;
@@ -953,7 +955,7 @@ async function searchDbFromField(fieldId,val){
 
 function applyDbMatch(item){
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
-  if(item.model_name_ko||item.model_name) document.getElementById('r-model-ko').textContent=item.model_name_ko||item.model_name;
+  if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
   if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
   if(item.sku_code){document.getElementById('r-sku').textContent=item.sku_code;document.getElementById('r-sku').className='info-cell-val';}
   // 실측사이즈·사이즈명칭 DB에서 끌어오기
@@ -1256,7 +1258,7 @@ function renderSkuList(list){
           ${item.notes?`특이사항: <span style="color:#f59e0b">${item.notes}</span><br>`:''}
           등록일: <span style="color:#f0f0f0">${new Date(item.created_at).toLocaleDateString('ko-KR')}</span>
         </div>
-        ${accText?`<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">${accText}</div>`:''}
+
       </div>
     </div></div>`;
   }).join('');
