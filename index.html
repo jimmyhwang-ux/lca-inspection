@@ -639,6 +639,88 @@ function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
 
 // ── renderDbMatchCards ──────────────────────────────────
+// _cardMatches에서 안전하게 꺼내서 적용
+function applyCardMatch(idx, cardId){
+  const matches = window._cardMatches;
+  if(!matches||!matches[idx]){
+    toast('❌ 카드 데이터 없음');
+    return;
+  }
+  applyDbMatch(matches[idx], cardId);
+}
+
+function applyDbMatch(item, cardId){
+  // 디버그: 실제 전달된 item 값 확인
+  const _dbgEl = document.getElementById('r-size');
+  console.error('[APPLY]', 'cardId='+cardId, 
+    'size='+item.size_actual, 'sku='+item.sku_code, 
+    'el='+(_dbgEl?_dbgEl.tagName:'NULL'),
+    'el_text='+(_dbgEl?_dbgEl.textContent:'NULL'));
+  // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
+  if(item.brand) document.getElementById('r-brand').textContent=item.brand;
+  if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
+  if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
+
+  // 인라인 편집 중인 input/span 자식만 제거 (onclick 유지)
+  ['r-sku','r-size','r-size-name'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.querySelectorAll('input,span').forEach(n=>n.remove());
+  });
+
+  const skuEl=document.getElementById('r-sku');
+  skuEl.textContent=item.sku_code||'—';
+  skuEl.className='info-cell-val'+(item.sku_code?'':' muted');
+
+  const sizeEl=document.getElementById('r-size');
+  sizeEl.textContent=item.size_actual||'—';
+  sizeEl.className='info-cell-val'+(item.size_actual?'':' muted');
+  sizeEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
+
+  const sizeNameEl=document.getElementById('r-size-name');
+  sizeNameEl.textContent=item.size_label||'—';
+  sizeNameEl.className='info-cell-val'+(item.size_label?'':' muted');
+  sizeNameEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
+
+  // ── 2. 부속품 강제 업데이트 ──────────────────────────────────
+  accessories=(item.accessories||[]).map(a=>({name:a.name,status:a.status||''}));
+  renderAcc();
+
+  // ── 3. 카드 하이라이트 ────────────────────────────────────────
+  const allCards=document.querySelectorAll('#db-match-wrap .db-match-card');
+  const sel = cardId ? document.getElementById(cardId) : (allCards.length===1 ? allCards[0] : null);
+  allCards.forEach(c=>{
+    const isSelected = (c===sel);
+    c.style.border = isSelected ? '2px solid #22c55e' : '1px solid rgba(34,197,94,.15)';
+    c.style.background = isSelected ? 'rgba(34,197,94,.12)' : 'rgba(34,197,94,.02)';
+    c.style.opacity = isSelected ? '1' : '0.45';
+    // 버튼 상태
+    c.querySelectorAll('button').forEach(btn=>{
+      if(!btn.getAttribute('onclick')?.includes('applyCardMatch')&&!btn.getAttribute('onclick')?.includes('applyDbMatch')) return;
+      btn.textContent = isSelected ? '✓ 적용됨' : '적용';
+      btn.style.background = isSelected ? '#22c55e' : '#1a3a1a';
+      btn.style.color = isSelected ? '#000' : '#22c55e';
+    });
+  });
+
+  // ── 4. resultData 동기화 ─────────────────────────────────────
+  if(!resultData.analysis) resultData.analysis={};
+  Object.assign(resultData.analysis,{
+    brand: item.brand||resultData.analysis.brand,
+    model_name: item.model_name||resultData.analysis.model_name,
+    model_name_ko: item.model_name_ko||resultData.analysis.model_name_ko,
+    sku: item.sku_code||resultData.analysis.sku,
+    category: item.category||resultData.analysis.category,
+    color: item.color||resultData.analysis.color,
+    size: item.size_actual||resultData.analysis.size,
+    size_label: item.size_label||resultData.analysis.size_label,
+  });
+
+  toast('✅ 적용됨: '+(item.model_name_ko||item.model_name||''));
+}
+
+let _dbMultiItems=[];
+
 function renderDbMatchCards(matches){
   if(!matches.length) return;
   const dbWrap=document.getElementById('db-match-wrap');
@@ -1073,87 +1155,7 @@ async function searchDbFromField(fieldId,val){
   }catch(e){console.warn('자동조회 실패',e);}
 }
 
-// _cardMatches에서 안전하게 꺼내서 적용
-function applyCardMatch(idx, cardId){
-  const matches = window._cardMatches;
-  if(!matches||!matches[idx]){
-    toast('❌ 카드 데이터 없음');
-    return;
-  }
-  applyDbMatch(matches[idx], cardId);
-}
 
-function applyDbMatch(item, cardId){
-  // 디버그: 실제 전달된 item 값 확인
-  const _dbgEl = document.getElementById('r-size');
-  console.error('[APPLY]', 'cardId='+cardId, 
-    'size='+item.size_actual, 'sku='+item.sku_code, 
-    'el='+(_dbgEl?_dbgEl.tagName:'NULL'),
-    'el_text='+(_dbgEl?_dbgEl.textContent:'NULL'));
-  // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
-  if(item.brand) document.getElementById('r-brand').textContent=item.brand;
-  if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
-  if(item.model_name) document.getElementById('r-model').textContent=item.model_name;
-
-  // 인라인 편집 중인 input/span 자식만 제거 (onclick 유지)
-  ['r-sku','r-size','r-size-name'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el) return;
-    el.querySelectorAll('input,span').forEach(n=>n.remove());
-  });
-
-  const skuEl=document.getElementById('r-sku');
-  skuEl.textContent=item.sku_code||'—';
-  skuEl.className='info-cell-val'+(item.sku_code?'':' muted');
-
-  const sizeEl=document.getElementById('r-size');
-  sizeEl.textContent=item.size_actual||'—';
-  sizeEl.className='info-cell-val'+(item.size_actual?'':' muted');
-  sizeEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
-
-  const sizeNameEl=document.getElementById('r-size-name');
-  sizeNameEl.textContent=item.size_label||'—';
-  sizeNameEl.className='info-cell-val'+(item.size_label?'':' muted');
-  sizeNameEl.closest('.info-cell')?.querySelectorAll('.ai-badge').forEach(b=>b.remove());
-
-  // ── 2. 부속품 강제 업데이트 ──────────────────────────────────
-  accessories=(item.accessories||[]).map(a=>({name:a.name,status:a.status||''}));
-  renderAcc();
-
-  // ── 3. 카드 하이라이트 ────────────────────────────────────────
-  const allCards=document.querySelectorAll('#db-match-wrap .db-match-card');
-  const sel = cardId ? document.getElementById(cardId) : (allCards.length===1 ? allCards[0] : null);
-  allCards.forEach(c=>{
-    const isSelected = (c===sel);
-    c.style.border = isSelected ? '2px solid #22c55e' : '1px solid rgba(34,197,94,.15)';
-    c.style.background = isSelected ? 'rgba(34,197,94,.12)' : 'rgba(34,197,94,.02)';
-    c.style.opacity = isSelected ? '1' : '0.45';
-    // 버튼 상태
-    c.querySelectorAll('button').forEach(btn=>{
-      if(!btn.getAttribute('onclick')?.includes('applyCardMatch')&&!btn.getAttribute('onclick')?.includes('applyDbMatch')) return;
-      btn.textContent = isSelected ? '✓ 적용됨' : '적용';
-      btn.style.background = isSelected ? '#22c55e' : '#1a3a1a';
-      btn.style.color = isSelected ? '#000' : '#22c55e';
-    });
-  });
-
-  // ── 4. resultData 동기화 ─────────────────────────────────────
-  if(!resultData.analysis) resultData.analysis={};
-  Object.assign(resultData.analysis,{
-    brand: item.brand||resultData.analysis.brand,
-    model_name: item.model_name||resultData.analysis.model_name,
-    model_name_ko: item.model_name_ko||resultData.analysis.model_name_ko,
-    sku: item.sku_code||resultData.analysis.sku,
-    category: item.category||resultData.analysis.category,
-    color: item.color||resultData.analysis.color,
-    size: item.size_actual||resultData.analysis.size,
-    size_label: item.size_label||resultData.analysis.size_label,
-  });
-
-  toast('✅ 적용됨: '+(item.model_name_ko||item.model_name||''));
-}
-
-let _dbMultiItems=[];
 function applyDbMatchMulti(items){
   _dbMultiItems=items;
   const dbWrap=document.getElementById('db-match-wrap');
