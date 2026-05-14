@@ -176,44 +176,34 @@ export default async function handler(req, res) {
 
   // ── fetch_size 액션 ───────────────────────────────────────────────────
   if (action === 'fetch_size') {
-    const { visualMatchLinks = [], brand, modelNameKo, modelNameEn } = req.body;
-    const results = { sizes: [], sizeNames: [], sources: [] };
-
-    // 링크 최대 8개 병렬 fetch (타임아웃 4초)
-    const links = visualMatchLinks.slice(0, 8);
-    await Promise.allSettled(links.map(async (link) => {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 4000);
-        const r = await fetch(link, {
-          signal: controller.signal,
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }
-        });
-        clearTimeout(timer);
-        if (!r.ok) return;
-        const html = await r.text();
-        const texts = extractSizeTexts(html);
-        for (const t of texts) {
-          const sz = parseSizeFromText(t);
-          const sn = parseSizeNameFromText(t);
-          if (sz) { results.sizes.push(sz); results.sources.push(new URL(link).hostname); }
-          if (sn) results.sizeNames.push(sn);
-        }
-      } catch (_) {}
-    }));
-
-    // 중복 기준 다수결
-    const finalSize = majority(results.sizes) || null;
-    const finalSizeName = majority(results.sizeNames) || null;
-
-    return res.status(200).json({
-      success: true,
-      size: finalSize,
-      size_label: finalSizeName,
-      sources: [...new Set(results.sources)],
-      raw_sizes: results.sizes,         // 디버그용
-    });
+    const { brand, modelNameKo, modelNameEn } = req.body;
+    try {
+      const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 80,
+          messages: [{
+            role: 'user',
+            content: `명품 제품 공식 사이즈 스펙. JSON만 응답, 다른 텍스트 금지.\n브랜드: ${brand}\n모델명: ${modelNameEn || modelNameKo}\n응답형식: {"size":"가로 × 세로 × 높이 cm","size_label":"Mini/Small/Medium 등(없으면null)"}`
+          }]
+        })
+      });
+      const cj = await claudeQ.json();
+      const raw = (cj.content?.[0]?.text || '').trim().replace(/```json|```/g, '');
+      const parsed = JSON.parse(raw);
+      return res.status(200).json({
+        success: true,
+        size: (parsed.size && parsed.size !== 'null') ? parsed.size : null,
+        size_label: (parsed.size_label && parsed.size_label !== 'null') ? parsed.size_label : null,
+        sources: ['claude_ai'],
+      });
+    } catch (e) {
+      return res.status(200).json({ success: true, size: null, size_label: null, sources: [] });
+    }
   }
+
 
   // ── SKU 저장 ──────────────────────────────────────────────────────────
   if (action === 'save_sku') {
@@ -291,49 +281,43 @@ export default async function handler(req, res) {
       }));
 
       // 사이즈 파싱도 병행 (링크 fetch)
-      const sizeResults = [];
-      const nameResults = [];
-      await Promise.allSettled(images.slice(0, 6).map(async (img) => {
-        if (!img.link) return;
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 3500);
-          const pr = await fetch(img.link, {
-            signal: controller.signal,
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }
-          });
-          clearTimeout(timer);
-          if (!pr.ok) return;
-          const html = await pr.text();
-          const clean = html
-            .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[\s\S]*?<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ');
-          const keyRe = /\b(size|dimension|measurement|치수|사이즈|width|height|depth)\b/gi;
-          let m;
-          while ((m = keyRe.exec(clean)) !== null) {
-            const snippet = clean.slice(Math.max(0, m.index - 30), m.index + 150);
-            const sz = parseSizeFromText(snippet);
-            const sn = parseSizeNameFromText(snippet);
-            if (sz) sizeResults.push(sz);
-            if (sn) nameResults.push(sn);
-          }
-        } catch (_) {}
-      }));
+      // 이미지 검색 결과 타이틀에서 사이즈 파싱 시도
+      let imgLensSize = null, imgLensSizeName = null;
+      for (const img of images) {
+        const txt = [img.title, img.snippet].filter(Boolean).join(' ');
+        if (!imgLensSize) imgLensSize = parseSizeFromText(txt);
+        if (!imgLensSizeName) imgLensSizeName = parseSizeNameFromText(txt);
+        if (imgLensSize && imgLensSizeName) break;
+      }
 
-      const majority = (arr) => {
-        if (!arr.length) return null;
-        const freq = {};
-        for (const v of arr) freq[v] = (freq[v] || 0) + 1;
-        return Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
-      };
+      // 타이틀에서 못 찾으면 Claude 질의
+      if (!imgLensSize) {
+        try {
+          const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 80,
+              messages: [{
+                role: 'user',
+                content: `명품 제품 공식 사이즈 스펙. JSON만 응답.\n브랜드: ${brand}\n모델명: ${modelName}\n응답: {"size":"가로 × 세로 × 높이 cm","size_label":"Mini/Small/Medium 등(없으면null)"}`
+              }]
+            })
+          });
+          const cj = await claudeQ.json();
+          const raw = (cj.content?.[0]?.text || '').trim().replace(/\`\`\`json|\`\`\`/g, '');
+          const parsed = JSON.parse(raw);
+          if (parsed.size && parsed.size !== 'null') imgLensSize = parsed.size;
+          if (parsed.size_label && parsed.size_label !== 'null') imgLensSizeName = parsed.size_label;
+        } catch (_) {}
+      }
 
       return res.status(200).json({
         success: true,
         visualMatches: images,
-        lensSize:      majority(sizeResults) || null,
-        lensSizeName:  majority(nameResults) || null,
+        lensSize:     imgLensSize || null,
+        lensSizeName: imgLensSizeName || null,
       });
     } catch (e) {
       return res.status(500).json({ success: false, error: e.message });
@@ -449,73 +433,67 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip'); }
 
-    // ── 렌즈 결과에서 사이즈 자동 파싱 (백그라운드) ──────────────────
+    // ── 사이즈 자동 추출: SerpAPI Shopping 검색 → Claude 질의 ──────────
     let lensSize = null;
     let lensSizeName = null;
     let lensSizeSources = [];
     try {
-      const links = visualMatches
-        .map(m => m.link)
-        .filter(Boolean)
-        .slice(0, 8);
+      const brand = analysis.brand || '';
+      const modelEn = analysis.model_name || '';
+      const modelKo = analysis.model_name_ko || '';
+      const query = `${brand} ${modelEn || modelKo}`.trim();
 
-      const sizeResults = [];
-      const nameResults = [];
-
-      await Promise.allSettled(links.map(async (link) => {
+      if (query.length > 3) {
+        // 1단계: SerpAPI Shopping으로 스펙 검색
+        let shoppingText = '';
         try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 4000);
-          const r = await fetch(link, {
-            signal: controller.signal,
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
-          });
-          clearTimeout(timer);
-          if (!r.ok) return;
-          const html = await r.text();
-
-          // HTML → 텍스트 정제
-          const clean = html
-            .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[\s\S]*?<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ');
-
-          // 사이즈 키워드 주변 텍스트 추출
-          const sizeKeyRe = /\b(size|dimension|measurement|치수|사이즈|크기|실측|가로|세로|높이|width|height|depth|length|specifications?)\b/gi;
-          let m2;
-          while ((m2 = sizeKeyRe.exec(clean)) !== null) {
-            const snippet = clean.slice(Math.max(0, m2.index - 30), m2.index + 150);
-            const sz = parseSizeFromText(snippet);
-            const sn = parseSizeNameFromText(snippet);
-            if (sz) { sizeResults.push(sz); lensSizeSources.push(new URL(link).hostname); }
-            if (sn) nameResults.push(sn);
+          const shopUrl = `https://serpapi.com/search?engine=google_shopping&q=${encodeURIComponent(query + ' size dimensions cm')}&gl=us&hl=en&api_key=${SERP_KEY}`;
+          const shopRes = await fetch(shopUrl);
+          const shopJson = await shopRes.json();
+          const items = shopJson.shopping_results || [];
+          // 상품 설명에서 사이즈 텍스트 추출
+          for (const item of items.slice(0, 5)) {
+            const txt = [item.title, item.description, item.snippet].filter(Boolean).join(' ');
+            const sz = parseSizeFromText(txt);
+            const sn = parseSizeNameFromText(txt);
+            if (sz) { lensSize = sz; lensSizeSources.push('google_shopping'); }
+            if (sn && !lensSizeName) lensSizeName = sn;
+            if (lensSize) break;
           }
-          // 숫자×숫자 패턴 직접 검색
-          const directRe = /\d{1,3}\s*[x×*]\s*\d{1,3}/g;
-          let dm;
-          while ((dm = directRe.exec(clean)) !== null) {
-            const snippet = clean.slice(Math.max(0, dm.index - 20), dm.index + 80);
-            const sz = parseSizeFromText(snippet);
-            if (sz) { sizeResults.push(sz); lensSizeSources.push(new URL(link).hostname); }
-          }
-        } catch (_) {}
-      }));
+        } catch (e) { console.warn('Shopping skip:', e.message); }
 
-      // 다수결: 2개 이상 일치 우선, 없으면 첫 번째
-      if (sizeResults.length > 0) {
-        const freq = {};
-        for (const v of sizeResults) freq[v] = (freq[v] || 0) + 1;
-        const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-        lensSize = sorted[0][0];
+        // 2단계: Shopping에서 못 찾으면 Claude에게 직접 질의
+        if (!lensSize) {
+          try {
+            const claudeQ = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+              body: JSON.stringify({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 80,
+                messages: [{
+                  role: 'user',
+                  content: `명품 제품의 공식 사이즈 스펙을 알려줘. JSON만 응답, 다른 텍스트 금지.
+브랜드: ${brand}
+모델명: ${modelEn || modelKo}
+응답 형식: {"size":"가로 × 세로 × 높이 cm","size_label":"Mini/Small/Medium 등(없으면null)"}`
+                }]
+              })
+            });
+            const cj = await claudeQ.json();
+            const raw = (cj.content?.[0]?.text || '').trim().replace(/```json|```/g, '');
+            const parsed = JSON.parse(raw);
+            if (parsed.size && parsed.size !== 'null') {
+              lensSize = parsed.size;
+              lensSizeSources.push('claude_ai');
+            }
+            if (parsed.size_label && parsed.size_label !== 'null') {
+              lensSizeName = parsed.size_label;
+            }
+          } catch (e) { console.warn('Claude size skip:', e.message); }
+        }
       }
-      if (nameResults.length > 0) {
-        const freq = {};
-        for (const v of nameResults) freq[v] = (freq[v] || 0) + 1;
-        lensSizeName = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
-      }
-      lensSizeSources = [...new Set(lensSizeSources)];
-    } catch (e) { console.warn('Lens size parse skip:', e.message); }
+    } catch (e) { console.warn('Size fetch skip:', e.message); }
 
     // analysis에 렌즈 사이즈 병합 (AI가 못 찾았을 때만)
     if (!analysis.size && lensSize) analysis.size = lensSize;
