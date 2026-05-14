@@ -783,7 +783,7 @@ function renderResult(){
 
   // 사이즈: AI 이미지 분석값만 (SKU DB 매칭은 renderDbMatchCards에서 처리)
   const _finalSize=_aiSize||'';
-  const _finalSizeName=_aiSizeName||'';
+  const _finalSizeName=_aiSizeName||_lensSizeName||'';
 
 
 
@@ -802,12 +802,14 @@ function renderResult(){
       sizeEl.textContent='—';sizeEl.className='info-cell-val muted';
     }
     if(_finalSizeName){
-      const sv=_finalSizeName;
-      sizeNameEl2.textContent=sv;
+      sizeNameEl2.textContent=_finalSizeName;
       sizeNameEl2.className='info-cell-val';
       const lbl2=sizeNameEl2.closest('.info-cell')?.querySelector('.info-cell-label');
       if(lbl2&&!lbl2.querySelector('.ai-badge')){
-        lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+        const isWebSN=!_aiSizeName&&!!_lensSizeName;
+        lbl2.insertAdjacentHTML('beforeend',isWebSN
+          ?'<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>'
+          :'<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
       }
     } else {
       sizeNameEl2.textContent='—';sizeNameEl2.className='info-cell-val muted';
@@ -990,9 +992,12 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
+      // 렌즈 재검색 후 DB도 재매칭 시도
+      if(modelName&&modelName!=='—'){
+        setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
+      }
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">재검색 실패: '+e.message+'</div>';
-
     }
   }, 800); // 800ms 디바운스 — 연속 수정 시 마지막 것만 검색
 }
