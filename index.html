@@ -1082,6 +1082,12 @@ function applyCardMatch(idx, cardId){
 }
 
 function applyDbMatch(item, cardId){
+  // 디버그: 실제 전달된 item 값 확인
+  const _dbgEl = document.getElementById('r-size');
+  console.error('[APPLY]', 'cardId='+cardId, 
+    'size='+item.size_actual, 'sku='+item.sku_code, 
+    'el='+(_dbgEl?_dbgEl.tagName:'NULL'),
+    'el_text='+(_dbgEl?_dbgEl.textContent:'NULL'));
   // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
