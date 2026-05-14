@@ -541,7 +541,7 @@ function processImage(src, key, fileSrc){
     const dataUrl=canvas.toDataURL('image/jpeg',0.8);
     photos[key]={file:fileSrc||null,dataUrl,mime:'image/jpeg'};
     const prev=document.getElementById('prev-'+key);
-    if(prev){prev.src=dataUrl;}
+    if(prev){prev.src=dataUrl;prev.style.display='block';}
     document.getElementById('slot-'+key).classList.add('filled');
     const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='flex';
     updateBtn();
@@ -579,7 +579,7 @@ document.addEventListener('paste',e=>{
 });
 function removePhoto(e,key){
   e.stopPropagation();photos[key]=null;
-  const prev=document.getElementById('prev-'+key);prev.src='';prev.style.display='none';
+  const prev=document.getElementById('prev-'+key);prev.src='';prev.style.display='';
   document.getElementById('slot-'+key).classList.remove('filled');
   const rm=document.getElementById('rm-'+key);if(rm)rm.style.display='none';
   document.getElementById('file-'+key).value='';
@@ -673,14 +673,14 @@ function renderResult(){
     const _rSizeEl=document.getElementById('r-size');
     const _rSizeNameEl=document.getElementById('r-size-name');
     if(first.size_actual){_rSizeEl.textContent=first.size_actual;_rSizeEl.className='info-cell-val';}
-    else if(analysis.size){
-      _rSizeEl.textContent=analysis.size;_rSizeEl.className='info-cell-val';
+    else if(_aiSize){
+      _rSizeEl.textContent=_aiSize;_rSizeEl.className='info-cell-val';
       const lbl=_rSizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
       if(lbl&&!lbl.querySelector('.ai-badge'))lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
     }
     if(first.size_label){_rSizeNameEl.textContent=first.size_label;_rSizeNameEl.className='info-cell-val';}
-    else if(analysis.size_label||analysis.sizeName){
-      const sv=analysis.size_label||analysis.sizeName||'';
+    else if(_aiSizeName){
+      const sv=_aiSizeName;
       _rSizeNameEl.textContent=sv;_rSizeNameEl.className='info-cell-val';
       const lbl2=_rSizeNameEl.closest('.info-cell')?.querySelector('.info-cell-label');
       if(lbl2&&!lbl2.querySelector('.ai-badge'))lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
@@ -766,10 +766,13 @@ function renderResult(){
   const sizeEl=document.getElementById('r-size');
   const sizeNameEl2=document.getElementById('r-size-name');
   const skuEl=document.getElementById('r-sku');
+  // 백엔드 키명 정규화 — 다양한 필드명 커버
+  const _aiSize=analysis.size_actual||analysis.size||analysis.dimensions||analysis.size_mm||'';
+  const _aiSizeName=analysis.size_label||analysis.sizeName||analysis.size_name||analysis.model_size||'';
   if(!dbMatches.length){
     // AI 분석 사이즈 자동 세팅 + AI 배지
-    if(analysis.size){
-      sizeEl.textContent=analysis.size;
+    if(_aiSize){
+      sizeEl.textContent=_aiSize;
       sizeEl.className='info-cell-val';
       sizeEl.title='AI 자동 추출 — 탭하여 수정';
       const lbl=sizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
@@ -777,8 +780,8 @@ function renderResult(){
     } else {
       sizeEl.textContent='—';sizeEl.className='info-cell-val muted';
     }
-    if(analysis.size_label||analysis.sizeName){
-      const sv=analysis.size_label||analysis.sizeName||'';
+    if(_aiSizeName){
+      const sv=_aiSizeName;
       sizeNameEl2.textContent=sv;
       sizeNameEl2.className='info-cell-val';
       const lbl2=sizeNameEl2.closest('.info-cell')?.querySelector('.info-cell-label');
@@ -1591,7 +1594,7 @@ function resetAll(){
     const rm=document.getElementById('rm-'+k);
     const slot=document.getElementById('slot-'+k);
     const fi=document.getElementById('file-'+k);
-    if(prev){prev.src='';prev.style.display='none';}
+    if(prev){prev.src='';prev.style.display='';}
     if(rm)rm.style.display='none';
     if(slot)slot.classList.remove('filled');
     if(fi)fi.value='';
