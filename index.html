@@ -311,7 +311,7 @@ input[type=file]{display:none}
       </div>
       <!-- 부속품 선택 + 추가 -->
       <div class="acc-bottom-row">
-        <select class="acc-input" id="acc-select">
+        <select class="acc-input" id="acc-select" onchange="addAccessory()">
           <option value="">-- 부속품 선택 --</option>
           <option>열쇠 1개</option><option>열쇠 2개</option>
           <option>자물쇠</option><option>자물쇠 커버 (키벨)</option><option>네임택</option>
@@ -325,14 +325,19 @@ input[type=file]{display:none}
           <option>밑판</option><option>탈착형 키링</option><option>리본</option>
           <option>여분단추</option><option>여분링크</option><option>여분끈</option>
         </select>
-        <button class="acc-add-btn" onclick="addAccessory()">추가</button>
       </div>
     </div>
   </div>
 
   <!-- Google Lens -->
-  <div class="section-hd">🔍 Google Lens 유사 상품</div>
-  <div class="lens-scroll" id="lens-results">
+  <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between;padding-right:16px">
+    <span>🔍 Google Lens 유사 상품</span>
+    <div style="display:flex;gap:6px">
+      <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <button onclick="slideLens(1)"  style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+    </div>
+  </div>
+  <div class="lens-scroll" id="lens-results" style="scroll-behavior:smooth">
     <div style="font-size:12px;color:#444;padding:8px">검색 결과 없음</div>
   </div>
 
@@ -652,7 +657,8 @@ function renderResult(){
               <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
               SKU: ${m.sku_code||'—'}<br>
               ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
-              ${accList?'부속품: '+accList:''}
+              ${accList?'부속품: '+accList:''}<br>
+              ${m.notes?`<span style="color:#f59e0b;font-size:11px">📝 ${m.notes}</span>`:''}
             </div>
           </div>
         </div>
@@ -729,24 +735,16 @@ function renderResult(){
 function renderAcc(){
   document.getElementById('acc-list').innerHTML=accessories.map((a,i)=>`
     <div class="acc-item">
-      <div class="acc-name">${a.name}</div>
-      <select class="acc-select ${a.status==='Y'?'status-y':a.status==='N'?'status-n':a.status==='?'?'status-u':''}"
-        onchange="setAcc(${i},this.value);this.className='acc-select '+(this.value==='Y'?'status-y':this.value==='N'?'status-n':this.value==='?'?'status-u':'')">
-        <option value="" ${!a.status?'selected':''}>선택</option>
-        <option value="Y" ${a.status==='Y'?'selected':''}>있음</option>
-        <option value="N" ${a.status==='N'?'selected':''}>없음</option>
-        <option value="?" ${a.status==='?'?'selected':''}>불확실</option>
-      </select>
-      <button class="acc-del" onclick="delAcc(${i})">✕</button>
+      <div class="acc-name" style="font-size:13px;font-weight:600;color:#f0f0f0;flex:1">${a.name}</div>
+      <button class="acc-del" onclick="delAcc(${i})" style="color:#ef4444;font-size:18px;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
     </div>`).join('');
 }
-function setAcc(i,v){accessories[i].status=v;}
 function delAcc(i){accessories.splice(i,1);renderAcc();}
 function addAccessory(){
   const sel=document.getElementById('acc-select');
   const name=sel.value;if(!name)return;
-  if(accessories.find(a=>a.name===name)){toast('이미 추가된 항목이에요');return;}
-  accessories.push({name,status:''});sel.value='';renderAcc();
+  if(accessories.find(a=>a.name===name)){toast('이미 추가된 항목이에요');sel.value='';return;}
+  accessories.push({name});sel.value='';renderAcc();
 }
 function editField(id){
   const el=document.getElementById(id);
@@ -1018,21 +1016,43 @@ function goToSku(){
     .filter(k=>photos[k])
     .map(k=>`<img src="${photos[k].dataUrl}" alt="">`)
     .join('');
+  renderSkuAccList();
+  switchSkuTab('save');
+  showScreen('sku');
+}
+
+function renderSkuAccList(){
   const accList=document.getElementById('sku-acc-list');
+  if(!accList)return;
   if(accessories.length){
-    accList.innerHTML=accessories.map(a=>{
-      const cls=a.status==='Y'?'#22c55e':a.status==='N'?'#ef4444':'#f59e0b';
-      const txt=a.status==='Y'?'있음':a.status==='N'?'없음':'미확인';
-      return`<div class="sku-row" style="justify-content:space-between">
-        <div style="font-size:13px;font-weight:600;color:#f0f0f0">${a.name}</div>
-        <div style="font-size:12px;font-weight:700;color:${cls}">${txt}</div>
-      </div>`;
-    }).join('');
+    accList.innerHTML=accessories.map((a,i)=>`
+      <div class="sku-row" style="justify-content:space-between">
+        <div style="font-size:13px;font-weight:600;color:#f0f0f0;flex:1">${a.name}</div>
+        <button onclick="delSkuAcc(${i})" style="background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
+      </div>`).join('');
   } else {
     accList.innerHTML='<div style="padding:14px 16px;font-size:12px;color:#444">부속품 없음</div>';
   }
-  switchSkuTab('save');
-  showScreen('sku');
+  // 적재탭에 부속품 추가 UI
+  let addRow=document.getElementById('sku-acc-add-row');
+  if(!addRow){
+    addRow=document.createElement('div');
+    addRow.id='sku-acc-add-row';
+    addRow.style.cssText='padding:10px 14px;border-top:1px solid #1a1a1a';
+    addRow.innerHTML=`<div style="display:flex;gap:8px">
+      <input id="sku-acc-input" type="text" placeholder="부속품 직접 입력" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit">
+      <button onclick="addSkuAcc()" style="background:#ff6b2b;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">추가</button>
+    </div>`;
+    accList.parentNode.insertBefore(addRow, accList.nextSibling);
+  }
+}
+function delSkuAcc(i){accessories.splice(i,1);renderSkuAccList();}
+function addSkuAcc(){
+  const inp=document.getElementById('sku-acc-input');
+  const name=(inp?.value||'').trim();
+  if(!name)return;
+  if(accessories.find(a=>a.name===name)){toast('이미 추가된 항목이에요');return;}
+  accessories.push({name});inp.value='';renderSkuAccList();
 }
 
 async function saveToSupabase(){
@@ -1173,6 +1193,17 @@ function toggleSkuDetail(i){
   el.style.display=open?'block':'none';
   if(icon)icon.textContent=open?'▴':'▾';
 }
+// ── Google Lens 슬라이더 ────────────────────────────────
+let _lensCards=[];
+function slideLens(dir){
+  const el=document.getElementById('lens-results');
+  if(!el)return;
+  const cards=el.querySelectorAll('.lens-card');
+  if(!cards.length)return;
+  const cardW=cards[0].offsetWidth+10; // gap 포함
+  el.scrollLeft+=dir*cardW*2;
+}
+
 // ── 공용 이미지 슬라이더 ────────────────────────────────
 const _sliders={};
 function makeSlider(sliderId,urls){
