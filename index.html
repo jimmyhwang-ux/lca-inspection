@@ -724,7 +724,11 @@ function renderResult(){
     });
 
     // 첫 번째 카드 자동 적용
-    setTimeout(()=>applyDbMatch(matches[0],'db-card-0'), 100);
+    console.log('[renderDbMatchCards] 완료, matches:', matches.length, '첫카드:', matches[0]?.sku_code);
+    setTimeout(()=>{
+      console.log('[setTimeout] applyDbMatch 호출 시작');
+      applyDbMatch(matches[0],'db-card-0');
+    }, 100);
   }
 
   if(dbMatches.length){
@@ -1044,6 +1048,7 @@ async function searchDbFromField(fieldId,val){
 }
 
 function applyDbMatch(item, cardId){
+  console.log('[applyDbMatch] 호출됨', {cardId, sku:item.sku_code, size:item.size_actual, acc:(item.accessories||[]).length});
   // ── 1. 결과 셀 강제 업데이트 ─────────────────────────────────
   if(item.brand) document.getElementById('r-brand').textContent=item.brand;
   if(item.model_name_ko) document.getElementById('r-model-ko').textContent=item.model_name_ko;
