@@ -1187,6 +1187,7 @@ function renderSkuList(list){
             ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
           </div>
           ${(item.accessories||[]).length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:''}
+          ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b">📝 ${item.notes}</div>`:''}
           <div id="sku-detail-${i}" style="display:block;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
             ${(()=>{
               const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
