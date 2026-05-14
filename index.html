@@ -694,7 +694,7 @@ function renderResult(){
       const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
       const total=allImgs.length;
       const slId=`dbsl-${idx}`;
-      const accList=(m.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+      const accList=(m.accessories||[]).map(a=>a.name).join(', ');
       const dbId=`db-detail-${idx}`;
       const isMulti=matches.length>1;
       const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a;cursor:pointer">
@@ -768,8 +768,14 @@ function renderResult(){
           notes: finalNotes   // 반드시 마지막에 덮어쓰기
         };
       });
-      window._dbEnriched=enriched;
-      renderDbMatchCards(enriched);
+      // notes 최종 보정 — full DB item의 notes를 반드시 사용
+      const finalEnriched = enriched.map(em => {
+        const dbItem = skuListAll.find(s => s.id === em.id);
+        const realNotes = (dbItem && dbItem.notes) ? String(dbItem.notes).trim() : (em.notes ? String(em.notes).trim() : '');
+        return { ...em, notes: realNotes };
+      });
+      window._dbEnriched=finalEnriched;
+      renderDbMatchCards(finalEnriched);
     }
     loadAndRender();
 
@@ -965,7 +971,7 @@ function applyDbMatch(item){
   if(item.size_actual){document.getElementById('r-size').textContent=item.size_actual;document.getElementById('r-size').className='info-cell-val';}
   if(item.size_label){document.getElementById('r-size-name').textContent=item.size_label;document.getElementById('r-size-name').className='info-cell-val';}
   const dbWrap=document.getElementById('db-match-wrap');
-  const accList=(item.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+  const accList=(item.accessories||[]).map(a=>a.name).join(', ');
   // skuListAll에서 extra_images 보완
   const fullItem=skuListAll.find(s=>s.id===item.id)||item;
   const allImgs=[
@@ -1028,7 +1034,7 @@ function applyDbMatchMulti(items){
     return{id:`dbslm-${idx}`,imgs};
   });
   dbWrap.innerHTML=items.map((m,idx)=>{
-    const accList=(m.accessories||[]).map(a=>`${a.name}:${a.status}`).join(', ');
+    const accList=(m.accessories||[]).map(a=>a.name).join(', ');
     const dbId=`db-detail-m${idx}`;
     const slId=`dbslm-${idx}`;
     const imgs=multiSlData[idx].imgs;
@@ -1206,7 +1212,7 @@ function renderSkuList(list){
     return;
   }
   wrap.innerHTML=list.map((item,i)=>{
-    const accText=(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:${a.status==='Y'?'#22c55e':a.status==='N'?'#ef4444':'#888'}">${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}</span>`).join('');
+    const accText=(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('');
     const thumbUrl=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean)[0]||'';
     return `<div class="sku-list-item">
       <div style="display:flex;gap:10px;align-items:flex-start" onclick="toggleSkuDetail(${i})" style="cursor:pointer">
@@ -1237,7 +1243,7 @@ function renderSkuList(list){
         ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span>`:''}
         ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
       </div>
-      ${(item.accessories||[]).length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:${a.status==='Y'?'#22c55e':a.status==='N'?'#ef4444':'#888'}">${a.name}</span>`).join('')}</div>`:''}
+      ${(item.accessories||[]).length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:''}
       <div id="sku-detail-${i}" style="display:block;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
         ${(()=>{
           const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
@@ -1578,7 +1584,7 @@ async function deleteSku(id){
 function copyResult(){
   const a=resultData.analysis||{};
 
-  const accText=accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}`).join('\n');
+  const accText=accessories.map(a=>a.name).join('\n');
   const text=['[번개케어 검수 결과]',
     '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
     'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
@@ -1596,7 +1602,7 @@ function copySkuResult(){
     '사이즈명칭: '+document.getElementById('sku-size-name').value,
     '스타일번호: '+document.getElementById('sku-sku').value,
     '','[부속품]',
-    ...accessories.map(a=>`${a.name}: ${a.status==='Y'?'있음':a.status==='N'?'없음':'미확인'}`)
+    ...accessories.map(a=>a.name)
   ].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ SKU 복사됨'));
 }
