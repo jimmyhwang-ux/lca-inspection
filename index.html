@@ -773,6 +773,7 @@ function renderResult(){
   const _lensSize=resultData.lensSize||'';
   const _lensSizeName=resultData.lensSizeName||'';
   const _lensSources=(resultData.lensSizeSources||[]).slice(0,3);
+  const _lensSku=resultData.lensSku||''
 
   // ── 사이즈 우선순위: AI분석 > 백엔드 렌즈 파싱 (다수결) ─────────────
   // 내장DB 제거 — 부분매칭 오류로 잘못된 사이즈 반환 문제
@@ -846,7 +847,14 @@ function renderResult(){
     } else {
       sizeNameEl2.textContent='—';sizeNameEl2.className='info-cell-val muted';
     }
-    skuEl.textContent=analysis.sku||'—';skuEl.className='info-cell-val'+(analysis.sku?'':' muted');
+    const _finalSku=analysis.sku||_lensSku||'';
+    skuEl.textContent=_finalSku||'—';
+    skuEl.className='info-cell-val'+(_finalSku?'':' muted');
+    if(_finalSku&&_lensSku&&!analysis.sku){
+      const skuLbl=skuEl.closest('.info-cell')?.querySelector('.info-cell-label');
+      if(skuLbl&&!skuLbl.querySelector('.ai-badge'))
+        skuLbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
+    }
   }
 
   const lensEl=document.getElementById('lens-results');
