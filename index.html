@@ -815,10 +815,14 @@ function renderResult(){
     const _finalSku=analysis.sku||_lensSku||'';
     skuEl.textContent=_finalSku||'—';
     skuEl.className='info-cell-val'+(_finalSku?'':' muted');
-    if(_finalSku&&_lensSku&&!analysis.sku){
+    if(_finalSku){
       const skuLbl=skuEl.closest('.info-cell')?.querySelector('.info-cell-label');
-      if(skuLbl&&!skuLbl.querySelector('.ai-badge'))
-        skuLbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
+      if(skuLbl&&!skuLbl.querySelector('.ai-badge')){
+        const isWeb=!analysis.sku&&!!_lensSku;
+        skuLbl.insertAdjacentHTML('beforeend',isWeb
+          ?'<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>'
+          :'<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+      }
     }
   }
 
@@ -1113,7 +1117,7 @@ function applyDbMatch(item, cardId){
     c.style.opacity = isSelected ? '1' : '0.45';
     // 버튼 상태
     c.querySelectorAll('button').forEach(btn=>{
-      if(!btn.getAttribute('onclick')?.includes('applyDbMatch')) return;
+      if(!btn.getAttribute('onclick')?.includes('applyCardMatch')&&!btn.getAttribute('onclick')?.includes('applyDbMatch')) return;
       btn.textContent = isSelected ? '✓ 적용됨' : '적용';
       btn.style.background = isSelected ? '#22c55e' : '#1a3a1a';
       btn.style.color = isSelected ? '#000' : '#22c55e';
