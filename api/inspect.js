@@ -445,6 +445,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
 
     // DB 매칭
     let dbMatch = null;
+    let dbMatches = [];
     try {
       const dbRes = await sb('sku_items?select=*&limit=500');
       const dbData = await dbRes.json();
@@ -459,8 +460,16 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
           const dbModel   = (item.model_name || '').toLowerCase().trim();
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
-          if (aiBrand && dbBrand && !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
-          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({ item, score: 200 }); continue; }
+
+          // SKU 완전 일치 → 브랜드 무관하게 최우선 매칭
+          if (aiSku && dbSku && aiSku === dbSku) {
+            candidates.push({ item, score: 200 }); continue;
+          }
+
+          // 브랜드 필터 — 단, 브랜드가 없거나 모델명 완전 일치 시 제외
+          const brandMismatch = aiBrand && dbBrand &&
+            !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand);
+
           let score = 0;
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
@@ -479,13 +488,26 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
             if (aiModelKo === dbModelKo) score = Math.max(score, 90);
             else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
           }
-          if (score >= 50) candidates.push({ item, score });
+
+          // 브랜드 불일치 시 완전 일치(score>=90)만 허용, 부분 일치는 제외
+          if (brandMismatch && score < 90) continue;
+
+          if (score >= 50) candidates.push({ item, score: brandMismatch ? score - 10 : score });
         }
+
         if (candidates.length > 0) {
           const maxScore = Math.max(...candidates.map(c => c.score));
-          const topCandidates = candidates.filter(c => c.score === maxScore);
-          const withNotes = topCandidates.find(c => c.item.notes && c.item.notes.trim());
-          dbMatch = (withNotes || topCandidates[0]).item;
+          // 상위 점수 그룹 (최고점 -10 이내) 모두 포함 → dbMatches 배열로
+          const topCandidates = candidates
+            .filter(c => c.score >= maxScore - 10)
+            .sort((a, b) => b.score - a.score);
+          dbMatch = topCandidates[0].item;
+          // 복수 매칭 저장 (프론트에서 선택 가능하도록)
+          dbMatches = topCandidates.map(c => ({
+            ...c.item,
+            extra_images: Array.isArray(c.item.extra_images) ? c.item.extra_images : [],
+            ref_image_url: c.item.ref_image_url || null,
+          }));
         }
       }
     } catch (e) { console.warn('DB skip:', e.message); }
@@ -503,6 +525,7 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
       imageUrl,
       analysis,
       dbMatch,
+      dbMatches,
       visualMatches: visualMatches.slice(0, 12),
       lensSize,
       lensSizeName,
