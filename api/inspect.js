@@ -412,6 +412,37 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
+
+
+    // Google Lens
+    let visualMatches = [];
+    try {
+      const s = await fetch(`https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`);
+      const j = await s.json();
+      visualMatches = j.visual_matches || [];
+    } catch (e) { console.warn('Lens skip'); }
+
+    // ── 스타일번호: 렌즈 타이틀에서 파싱 ─────────────────────────────
+    // 사이즈/사이즈명칭은 SKU DB 매칭에서만 가져옴 (자동 추출 제거)
+    let lensSize = null;
+    let lensSizeName = null;
+    let lensSizeSources = [];
+    let lensSku = null;
+    try {
+      const brand = analysis.brand || '';
+      // 렌즈 타이틀 전체 텍스트
+      const lensTitles = visualMatches.slice(0, 10)
+        .map(m => m.title || '').join(' ');
+      // 스타일번호 파싱 (타이틀에서)
+      lensSku = parseSkuFromText(lensTitles, brand);
+    } catch (e) { console.warn('Lens SKU skip:', e.message); }
+
+
+
+
+    // 스타일번호: 렌즈에서 파싱된 경우만 보완
+    if (!analysis.sku && lensSku) analysis.sku = lensSku;
+
     // DB 매칭
     let dbMatch = null;
     try {
@@ -458,35 +489,6 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
         }
       }
     } catch (e) { console.warn('DB skip:', e.message); }
-
-    // Google Lens
-    let visualMatches = [];
-    try {
-      const s = await fetch(`https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`);
-      const j = await s.json();
-      visualMatches = j.visual_matches || [];
-    } catch (e) { console.warn('Lens skip'); }
-
-    // ── 스타일번호: 렌즈 타이틀에서 파싱 ─────────────────────────────
-    // 사이즈/사이즈명칭은 SKU DB 매칭에서만 가져옴 (자동 추출 제거)
-    let lensSize = null;
-    let lensSizeName = null;
-    let lensSizeSources = [];
-    let lensSku = null;
-    try {
-      const brand = analysis.brand || '';
-      // 렌즈 타이틀 전체 텍스트
-      const lensTitles = visualMatches.slice(0, 10)
-        .map(m => m.title || '').join(' ');
-      // 스타일번호 파싱 (타이틀에서)
-      lensSku = parseSkuFromText(lensTitles, brand);
-    } catch (e) { console.warn('Lens SKU skip:', e.message); }
-
-
-
-
-    // 스타일번호: 렌즈에서 파싱된 경우만 보완
-    if (!analysis.sku && lensSku) analysis.sku = lensSku;
 
     if (dbMatch) {
       dbMatch = {
