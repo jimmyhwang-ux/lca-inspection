@@ -2,6 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <!-- v1778772226 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -649,6 +653,8 @@ function applyCardMatch(idx, cardId){
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
+  // 확인용 toast
+  if(typeof toast==='function') toast('🔧 applyDbMatch 실행: '+(item.sku_code||'no sku'), 1000);
 
   // ── 1. 브랜드/모델명 ─────────────────────────────────────────
   const rBrand = document.getElementById('r-brand');
