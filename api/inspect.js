@@ -31,9 +31,11 @@ export default async function handler(req, res) {
   };
 
   // ── 사이즈 파싱 헬퍼 ──────────────────────────────────────────────────
-  // 인치 → cm 변환 (소수점 1자리 반올림)
+  // 인치 → cm 변환 (0.5 단위 반올림 — 예: 36.068 → 36, 23.114 → 23)
   function inchToCm(val) {
-    return Math.round(parseFloat(val) * 2.54 * 10) / 10;
+    const cm = parseFloat(val) * 2.54;
+    // 0.5 단위 반올림: 소수점이 .25 미만이면 버림, .75 이상이면 올림, 나머지 0.5
+    return Math.round(cm * 2) / 2;
   }
 
   // 숫자 파싱 + 인치면 cm 변환
@@ -561,7 +563,9 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
               if (!sz) continue;
               const sn = parseSizeNameFromText(txt) || sizeNameFromLens;
               const src = result.displayed_link || new URL(result.link || 'https://x.com').hostname;
-              sizeHits.push({ sz, sn, src });
+              // cm 직접 기재 여부 플래그
+              const isCmDirect = /\d\s*cm/i.test(txt);
+              sizeHits.push({ sz, sn, src, isCmDirect });
             }
           }
 
@@ -574,16 +578,20 @@ verdict: pass/review/fail, confidence: 0-100 정수. size는 반드시 이미지
           }
         } catch (e) { console.warn('Site search skip:', e.message); }
 
-        // ── 다수결: 동일 사이즈가 2개 이상 출처에서 나온 것만 채택 ──
+        // ── 다수결: cm 직접값 우선, 2개 이상 출처 일치 채택 ──
         if (sizeHits.length > 0) {
+          // cm 직접 기재된 것만 우선 필터
+          const cmDirect = sizeHits.filter(h => h.isCmDirect);
+          const pool = cmDirect.length > 0 ? cmDirect : sizeHits;
+
           const freq = {};
-          for (const h of sizeHits) {
+          for (const h of pool) {
             if (!freq[h.sz]) freq[h.sz] = { count: 0, sn: h.sn, srcs: [] };
             freq[h.sz].count++;
             if (!freq[h.sz].srcs.includes(h.src)) freq[h.sz].srcs.push(h.src);
           }
-          // 2개 이상 출처에서 일치한 값 우선, 없으면 가장 많이 나온 값
           const sorted = Object.entries(freq).sort((a, b) => b[1].count - a[1].count);
+          // 2개 이상 다른 출처에서 일치한 값 우선
           const consensus = sorted.find(([, v]) => v.srcs.length >= 2);
           const best = consensus || sorted[0];
           lensSize = best[0];
