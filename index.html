@@ -513,8 +513,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778848616';
-console.error('APP VERSION: 1778848616');
+window._appVer='1778849007';
+console.error('APP VERSION: 1778849007');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -960,7 +960,13 @@ function renderResult(){
   if(analysis.category)cats.push(analysis.category);
   if(analysis.color)cats.push(analysis.color);
   if(analysis.origin)cats.push(analysis.origin);
-  document.getElementById('r-cats').innerHTML=cats.map(c=>`<div class="cat-tag">${c}</div>`).join('');
+  document.getElementById('r-cats').innerHTML=cats.map((c,i)=>{
+    // 첫 번째 태그(카테고리)는 클릭으로 변경 가능
+    if(i===0){
+      return`<div class="cat-tag" id="r-cat-tag" style="cursor:pointer;border-color:#ff6b2b;color:#ff6b2b" onclick="showCatPicker(this)" title="탭하여 카테고리 변경">${c} ✎</div>`;
+    }
+    return`<div class="cat-tag">${c}</div>`;
+  }).join('');
 
   if(analysis.category){
     const catMap={'가방':' 가방/지갑','지갑':'가방/지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
@@ -1150,15 +1156,50 @@ const SIZE_CONFIG = {
   '가방':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
   '지갑':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'}],
   '가방/지갑':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
-  '의류':    [{id:'sz-w',label:'사이즈',unit:'',text:true}],
-  '신발':    [{id:'sz-w',label:'사이즈',unit:'',text:true}],
-  '시계':    [{id:'sz-w',label:'케이스 가로',unit:'mm'},{id:'sz-h',label:'케이스 세로',unit:'mm',opt:true}],
-  '벨트':    [{id:'sz-w',label:'세로 폭',unit:'cm'}],
-  '주얼리':  [{id:'sz-w',label:'펜던트 가로',unit:'mm'},{id:'sz-h',label:'펜던트 세로',unit:'mm',opt:true},{id:'sz-d',label:'체인 길이',unit:'cm',opt:true},{id:'sz-e',label:'내부 직경',unit:'cm',opt:true},{id:'sz-f',label:'폭',unit:'mm',opt:true}],
+  '의류':    [{id:'sz-w',label:'사이즈',unit:'',text:true,wide:true}],
+  '신발':    [{id:'sz-w',label:'사이즈',unit:'',text:true,wide:true}],
+  '시계':    [{id:'sz-w',label:'가로',unit:'mm'},{id:'sz-h',label:'세로',unit:'mm',opt:true}],
+  '벨트':    [{id:'sz-w',label:'폭',unit:'cm'}],
+  '주얼리':  [{id:'sz-w',label:'가로',unit:'mm'},{id:'sz-h',label:'세로',unit:'mm',opt:true},{id:'sz-d',label:'체인',unit:'cm',opt:true},{id:'sz-e',label:'직경',unit:'cm',opt:true},{id:'sz-f',label:'폭',unit:'mm',opt:true}],
 };
 
 
 // 카테고리 탭 자동 활성화 (renderResult 호출)
+// 카테고리 강제 변경 팝업
+function showCatPicker(tagEl){
+  const existing=document.getElementById('cat-picker-popup');
+  if(existing){existing.remove();return;}
+  const cats=['가방/지갑','주얼리','의류','신발','시계','벨트','기타'];
+  const popup=document.createElement('div');
+  popup.id='cat-picker-popup';
+  popup.style.cssText='position:absolute;z-index:999;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.6);min-width:130px';
+  cats.forEach(cat=>{
+    const btn=document.createElement('button');
+    btn.textContent=cat;
+    btn.style.cssText='background:none;border:none;color:#ccc;font-size:13px;padding:6px 12px;border-radius:8px;cursor:pointer;text-align:left';
+    btn.onmouseenter=()=>btn.style.background='#2a2a2a';
+    btn.onmouseleave=()=>btn.style.background='none';
+    btn.onclick=()=>{
+      // 카테고리 탭 강제 변경
+      syncCatTab(cat);
+      // 태그 텍스트 업데이트
+      if(tagEl) tagEl.textContent=cat+' ✎';
+      popup.remove();
+      toast('카테고리: '+cat);
+    };
+    popup.appendChild(btn);
+  });
+  // 팝업 위치
+  const rect=tagEl.getBoundingClientRect();
+  popup.style.top=(rect.bottom+window.scrollY+4)+'px';
+  popup.style.left=(rect.left+window.scrollX)+'px';
+  document.body.appendChild(popup);
+  // 외부 클릭 시 닫기
+  setTimeout(()=>document.addEventListener('click',function h(e){
+    if(!popup.contains(e.target)&&e.target!==tagEl){popup.remove();document.removeEventListener('click',h);}
+  }),100);
+}
+
 function syncCatTab(category){
   const catToTab={'가방':'가방/지갑','지갑':'가방/지갑','가방/지갑':'가방/지갑',
     '주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계','벨트':'가방/지갑'};
@@ -1188,8 +1229,8 @@ function buildSizeInput(cfg, nums){
   return cfg.map((f,i)=>{
     const isText=!!f.text;
     const inputEl=isText
-      ?`<input id="${f.id}" style="width:90px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="예) M, 95, 250">`
-      :`<input id="${f.id}" style="width:42px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">`;
+      ?`<input id="${f.id}" style="width:${f.wide?'100px':'80px'};background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="예) M, 95, 250">`
+      :`<input id="${f.id}" style="width:38px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">`;
     return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap">
       <span style="font-size:9px;color:#666">${f.label}${f.unit?'':''}${!isText&&f.unit?' ('+f.unit+')':''}</span>
       ${inputEl}
