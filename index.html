@@ -513,8 +513,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778825106';
-console.error('APP VERSION: 1778825106');
+window._appVer='1778847313';
+console.error('APP VERSION: 1778847313');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1131,14 +1131,12 @@ function editField(id){
 
   const isSearch=(id==='r-model'||id==='r-model-ko'||id==='r-sku');
   const trigger=isSearch?'oninput="onResultFieldInput(this,\''+id+'\')"':'';
-  el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" ${trigger}>`;
+  el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" ${trigger}>`;
   const inp=el.querySelector('input');
   // 사용자 직접 편집 플래그 ON
   window._userEditingField=true;
   inp.focus();
-  const len=inp.value.length;
-  inp.setSelectionRange(len,len);
-  inp.addEventListener('dblclick',()=>inp.select());
+  inp.select();
 }
 
 let _sizeVal='';
