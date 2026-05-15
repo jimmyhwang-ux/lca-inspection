@@ -80,7 +80,7 @@ input[type=file]{display:none}
 .result-reason{font-size:12px;color:#555;margin-bottom:8px}
 .result-cats{display:flex;gap:6px;flex-wrap:wrap}
 .cat-tag{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;padding:3px 10px;font-size:11px;color:#888}
-.info-row-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a1a1a;margin:0 16px 4px;border-radius:12px;overflow:visible}
+.info-row-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a1a1a;border-radius:12px;overflow:visible}
 .info-cell{background:#111;padding:12px 10px}
 .info-cell-label{font-size:10px;color:#444;margin-bottom:4px}
 .info-cell-val{font-size:13px;font-weight:700;color:#fff;cursor:pointer}
@@ -88,8 +88,8 @@ input[type=file]{display:none}
 .info-cell-val:hover{color:#ff6b2b}
 .ai-badge{cursor:default;vertical-align:middle}
 .info-cell-val[title]:hover::after{content:attr(title);position:absolute;background:#1c1c1c;color:#aaa;font-size:10px;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;margin-top:18px;margin-left:-20px}
-.section-hd{padding:16px 16px 8px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase}
-.lens-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
+.section-hd{padding:16px 0 8px;font-size:11px;font-weight:700;color:#444;letter-spacing:.08em;text-transform:uppercase}
+.lens-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 0 4px;scrollbar-width:none}
 .lens-scroll::-webkit-scrollbar{display:none}
 .lens-card{flex-shrink:0;width:120px;background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
 .lens-card:hover{border-color:#ff6b2b}
@@ -98,7 +98,7 @@ input[type=file]{display:none}
 .lens-title{font-size:11px;font-weight:600;color:#f0f0f0;line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lens-price{font-size:12px;font-weight:800;color:#ff6b2b}
 .lens-src{font-size:10px;color:#444;margin-top:2px}
-.acc-wrap{margin:0 16px;background:#111;border-radius:14px;overflow:hidden}
+.acc-wrap{background:#111;border-radius:14px;overflow:hidden}
 .acc-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
 .acc-item:last-child{border-bottom:none}
 .acc-name{font-size:13px;font-weight:600;color:#f0f0f0;flex:1;min-width:0}
@@ -121,7 +121,7 @@ input[type=file]{display:none}
 .db-match-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
 .db-match-info{flex:1;font-size:12px;color:#aaa;line-height:1.7}
 .db-match-info strong{color:#f0f0f0;font-size:13px}
-.db-new-badge{margin:0 16px 4px;border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px}
+.db-new-badge{border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px}
 .bottom-bar{position:sticky;bottom:0;background:linear-gradient(to top,#000 60%,transparent);padding:14px 16px 20px}
 .btn-row{display:flex;gap:6px}
 .btn-sec{flex:1;background:#111;color:#888;border:1px solid #1e1e1e;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer}
@@ -281,8 +281,9 @@ input[type=file]{display:none}
 
   <div id="db-match-wrap"></div>
 
+  <div style="padding:0 16px;display:flex;flex-direction:column;gap:4px" id="result-body">
   <!-- 실측사이즈 + 사이즈명칭 + 스타일번호 -->
-  <div style="margin:0 16px;background:#111;border-radius:14px;overflow:visible;margin-bottom:0">
+  <div style="background:#111;border-radius:14px;overflow:visible">
   <!-- 실측 사이즈 단독 행 -->
   <div style="border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
     <div style="font-size:9px;color:#555;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
@@ -311,7 +312,10 @@ input[type=file]{display:none}
   </div>
   </div><!-- end 사이즈 컨테이너 -->
 
-  <div class="section-hd">🔧 부속품 체크</div>
+  </div><!-- end result-body -->
+
+  <div style="padding:0 16px;display:flex;flex-direction:column;gap:4px">
+  <div class="section-hd" style="padding:16px 0 8px">🔧 부속품 체크</div>
   <div class="acc-wrap">
     <div id="acc-list"></div>
     <div class="acc-add-row">
@@ -341,7 +345,10 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between">
+  </div><!-- end acc wrapper -->
+
+  <div style="padding:0 16px">
+  <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px">
     <span>🔍 Google Lens 유사 상품</span>
     <div style="display:flex;gap:6px">
       <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#888;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
@@ -351,6 +358,7 @@ input[type=file]{display:none}
   <div class="lens-scroll" id="lens-results" style="scroll-behavior:smooth">
     <div style="font-size:12px;color:#444;padding:8px">검색 결과 없음</div>
   </div>
+  </div><!-- end lens wrapper -->
 
   <div style="height:16px"></div>
   <div class="bottom-bar">
@@ -520,8 +528,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778851196';
-console.error('APP VERSION: 1778851196');
+window._appVer='1778851425';
+console.error('APP VERSION: 1778851425');
 
 const ACC_MAP = {
   '가방/지갑': [
