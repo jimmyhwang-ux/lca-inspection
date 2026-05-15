@@ -393,9 +393,9 @@ input[type=file]{display:none}
       <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—" oninput="onSkuModelKoInput(this)"></div>
       <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="sku-model" type="text" placeholder="—"></div>
-      <div class="sku-row"><div class="sku-key">카테고리</div><input class="sku-input" id="sku-cat" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">카테고리</div><input class="sku-input" id="sku-cat" type="text" placeholder="—" oninput="onSkuCatInput(this)"></div>
       <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—"></div>
-      <div class="sku-row"><div class="sku-key">실측 사이즈</div><input class="sku-input" id="sku-size" type="text" placeholder="가로 _ × 세로 _ × 높이 _"></div>
+      <div class="sku-row"><div class="sku-key">실측 사이즈</div><div class="sku-input" id="sku-size-wrap" onclick="editSkuSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="sku-size-display" style="color:#555;font-size:12px">탭하여 입력</span></div></div>
       <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">사이트 URL</div><input class="sku-input" id="sku-url" type="url" placeholder="https://..."></div>
@@ -528,8 +528,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778851425';
-console.error('APP VERSION: 1778851425');
+window._appVer='1778851756';
+console.error('APP VERSION: 1778851756');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1472,6 +1472,88 @@ function addSkuPhotoThumb(wrap,dataUrl,inp){
   wrap.appendChild(tw);
 }
 
+// 적재탭 카테고리 입력 → 사이즈 필드 초기화
+function onSkuCatInput(input){
+  // 카테고리 변경 시 사이즈 초기화
+  const wrap=document.getElementById('sku-size-wrap');
+  if(wrap){
+    wrap.innerHTML='<span id="sku-size-display" style="color:#555;font-size:12px">탭하여 입력</span>';
+  }
+  // sku-size hidden input 값도 초기화
+  let hidden=document.getElementById('sku-size-hidden');
+  if(hidden) hidden.value='';
+}
+
+// 적재탭 실측사이즈 편집
+function editSkuSize(){
+  const wrap=document.getElementById('sku-size-wrap');
+  if(!wrap) return;
+  if(wrap.querySelector('input')) return; // 이미 편집 중
+  const cat=(document.getElementById('sku-cat')?.value||'').trim();
+  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+  // 기존 값 파싱
+  const curText=(document.getElementById('sku-size-hidden')?.value||wrap.textContent||'').replace('탭하여 입력','');
+  const nums=curText.match(/\d+(\.\d+)?/g)||[];
+  wrap.innerHTML=`<span id="sz-sku-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">${buildSkuSizeInput(cfg,nums)}</span>`;
+  const sizeInputIds=cfg.map(f=>'ssku-'+f.id);
+  const doSave=()=>{
+    setTimeout(()=>{
+      const focusId=document.activeElement?.id;
+      if(sizeInputIds.includes(focusId)) return;
+      saveSkuSize(cfg);
+    },350);
+  };
+  cfg.forEach(f=>{
+    const inp=document.getElementById('ssku-'+f.id);
+    if(inp) inp.addEventListener('blur',doSave);
+  });
+  const first=document.getElementById('ssku-'+cfg[0].id);
+  if(first) first.focus();
+}
+
+function buildSkuSizeInput(cfg, nums){
+  return cfg.map((f,i)=>{
+    const isText=!!f.text;
+    const sep=i<cfg.length-1?`<span style="color:#444;font-size:10px;margin:0 3px">×</span>`:'';
+    if(isText){
+      return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
+        <span style="font-size:8px;color:#555">${f.label}</span>
+        <input id="ssku-${f.id}" onclick="event.stopPropagation()" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
+      </span>${sep}`;
+    }
+    return `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">
+      <span style="font-size:8px;color:#555">${f.label}(${f.unit})</span>
+      <input id="ssku-${f.id}" onclick="event.stopPropagation()" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
+    </span>${sep}`;
+  }).join('');
+}
+
+function saveSkuSize(cfg){
+  const parts=cfg.map(f=>{
+    const v=(document.getElementById('ssku-'+f.id)?.value||'').trim();
+    if(!v) return null;
+    if(f.text) return `${f.label}: ${v}`;
+    return `${f.label} ${v}${f.unit}`;
+  }).filter(Boolean);
+  const val=parts.length?parts.join(' × '):'';
+  // hidden input에 저장
+  let hidden=document.getElementById('sku-size-hidden');
+  if(!hidden){
+    hidden=document.createElement('input');
+    hidden.type='hidden';
+    hidden.id='sku-size-hidden';
+    hidden.name='sku-size';
+    document.getElementById('sku-size-wrap')?.parentNode?.appendChild(hidden);
+  }
+  hidden.value=val;
+  const wrap=document.getElementById('sku-size-wrap');
+  if(wrap){
+    wrap.innerHTML=val
+      ?`<span style="font-size:13px;font-weight:700;color:#fff">${val}</span>`
+      :`<span id="sku-size-display" style="color:#555;font-size:12px">탭하여 입력</span>`;
+  }
+}
+
 function onSkuModelKoInput(input){
   clearTimeout(_skuTransTimer);
   const val=input.value.trim();
@@ -1592,7 +1674,7 @@ function goToSku(){
   document.getElementById('sku-color').value=a.color||'';
   const rSizeEl=document.getElementById('r-size');
   const rSizeText=_sizeVal||((rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim());
-  document.getElementById('sku-size').value=rSizeText;
+  (document.getElementById('sku-size-hidden')?.value||'')=rSizeText;
   document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
   document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
   const _dbFirst=(window._dbEnriched&&window._dbEnriched[0])||{};
@@ -1681,7 +1763,7 @@ async function saveToSupabase(){
       model_name_ko:document.getElementById('sku-model-ko').value,
       category:document.getElementById('sku-cat').value,
       color:document.getElementById('sku-color').value,
-      size_actual:document.getElementById('sku-size').value,
+      size_actual:(document.getElementById('sku-size-hidden')?.value||''),
       size_label:document.getElementById('sku-size-name').value,
       sku_code:document.getElementById('sku-sku').value,
       site_url:document.getElementById('sku-url').value,
@@ -2151,6 +2233,11 @@ function clearSkuForm(){
   accessories=[];
   renderSkuAccList();
   // 적재탭 추가 사진 초기화
+  // 사이즈 필드 초기화
+  const skuSizeWrap=document.getElementById('sku-size-wrap');
+  if(skuSizeWrap) skuSizeWrap.innerHTML='<span id="sku-size-display" style="color:#555;font-size:12px">탭하여 입력</span>';
+  const skuSizeHidden=document.getElementById('sku-size-hidden');
+  if(skuSizeHidden) skuSizeHidden.value='';
   const skuPhotoInp=document.getElementById('sku-new-photo');
   if(skuPhotoInp) skuPhotoInp._dataUrls=[];
   const skuPreview=document.getElementById('sku-new-photo-preview');
@@ -2165,7 +2252,7 @@ function copySkuResult(){
     '모델명(영문): '+document.getElementById('sku-model').value,
     '카테고리: '+document.getElementById('sku-cat').value,
     '컬러: '+document.getElementById('sku-color').value,
-    '실측사이즈: '+document.getElementById('sku-size').value,
+    '실측사이즈: '+(document.getElementById('sku-size-hidden')?.value||''),
     '사이즈명칭: '+document.getElementById('sku-size-name').value,
     '스타일번호: '+document.getElementById('sku-sku').value,
     '','[부속품]',
