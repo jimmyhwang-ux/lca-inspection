@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778806516';
-console.error('APP VERSION: 1778806516');
+window._appVer='1778808043';
+console.error('APP VERSION: 1778808043');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -635,6 +635,15 @@ async function startInspection(){
     const data=await res.json();
     setStep(3,'done');setStep(4,'active');
     resultData=data;
+    // AI 원본값 저장 (DB 적용 취소 시 복원용)
+    window._aiOriginal={
+      brand:     data.analysis?.brand||'',
+      model_name:data.analysis?.model_name||'',
+      model_name_ko:data.analysis?.model_name_ko||'',
+      sku:       data.analysis?.sku||'',
+      size:      data.analysis?.size||'',
+      size_label:data.analysis?.size_label||'',
+    };
     await delay(400);setStep(4,'done');
     await delay(300);renderResult();
   }catch(err){
@@ -646,6 +655,42 @@ function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // ── renderDbMatchCards ──────────────────────────────────
 // _cardMatches에서 안전하게 꺼내서 적용
+// AI 원본값으로 복원 + DB 카드 해제
+function resetToAi(){
+  const ai=window._aiOriginal||{};
+  // 브랜드/모델명 복원
+  const rBrand=document.getElementById('r-brand');
+  const rModelKo=document.getElementById('r-model-ko');
+  const rModel=document.getElementById('r-model');
+  if(rBrand) rBrand.textContent=ai.brand||'—';
+  if(rModelKo) rModelKo.textContent=ai.model_name_ko||'—';
+  if(rModel) rModel.textContent=ai.model_name||'—';
+  // 실측사이즈 복원
+  const sizeEl=document.getElementById('r-size');
+  if(sizeEl){ sizeEl.textContent=ai.size||'—'; sizeEl.className='info-cell-val'+(ai.size?'':' muted'); }
+  // 사이즈명칭 복원
+  const sizeNameEl=document.getElementById('r-size-name');
+  if(sizeNameEl){ sizeNameEl.textContent=ai.size_label||'—'; sizeNameEl.className='info-cell-val'+(ai.size_label?'':' muted'); }
+  // 스타일번호 복원
+  const skuEl=document.getElementById('r-sku');
+  if(skuEl){ skuEl.textContent=ai.sku||'—'; skuEl.className='info-cell-val'+(ai.sku?'':' muted'); }
+  // 부속품 초기화
+  accessories=[];
+  renderAcc();
+  // 카드 하이라이트 전부 해제
+  document.querySelectorAll('#db-match-wrap .db-match-card').forEach(c=>{
+    c.style.border='1px solid rgba(34,197,94,.15)';
+    c.style.background='rgba(34,197,94,.02)';
+    c.style.opacity='1';
+    c.querySelectorAll('button[id^="apply-btn"]').forEach(btn=>{
+      btn.textContent='적용';
+      btn.style.background='#1a3a1a';
+      btn.style.color='#22c55e';
+    });
+  });
+  toast('↩️ AI 분석값으로 복원됨');
+}
+
 function applyCardMatch(idx, cardId){
   const item = (window._cardMatches||[])[idx];
   if(!item){ console.warn('[applyCardMatch] item not found at', idx); return; }
@@ -655,6 +700,12 @@ function applyCardMatch(idx, cardId){
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
+  // 이미 적용된 카드 재클릭 → 해제
+  const selCard=cardId?document.getElementById(cardId):null;
+  if(selCard&&selCard.style.border==='2px solid rgb(34, 197, 94)'){
+    resetToAi();
+    return;
+  }
 
   // ── 1. 브랜드/모델명 ─────────────────────────────────────────
   const rBrand = document.getElementById('r-brand');
@@ -1018,13 +1069,8 @@ function saveField(id,input){
     reSearchByModel(brand, val);
   }
   if(id==='r-sku'&&val==='—'){
-    const dbWrap=document.getElementById('db-match-wrap');
-    if(dbWrap){
-      dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
-    }
-    window._dbEnriched=[];
-    accessories=[];
-    renderAcc();
+    // 스타일번호 삭제 시 AI 원본값으로 복원
+    resetToAi();
   }
 }
 
