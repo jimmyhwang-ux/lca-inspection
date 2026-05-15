@@ -575,8 +575,32 @@ function loadPhoto(input,key){
 
 const SLOT_ORDER=['main','label1','label2','label3','logo','origin','back'];
 document.addEventListener('paste',e=>{
+  // screen-shoot 아닐 때는 무시
+  if(!document.getElementById('screen-shoot')?.classList.contains('active')) return;
   const items=[...(e.clipboardData?.items||[])];
+
+  // 1순위: 실제 이미지 파일
   const imgItem=items.find(it=>it.type.startsWith('image/'));
+  
+  // 2순위: text/html 안의 img src (일부 사이트 복사 시)
+  let htmlImgUrl=null;
+  if(!imgItem){
+    const htmlItem=items.find(it=>it.type==='text/html');
+    if(htmlItem){
+      htmlItem.getAsString(htmlStr=>{
+        const m=htmlStr.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if(m&&m[1]&&m[1].startsWith('http')){
+          const focused2=document.activeElement?.closest('[id^="slot-"]');
+          let targetKey2=null;
+          if(focused2){const k=focused2.id.replace('slot-','');if(SLOT_ORDER.includes(k))targetKey2=k;}
+          if(!targetKey2) targetKey2=SLOT_ORDER.find(k=>!photos[k])||'main';
+          processImage(m[1],targetKey2,null);
+        }
+      });
+      return;
+    }
+  }
+
   if(!imgItem)return;
   e.preventDefault();
   const file=imgItem.getAsFile();
