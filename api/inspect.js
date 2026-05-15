@@ -280,7 +280,9 @@ export default async function handler(req, res) {
   if (action === 'list_sku') {
     try {
       const source = body.source || null;
-      const query = source
+      const query = source === 'model'
+        ? `sku_items?select=*&or=(source.eq.model,source.is.null)&order=created_at.desc&limit=500`
+        : source
         ? `sku_items?select=*&source=eq.${source}&order=created_at.desc&limit=500`
         : `sku_items?select=*&order=created_at.desc&limit=500`;
       const r = await sb(query);
