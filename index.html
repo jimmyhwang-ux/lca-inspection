@@ -438,7 +438,8 @@ input[type=file]{display:none}
 
   <div id="sku-list-panel" style="display:none">
     <div style="margin-bottom:10px">
-      <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuList()">
+      <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;margin-bottom:6px" oninput="filterSkuList()">
+      <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuNotes(this.value)">
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="sku-cat-tabs">
       <button class="cat-btn active" onclick="setSkuCatFilter('전체',this)">전체</button>
@@ -565,8 +566,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778856062';
-console.error('APP VERSION: 1778856062');
+window._appVer='1778856525';
+console.error('APP VERSION: 1778856525');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -951,7 +952,7 @@ function renderDbMatchCards(matches){
     const dbId=`db-detail-${idx}`;
     const isMulti=matches.length>1;
     const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a">
-        <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${allImgs[0]}',${JSON.stringify(allImgs).replace(/'/g,'&#39;')})">
+        <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}')">
         ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
         <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
         <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`:'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'}
@@ -2037,10 +2038,10 @@ function renderSkuList(list, wrapId){
                 };
                 const targets=moveTargets[itemSource]||moveTargets['model'];
                 const moveBtns=targets.map(t=>'<button onclick="event.stopPropagation();copySkuTo(\'' + item.id + '\',\'' + t.src + '\')" style="flex:1;background:' + t.bg + ';border:1px solid ' + t.border + ';color:' + t.color + ';font-size:12px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer">' + t.label + '</button>').join('');
-                const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDrop(event,\'' + item.id + '\')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\'' + item.id + '\',' + pi + ')"><div id="pchk-' + item.id + '-' + pi + '" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
+                const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\'' + item.id + '\',' + pi + ')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();openLightboxSlider(\'skusl-' + item.id + '\','+ pi +');togglePhotoCheck(this,\'' + item.id + '\',' + pi + ')"><div id="pchk-' + item.id + '-' + pi + '" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
                 const photoGrid='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' + thumbChecks + '</div><div style="display:flex;gap:6px;margin-bottom:8px">' + moveBtns + '</div>';
                 return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
-                  <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${allImgs[0]}',${JSON.stringify(allImgs).replace(/'/g,'&#39;')})">
+                  <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}')">
                   ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
                   <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
                   <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
@@ -2155,6 +2156,22 @@ function slideImg(sliderId,dir){
 }
 
 // 드래그앤드롭 - 사진 순서 변경
+// slId 기반 lightbox 열기 (배열 JSON 문제 우회)
+// 특이사항 전용 검색
+function filterSkuNotes(q){
+  const filtered = q.trim()
+    ? skuListAll.filter(s=>(s.notes||'').toLowerCase().includes(q.toLowerCase()))
+    : skuListAll;
+  renderSkuList(filtered, 'sku-list-wrap');
+}
+
+function openLightboxSlider(slId, startIdx){
+  const s=_sliders[slId];
+  if(!s||!s.urls||!s.urls.length){ return; }
+  openLightbox(s.urls[startIdx||s.cur||0], s.urls);
+}
+
+// 드래그앤드롭 - 모델간 사진 이동 (다른 SKU로)
 let _dragFromIdx = null, _dragSkuId = null;
 function lbDragStart(e){
   _dragFromIdx = parseInt(e.currentTarget.dataset.pi);
@@ -2162,31 +2179,52 @@ function lbDragStart(e){
   e.currentTarget.style.opacity = '0.4';
   e.dataTransfer.effectAllowed = 'move';
 }
-async function lbDrop(e, skuId){
+async function lbDropTo(e, toSkuId, toIdx){
   e.preventDefault();
-  const toIdx = parseInt(e.currentTarget.dataset.pi);
-  if(_dragSkuId !== skuId || _dragFromIdx === null || _dragFromIdx === toIdx) {
-    document.querySelectorAll('[data-skuid="'+skuId+'"]').forEach(el=>el.style.opacity='1');
-    return;
-  }
-  // 배열 순서 변경
-  const item = skuListAll.find(s=>String(s.id)===String(skuId));
-  if(!item) return;
-  const allPhotos = [item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
-  const moved = allPhotos.splice(_dragFromIdx, 1)[0];
-  allPhotos.splice(toIdx, 0, moved);
-  item.ref_image_url = allPhotos[0]||null;
-  item.extra_images = allPhotos.slice(1);
-  // DB 저장
-  try{
+  if(_dragFromIdx===null || _dragSkuId===null) return;
+  document.querySelectorAll('[draggable]').forEach(el=>el.style.opacity='1');
+
+  const fromItem = skuListAll.find(s=>String(s.id)===String(_dragSkuId));
+  if(!fromItem) return;
+  const fromPhotos = [fromItem.ref_image_url,...(fromItem.extra_images||[])].filter(Boolean);
+  const movedUrl = fromPhotos[_dragFromIdx];
+  if(!movedUrl) return;
+
+  if(_dragSkuId === toSkuId){
+    // 같은 SKU 내 순서 변경
+    fromPhotos.splice(_dragFromIdx,1);
+    fromPhotos.splice(toIdx,0,movedUrl);
+    fromItem.ref_image_url=fromPhotos[0]||null;
+    fromItem.extra_images=fromPhotos.slice(1);
     await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'update_sku_photos',itemId:skuId,
-        ref_image_url:item.ref_image_url, extra_images:item.extra_images})});
-    toast('📷 사진 순서 저장됨');
-  }catch(e){ toast('❌ 저장 실패'); }
-  // 현재 탭 재렌더
+      body:JSON.stringify({action:'update_sku_photos',itemId:_dragSkuId,
+        ref_image_url:fromItem.ref_image_url,extra_images:fromItem.extra_images})});
+    toast('📷 순서 변경됨');
+  } else {
+    // 다른 SKU로 사진 이동
+    const toItem = skuListAll.find(s=>String(s.id)===String(toSkuId));
+    if(!toItem) return;
+    // 원본에서 제거
+    fromPhotos.splice(_dragFromIdx,1);
+    fromItem.ref_image_url=fromPhotos[0]||null;
+    fromItem.extra_images=fromPhotos.slice(1);
+    // 대상에 추가
+    const toPhotos=[toItem.ref_image_url,...(toItem.extra_images||[])].filter(Boolean);
+    toPhotos.splice(toIdx,0,movedUrl);
+    toItem.ref_image_url=toPhotos[0]||null;
+    toItem.extra_images=toPhotos.slice(1);
+    await Promise.all([
+      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'update_sku_photos',itemId:_dragSkuId,
+          ref_image_url:fromItem.ref_image_url,extra_images:fromItem.extra_images})}),
+      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'update_sku_photos',itemId:toSkuId,
+          ref_image_url:toItem.ref_image_url,extra_images:toItem.extra_images})})
+    ]);
+    toast('📷 사진 이동됨: '+toItem.model_name_ko);
+  }
   const srcTabMap={'model':'list','db':'db','gear':'gear'};
-  loadSkuList(srcTabMap[item.source||'model']||'list');
+  loadSkuList(srcTabMap[fromItem.source||'model']||'list');
 }
 
 let _lbUrls=[], _lbIdx=0, _lbTouchX=0;
@@ -2219,9 +2257,13 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='ArrowRight') lbNav(1);
   else if(e.key==='Escape') closeLightbox();
 });
-// 스와이프
-document.getElementById('lightbox')?.addEventListener('touchstart',e=>{ _lbTouchX=e.touches[0].clientX; },{passive:true});
-document.getElementById('lightbox')?.addEventListener('touchend',e=>{
+// 스와이프 - 이벤트 위임 방식
+document.addEventListener('touchstart',e=>{
+  if(document.getElementById('lightbox')?.classList.contains('open'))
+    _lbTouchX=e.touches[0].clientX;
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!document.getElementById('lightbox')?.classList.contains('open')) return;
   const dx=e.changedTouches[0].clientX-_lbTouchX;
   if(Math.abs(dx)>50){ lbNav(dx<0?1:-1); }
 },{passive:true});
