@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778805875';
-console.error('APP VERSION: 1778805875');
+window._appVer='1778806096';
+console.error('APP VERSION: 1778806096');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -727,9 +727,13 @@ function renderDbMatchCards(matches){
   const dbWrap=document.getElementById('db-match-wrap');
   if(!dbWrap) return;
   // 카드 데이터를 전역에 저장 (버튼 클릭 시 참조)
+  // 카드 ID가 동일하면 innerHTML 스킵 (깜빡임 방지)
+  const _newIds=matches.map(m=>String(m.id)).join(',');
+  const _oldIds=(_cardMatches||[]).map(m=>String(m.id)).join(',');
+  const _doRender=_newIds!==_oldIds||!dbWrap.querySelector('.db-match-card');
   window._cardMatches=matches;
 
-  dbWrap.innerHTML=matches.map((m,idx)=>{
+  if(_doRender) dbWrap.innerHTML=matches.map((m,idx)=>{
     const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     const total=allImgs.length;
     const slId=`dbsl-${idx}`;
