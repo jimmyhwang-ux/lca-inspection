@@ -280,16 +280,19 @@ export default async function handler(req, res) {
   if (action === 'list_sku') {
     try {
       const source = body.source || null;
-      const query = source === 'model'
-        ? `sku_items?select=*&or=(source.eq.model,source.is.null)&order=created_at.desc&limit=500`
-        : source
-        ? `sku_items?select=*&source=eq.${source}&order=created_at.desc&limit=500`
-        : `sku_items?select=*&order=created_at.desc&limit=500`;
-      const r = await sb(query);
+      // 전체 가져온 후 JS에서 source 필터 (Supabase or= 문법 이슈 방지)
+      const r = await sb('sku_items?select=*&order=created_at.desc&limit=500');
       const text = await r.text();
       if (!r.ok) return res.status(200).json({ success: false, error: `Supabase ${r.status}: ${text}` });
-      const d = text ? JSON.parse(text) : [];
-      return res.status(200).json({ success: true, data: Array.isArray(d) ? d : [] });
+      let d = text ? JSON.parse(text) : [];
+      if (!Array.isArray(d)) d = [];
+      // source 필터링
+      if (source === 'model') {
+        d = d.filter(s => !s.source || s.source === 'model');
+      } else if (source) {
+        d = d.filter(s => s.source === source);
+      }
+      return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
