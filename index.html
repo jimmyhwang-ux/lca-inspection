@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778809450';
-console.error('APP VERSION: 1778809450');
+window._appVer='1778809714';
+console.error('APP VERSION: 1778809714');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -603,11 +603,25 @@ document.addEventListener('paste',e=>{
           const wrap=document.getElementById('ef-new-photo-preview');
           if(wrap){
             wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:6px';
+            const thumbWrap=document.createElement('div');
+            thumbWrap.style.cssText='position:relative;flex-shrink:0';
             const thumb=document.createElement('img');
             thumb.src=dataUrl;
-            thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;flex-shrink:0;cursor:zoom-in';
+            thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;cursor:zoom-in;display:block';
             thumb.onclick=()=>openLightbox(dataUrl);
-            wrap.appendChild(thumb);
+            const delBtn=document.createElement('button');
+            delBtn.textContent='×';
+            delBtn.style.cssText='position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ff3b30;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:2';
+            delBtn.onclick=()=>{
+              // _dataUrls에서 제거
+              const efInputEl=document.getElementById('ef-new-photo');
+              if(efInputEl) efInputEl._dataUrls=(efInputEl._dataUrls||[]).filter(u=>u!==dataUrl);
+              thumbWrap.remove();
+              toast('🗑 사진 삭제됨');
+            };
+            thumbWrap.appendChild(thumb);
+            thumbWrap.appendChild(delBtn);
+            wrap.appendChild(thumbWrap);
           }
         }
         toast('📷 사진 추가됨 (붙여넣기)');
@@ -1647,11 +1661,23 @@ async function previewEditPhotos(input){
   const wrap=document.getElementById('ef-new-photo-preview');
   wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:6px';
   newDataUrls.forEach(dataUrl=>{
+    const tw=document.createElement('div');
+    tw.style.cssText='position:relative;flex-shrink:0';
     const thumb=document.createElement('img');
     thumb.src=dataUrl;
-    thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;flex-shrink:0;cursor:zoom-in';
+    thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;cursor:zoom-in;display:block';
     thumb.onclick=()=>openLightbox(dataUrl);
-    wrap.appendChild(thumb);
+    const db=document.createElement('button');
+    db.textContent='×';
+    db.style.cssText='position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ff3b30;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:2';
+    db.onclick=()=>{
+      input._dataUrls=(input._dataUrls||[]).filter(u=>u!==dataUrl);
+      tw.remove();
+      toast('🗑 사진 삭제됨');
+    };
+    tw.appendChild(thumb);
+    tw.appendChild(db);
+    wrap.appendChild(tw);
   });
   toast(`📷 ${newDataUrls.length}장 추가 (총 ${input._dataUrls.length}장)`);
 }
