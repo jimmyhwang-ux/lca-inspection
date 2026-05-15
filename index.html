@@ -528,8 +528,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778852491';
-console.error('APP VERSION: 1778852491');
+window._appVer='1778852642';
+console.error('APP VERSION: 1778852642');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1473,12 +1473,14 @@ function addSkuPhotoThumb(wrap,dataUrl,inp){
 }
 
 // 적재탭 카테고리 입력 → 사이즈 필드 초기화
+let _skuCatTimer=null;
 function onSkuCatInput(input){
-  // sku-size hidden 초기화
-  const hidden=document.getElementById('sku-size-hidden');
-  if(hidden) hidden.value='';
-  // 카테고리에 맞는 사이즈 필드 즉시 표시
-  setTimeout(()=>editSkuSize(), 50);
+  clearTimeout(_skuCatTimer);
+  _skuCatTimer=setTimeout(()=>{
+    const hidden=document.getElementById('sku-size-hidden');
+    if(hidden) hidden.value='';
+    editSkuSize();
+  }, 800);
 }
 
 // 적재탭 실측사이즈 편집
