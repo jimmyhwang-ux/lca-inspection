@@ -245,6 +245,7 @@ export default async function handler(req, res) {
       }
       const payload = { ...skuData, extra_images };
       delete payload.newImageBase64;
+      if (!payload.source) payload.source = 'model';
       // site_url: DB 컬럼 없으면 에러 방지 — 일단 전송하고 에러 시 제거 후 재시도
       if (payload.site_url === undefined) payload.site_url = '';
       const r = await sb('sku_items', {
@@ -278,11 +279,42 @@ export default async function handler(req, res) {
   // ── SKU 목록 ──────────────────────────────────────────────────────────
   if (action === 'list_sku') {
     try {
-      const r = await sb('sku_items?select=*&order=created_at.desc&limit=200');
+      const source = body.source || null;
+      const query = source
+        ? `sku_items?select=*&source=eq.${source}&order=created_at.desc&limit=500`
+        : `sku_items?select=*&order=created_at.desc&limit=500`;
+      const r = await sb(query);
       const text = await r.text();
       if (!r.ok) return res.status(200).json({ success: false, error: `Supabase ${r.status}: ${text}` });
       const d = text ? JSON.parse(text) : [];
       return res.status(200).json({ success: true, data: Array.isArray(d) ? d : [] });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  if (action === 'copy_sku_to') {
+    try {
+      const { itemId, targetSource, photoIndices } = body;
+      const r = await sb(`sku_items?id=eq.${itemId}&select=*`);
+      const text = await r.text();
+      const items = JSON.parse(text);
+      if (!items.length) return res.status(404).json({ success: false, error: 'SKU not found' });
+      const orig = items[0];
+      const allPhotos = [orig.ref_image_url, ...(orig.extra_images || [])].filter(Boolean);
+      const selected = photoIndices.map(i => allPhotos[i]).filter(Boolean);
+      const newItem = {
+        brand: orig.brand, model_name: orig.model_name, model_name_ko: orig.model_name_ko,
+        category: orig.category, color: orig.color,
+        size_actual: orig.size_actual, size_label: orig.size_label, sku_code: orig.sku_code,
+        accessories: orig.accessories, notes: orig.notes, site_url: orig.site_url,
+        ref_image_url: selected[0] || null,
+        extra_images: selected.slice(1),
+        source: targetSource,
+      };
+      const ins = await sb('sku_items', { method: 'POST', body: JSON.stringify(newItem),
+        headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' } });
+      const insText = await ins.text();
+      if (!ins.ok) return res.status(500).json({ success: false, error: insText });
+      return res.status(200).json({ success: true, data: JSON.parse(insText) });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
