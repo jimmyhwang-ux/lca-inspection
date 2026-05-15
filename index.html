@@ -528,8 +528,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778852314';
-console.error('APP VERSION: 1778852314');
+window._appVer='1778852491';
+console.error('APP VERSION: 1778852491');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1490,8 +1490,6 @@ function editSkuSize(){
   const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
   const curRenderedCat=wrap.dataset.cat;
   if(wrap.querySelector('input') && curRenderedCat===cat) return; // 같은 카테고리면 유지
-  const cat=(document.getElementById('sku-cat')?.value||'').trim();
-  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
   // 기존 값 파싱
   const curText=(document.getElementById('sku-size-hidden')?.value||wrap.textContent||'').replace('탭하여 입력','');
   const nums=curText.match(/\d+(\.\d+)?/g)||[];
