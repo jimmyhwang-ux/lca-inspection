@@ -507,8 +507,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778810573';
-console.error('APP VERSION: 1778810573');
+window._appVer='1778810832';
+console.error('APP VERSION: 1778810832');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1209,18 +1209,7 @@ async function translateToEn(koName, targetEnId){
     const el=document.getElementById(targetEnId);
     if(el){ el.value=v; }
   };
-  try{
-    const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku'})
-    });
-    const j=await res.json();
-    if(j.success&&j.data){
-      const v=koName.toLowerCase();
-      const match=j.data.find(i=>(i.model_name_ko||'').toLowerCase()===v);
-      if(match?.model_name){ setEn(match.model_name); toast('🔤 영문명(DB): '+match.model_name); return; }
-    }
-  }catch(_){}
+  // Claude API로 번역 (DB 매칭 제거 — 카테고리명 오매칭 방지)
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
