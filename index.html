@@ -506,8 +506,9 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778810315';
-console.error('APP VERSION: 1778810315');
+const _sliders={};
+window._appVer='1778810573';
+console.error('APP VERSION: 1778810573');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1201,7 +1202,7 @@ async function reSearchByModel(brand, modelName){
   }, 800); // 800ms 디바운스 — 연속 수정 시 마지막 것만 검색
 }
 
-async // 범용 한→영 번역 함수 (targetEnId: 영문 input id)
+// 범용 한→영 번역 함수 (targetEnId: 영문 input id)
 async function translateToEn(koName, targetEnId){
   if(!koName||koName.trim().length<1) return;
   const setEn=(v)=>{
@@ -1610,7 +1611,6 @@ function slideLens(dir){
   el.scrollLeft+=dir*cardW*2;
 }
 
-const _sliders={};
 function makeSlider(sliderId,urls){
   if(!urls||!urls.length)return'<div style="text-align:center;padding:20px;opacity:.3;font-size:20px">🗄️</div>';
   _sliders[sliderId]={urls,cur:0};
