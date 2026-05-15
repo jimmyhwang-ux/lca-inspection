@@ -284,10 +284,10 @@ input[type=file]{display:none}
   <!-- 실측 사이즈 단독 행 -->
   <div style="background:#111;border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
     <div style="font-size:9px;color:#555;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
-    <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center">—</div>
+    <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center;justify-content:center">—</div>
   </div>
   <!-- 사이즈명칭 + 스타일번호 행 -->
-  <div class="info-row-grid" style="grid-template-columns:1fr 1fr">
+  <div class="info-row-grid" style="grid-template-columns:1fr 1fr;width:100%">
     <div class="info-cell">
       <div class="info-cell-label">사이즈 명칭 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
       <div class="info-cell-val muted" id="r-size-name" onclick="editField('r-size-name')">—</div>
@@ -515,8 +515,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778850207';
-console.error('APP VERSION: 1778850207');
+window._appVer='1778850538';
+console.error('APP VERSION: 1778850538');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -549,11 +549,14 @@ function setCat(cat, btn) {
   const items = ACC_MAP[cat] || [];
   sel.innerHTML = '<option value="">-- 부속품 선택 --</option>' +
     items.map(i => `<option>${i}</option>`).join('');
-  // 사이즈 입력이 열려있으면 카테고리에 맞게 재렌더
+  // 카테고리 변경 시 실측사이즈 초기화
   const sizeEl=document.getElementById('r-size');
-  if(sizeEl&&sizeEl.querySelector('input')){
-    editField('r-size');
+  if(sizeEl){
+    sizeEl.textContent='—';
+    sizeEl.className='info-cell-val muted';
+    sizeEl.style.cssText='font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center;justify-content:center';
   }
+  _sizeVal='';
 }
 
 function triggerFile(id){document.getElementById(id).click()}
