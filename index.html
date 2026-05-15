@@ -513,8 +513,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778847637';
-console.error('APP VERSION: 1778847637');
+window._appVer='1778848009';
+console.error('APP VERSION: 1778848009');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1461,7 +1461,11 @@ function goToSku(){
   document.getElementById('sku-brand').value=document.getElementById('r-brand').textContent.replace('—','');
   document.getElementById('sku-model-ko').value=document.getElementById('r-model-ko').textContent.replace('—','');
   document.getElementById('sku-model').value=document.getElementById('r-model').textContent.replace('—','');
-  document.getElementById('sku-cat').value=a.category||'';
+  // 카테고리: 부속품 탭 active 버튼 우선, 없으면 AI 분석값
+  const _activeCatBtn=document.querySelector('#cat-tabs .cat-btn.active');
+  const _catMap={'가방/지갑':'가방','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
+  const _catFromTab=_activeCatBtn?(_catMap[_activeCatBtn.textContent.trim()]||_activeCatBtn.textContent.trim()):'';
+  document.getElementById('sku-cat').value=_catFromTab||a.category||'';
   document.getElementById('sku-color').value=a.color||'';
   const rSizeEl=document.getElementById('r-size');
   const rSizeText=_sizeVal||((rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim());
