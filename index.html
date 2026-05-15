@@ -513,8 +513,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778848009';
-console.error('APP VERSION: 1778848009');
+window._appVer='1778848616';
+console.error('APP VERSION: 1778848616');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -547,6 +547,11 @@ function setCat(cat, btn) {
   const items = ACC_MAP[cat] || [];
   sel.innerHTML = '<option value="">-- 부속품 선택 --</option>' +
     items.map(i => `<option>${i}</option>`).join('');
+  // 사이즈 입력이 열려있으면 카테고리에 맞게 재렌더
+  const sizeEl=document.getElementById('r-size');
+  if(sizeEl&&sizeEl.querySelector('input')){
+    editField('r-size');
+  }
 }
 
 function triggerFile(id){document.getElementById(id).click()}
@@ -1090,6 +1095,8 @@ function renderResult(){
         </div></div>`;
     }).join('');
   }
+  // 카테고리 탭 자동 동기화
+  if(analysis.category) syncCatTab(analysis.category);
   showScreen('result');
 }
 
@@ -1112,26 +1119,18 @@ function editField(id){
   const cur=el.textContent;
 
   if(id==='r-size'){
-    const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||['',''];
-    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap">
-        <span style="font-size:9px;color:#666">가로</span>
-        <input id="sz-w" style="width:38px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[0]||''}" placeholder="0">
-        <span style="color:#444;font-size:11px;margin:0 1px">×</span>
-        <span style="font-size:9px;color:#666">세로</span>
-        <input id="sz-h" style="width:38px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[1]||''}" placeholder="0">
-      </span>`;
-    const szW=document.getElementById('sz-w');
-    const szH=document.getElementById('sz-h');
+    const cfg=getSizeConfig();
+    const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||[];
+    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap">${buildSizeInput(cfg,nums)}</span>`;
+    const allInputs=cfg.map(f=>document.getElementById(f.id)).filter(Boolean);
     const doSave=()=>{
       setTimeout(()=>{
-        const focus=document.activeElement;
-        if(focus===szW||focus===szH)return;
+        if(allInputs.some(inp=>inp===document.activeElement)) return;
         saveSizeField('r-size');
       },300);
     };
-    szW.addEventListener('blur',doSave);
-    szH.addEventListener('blur',doSave);
-    szW.focus();
+    allInputs.forEach(inp=>inp.addEventListener('blur',doSave));
+    if(allInputs[0]) allInputs[0].focus();
     return;
   }
 
@@ -1146,10 +1145,68 @@ function editField(id){
 }
 
 let _sizeVal='';
+// 카테고리별 사이즈 입력 설정
+const SIZE_CONFIG = {
+  '가방':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
+  '지갑':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'}],
+  '가방/지갑':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
+  '의류':    [{id:'sz-w',label:'사이즈',unit:'',text:true}],
+  '신발':    [{id:'sz-w',label:'사이즈',unit:'',text:true}],
+  '시계':    [{id:'sz-w',label:'케이스 가로',unit:'mm'},{id:'sz-h',label:'케이스 세로',unit:'mm',opt:true}],
+  '벨트':    [{id:'sz-w',label:'세로 폭',unit:'cm'}],
+  '주얼리':  [{id:'sz-w',label:'펜던트 가로',unit:'mm'},{id:'sz-h',label:'펜던트 세로',unit:'mm',opt:true},{id:'sz-d',label:'체인 길이',unit:'cm',opt:true},{id:'sz-e',label:'내부 직경',unit:'cm',opt:true},{id:'sz-f',label:'폭',unit:'mm',opt:true}],
+};
+
+
+// 카테고리 탭 자동 활성화 (renderResult 호출)
+function syncCatTab(category){
+  const catToTab={'가방':'가방/지갑','지갑':'가방/지갑','가방/지갑':'가방/지갑',
+    '주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계','벨트':'가방/지갑'};
+  const tabName=catToTab[category]||'가방/지갑';
+  document.querySelectorAll('#cat-tabs .cat-btn').forEach(btn=>{
+    if(btn.textContent.trim()===tabName){
+      btn.classList.add('active');
+      setCat(tabName,btn);
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+function getCurrentCat(){
+  const btn=document.querySelector('#cat-tabs .cat-btn.active');
+  if(!btn) return '가방/지갑';
+  const t=btn.textContent.trim();
+  return t;
+}
+
+function getSizeConfig(){
+  const cat=getCurrentCat();
+  return SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+}
+
+function buildSizeInput(cfg, nums){
+  return cfg.map((f,i)=>{
+    const isText=!!f.text;
+    const inputEl=isText
+      ?`<input id="${f.id}" style="width:90px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="예) M, 95, 250">`
+      :`<input id="${f.id}" style="width:42px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">`;
+    return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap">
+      <span style="font-size:9px;color:#666">${f.label}${f.unit?'':''}${!isText&&f.unit?' ('+f.unit+')':''}</span>
+      ${inputEl}
+      ${f.unit&&!isText?'<span style="font-size:9px;color:#555">'+f.unit+'</span>':''}
+    </span>
+    ${i<cfg.length-1?'<span style="color:#444;font-size:11px;margin:0 1px">×</span>':''}`;
+  }).join('');
+}
+
 function saveSizeField(id){
-  const w=(document.getElementById('sz-w')?.value||'').trim();
-  const h=(document.getElementById('sz-h')?.value||'').trim();
-  const parts=[w&&`가로 ${w}`,h&&`세로 ${h}`].filter(Boolean);
+  const cfg=getSizeConfig();
+  const parts=cfg.map((f,i)=>{
+    const v=(document.getElementById(f.id)?.value||'').trim();
+    if(!v) return null;
+    if(f.text) return `${f.label}: ${v}`; // 의류/신발: "사이즈: M"
+    return `${f.label} ${v}${f.unit}`;    // 기타: "가로 25cm"
+  }).filter(Boolean);
   const val=parts.length?parts.join(' × '):'—';
   _sizeVal=val==='—'?'':val;
   const el=document.getElementById(id);
