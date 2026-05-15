@@ -562,8 +562,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778853955';
-console.error('APP VERSION: 1778853955');
+window._appVer='1778854420';
+console.error('APP VERSION: 1778854420');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1958,6 +1958,14 @@ async function loadSkuList(tab){
       body:JSON.stringify({action:'list_sku',source:srcFilter})
     });
     const j=await res.json();
+    console.error('[loadSkuList] 응답:', JSON.stringify({
+      success:j.success, dataLen:(j.data||[]).length, error:j.error,
+      activeTab, srcFilter, first:j.data?.[0]?.brand
+    }));
+    if(!j.success){
+      if(wrap) wrap.innerHTML=`<div class="sku-empty">API 오류: ${j.error||'unknown'}</div>`;
+      return;
+    }
     skuListAll=j.data||[];
     if(activeTab==='db'||activeTab==='gear'){
       filterSkuListByCat(skuListAll,wrapId,'전체','');
