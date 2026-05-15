@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778810100';
-console.error('APP VERSION: 1778810100');
+window._appVer='1778810315';
+console.error('APP VERSION: 1778810315');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1234,7 +1234,7 @@ async function translateToEn(koName, targetEnId){
   toast('⚠️ 영문 변환 실패 — 직접 입력해 주세요');
 }
 
-function autoTranslateModelName(koName){
+async function autoTranslateModelName(koName){
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
