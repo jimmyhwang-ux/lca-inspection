@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778808043';
-console.error('APP VERSION: 1778808043');
+window._appVer='1778808743';
+console.error('APP VERSION: 1778808743');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -768,7 +768,14 @@ function applyDbMatch(item, cardId){
   resultData.analysis.size          = item.size_actual   || resultData.analysis.size;
   resultData.analysis.size_label    = item.size_label    || resultData.analysis.size_label;
 
-  toast('✅ 적용됨: ' + (item.model_name_ko || item.model_name || ''));
+  // 적용된 브랜드+모델명으로 구글렌즈 재검색
+  const _applyBrand = item.brand || '';
+  const _applyModel = item.model_name_ko || item.model_name || '';
+  if(_applyModel && _applyModel !== '—'){
+    reSearchByModel(_applyBrand, _applyModel);
+  }
+
+  toast('✅ 적용됨: ' + _applyModel);
 }
 
 let _dbMultiItems = [];
