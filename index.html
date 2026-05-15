@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778806361';
-console.error('APP VERSION: 1778806361');
+window._appVer='1778806516';
+console.error('APP VERSION: 1778806516');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1034,14 +1034,8 @@ async function reSearchByModel(brand, modelName){
   clearTimeout(_reSearchTimer);
   _reSearchTimer=setTimeout(async()=>{
     const lensEl=document.getElementById('lens-results');
-    // 모델명 변경 시 DB 카드 초기화
-    const dbWrap=document.getElementById('db-match-wrap');
-    if(dbWrap){
-      dbWrap.innerHTML='<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>';
-    }
+    // DB 카드는 재매칭 완료 후 자동 교체됨 (초기화 불필요 — 깜빡임 방지)
     window._dbEnriched=[];
-    accessories=[];
-    renderAcc();
     lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">검색 중...</div>';
     try{
       const res=await fetch('/api/inspect',{
