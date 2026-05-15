@@ -528,8 +528,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778851932';
-console.error('APP VERSION: 1778851932');
+window._appVer='1778852119';
+console.error('APP VERSION: 1778852119');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -961,7 +961,7 @@ function renderDbMatchCards(matches){
   }
 }
 
-function renderResult(){
+async function renderResult(){
   const{analysis,visualMatches=[],dbMatch}=resultData;
   const conf=analysis.confidence||0;
   const badge=document.getElementById('conf-badge');
