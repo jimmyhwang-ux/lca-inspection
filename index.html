@@ -513,8 +513,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778847313';
-console.error('APP VERSION: 1778847313');
+window._appVer='1778847637';
+console.error('APP VERSION: 1778847637');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -722,6 +722,7 @@ async function startInspection(){
     const data=await res.json();
     setStep(3,'done');setStep(4,'active');
     resultData=data;
+    window._userResetDb=false; // 새 검수 시 초기화
     // AI 원본값 저장 (DB 적용 취소 시 복원용)
     window._aiOriginal={
       brand:     data.analysis?.brand||'',
@@ -775,12 +776,15 @@ function resetToAi(){
       btn.style.color='#22c55e';
     });
   });
+  // 수동 해제 플래그 — 이후 자동 적용 차단
+  window._userResetDb = true;
   toast('↩️ AI 분석값으로 복원됨');
 }
 
 function applyCardMatch(idx, cardId){
   const item = (window._cardMatches||[])[idx];
   if(!item){ console.warn('[applyCardMatch] item not found at', idx); return; }
+  window._userResetDb = false; // 수동 적용 시 플래그 해제
   applyDbMatch(item, cardId);
 }
 
@@ -924,11 +928,13 @@ function renderDbMatchCards(matches){
     if(allImgs.length>1)_sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
   });
 
-  // 첫 번째 카드 자동 적용
-  try {
-    applyDbMatch(matches[0],'db-card-0');
-  } catch(e) {
-    console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
+  // 첫 번째 카드 자동 적용 — 수동 해제 후엔 스킵
+  if(!window._userResetDb){
+    try {
+      applyDbMatch(matches[0],'db-card-0');
+    } catch(e) {
+      console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
+    }
   }
 }
 
