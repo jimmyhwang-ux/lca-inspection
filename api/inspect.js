@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { imageBase64, imageMime, extras = {}, action, skuData } = req.body;
+  const { imageBase64, imageMime, extras = {}, action, skuData, source: reqSource } = req.body;
 
   const IMGBB_KEY    = process.env.IMGBB_KEY;
   const SERP_KEY     = process.env.SERP_KEY;
@@ -279,7 +279,7 @@ export default async function handler(req, res) {
   // ── SKU 목록 ──────────────────────────────────────────────────────────
   if (action === 'list_sku') {
     try {
-      const source = body.source || null;
+      const source = reqSource || null;
       // 전체 가져온 후 JS에서 source 필터 (Supabase or= 문법 이슈 방지)
       const r = await sb('sku_items?select=*&order=created_at.desc&limit=500');
       const text = await r.text();
@@ -298,7 +298,7 @@ export default async function handler(req, res) {
 
   if (action === 'copy_sku_to') {
     try {
-      const { itemId, targetSource, photoIndices } = body;
+      const { itemId, targetSource, photoIndices } = req.body;
       const r = await sb(`sku_items?id=eq.${itemId}&select=*`);
       const text = await r.text();
       const items = JSON.parse(text);
