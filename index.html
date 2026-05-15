@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778808743';
-console.error('APP VERSION: 1778808743');
+window._appVer='1778809000';
+console.error('APP VERSION: 1778809000');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -768,10 +768,11 @@ function applyDbMatch(item, cardId){
   resultData.analysis.size          = item.size_actual   || resultData.analysis.size;
   resultData.analysis.size_label    = item.size_label    || resultData.analysis.size_label;
 
-  // 적용된 브랜드+모델명으로 구글렌즈 재검색
+  // 적용된 브랜드+모델명으로 구글렌즈 재검색 (DB 재매칭은 스킵)
   const _applyBrand = item.brand || '';
   const _applyModel = item.model_name_ko || item.model_name || '';
   if(_applyModel && _applyModel !== '—'){
+    window._skipDbRematch = true; // 렌즈 재검색 시 DB 재매칭 스킵
     reSearchByModel(_applyBrand, _applyModel);
   }
 
@@ -1137,10 +1138,11 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
-      // 렌즈 재검색 후 DB도 재매칭 시도
-      if(modelName&&modelName!=='—'){
+      // 렌즈 재검색 후 DB도 재매칭 시도 (적용 중에는 스킵)
+      if(modelName&&modelName!=='—'&&!window._skipDbRematch){
         setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
       }
+      window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#444;padding:8px">재검색 실패: '+e.message+'</div>';
     }
