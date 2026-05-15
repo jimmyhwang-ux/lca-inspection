@@ -281,8 +281,10 @@ input[type=file]{display:none}
 
   <div id="db-match-wrap"></div>
 
+  <!-- 실측사이즈 + 사이즈명칭 + 스타일번호 -->
+  <div style="margin:0 16px;background:#111;border-radius:14px;overflow:hidden;margin-bottom:0">
   <!-- 실측 사이즈 단독 행 -->
-  <div style="background:#111;border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
+  <div style="border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
     <div style="font-size:9px;color:#555;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
     <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center;justify-content:center">—</div>
   </div>
@@ -305,6 +307,7 @@ input[type=file]{display:none}
       <div class="info-cell-val muted" id="r-sku" onclick="editField('r-sku')">—</div>
     </div>
   </div>
+  </div><!-- end 사이즈 컨테이너 -->
 
   <div class="section-hd">🔧 부속품 체크</div>
   <div class="acc-wrap">
@@ -515,8 +518,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778850538';
-console.error('APP VERSION: 1778850538');
+window._appVer='1778850730';
+console.error('APP VERSION: 1778850730');
 
 const ACC_MAP = {
   '가방/지갑': [
