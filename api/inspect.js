@@ -279,8 +279,10 @@ export default async function handler(req, res) {
   if (action === 'list_sku') {
     try {
       const r = await sb('sku_items?select=*&order=created_at.desc&limit=200');
-      const d = await r.json();
-      return res.status(200).json({ success: true, data: d });
+      const text = await r.text();
+      if (!r.ok) return res.status(200).json({ success: false, error: `Supabase ${r.status}: ${text}` });
+      const d = text ? JSON.parse(text) : [];
+      return res.status(200).json({ success: true, data: Array.isArray(d) ? d : [] });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
