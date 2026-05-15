@@ -370,7 +370,7 @@ input[type=file]{display:none}
     <div class="sku-photos" id="sku-photo-wrap"></div>
     <div class="sku-card">
       <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—"></div>
-      <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—" oninput="onSkuModelKoInput(this)"></div>
       <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="sku-model" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">카테고리</div><input class="sku-input" id="sku-cat" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—"></div>
@@ -449,7 +449,7 @@ input[type=file]{display:none}
       <div id="ef-new-photo-preview" style="margin-top:6px"></div>
     </div>
     <div class="edit-field-row"><div class="edit-field-label">브랜드</div><input class="edit-field-input" id="ef-brand" type="text"></div>
-    <div class="edit-field-row"><div class="edit-field-label">모델명 (한글)</div><input class="edit-field-input" id="ef-model-ko" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">모델명 (한글)</div><input class="edit-field-input" id="ef-model-ko" type="text" oninput="onEfModelKoInput(this)"></div>
     <div class="edit-field-row"><div class="edit-field-label">모델명 (영문)</div><input class="edit-field-input" id="ef-model" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">카테고리</div><input class="edit-field-input" id="ef-cat" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">컬러</div><input class="edit-field-input" id="ef-color" type="text"></div>
@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778809714';
-console.error('APP VERSION: 1778809714');
+window._appVer='1778810100';
+console.error('APP VERSION: 1778810100');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1201,7 +1201,40 @@ async function reSearchByModel(brand, modelName){
   }, 800); // 800ms 디바운스 — 연속 수정 시 마지막 것만 검색
 }
 
-async function autoTranslateModelName(koName){
+async // 범용 한→영 번역 함수 (targetEnId: 영문 input id)
+async function translateToEn(koName, targetEnId){
+  if(!koName||koName.trim().length<1) return;
+  const setEn=(v)=>{
+    const el=document.getElementById(targetEnId);
+    if(el){ el.value=v; }
+  };
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list_sku'})
+    });
+    const j=await res.json();
+    if(j.success&&j.data){
+      const v=koName.toLowerCase();
+      const match=j.data.find(i=>(i.model_name_ko||'').toLowerCase()===v);
+      if(match?.model_name){ setEn(match.model_name); toast('🔤 영문명(DB): '+match.model_name); return; }
+    }
+  }catch(_){}
+  try{
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'translate_model',modelNameKo:koName})
+    });
+    if(res.ok){
+      const j=await res.json();
+      const en=(j.model_name_en||'').trim().split('\n')[0];
+      if(en&&en.length>0&&en.length<120){ setEn(en); toast('🔤 영문명: '+en); return; }
+    }
+  }catch(_){}
+  toast('⚠️ 영문 변환 실패 — 직접 입력해 주세요');
+}
+
+function autoTranslateModelName(koName){
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -1237,6 +1270,24 @@ async function autoTranslateModelName(koName){
 }
 
 let _dbSearchTimer=null;
+// 적재 화면 한글 모델명 입력 → 영문 자동 번역
+let _skuTransTimer=null;
+function onSkuModelKoInput(input){
+  clearTimeout(_skuTransTimer);
+  const val=input.value.trim();
+  if(!val||val.length<2) return;
+  _skuTransTimer=setTimeout(()=>translateToEn(val,'sku-model'),800);
+}
+
+// 수정 화면 한글 모델명 입력 → 영문 자동 번역
+let _efTransTimer=null;
+function onEfModelKoInput(input){
+  clearTimeout(_efTransTimer);
+  const val=input.value.trim();
+  if(!val||val.length<2) return;
+  _efTransTimer=setTimeout(()=>translateToEn(val,'ef-model'),800);
+}
+
 function onResultFieldInput(input,id){
   clearTimeout(_dbSearchTimer);
   const val=input.value.trim();
