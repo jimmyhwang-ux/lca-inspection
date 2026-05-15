@@ -506,8 +506,8 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
-window._appVer='1778805686';
-console.error('APP VERSION: 1778805686');
+window._appVer='1778805875';
+console.error('APP VERSION: 1778805875');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -727,13 +727,9 @@ function renderDbMatchCards(matches){
   const dbWrap=document.getElementById('db-match-wrap');
   if(!dbWrap) return;
   // 카드 데이터를 전역에 저장 (버튼 클릭 시 참조)
-  // 이미 같은 카드가 렌더됐으면 HTML 교체 건너뜀 (깜빡임 방지)
-  const _newIds=matches.map(m=>String(m.id)).join(',');
-  const _curIds=(window._cardMatches||[]).map(m=>String(m.id)).join(',');
-  const _needRender=_newIds!==_curIds||!dbWrap.querySelector('.db-match-card');
   window._cardMatches=matches;
 
-  if(_needRender) dbWrap.innerHTML=matches.map((m,idx)=>{
+  dbWrap.innerHTML=matches.map((m,idx)=>{
     const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     const total=allImgs.length;
     const slId=`dbsl-${idx}`;
@@ -772,7 +768,6 @@ function renderDbMatchCards(matches){
       </div>
     </div>`;
   }).join('');
-  } // end if(_needRender)
 
   matches.forEach((m,idx)=>{
     const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
