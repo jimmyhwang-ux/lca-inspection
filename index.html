@@ -1516,7 +1516,8 @@ async function loadSkuList(){
     skuListAll=j.data||[];
     renderSkuList(skuListAll);
   }catch(e){
-    document.getElementById('sku-list-wrap').innerHTML='<div class="sku-empty">불러오기 실패</div>';
+    document.getElementById('sku-list-wrap').innerHTML=`<div class="sku-empty">불러오기 실패: ${e.message}</div>`;
+    console.error('[loadSkuList] 에러:', e);
   }
 }
 
