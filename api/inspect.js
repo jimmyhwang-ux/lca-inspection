@@ -296,6 +296,19 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
+  if (action === 'update_sku_photos') {
+    try {
+      const { itemId, ref_image_url, extra_images } = req.body;
+      const r = await sb(`sku_items?id=eq.${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ref_image_url, extra_images }),
+        headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+      });
+      if (!r.ok) return res.status(500).json({ success: false, error: await r.text() });
+      return res.status(200).json({ success: true });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
   if (action === 'copy_sku_to') {
     try {
       const { itemId, targetSource, photoIndices } = req.body;
@@ -319,14 +332,9 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' } });
       const insText = await ins.text();
       if (!ins.ok) return res.status(500).json({ success: false, error: insText });
-      // 원본에서 이동한 사진 제거
-      const remainPhotos = allPhotos.filter((_, i) => !photoIndices.includes(i));
-      const updPayload = {
-        ref_image_url: remainPhotos[0] || null,
-        extra_images: remainPhotos.slice(1),
-      };
+      // 원본 SKU 삭제 (다른 탭으로 이동 = 이동이지 복사 아님)
       await sb(`sku_items?id=eq.${itemId}`, {
-        method: 'PATCH', body: JSON.stringify(updPayload),
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
       });
       return res.status(200).json({ success: true, data: JSON.parse(insText) });
