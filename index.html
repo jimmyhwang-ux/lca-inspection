@@ -528,8 +528,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778852119';
-console.error('APP VERSION: 1778852119');
+window._appVer='1778852314';
+console.error('APP VERSION: 1778852314');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1676,7 +1676,8 @@ function goToSku(){
   document.getElementById('sku-color').value=a.color||'';
   const rSizeEl=document.getElementById('r-size');
   const rSizeText=_sizeVal||((rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim());
-  (document.getElementById('sku-size-hidden')?.value||'')=rSizeText;
+  const _skuSizeHidden=document.getElementById('sku-size-hidden');
+  if(_skuSizeHidden) _skuSizeHidden.value=rSizeText;
   document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
   document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
   const _dbFirst=(window._dbEnriched&&window._dbEnriched[0])||{};
@@ -1690,7 +1691,7 @@ function goToSku(){
   switchSkuTab('save');
   showScreen('sku');
   // 카테고리에 맞는 사이즈 필드 자동 표시
-  setTimeout(()=>editSkuSize(), 100);;
+  setTimeout(()=>editSkuSize(), 100);
 }
 
 function renderSkuAccList(){
