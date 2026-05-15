@@ -295,9 +295,11 @@ input[type=file]{display:none}
       <div class="info-cell-val muted" id="r-size-name" onclick="editField('r-size-name')">—</div>
     </div>
     <div class="info-cell">
-      <div class="info-cell-label" style="display:flex;align-items:center;justify-content:space-between">
-        <span>스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></span>
-        <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#444;display:flex;align-items:center" id="sku-search-btn">
+      <div class="info-cell-label" style="display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:hidden">
+        <span style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap;overflow:hidden;min-width:0">
+          <span style="white-space:nowrap">스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></span>
+        </span>
+        <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#444;display:flex;align-items:center;flex-shrink:0" id="sku-search-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -518,8 +520,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778850730';
-console.error('APP VERSION: 1778850730');
+window._appVer='1778850939';
+console.error('APP VERSION: 1778850939');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1086,7 +1088,7 @@ function renderResult(){
     skuEl.textContent=_finalSku||'—';
     skuEl.className='info-cell-val'+(_finalSku?'':' muted');
     if(_finalSku){
-      const skuLbl=skuEl.closest('.info-cell')?.querySelector('.info-cell-label');
+      const skuLbl=skuEl.closest('.info-cell')?.querySelector('.info-cell-label span:first-child');
       if(skuLbl&&!skuLbl.querySelector('.ai-badge')){
         const isWeb=!analysis.sku&&!!_lensSku;
         skuLbl.insertAdjacentHTML('beforeend',isWeb
