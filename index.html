@@ -562,8 +562,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778854420';
-console.error('APP VERSION: 1778854420');
+window._appVer='1778854863';
+console.error('APP VERSION: 1778854863');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1942,7 +1942,7 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
   if(catFilter&&catFilter!=='전체') filtered=filtered.filter(s=>s.category?.includes(catFilter.replace('/지갑','')));
   if(q) filtered=filtered.filter(s=>(s.brand+s.model_name+s.model_name_ko).toLowerCase().includes(q.toLowerCase()));
   if(!filtered.length){ wrap.innerHTML='<div class="sku-empty">검색 결과 없음</div>'; return; }
-  wrap.innerHTML=filtered.map(s=>renderSkuCard(s)).join('');
+  renderSkuList(filtered, wrapId);
 }
 
 async function loadSkuList(tab){
@@ -1978,10 +1978,11 @@ async function loadSkuList(tab){
   }
 }
 
-function renderSkuList(list){
-  const wrap=document.getElementById('sku-list-wrap');
+function renderSkuList(list, wrapId){
+  const wrap=document.getElementById(wrapId||'sku-list-wrap');
+  if(!wrap) return;
   if(!list.length){
-    const q=document.getElementById('sku-search').value.trim();
+    const q=document.getElementById('sku-search')?.value.trim()||'';
     wrap.innerHTML=`<div class="sku-empty">${q?'검색 결과가 없습니다':'등록된 SKU가 없습니다'}</div>`;
     return;
   }
@@ -2101,6 +2102,8 @@ async function copySkuTo(skuId, targetSource){
     const j=await res.json();
     if(j.success){
       toast(`✅ ${targetLabel}에 추가됨: ${item.model_name_ko||item.model_name} (사진 ${selectedIndices.length}장)`);
+      // 목록 새로고침
+      loadSkuList('list');
     } else {
       toast('❌ 실패: '+j.error);
     }
