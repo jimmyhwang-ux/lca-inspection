@@ -282,9 +282,9 @@ input[type=file]{display:none}
   <div id="db-match-wrap"></div>
 
   <!-- 실측 사이즈 단독 행 -->
-  <div style="background:#111;border-bottom:1px solid #1a1a1a;padding:10px 14px">
-    <div style="font-size:9px;color:#444;margin-bottom:4px">실측 사이즈 <span style="color:#2a2a2a">(선택)</span></div>
-    <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap">—</div>
+  <div style="background:#111;border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
+    <div style="font-size:9px;color:#555;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
+    <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center">—</div>
   </div>
   <!-- 사이즈명칭 + 스타일번호 행 -->
   <div class="info-row-grid" style="grid-template-columns:1fr 1fr">
@@ -515,8 +515,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778849762';
-console.error('APP VERSION: 1778849762');
+window._appVer='1778850207';
+console.error('APP VERSION: 1778850207');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1127,9 +1127,11 @@ function editField(id){
   const cur=el.textContent;
 
   if(id==='r-size'){
+    // 이미 편집 중이면 재호출 방지
+    if(el.querySelector('input')) return;
     const cfg=getSizeConfig();
     const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||[];
-    el.innerHTML=`<span id="sz-wrap" style="display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">${buildSizeInput(cfg,nums)}</span>`;
+    el.innerHTML=`<span id="sz-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">${buildSizeInput(cfg,nums)}</span>`;
     const sizeInputIds=cfg.map(f=>f.id);
     const doSave=()=>{
       setTimeout(()=>{
@@ -1237,12 +1239,12 @@ function buildSizeInput(cfg, nums){
     if(isText){
       return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
         <span style="font-size:8px;color:#555">${f.label}</span>
-        <input id="${f.id}" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
+        <input id="${f.id}" onclick="event.stopPropagation()" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
       </span>${sep}`;
     }
     return `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">
       <span style="font-size:8px;color:#555">${f.label}(${f.unit})</span>
-      <input id="${f.id}" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
+      <input id="${f.id}" onclick="event.stopPropagation()" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
     </span>${sep}`;
   }).join('');
 }
