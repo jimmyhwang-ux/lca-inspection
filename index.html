@@ -281,11 +281,13 @@ input[type=file]{display:none}
 
   <div id="db-match-wrap"></div>
 
-  <div class="info-row-grid">
-    <div class="info-cell">
-      <div class="info-cell-label">실측 사이즈 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
-      <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')">—</div>
-    </div>
+  <!-- 실측 사이즈 단독 행 -->
+  <div style="background:#111;border-bottom:1px solid #1a1a1a;padding:10px 14px">
+    <div style="font-size:9px;color:#444;margin-bottom:4px">실측 사이즈 <span style="color:#2a2a2a">(선택)</span></div>
+    <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap">—</div>
+  </div>
+  <!-- 사이즈명칭 + 스타일번호 행 -->
+  <div class="info-row-grid" style="grid-template-columns:1fr 1fr">
     <div class="info-cell">
       <div class="info-cell-label">사이즈 명칭 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
       <div class="info-cell-val muted" id="r-size-name" onclick="editField('r-size-name')">—</div>
@@ -513,8 +515,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778849450';
-console.error('APP VERSION: 1778849450');
+window._appVer='1778849762';
+console.error('APP VERSION: 1778849762');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1128,13 +1130,14 @@ function editField(id){
     const cfg=getSizeConfig();
     const nums=cur.replace('—','').match(/\d+(\.\d+)?/g)||[];
     el.innerHTML=`<span id="sz-wrap" style="display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">${buildSizeInput(cfg,nums)}</span>`;
+    const sizeInputIds=cfg.map(f=>f.id);
     const doSave=()=>{
       setTimeout(()=>{
-        // 현재 포커스가 sz-wrap 내부 input이면 저장 안함
-        const wrap=document.getElementById('sz-wrap');
-        if(wrap&&wrap.contains(document.activeElement)) return;
+        // 현재 포커스가 사이즈 입력 필드 중 하나이면 저장 안함
+        const focusId=document.activeElement?.id;
+        if(sizeInputIds.includes(focusId)) return;
         saveSizeField('r-size');
-      },300);
+      },350);
     };
     const allInputs=cfg.map(f=>document.getElementById(f.id)).filter(Boolean);
     allInputs.forEach(inp=>inp.addEventListener('blur',doSave));
@@ -1230,16 +1233,16 @@ function getSizeConfig(){
 function buildSizeInput(cfg, nums){
   return cfg.map((f,i)=>{
     const isText=!!f.text;
-    const sep=i<cfg.length-1?`<span style="color:#444;font-size:10px;margin:0 2px">×</span>`:'';
+    const sep=i<cfg.length-1?`<span style="color:#444;font-size:10px;margin:0 3px">×</span>`:'';
     if(isText){
-      return `<span style="display:inline-flex;align-items:center;gap:3px">
-        <span style="font-size:9px;color:#666">${f.label}</span>
-        <input id="${f.id}" style="width:80px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
+      return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
+        <span style="font-size:8px;color:#555">${f.label}</span>
+        <input id="${f.id}" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
       </span>${sep}`;
     }
-    return `<span style="display:inline-flex;align-items:center;gap:2px">
-      <input id="${f.id}" style="width:32px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
-      <span style="font-size:9px;color:#555">${f.unit}</span>
+    return `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">
+      <span style="font-size:8px;color:#555">${f.label}(${f.unit})</span>
+      <input id="${f.id}" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
     </span>${sep}`;
   }).join('');
 }
