@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778937799';
-console.error('APP VERSION: 1778937799');
+window._appVer='1778938060';
+console.error('APP VERSION: 1778938060');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2228,7 +2228,7 @@ function renderSkuList(list, wrapId){
     const thumbUrl=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean)[0]||'';
     return `<div class="sku-list-item" data-skuid="${item.id}" ondragover="event.preventDefault()" ondrop="lbDropTo(event,'${item.id}',999)">
       <div style="display:flex;gap:10px;align-items:flex-start;cursor:pointer" onclick="toggleSkuDetail('${item.id}')">
-        <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0">
+        <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0" onclick="event.stopPropagation()">
           ${(()=>{
             const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
             _sliders['th-'+item.id]={urls:_all,cur:0};
@@ -2597,8 +2597,25 @@ function rerenderSkuCard(skuId, photos){
     }
   }
 
-    // 5. _sliders 데이터만 업데이트 (탭 열 때 toggleSkuDetail에서 자동 재렌더)
+    // 5. _sliders 업데이트 + 탭 열려있으면 즉시 슬라이더 재렌더
   _sliders[slId] = {urls: photos, cur: 0};
+  const _detailEl = document.getElementById('sku-detail-'+skuId);
+  if(_detailEl && _detailEl.style.display !== 'none'){
+    const _slWrap = document.getElementById(slId);
+    if(_slWrap){
+      const _total = photos.length;
+      _slWrap.innerHTML = photos[0]
+        ?'<img id="'+slId+'-img" src="'+photos[0]+'" draggable="true" data-skuid="'+skuId+'" data-pi="0" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
+        +(_total>1
+          ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
+          +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
+          +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/'+_total+'</span>'
+          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
+        :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
+      const _slImg = document.getElementById(slId+'-img');
+      if(_slImg) _slImg.onclick = e=>{ e.stopPropagation(); openLightboxSlider(slId,0); };
+    }
+  }
 }
 
 function _updateThumbGrid(skuId, photos){
