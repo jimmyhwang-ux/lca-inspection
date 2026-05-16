@@ -682,8 +682,8 @@ window.fetch = function(url, opts={}){
   }catch(e){ showScreen('shoot'); } // 오프라인이면 통과
 })();
 
-window._appVer='1778909340';
-console.error('APP VERSION: 1778909340');
+window._appVer='1778909901';
+console.error('APP VERSION: 1778909901');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2622,14 +2622,37 @@ function openEditModal(i){
 }
 function renderEditPhotos(urls){
   const wrap=document.getElementById('ef-photos-wrap');
-  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px';
+  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none';
   wrap.innerHTML=urls.map((url,idx)=>`
-    <div style="position:relative;flex-shrink:0">
+    <div draggable="true" data-efidx="${idx}"
+      ondragstart="efDragStart(event)"
+      ondragover="event.preventDefault();event.currentTarget.style.opacity='0.6'"
+      ondragleave="event.currentTarget.style.opacity='1'"
+      ondrop="efDrop(event,${idx})"
+      style="position:relative;flex-shrink:0;transition:opacity .15s">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
-        onclick="openLightbox('${url}')" alt="">
+        onclick="openLightbox('${url}',${JSON.stringify(urls)})" alt="">
       <button onclick="deleteEditPhoto(${idx})"
         style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;font-size:10px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0">✕</button>
     </div>`).join('');
+}
+
+let _efDragIdx = null;
+function efDragStart(e){
+  _efDragIdx = parseInt(e.currentTarget.dataset.efidx);
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+function efDrop(e, toIdx){
+  e.preventDefault();
+  document.querySelectorAll('[data-efidx]').forEach(el=>el.style.opacity='1');
+  if(_efDragIdx===null || _efDragIdx===toIdx) return;
+  const urls=JSON.parse(document.getElementById('ef-extra-images').value||'[]');
+  const moved=urls.splice(_efDragIdx,1)[0];
+  urls.splice(toIdx,0,moved);
+  document.getElementById('ef-extra-images').value=JSON.stringify(urls);
+  renderEditPhotos(urls);
+  _efDragIdx=null;
 }
 
 function deleteEditPhoto(idx){
