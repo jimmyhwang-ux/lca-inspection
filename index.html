@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778908336';
-console.error('APP VERSION: 1778908336');
+window._appVer='1778908610';
+console.error('APP VERSION: 1778908610');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2320,7 +2320,11 @@ function slideImg(sliderId,dir){
   const url=s.urls[s.cur];
   const img=document.getElementById(sliderId+'-img');
   const cnt=document.getElementById(sliderId+'-cnt');
-  if(img){img.src=url;img.onclick=e=>{e.stopPropagation();openLightbox(url);};}
+  if(img){
+    img.src=url;
+    // 전체 배열 전달 → 라이트박스에서 화살표/키보드 작동
+    img.onclick=e=>{e.stopPropagation();openLightbox(url,s.urls);};
+  }
   if(cnt)cnt.textContent=`${s.cur+1}/${s.urls.length}`;
 }
 
@@ -2448,7 +2452,7 @@ function _updateSlider(slId, photos){
   if(cnt) cnt.textContent='1/'+photos.length;
 }
 
-let _lbUrls=[], _lbIdx=0, _lbTouchX=0;
+let _lbUrls=[], _lbIdx=0, _lbTouchX=0, _lbTouchY=0;
 function openLightbox(url, urls){
   _lbUrls = urls ? (Array.isArray(urls)?urls:[url]) : [url];
   _lbIdx = _lbUrls.indexOf(url);
@@ -2481,13 +2485,20 @@ document.addEventListener('keydown',e=>{
 });
 // 스와이프 - 이벤트 위임 방식
 document.addEventListener('touchstart',e=>{
-  if(document.getElementById('lightbox')?.classList.contains('open'))
-    _lbTouchX=e.touches[0].clientX;
+  if(!document.getElementById('lightbox')?.classList.contains('open')) return;
+  _lbTouchX=e.touches[0].clientX;
+  _lbTouchY=e.touches[0].clientY;
 },{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(!document.getElementById('lightbox')?.classList.contains('open')) return;
+  e.preventDefault(); // 상하 스크롤 차단
+},{passive:false});
 document.addEventListener('touchend',e=>{
   if(!document.getElementById('lightbox')?.classList.contains('open')) return;
   const dx=e.changedTouches[0].clientX-_lbTouchX;
-  if(Math.abs(dx)>30){ lbNav(dx<0?1:-1); }
+  const dy=e.changedTouches[0].clientY-(_lbTouchY||0);
+  // 수평 스와이프가 수직보다 클 때만 작동
+  if(Math.abs(dx)>30&&Math.abs(dx)>Math.abs(dy)){ lbNav(dx<0?1:-1); }
 },{passive:true});
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
 
