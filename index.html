@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778937273';
-console.error('APP VERSION: 1778937273');
+window._appVer='1778937431';
+console.error('APP VERSION: 1778937431');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2228,15 +2228,23 @@ function renderSkuList(list, wrapId){
     const thumbUrl=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean)[0]||'';
     return `<div class="sku-list-item" data-skuid="${item.id}" ondragover="event.preventDefault()" ondrop="lbDropTo(event,'${item.id}',999)">
       <div style="display:flex;gap:10px;align-items:flex-start;cursor:pointer" onclick="toggleSkuDetail('${item.id}')">
-        <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0">
+        <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0;width:72px;height:72px;border-radius:8px;overflow:hidden;background:#1a1a1a;border:1px solid #2a2a2a"
+          ontouchstart="thumbTouchStart(event,'th-${item.id}')"
+          ontouchend="thumbTouchEnd(event,'th-${item.id}')">
           ${(()=>{
             const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-            const thumbUrl=_all[0]||'';
-            return (thumbUrl
-              ?`<img id="thumb-${item.id}-img" src="${thumbUrl}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
-                onclick="event.stopPropagation();openLightbox('${thumbUrl}',_sliders['skusl-'+item.id]?.urls||[thumbUrl])" alt="">`
-              :'<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>')
-            +(_all.length>=2?`<span id="thumb-${item.id}-cnt" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px">+${_all.length}</span>`:'');
+            _sliders['th-'+item.id]={urls:_all,cur:0};
+            if(!_all.length) return '<div style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.3">📦</div>';
+            const arrows=_all.length>1
+              ?'<button onclick="event.stopPropagation();thumbNav(\'th-${item.id}\',-1)" style="position:absolute;left:0;top:0;bottom:0;width:20px;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">&#8249;</button>'
+              +'<button onclick="event.stopPropagation();thumbNav(\'th-${item.id}\',1)" style="position:absolute;right:0;top:0;bottom:0;width:20px;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2">&#8250;</button>'
+              +'<span id="th-${item.id}-cnt" style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;z-index:2">1/'+_all.length+'</span>'
+              :'';
+            return `<img id="th-${item.id}-img" src="${_all[0]}" draggable="true"
+              data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)"
+              style="width:72px;height:72px;object-fit:cover;display:block;cursor:zoom-in"
+              onclick="event.stopPropagation();openLightbox('${_all[0]}',_sliders['skusl-'+item.id]?.urls||_all)">
+            ${arrows}`;
           })()}
         </div>
         <div style="flex:1;min-width:0">
@@ -2521,6 +2529,43 @@ async function lbDropTo(e, toSkuId, toIdx){
 
 // DOM 직접 업데이트 함수들 (새로고침 없이)
 // 카드 완전 재렌더 (DOM 조작 대신 innerHTML 교체)
+// 썸네일 네비게이션
+let _thumbTX=0, _thumbTY=0, _focusThumbId=null;
+function thumbNav(slId, dir){
+  const s=_sliders[slId]; if(!s||!s.urls.length) return;
+  s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
+  const img=document.getElementById(slId+'-img');
+  if(img){
+    img.src=s.urls[s.cur];
+    img.dataset.pi=s.cur;
+    img.onclick=e=>{e.stopPropagation();openLightbox(s.urls[s.cur],_sliders['skusl-'+slId.replace('th-','')]?.urls||s.urls);};
+  }
+  const cnt=document.getElementById(slId+'-cnt');
+  if(cnt) cnt.textContent=(s.cur+1)+'/'+s.urls.length;
+}
+function thumbTouchStart(e,slId){ _thumbTX=e.touches[0].clientX; _thumbTY=e.touches[0].clientY; _focusThumbId=slId; }
+function thumbTouchEnd(e,slId){
+  const dx=e.changedTouches[0].clientX-_thumbTX;
+  const dy=e.changedTouches[0].clientY-_thumbTY;
+  if(Math.abs(dx)>25&&Math.abs(dx)>Math.abs(dy)) thumbNav(slId,dx<0?1:-1);
+}
+// 키보드 방향키로 포커스된 썸네일 네비게이션
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('lightbox')?.classList.contains('open')) return;
+  if(_focusThumbId&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+    e.preventDefault();
+    thumbNav(_focusThumbId,e.key==='ArrowRight'?1:-1);
+  }
+});
+document.addEventListener('mouseover',e=>{
+  const wrap=e.target.closest('.sku-thumb-wrap');
+  if(wrap){
+    // th- 슬라이더 ID 찾기
+    const img=wrap.querySelector('img[id^="th-"]');
+    if(img) _focusThumbId=img.id.replace('-img','');
+  }
+},{passive:true});
+
 function rerenderSkuCard(skuId, photos){
   // 1. skuListAll 데이터 동기화
   const item = skuListAll.find(s=>String(s.id)===String(skuId));
@@ -2535,22 +2580,18 @@ function rerenderSkuCard(skuId, photos){
     _sliders[slId].cur = 0;
   }
 
-  // 3. 썸네일 이미지 + 카운트 업데이트 (ID 직접 접근 - card 탐색 불필요)
-  const thumbImgEl = document.getElementById('thumb-'+skuId+'-img');
-  if(thumbImgEl){
-    if(photos[0]){
-      thumbImgEl.src = photos[0];
-      thumbImgEl.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], _sliders['skusl-'+skuId]?.urls||photos); };
-    }
+  // 3. 썸네일 슬라이더(th-) 업데이트
+  const thSlId = 'th-' + skuId;
+  if(_sliders[thSlId]){ _sliders[thSlId].urls=photos; _sliders[thSlId].cur=0; }
+  const thImg = document.getElementById(thSlId+'-img');
+  if(thImg && photos[0]){
+    thImg.src = photos[0];
+    thImg.dataset.pi = 0;
   }
-  const thumbCntEl = document.getElementById('thumb-'+skuId+'-cnt');
-  if(thumbCntEl){
-    if(photos.length>=2){
-      thumbCntEl.textContent = '+'+photos.length;
-      thumbCntEl.style.display = '';
-    } else {
-      thumbCntEl.style.display = 'none';
-    }
+  const thCnt = document.getElementById(thSlId+'-cnt');
+  if(thCnt){
+    if(photos.length>=2){ thCnt.textContent='1/'+photos.length; thCnt.style.display=''; }
+    else thCnt.style.display='none';
   }
 
     // 5. _sliders 데이터만 업데이트 (탭 열 때 toggleSkuDetail에서 자동 재렌더)
