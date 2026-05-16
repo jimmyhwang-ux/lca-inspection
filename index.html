@@ -427,8 +427,9 @@ input[type=file]{display:none}
 <!-- SKU 탭 -->
 <div id="screen-sku" class="screen">
   <div class="sku-topbar">
-    <button class="sku-back" onclick="showScreen('result')">←</button>
+    <button class="sku-back" onclick="showScreen('shoot')" style="font-size:18px;padding:6px 10px" title="홈으로">🏠</button>
     <div class="sku-title">모델 SKU 관리</div>
+    <button class="sku-back" onclick="showScreen('result')" style="font-size:18px;padding:6px 10px;margin-left:auto" title="검수결과로">↩</button>
   </div>
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
@@ -553,7 +554,7 @@ input[type=file]{display:none}
   <div id="lb-cnt" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:4px 12px;border-radius:20px"></div>
 </div>
 
-<div class="edit-modal" id="edit-modal">
+<div class="edit-modal" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
   <div class="edit-sheet">
     <div class="edit-sheet-handle"></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:16px">SKU 수정</div>
@@ -666,8 +667,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778972851';
-console.error('APP VERSION: 1778972851');
+window._appVer='1778973502';
+console.error('APP VERSION: 1778973502');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2558,6 +2559,11 @@ function thumbTouchEnd(e,slId){
 }
 // 키보드 방향키로 포커스된 썸네일 네비게이션
 document.addEventListener('keydown',e=>{
+  // 수정 모달 ESC 닫기
+  if(e.key==='Escape'){
+    const modal=document.getElementById('edit-modal');
+    if(modal?.classList.contains('open')){ closeEditModal(); return; }
+  }
   if(document.getElementById('lightbox')?.classList.contains('open')) return;
   if(_focusThumbId&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
     e.preventDefault();
