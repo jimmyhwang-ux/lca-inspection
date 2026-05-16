@@ -662,28 +662,12 @@ window.fetch = function(url, opts={}){
   return _origFetch(url, opts);
 };
 
-// 앱 시작 시 토큰 확인
-(async()=>{
-  const token = getToken();
-  if(!token){
-    showScreen('login');
-    return;
-  }
-  // 토큰 유효성 검사
-  try{
-    const res = await _origFetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':token},
-      body: JSON.stringify({action:'check_password', password:token})
-    });
-    const j = await res.json();
-    if(j.success){ showScreen('shoot'); }
-    else { sessionStorage.removeItem(_TOKEN_KEY); showScreen('login'); }
-  }catch(e){ showScreen('shoot'); } // 오프라인이면 통과
-})();
+// 새로고침 시 항상 로그인 화면으로
+sessionStorage.removeItem(_TOKEN_KEY);
+showScreen('login');
 
-window._appVer='1778909901';
-console.error('APP VERSION: 1778909901');
+window._appVer='1778910081';
+console.error('APP VERSION: 1778910081');
 
 const ACC_MAP = {
   '가방/지갑': [
