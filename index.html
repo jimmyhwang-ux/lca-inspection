@@ -432,9 +432,9 @@ input[type=file]{display:none}
       </div>
     </div>
     <div style="display:flex;gap:6px">
-      <button onclick="saveToSupabase('model')" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ff6b2b;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 SKU</button>
-      <button onclick="saveToSupabase('db')" style="flex:1;padding:13px;border-radius:12px;border:none;background:#0a1a2a;color:#007aff;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(0,122,255,.4)">💾 DB</button>
-      <button onclick="saveToSupabase('gear')" style="flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
+      <button onclick="saveToSupabase('model',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ff6b2b;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 SKU</button>
+      <button onclick="saveToSupabase('db',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#0a1a2a;color:#007aff;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(0,122,255,.4)">💾 DB</button>
+      <button onclick="saveToSupabase('gear',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
     </div>
     <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #2a2a2a;color:#444;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
   </div>
@@ -569,8 +569,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778904847';
-console.error('APP VERSION: 1778904847');
+window._appVer='1778905059';
+console.error('APP VERSION: 1778905059');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1836,8 +1836,8 @@ function addSkuAcc(){
   accessories.push({name});inp.value='';renderSkuAccList();
 }
 
-async function saveToSupabase(source){
-  const btn=document.querySelector('.sku-save-btn');
+async function saveToSupabase(source, btnEl){
+  const btn=btnEl||document.querySelector('.sku-save-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ 저장 중...';}
   try{
     // 사진 imgbb 업로드
@@ -1892,14 +1892,16 @@ async function saveToSupabase(source){
     });
     const j=await res.json();
     if(j.success){
-      toast('✅ SKU DB에 저장되었습니다');
+      const _srcLabel={'model':'모델SKU','db':'DB','gear':'검기어'}[source||'model']||'모델SKU';
+      toast(`✅ ${_srcLabel}에 저장되었습니다`);
       const savedCat=document.getElementById('sku-cat').value||'전체';
-      setTimeout(()=>switchSkuTab('list', savedCat), 600);
+      const _srcTab={'model':'list','db':'db','gear':'gear'}[source||'model']||'list';
+      setTimeout(()=>switchSkuTab(_srcTab, savedCat), 600);
     } else throw new Error(j.error||'저장 실패');
   }catch(e){
     toast('❌ 저장 실패: '+e.message);
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='💾 SKU DB에 저장';}
+    if(btn){btn.disabled=false;btn.textContent='💾 저장';}
   }
 }
 
