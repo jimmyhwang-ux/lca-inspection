@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778936474';
-console.error('APP VERSION: 1778936474');
+window._appVer='1778936787';
+console.error('APP VERSION: 1778936787');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2364,6 +2364,27 @@ function toggleSkuDetail(id){
   if(!el)return;
   const open=el.style.display==='none';
   el.style.display=open?'block':'none';
+  // 열 때 슬라이더 데이터 최신화
+  if(open){
+    const slId='skusl-'+id;
+    const s=_sliders[slId];
+    if(!s||!s.urls) return;
+    const slWrap=document.getElementById(slId);
+    if(!slWrap) return;
+    const photos=s.urls;
+    const total=photos.length;
+    slWrap.innerHTML=photos[0]
+      ?'<img id="'+slId+'-img" src="'+photos[0]+'" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
+        +(total>1
+          ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
+          +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
+          +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/'+total+'</span>'
+          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
+      :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
+    const slImg=document.getElementById(slId+'-img');
+    if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,0);};
+    s.cur=0;
+  }
 }
 
 let _lensCards=[];
@@ -2537,23 +2558,8 @@ function rerenderSkuCard(skuId, photos){
     }
   }
 
-  // 5. 슬라이더 이미지/카운터 업데이트 (펼쳐진 상태일 때)
-  const slImg = document.getElementById(slId+'-img');
-  if(slImg){
-    slImg.src = photos[0]||'';
-    slImg.dataset.pi = 0;
-    slImg.dataset.skuid = skuId;
-    slImg.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0]||'', photos); };
-  }
-  const slCnt = document.getElementById(slId+'-cnt');
-  if(slCnt) slCnt.textContent = '1/'+photos.length;
-  // 슬라이더 좌우 버튼 표시/숨김
-  const slWrap = slImg?.parentNode;
-  if(slWrap){
-    slWrap.querySelectorAll('button').forEach(btn=>{
-      btn.style.display = photos.length>1 ? 'flex' : 'none';
-    });
-  }
+    // 5. _sliders 데이터만 업데이트 (탭 열 때 toggleSkuDetail에서 자동 재렌더)
+  _sliders[slId] = {urls: photos, cur: 0};
 }
 
 function _updateThumbGrid(skuId, photos){
