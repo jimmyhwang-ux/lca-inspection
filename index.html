@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778913007';
-console.error('APP VERSION: 1778913007');
+window._appVer='1778936474';
+console.error('APP VERSION: 1778936474');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2228,20 +2228,15 @@ function renderSkuList(list, wrapId){
     const thumbUrl=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean)[0]||'';
     return `<div class="sku-list-item" data-skuid="${item.id}" ondragover="event.preventDefault()" ondrop="lbDropTo(event,'${item.id}',999)">
       <div style="display:flex;gap:10px;align-items:flex-start;cursor:pointer" onclick="toggleSkuDetail('${item.id}')">
-        <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0;width:72px;height:72px;border-radius:8px;overflow:hidden;background:#1a1a1a;border:1px solid #2a2a2a"
-          ontouchstart="thumbSwipeStart(event,'thumb-${item.id}')"
-          ontouchend="thumbSwipeEnd(event,'thumb-${item.id}')">
+        <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0">
           ${(()=>{
             const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-            _sliders['thumb-'+item.id]={urls:_all,cur:0};
-            if(!_all.length) return '<div style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.3">📦</div>';
-            const btn = _all.length>1
-              ? `<button onclick="event.stopPropagation();thumbSlide('thumb-${item.id}',-1)" style="position:absolute;left:0;top:0;bottom:0;width:20px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">&#8249;</button>`
-              + `<button onclick="event.stopPropagation();thumbSlide('thumb-${item.id}',1)" style="position:absolute;right:0;top:0;bottom:0;width:20px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">&#8250;</button>`
-              + `<span id="thumb-${item.id}-cnt" style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px">1/${_all.length}</span>`
-              : '';
-            return `<img id="thumb-${item.id}-img" src="${_all[0]}" style="width:72px;height:72px;object-fit:cover;display:block;cursor:zoom-in"
-              onclick="event.stopPropagation();openLightbox('${_all[0]}',_sliders['thumb-${item.id}'].urls)">${btn}`;
+            const thumbUrl=_all[0]||'';
+            return (thumbUrl
+              ?`<img id="thumb-${item.id}-img" src="${thumbUrl}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
+                onclick="event.stopPropagation();openLightbox('${thumbUrl}',_sliders['skusl-'+item.id]?.urls||[thumbUrl])" alt="">`
+              :'<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>')
+            +(_all.length>=2?`<span id="thumb-${item.id}-cnt" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px">+${_all.length}</span>`:'');
           })()}
         </div>
         <div style="flex:1;min-width:0">
@@ -2506,28 +2501,6 @@ async function lbDropTo(e, toSkuId, toIdx){
 
 // DOM 직접 업데이트 함수들 (새로고침 없이)
 // 카드 완전 재렌더 (DOM 조작 대신 innerHTML 교체)
-// 썸네일 미니 슬라이더
-let _thumbTouchX = 0;
-function thumbSlide(slId, dir){
-  const s = _sliders[slId];
-  if(!s||!s.urls||!s.urls.length) return;
-  s.cur = (s.cur + dir + s.urls.length) % s.urls.length;
-  const img = document.getElementById(slId+'-img');
-  if(img){
-    img.src = s.urls[s.cur];
-    img.onclick = e=>{ e.stopPropagation(); openLightbox(s.urls[s.cur], s.urls); };
-  }
-  const cnt = document.getElementById(slId+'-cnt');
-  if(cnt) cnt.textContent = (s.cur+1)+'/'+s.urls.length;
-}
-function thumbSwipeStart(e, slId){
-  _thumbTouchX = e.touches[0].clientX;
-}
-function thumbSwipeEnd(e, slId){
-  const dx = e.changedTouches[0].clientX - _thumbTouchX;
-  if(Math.abs(dx) > 30) thumbSlide(slId, dx < 0 ? 1 : -1);
-}
-
 function rerenderSkuCard(skuId, photos){
   // 1. skuListAll 데이터 동기화
   const item = skuListAll.find(s=>String(s.id)===String(skuId));
@@ -2546,35 +2519,41 @@ function rerenderSkuCard(skuId, photos){
   const card = document.querySelector('.sku-list-item[data-skuid="'+skuId+'"]');
   if(!card) return;
 
-  // 4. 썸네일 미니 슬라이더 업데이트
-  const thumbSlId = 'thumb-' + skuId;
-  if(_sliders[thumbSlId]){
-    _sliders[thumbSlId].urls = photos;
-    _sliders[thumbSlId].cur = 0;
+  // 4. 썸네일 이미지 + 카운트 업데이트 (ID 직접 접근)
+  const thumbImgEl = document.getElementById('thumb-'+skuId+'-img');
+  if(thumbImgEl){
+    if(photos[0]){
+      thumbImgEl.src = photos[0];
+      thumbImgEl.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], _sliders['skusl-'+skuId]?.urls||photos); };
+    }
   }
-  const thumbImg = document.getElementById(thumbSlId+'-img');
-  if(thumbImg && photos[0]){
-    thumbImg.src = photos[0];
-    thumbImg.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], photos); };
-  }
-  const thumbCnt = document.getElementById(thumbSlId+'-cnt');
-  if(thumbCnt){
-    if(photos.length >= 2){
-      thumbCnt.textContent = '1/'+photos.length;
+  const thumbCntEl = document.getElementById('thumb-'+skuId+'-cnt');
+  if(thumbCntEl){
+    if(photos.length>=2){
+      thumbCntEl.textContent = '+'+photos.length;
+      thumbCntEl.style.display = '';
     } else {
-      thumbCnt.style.display = 'none';
+      thumbCntEl.style.display = 'none';
     }
   }
 
-  // 5. 슬라이더 이미지/카운터 업데이트
+  // 5. 슬라이더 이미지/카운터 업데이트 (펼쳐진 상태일 때)
   const slImg = document.getElementById(slId+'-img');
   if(slImg){
     slImg.src = photos[0]||'';
     slImg.dataset.pi = 0;
+    slImg.dataset.skuid = skuId;
     slImg.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0]||'', photos); };
   }
   const slCnt = document.getElementById(slId+'-cnt');
   if(slCnt) slCnt.textContent = '1/'+photos.length;
+  // 슬라이더 좌우 버튼 표시/숨김
+  const slWrap = slImg?.parentNode;
+  if(slWrap){
+    slWrap.querySelectorAll('button').forEach(btn=>{
+      btn.style.display = photos.length>1 ? 'flex' : 'none';
+    });
+  }
 }
 
 function _updateThumbGrid(skuId, photos){
