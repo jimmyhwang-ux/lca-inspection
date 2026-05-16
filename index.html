@@ -168,7 +168,7 @@ input[type=file]{display:none}
 .screen{display:none}
 .screen.active{display:block}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-.lightbox.open{opacity:1;pointer-events:all}
+.lightbox.open{opacity:1;pointer-events:all}#lightbox{overflow:hidden}
 .lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px}
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -525,7 +525,7 @@ input[type=file]{display:none}
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;z-index:10">✕</button>
   <button id="lb-prev" onclick="lbNav(-1)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;font-size:32px;width:44px;height:60px;border-radius:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center">&#8249;</button>
-  <img id="lightbox-img" src="" alt="" style="max-width:92vw;max-height:88vh;object-fit:contain;border-radius:8px;user-select:none">
+  <img id="lightbox-img" src="" alt="" style="width:100vw;height:100vh;object-fit:contain;user-select:none;touch-action:none;display:block">
   <button id="lb-next" onclick="lbNav(1)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;font-size:32px;width:44px;height:60px;border-radius:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center">&#8250;</button>
   <div id="lb-cnt" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:4px 12px;border-radius:20px"></div>
 </div>
@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778907525';
-console.error('APP VERSION: 1778907525');
+window._appVer='1778907930';
+console.error('APP VERSION: 1778907930');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2487,7 +2487,7 @@ document.addEventListener('touchstart',e=>{
 document.addEventListener('touchend',e=>{
   if(!document.getElementById('lightbox')?.classList.contains('open')) return;
   const dx=e.changedTouches[0].clientX-_lbTouchX;
-  if(Math.abs(dx)>50){ lbNav(dx<0?1:-1); }
+  if(Math.abs(dx)>30){ lbNav(dx<0?1:-1); }
 },{passive:true});
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
 
@@ -2749,15 +2749,31 @@ function filterSkuList(){
 
 async function deleteSku(id){
   if(!confirm('삭제하시겠습니까?'))return;
+  // DOM 즉시 제거 (새로고침 없이)
+  const card=document.querySelector(`[data-skuid="${id}"]`)?.closest('.sku-list-item')
+    || document.getElementById(`sku-detail-${id}`)?.closest('.sku-list-item');
+  // data-id로 찾기
+  const allCards=document.querySelectorAll('.sku-list-item');
+  let targetCard=null;
+  allCards.forEach(c=>{ if(c.innerHTML.includes(`deleteSku('${id}')`) || c.innerHTML.includes(`deleteSku("${id}")`)) targetCard=c; });
+  if(targetCard) targetCard.style.opacity='0.3';
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'delete_sku',skuData:{id}})
     });
     const j=await res.json();
-    if(j.success){toast('✅ 삭제되었습니다');loadSkuList();}
-    else throw new Error(j.error);
-  }catch(e){toast('❌ 삭제 실패');}
+    if(j.success){
+      if(targetCard) targetCard.remove();
+      // skuListAll에서도 제거
+      const idx=skuListAll.findIndex(s=>String(s.id)===String(id));
+      if(idx>=0) skuListAll.splice(idx,1);
+      toast('✅ 삭제되었습니다');
+    } else throw new Error(j.error);
+  }catch(e){
+    if(targetCard) targetCard.style.opacity='1';
+    toast('❌ 삭제 실패: '+e.message);
+  }
 }
 
 function copyResult(){
