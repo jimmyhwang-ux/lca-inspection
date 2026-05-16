@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778911504';
-console.error('APP VERSION: 1778911504');
+window._appVer='1778912111';
+console.error('APP VERSION: 1778912111');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2512,22 +2512,28 @@ function _updateThumbGrid(skuId, photos){
   }
 
   // ── 카드 헤더 썸네일 + 뱃지 업데이트 ──
-  // data-skuid 속성으로 카드 정확히 찾기
   const card = document.querySelector('.sku-list-item[data-skuid="'+skuId+'"]');
   if(card){
-    // 52px 썸네일 이미지
-    const thumbImg = card.querySelector('img[style*="52px"]');
-    if(thumbImg){
-      thumbImg.src = photos[0] || thumbImg.src;
-    }
-    // 뱃지 (position:absolute)
-    const thumbWrap = thumbImg?.closest('[style*="position:relative"]');
+    // 첫 번째 position:relative div (썸네일 래퍼) 직접 접근
+    const thumbWrap = card.querySelector('div[style*="position:relative"][style*="flex-shrink"]');
     if(thumbWrap){
-      let badge = thumbWrap.querySelector('span[style*="bottom:2px"]');
+      // 래퍼 안의 img
+      const thumbImg = thumbWrap.querySelector('img');
+      if(thumbImg && photos[0]){
+        thumbImg.src = photos[0];
+        // onclick도 새 URL로 업데이트
+        thumbImg.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], photos); };
+      } else if(!thumbImg && photos[0]){
+        // placeholder div → img로 교체
+        thumbWrap.innerHTML = `<img src="${photos[0]}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" onclick="event.stopPropagation()">`;
+        thumbWrap.querySelector('img').onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], photos); };
+      }
+      // 뱃지
+      let badge = thumbWrap.querySelector('span');
       if(photos.length >= 2){
         if(!badge){
           badge = document.createElement('span');
-          badge.style.cssText = "position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px";
+          badge.style.cssText = 'position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px';
           thumbWrap.appendChild(badge);
         }
         badge.textContent = '+'+photos.length;
