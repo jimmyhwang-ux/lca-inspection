@@ -559,7 +559,7 @@ input[type=file]{display:none}
     <div style="font-size:15px;font-weight:800;margin-bottom:16px">SKU 수정</div>
     <div class="edit-field-row">
       <div class="edit-field-label">사진</div>
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
+      <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:8px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
       <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#666;width:fit-content">
         + 사진 추가
         <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none" onchange="previewEditPhotos(this)">
@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778910081';
-console.error('APP VERSION: 1778910081');
+window._appVer='1778910160';
+console.error('APP VERSION: 1778910160');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2606,18 +2606,18 @@ function openEditModal(i){
 }
 function renderEditPhotos(urls){
   const wrap=document.getElementById('ef-photos-wrap');
-  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none';
+  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding:8px 4px 4px 4px;scrollbar-width:none';
   wrap.innerHTML=urls.map((url,idx)=>`
     <div draggable="true" data-efidx="${idx}"
       ondragstart="efDragStart(event)"
       ondragover="event.preventDefault();event.currentTarget.style.opacity='0.6'"
       ondragleave="event.currentTarget.style.opacity='1'"
       ondrop="efDrop(event,${idx})"
-      style="position:relative;flex-shrink:0;transition:opacity .15s">
+      style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:4px">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
         onclick="openLightbox('${url}',${JSON.stringify(urls)})" alt="">
       <button onclick="deleteEditPhoto(${idx})"
-        style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;font-size:10px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0">✕</button>
+        style="position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:#ef4444;border:2px solid #0d0d0d;color:#fff;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:10">✕</button>
     </div>`).join('');
 }
 
