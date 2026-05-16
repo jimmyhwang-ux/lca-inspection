@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778908872';
-console.error('APP VERSION: 1778908872');
+window._appVer='1778909119';
+console.error('APP VERSION: 1778909119');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2210,7 +2210,12 @@ function renderSkuList(list, wrapId){
                 const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+item.id+'\','+ pi +')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+item.id+'\','+ pi +')"><div id="pchk-'+item.id+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
                 const photoGrid='<div style="display:flex;gap:6px;margin-bottom:6px">' + moveBtns + '</div>';
                 return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
-                  <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}', _sliders['${slId}']?.cur||0)">
+                  <img id="${slId}-img" src="${allImgs[0]}"
+                    draggable="true"
+                    data-skuid="${item.id}"
+                    data-pi="${_sliders[slId]?.cur||0}"
+                    ondragstart="lbDragStart(event)"
+                    style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}', _sliders['${slId}']?.cur||0)">
                   ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
                   <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
                   <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
@@ -2322,6 +2327,7 @@ function slideImg(sliderId,dir){
   const cnt=document.getElementById(sliderId+'-cnt');
   if(img){
     img.src=url;
+    img.dataset.pi=s.cur; // 드래그 시 현재 인덱스 동기화
     // 전체 배열 전달 → 라이트박스에서 화살표/키보드 작동
     img.onclick=e=>{e.stopPropagation();openLightbox(url,s.urls);};
   }
@@ -2435,7 +2441,7 @@ function _updateThumbGrid(skuId, photos){
   if(!wrap) return;
   wrap.innerHTML=photos.map((url,pi)=>
     '<div draggable="true" data-skuid="'+skuId+'" data-pi="'+pi+'" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+skuId+'\','+pi+')" style="position:relative;flex-shrink:0;transition:opacity .2s">'+
-    '<img src="'+url+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+skuId+'\','+pi+')">'+
+    '<img src="'+url+'" draggable="true" data-skuid="'+skuId+'" data-pi="'+pi+'" ondragstart="lbDragStart(event)" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+skuId+'\','+pi+')">'+
     '<div id="pchk-'+skuId+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div>'+
     '</div>'
   ).join('');
