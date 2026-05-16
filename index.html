@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778908610';
-console.error('APP VERSION: 1778908610');
+window._appVer='1778908872';
+console.error('APP VERSION: 1778908872');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2491,7 +2491,8 @@ document.addEventListener('touchstart',e=>{
 },{passive:true});
 document.addEventListener('touchmove',e=>{
   if(!document.getElementById('lightbox')?.classList.contains('open')) return;
-  e.preventDefault(); // 상하 스크롤 차단
+  // 손가락 1개만 스크롤 차단 (2개=pinch zoom은 허용)
+  if(e.touches.length===1) e.preventDefault();
 },{passive:false});
 document.addEventListener('touchend',e=>{
   if(!document.getElementById('lightbox')?.classList.contains('open')) return;
