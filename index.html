@@ -457,7 +457,8 @@ input[type=file]{display:none}
   <!-- DB 패널 (모델SKU와 동일 구조) -->
   <div id="sku-db-panel" style="display:none">
     <div style="margin-bottom:10px">
-      <input id="db-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuList(this.value,'db-list-wrap')">
+      <input id="db-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:6px" oninput="filterSkuList(this.value,'db-list-wrap')">
+      <input id="db-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuNotesByWrap(this.value,'db-list-wrap')">
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="db-cat-tabs">
       <button class="cat-btn active" onclick="setDbCatFilter('전체',this)">전체</button>
@@ -473,7 +474,8 @@ input[type=file]{display:none}
   <!-- 검기어 패널 (모델SKU와 동일 구조) -->
   <div id="sku-gear-panel" style="display:none">
     <div style="margin-bottom:10px">
-      <input id="gear-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuList(this.value,'gear-list-wrap')">
+      <input id="gear-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:6px" oninput="filterSkuList(this.value,'gear-list-wrap')">
+      <input id="gear-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuNotesByWrap(this.value,'gear-list-wrap')">
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="gear-cat-tabs">
       <button class="cat-btn active" onclick="setGearCatFilter('전체',this)">전체</button>
@@ -569,8 +571,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778905059';
-console.error('APP VERSION: 1778905059');
+window._appVer='1778905512';
+console.error('APP VERSION: 1778905512');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2163,6 +2165,14 @@ function slideImg(sliderId,dir){
 // 드래그앤드롭 - 사진 순서 변경
 // slId 기반 lightbox 열기 (배열 JSON 문제 우회)
 // 특이사항 전용 검색
+// wrapId 기반 특이사항 검색 (DB/검기어 탭용)
+function filterSkuNotesByWrap(q, wrapId){
+  const filtered = q.trim()
+    ? skuListAll.filter(s=>(s.notes||'').toLowerCase().includes(q.toLowerCase()))
+    : skuListAll;
+  renderSkuList(filtered, wrapId);
+}
+
 function filterSkuNotes(q){
   const filtered = q.trim()
     ? skuListAll.filter(s=>(s.notes||'').toLowerCase().includes(q.toLowerCase()))
