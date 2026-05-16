@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778907208';
-console.error('APP VERSION: 1778907208');
+window._appVer='1778907525';
+console.error('APP VERSION: 1778907525');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1371,8 +1371,11 @@ function renderRefList(wrapId, items, type){
       const photos=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
       const thumb=photos[0]||'';
       return `<div style="background:${bg};border:0.5px solid ${border};border-radius:8px;padding:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">
-        ${thumb?`<img src="${thumb}" onclick="openLightboxRef(this)" data-urls="${photos.join(',')}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:zoom-in">`:
-          `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
+        <div style="position:relative;flex-shrink:0">
+        ${thumb?`<img src="${thumb}" onclick="openLightboxRef(this)" data-urls="${photos.join(',')}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block">`:
+          `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
+        ${photos.length>1?`<span style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px">+${photos.length}</span>`:''}
+      </div>
         <div style="flex:1;min-width:0">
           <div style="color:#fff;font-size:12px;font-weight:600">${item.model_name_ko||item.model_name||'—'}</div>
           <div style="color:${color};font-size:10px">${[item.brand,item.sku_code,item.size_actual].filter(Boolean).join(' · ')}</div>
@@ -2348,8 +2351,14 @@ function openLightboxRef(imgEl){
 
 function openLightboxSlider(slId, startIdx){
   const s=_sliders[slId];
-  if(!s||!s.urls||!s.urls.length){ return; }
-  openLightbox(s.urls[startIdx||s.cur||0], s.urls);
+  if(!s||!s.urls||!s.urls.length){
+    // 슬라이더 없으면 이미지 src에서 직접 열기
+    const img=document.getElementById(slId+'-img');
+    if(img&&img.src) openLightbox(img.src,[img.src]);
+    return;
+  }
+  const idx=(startIdx!==undefined&&startIdx!==null)?startIdx:(s.cur||0);
+  openLightbox(s.urls[idx], s.urls);
 }
 
 // 드래그앤드롭 - 모델간 사진 이동 (다른 SKU로)
@@ -2455,8 +2464,9 @@ function _lbRender(){
   const next=document.getElementById('lb-next');
   if(img) img.src=_lbUrls[_lbIdx]||'';
   if(cnt) cnt.textContent=_lbUrls.length>1?`${_lbIdx+1} / ${_lbUrls.length}`:'';
-  if(prev) prev.style.display=_lbUrls.length>1?'flex':'none';
-  if(next) next.style.display=_lbUrls.length>1?'flex':'none';
+  const showArrow=_lbUrls.length>1;
+  if(prev){ prev.style.display=showArrow?'flex':'none'; prev.style.opacity=_lbIdx===0?'0.3':'1'; }
+  if(next){ next.style.display=showArrow?'flex':'none'; next.style.opacity=_lbIdx===_lbUrls.length-1?'0.3':'1'; }
 }
 function lbNav(dir){
   _lbIdx=(_lbIdx+dir+_lbUrls.length)%_lbUrls.length;
