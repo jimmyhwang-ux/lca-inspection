@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778906319';
-console.error('APP VERSION: 1778906319');
+window._appVer='1778906828';
+console.error('APP VERSION: 1778906828');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -992,7 +992,7 @@ function renderDbMatchCards(matches){
     const dbId=`db-detail-${idx}`;
     const isMulti=matches.length>1;
     const slHtml=total>0?`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a">
-        <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}')">
+        <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}', _sliders['${slId}']?.cur||0)">
         ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
         <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
         <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`:'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'}
@@ -1052,7 +1052,7 @@ async function renderResult(){
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
-    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="openLightbox('${photos.main.dataUrl}')">`;
+    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="openLightbox('${photos.main.dataUrl}', Object.values(photos).filter(Boolean).map(p=>p.dataUrl))">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||'—';
@@ -1341,7 +1341,7 @@ function renderRefList(wrapId, items, type){
       const photos=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
       const thumb=photos[0]||'';
       return `<div style="background:${bg};border:0.5px solid ${border};border-radius:8px;padding:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">
-        ${thumb?`<img src="${thumb}" onclick="openLightbox('${thumb}',${JSON.stringify(photos)})" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:zoom-in">`:
+        ${thumb?`<img src="${thumb}" onclick="openLightboxRef(this)" data-urls="${photos.join(',')}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:zoom-in">`:
           `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
         <div style="flex:1;min-width:0">
           <div style="color:#fff;font-size:12px;font-weight:600">${item.model_name_ko||item.model_name||'—'}</div>
@@ -2175,9 +2175,9 @@ function renderSkuList(list, wrapId){
                 const targets=moveTargets[itemSource]||moveTargets['model'];
                 const moveBtns=targets.map(t=>'<button onclick="event.stopPropagation();copySkuTo(\'' + item.id + '\',\'' + t.src + '\')" style="flex:1;background:' + t.bg + ';border:1px solid ' + t.border + ';color:' + t.color + ';font-size:12px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer">' + t.label + '</button>').join('');
                 const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+item.id+'\','+ pi +')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+item.id+'\','+ pi +')"><div id="pchk-'+item.id+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
-                const photoGrid='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' + thumbChecks + '</div><div style="display:flex;gap:6px;margin-bottom:8px">' + moveBtns + '</div>';
+                const photoGrid='<div style="display:flex;gap:6px;margin-bottom:6px">' + moveBtns + '</div>';
                 return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
-                  <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}')">
+                  <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}', _sliders['${slId}']?.cur||0)">
                   ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
                   <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
                   <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
@@ -2274,7 +2274,7 @@ function makeSlider(sliderId,urls){
   _sliders[sliderId]={urls,cur:0};
   const total=urls.length;
   return`<div class="sl-box" id="${sliderId}">
-    <img src="${urls[0]}" alt="" onclick="event.stopPropagation();openLightbox('${urls[0]}')">
+    <img src="${urls[0]}" alt="" onclick="event.stopPropagation();openLightbox('${urls[0]}', urls)">
     ${total>1?`
     <button class="sl-arrow left" onclick="event.stopPropagation();slideImg('${sliderId}',-1)">‹</button>
     <button class="sl-arrow right" onclick="event.stopPropagation();slideImg('${sliderId}',1)">›</button>`:''}
@@ -2307,6 +2307,13 @@ function filterSkuNotes(q){
     ? skuListAll.filter(s=>(s.notes||'').toLowerCase().includes(q.toLowerCase()))
     : skuListAll;
   renderSkuList(filtered, 'sku-list-wrap');
+}
+
+// 참고자료 이미지 확대 (data-urls 속성 기반)
+function openLightboxRef(imgEl){
+  const urls=(imgEl.dataset.urls||'').split(',').filter(Boolean);
+  const cur=imgEl.src;
+  openLightbox(cur, urls.length?urls:[cur]);
 }
 
 function openLightboxSlider(slId, startIdx){
