@@ -522,10 +522,10 @@ input[type=file]{display:none}
   <div style="height:40px"></div>
 </div>
 
-<div class="lightbox" id="lightbox">
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;z-index:10">✕</button>
   <button id="lb-prev" onclick="lbNav(-1)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;font-size:32px;width:44px;height:60px;border-radius:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center">&#8249;</button>
-  <img id="lightbox-img" src="" alt="" style="width:100vw;height:100vh;object-fit:contain;user-select:none;touch-action:none;display:block">
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()" style="max-width:96vw;max-height:90vh;object-fit:contain;user-select:none;border-radius:6px;display:block;cursor:zoom-in">
   <button id="lb-next" onclick="lbNav(1)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;font-size:32px;width:44px;height:60px;border-radius:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center">&#8250;</button>
   <div id="lb-cnt" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:4px 12px;border-radius:20px"></div>
 </div>
@@ -602,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778907930';
-console.error('APP VERSION: 1778907930');
+window._appVer='1778908336';
+console.error('APP VERSION: 1778908336');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2455,7 +2455,7 @@ function openLightbox(url, urls){
   if(_lbIdx<0) _lbIdx=0;
   _lbRender();
   document.getElementById('lightbox').classList.add('open');
-  document.getElementById('lightbox').onclick = (e)=>{ if(e.target===e.currentTarget) closeLightbox(); };
+
 }
 function _lbRender(){
   const img=document.getElementById('lightbox-img');
