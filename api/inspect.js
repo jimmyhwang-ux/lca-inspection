@@ -245,7 +245,8 @@ export default async function handler(req, res) {
       }
       const payload = { ...skuData, extra_images };
       delete payload.newImageBase64;
-      if (!payload.source) payload.source = 'model';
+      // reqSource 우선, skuData.source 차선, 기본값 'model'
+      payload.source = reqSource || payload.source || 'model';
       // site_url: DB 컬럼 없으면 에러 방지 — 일단 전송하고 에러 시 제거 후 재시도
       if (payload.site_url === undefined) payload.site_url = '';
       const r = await sb('sku_items', {
