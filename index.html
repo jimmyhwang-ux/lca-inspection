@@ -280,6 +280,37 @@ input[type=file]{display:none}
   </div>
 
   <div id="db-match-wrap"></div>
+  <div id="ref-section" style="display:none;margin:0 16px 4px">
+    <div style="height:1px;background:#1a1a1a;margin-bottom:8px"></div>
+    <div style="background:#111;border-radius:10px;border:0.5px solid #2a2a2a;overflow:hidden">
+      <!-- 참고자료 헤더 행 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;gap:8px">
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <span style="font-size:11px;color:#555">참고자료</span>
+          <span id="ref-db-cnt" style="background:#0a1a2a;color:#007aff;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(0,122,255,.3);display:none">DB 0</span>
+          <span id="ref-gear-cnt" style="background:#1a1200;color:#BA7517;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(186,117,23,.3);display:none">검기어 0</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end">
+          <div style="position:relative;display:flex;align-items:center">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:7px;pointer-events:none">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input id="ref-search-input" type="text" placeholder="모델명 검색..." oninput="searchRefData(this.value)"
+              style="background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:7px;padding:5px 8px 5px 24px;color:#fff;font-size:11px;width:110px;outline:none">
+          </div>
+          <button onclick="toggleRefPanel()" id="ref-toggle-btn"
+            style="background:#1a1a2a;border:0.5px solid rgba(0,122,255,.4);color:#007aff;font-size:11px;padding:5px 10px;border-radius:7px;cursor:pointer;white-space:nowrap;font-weight:600">
+            펼치기 ▾
+          </button>
+        </div>
+      </div>
+      <!-- 참고자료 패널 -->
+      <div id="ref-panel" style="display:none;padding:0 10px 10px">
+        <div id="ref-db-list" style="margin-bottom:8px"></div>
+        <div id="ref-gear-list"></div>
+      </div>
+    </div>
+  </div>
 
   <div style="padding:0 16px;display:flex;flex-direction:column;gap:4px" id="result-body">
   <!-- 실측사이즈 + 사이즈명칭 + 스타일번호 -->
@@ -571,8 +602,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778905512';
-console.error('APP VERSION: 1778905512');
+window._appVer='1778906319';
+console.error('APP VERSION: 1778906319');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -789,6 +820,10 @@ async function startInspection(){
     setStep(3,'done');setStep(4,'active');
     resultData=data;
     window._userResetDb=false; // 새 검수 시 초기화
+  _refDataAll = []; // 참고자료 캐시 초기화
+  const _refSec=document.getElementById('ref-section'); if(_refSec) _refSec.style.display='none';
+  const _refPanel=document.getElementById('ref-panel'); if(_refPanel) _refPanel.style.display='none';
+  const _refBtn=document.getElementById('ref-toggle-btn'); if(_refBtn) _refBtn.textContent='펼치기 ▾';
     // AI 원본값 저장 (DB 적용 취소 시 복원용)
     window._aiOriginal={
       brand:     data.analysis?.brand||'',
@@ -964,7 +999,7 @@ function renderDbMatchCards(matches){
       </div>`:'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">&#128452;</div>';
     return`<div class="db-match-card" id="db-card-${idx}" style="${idx>0?'margin-top:6px':''}">
       <div class="db-match-header" onclick="toggleDbDetail('${dbId}')" style="cursor:pointer;user-select:none">
-        <span class="db-match-badge">&#10003; DB ${isMulti?`${idx+1}/${matches.length}`:''}</span>
+        <span class="db-match-badge">&#10003; SKU ${isMulti?`${idx+1}/${matches.length}`:''}</span>
         <span style="font-size:11px;color:#22c55e;flex:1;margin-left:6px">${m.brand||''} · ${m.model_name_ko||m.model_name||''}</span>
         <button id="apply-btn-${idx}" onclick="event.stopPropagation();applyCardMatch(${idx},'db-card-${idx}')" style="background:#1a3a1a;border:none;color:#22c55e;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;margin-right:6px;z-index:10">적용</button>
         <span id="${dbId}-icon" style="color:#22c55e;font-size:13px">${idx===0?'&#9652;':'&#9662;'}</span>
@@ -1001,6 +1036,12 @@ function renderDbMatchCards(matches){
     } catch(e) {
       console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
     }
+  }
+
+  // 참고자료 자동 로드 — 매칭된 모델명으로
+  const _refModelName = matches[0]?.model_name_ko || matches[0]?.model_name || '';
+  if(_refModelName){
+    loadRefData(_refModelName);
   }
 }
 
@@ -1082,7 +1123,7 @@ async function renderResult(){
     })();
 
   } else {
-    dbWrap.innerHTML=`<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 DB에 새로 적재됩니다</div>`;
+    dbWrap.innerHTML=`<div class="db-new-badge">⚠️ 미등록 SKU — 결과 이동 시 모델SKU에 새로 적재됩니다</div>`;
     accessories=[];renderAcc();
   }
 
@@ -1098,6 +1139,11 @@ async function renderResult(){
   const _lensSources=(resultData.lensSizeSources||[]).slice(0,3);
   const _lensSku=resultData.lensSku||''
 
+  // 참고자료 로드 (미등록 SKU인 경우)
+  setTimeout(()=>{
+    const modelName=document.getElementById('r-model-ko')?.textContent?.trim();
+    if(modelName&&modelName!=='—'&&!_refDataAll.length) loadRefData(modelName);
+  }, 1200);
   // 사이즈: AI 이미지 분석값만 (SKU DB 매칭은 renderDbMatchCards에서 처리)
   const _finalSize=_aiSize||'';
   const _finalSizeName=_aiSizeName||_lensSizeName||'';
@@ -1231,6 +1277,90 @@ const SIZE_CONFIG = {
 
 
 // 카테고리 탭 자동 활성화 (renderResult 호출)
+// ── 참고자료 섹션 ──────────────────────────────────────────
+let _refDataAll = []; // 전체 DB+검기어 데이터 캐시
+
+async function loadRefData(modelName){
+  // 모델명으로 DB/검기어에서 참고자료 검색
+  try{
+    const [dbRes, gearRes] = await Promise.all([
+      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'list_sku',source:'db'})}),
+      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'list_sku',source:'gear'})})
+    ]);
+    const dbJ = await dbRes.json();
+    const gearJ = await gearRes.json();
+    const dbList = (dbJ.data||[]).map(s=>({...s,_refType:'db'}));
+    const gearList = (gearJ.data||[]).map(s=>({...s,_refType:'gear'}));
+    _refDataAll = [...dbList, ...gearList];
+    searchRefData(modelName);
+  }catch(e){ console.warn('참고자료 로드 실패',e); }
+}
+
+function searchRefData(q){
+  const input = document.getElementById('ref-search-input');
+  if(input && q !== undefined) input.value = q;
+  const query = (q||input?.value||'').trim().toLowerCase();
+
+  const dbItems = _refDataAll.filter(s=>s._refType==='db').filter(s=>
+    !query || (s.model_name_ko||s.model_name||'').toLowerCase().includes(query)
+      || (s.notes||'').toLowerCase().includes(query)
+  );
+  const gearItems = _refDataAll.filter(s=>s._refType==='gear').filter(s=>
+    !query || (s.model_name_ko||s.model_name||'').toLowerCase().includes(query)
+      || (s.notes||'').toLowerCase().includes(query)
+  );
+
+  // 배지 업데이트
+  const dbCnt = document.getElementById('ref-db-cnt');
+  const gearCnt = document.getElementById('ref-gear-cnt');
+  if(dbCnt){ dbCnt.textContent='DB '+dbItems.length; dbCnt.style.display=dbItems.length?'inline':'none'; }
+  if(gearCnt){ gearCnt.textContent='검기어 '+gearItems.length; gearCnt.style.display=gearItems.length?'inline':'none'; }
+
+  // 섹션 표시 여부
+  const refSection = document.getElementById('ref-section');
+  if(refSection) refSection.style.display = _refDataAll.length ? 'block' : 'none';
+
+  // 패널 내용 렌더
+  renderRefList('ref-db-list', dbItems, 'db');
+  renderRefList('ref-gear-list', gearItems, 'gear');
+}
+
+function renderRefList(wrapId, items, type){
+  const wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  if(!items.length){ wrap.innerHTML=''; return; }
+  const color = type==='db' ? '#007aff' : '#BA7517';
+  const bg = type==='db' ? '#0a1218' : '#18120a';
+  const border = type==='db' ? 'rgba(0,122,255,.2)' : 'rgba(186,117,23,.2)';
+  const label = type==='db' ? 'DB 각인 자료' : '검기어 판정불가 사례';
+  wrap.innerHTML = `
+    <div style="font-size:10px;color:${color};font-weight:600;margin-bottom:4px;padding-left:2px">■ ${label}</div>
+    ${items.map(item=>{
+      const photos=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
+      const thumb=photos[0]||'';
+      return `<div style="background:${bg};border:0.5px solid ${border};border-radius:8px;padding:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">
+        ${thumb?`<img src="${thumb}" onclick="openLightbox('${thumb}',${JSON.stringify(photos)})" style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:zoom-in">`:
+          `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
+        <div style="flex:1;min-width:0">
+          <div style="color:#fff;font-size:12px;font-weight:600">${item.model_name_ko||item.model_name||'—'}</div>
+          <div style="color:${color};font-size:10px">${[item.brand,item.sku_code,item.size_actual].filter(Boolean).join(' · ')}</div>
+          ${item.notes?`<div style="color:#666;font-size:10px;margin-top:2px">${item.notes}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function toggleRefPanel(){
+  const panel = document.getElementById('ref-panel');
+  const btn = document.getElementById('ref-toggle-btn');
+  if(!panel||!btn) return;
+  const open = panel.style.display==='none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '접기 ▴' : '펼치기 ▾';
+}
+
 // 카테고리 강제 변경 팝업
 function showCatPicker(tagEl){
   const existing=document.getElementById('cat-picker-popup');
@@ -1690,11 +1820,10 @@ function onResultFieldInput(input,id){
 
 async function searchDbFromField(fieldId,val){
   try{
-    const srcMap={'list':'model','db':'db','gear':'gear'};
-    const srcFilter=srcMap[activeTab]||null;
+    // 검수 화면에서는 모델SKU(source='model') 전체에서 매칭
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku',source:srcFilter})
+      body:JSON.stringify({action:'list_sku',source:'model'})
     });
     const j=await res.json();
     if(!j.success||!j.data)return;
