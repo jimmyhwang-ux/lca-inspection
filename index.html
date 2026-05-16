@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778910833';
-console.error('APP VERSION: 1778910833');
+window._appVer='1778911202';
+console.error('APP VERSION: 1778911202');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2232,7 +2232,7 @@ function renderSkuList(list, wrapId){
           ${thumbUrl
             ?`<img src="${thumbUrl}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" onclick="event.stopPropagation();openLightbox('${thumbUrl}')" alt="">`
             :`<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>`}
-          ${(()=>{const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);return _all.length>=2?`<span style='position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px'>${_all.length}</span>`:''})()}
+          ${(()=>{const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);return _all.length>=2?`<span style='position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px'>+${_all.length}</span>`:''})()}
         </div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
@@ -2498,10 +2498,10 @@ async function lbDropTo(e, toSkuId, toIdx){
 
 // DOM 직접 업데이트 함수들 (새로고침 없이)
 function _updateThumbGrid(skuId, photos){
-  // 슬라이더 방식 - 슬라이더 데이터와 이미지만 업데이트
   const slId = 'skusl-' + skuId;
+  // 슬라이더 업데이트
   _updateSlider(slId, photos);
-  // 슬라이더 이미지의 data-pi도 0으로 리셋
+  // 슬라이더 이미지 data 속성 동기화
   const img = document.getElementById(slId+'-img');
   if(img){
     img.dataset.pi = 0;
@@ -2509,6 +2509,40 @@ function _updateThumbGrid(skuId, photos){
     img.draggable = true;
     img.ondragstart = lbDragStart;
     img.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], photos); };
+  }
+  // 카드 헤더 썸네일 이미지 + 뱃지 업데이트
+  // sku-list-item 안의 첫 번째 img (52x52 썸네일)
+  const card = document.querySelector('.sku-list-item [data-skuid="'+skuId+'"]')?.closest('.sku-list-item')
+    || Array.from(document.querySelectorAll('.sku-list-item')).find(c=>c.innerHTML.includes("'"+skuId+"'"));
+  if(card){
+    // 썸네일 이미지 src 업데이트
+    const thumbImg = card.querySelector('img[style*="52px"]');
+    if(thumbImg && photos[0]) thumbImg.src = photos[0];
+    // 뱃지 업데이트
+    const badge = card.querySelector('span[style*="position:absolute"][style*="bottom:2px"]');
+    if(photos.length >= 2){
+      if(badge){
+        badge.textContent = '+'+photos.length;
+      } else {
+        // 뱃지 없으면 생성
+        const thumbWrap = thumbImg?.parentNode;
+        if(thumbWrap){
+          const newBadge = document.createElement('span');
+          newBadge.style.cssText = "position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px";
+          newBadge.textContent = '+'+photos.length;
+          thumbWrap.appendChild(newBadge);
+        }
+      }
+    } else {
+      // 1장이면 뱃지 제거
+      if(badge) badge.remove();
+    }
+  }
+  // skuListAll 데이터도 동기화
+  const item = skuListAll.find(s=>String(s.id)===String(skuId));
+  if(item && photos.length){
+    item.ref_image_url = photos[0]||null;
+    item.extra_images = photos.slice(1);
   }
 }
 
