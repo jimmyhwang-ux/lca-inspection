@@ -556,7 +556,10 @@ input[type=file]{display:none}
 <div class="edit-modal" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
   <div class="edit-sheet">
     <div class="edit-sheet-handle"></div>
-    <div style="font-size:15px;font-weight:800;margin-bottom:16px">SKU 수정</div>
+    <div style="display:flex;align-items:center;margin-bottom:16px">
+      <button onclick="closeEditModal()" style="background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;padding:0 10px 0 0;line-height:1">←</button>
+      <span style="font-size:15px;font-weight:800">SKU 수정</span>
+    </div>
     <div class="edit-field-row">
       <div class="edit-field-label">사진</div>
       <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:8px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
@@ -666,8 +669,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778973692';
-console.error('APP VERSION: 1778973692');
+window._appVer='1778973796';
+console.error('APP VERSION: 1778973796');
 
 const ACC_MAP = {
   '가방/지갑': [
