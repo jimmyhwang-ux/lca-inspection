@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778936787';
-console.error('APP VERSION: 1778936787');
+window._appVer='1778937127';
+console.error('APP VERSION: 1778937127');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2503,10 +2503,9 @@ async function lbDropTo(e, toSkuId, toIdx){
     toPhotos.splice(toIdx,0,movedUrl);
     toItem.ref_image_url=toPhotos[0]||null;
     toItem.extra_images=toPhotos.slice(1);
-    // DOM 직접 업데이트
+    // DOM 업데이트
     rerenderSkuCard(_dragSkuId, fromPhotos);
-    _updateThumbGrid(toSkuId, toPhotos);
-    _updateSlider('skusl-'+toSkuId, toPhotos);
+    rerenderSkuCard(toSkuId, toPhotos);
     Promise.all([
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'update_sku_photos',itemId:_dragSkuId,
@@ -2536,11 +2535,7 @@ function rerenderSkuCard(skuId, photos){
     _sliders[slId].cur = 0;
   }
 
-  // 3. 카드 찾기
-  const card = document.querySelector('.sku-list-item[data-skuid="'+skuId+'"]');
-  if(!card) return;
-
-  // 4. 썸네일 이미지 + 카운트 업데이트 (ID 직접 접근)
+  // 3. 썸네일 이미지 + 카운트 업데이트 (ID 직접 접근 - card 탐색 불필요)
   const thumbImgEl = document.getElementById('thumb-'+skuId+'-img');
   if(thumbImgEl){
     if(photos[0]){
