@@ -429,6 +429,7 @@ input[type=file]{display:none}
   <div class="sku-topbar">
     <button class="sku-back" onclick="showScreen('result')">←</button>
     <div class="sku-title">모델 SKU 관리</div>
+    <button onclick="showScreen('shoot')" style="margin-left:auto;background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   </div>
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
@@ -669,8 +670,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778973796';
-console.error('APP VERSION: 1778973796');
+window._appVer='1778974871';
+console.error('APP VERSION: 1778974871');
 
 const ACC_MAP = {
   '가방/지갑': [
