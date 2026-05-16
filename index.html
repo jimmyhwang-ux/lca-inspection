@@ -566,8 +566,8 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778856525';
-console.error('APP VERSION: 1778856525');
+window._appVer='1778903859';
+console.error('APP VERSION: 1778903859');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2184,36 +2184,42 @@ async function lbDropTo(e, toSkuId, toIdx){
   if(_dragFromIdx===null || _dragSkuId===null) return;
   document.querySelectorAll('[draggable]').forEach(el=>el.style.opacity='1');
 
-  const fromItem = skuListAll.find(s=>String(s.id)===String(_dragSkuId));
+  const fromItem=skuListAll.find(s=>String(s.id)===String(_dragSkuId));
   if(!fromItem) return;
-  const fromPhotos = [fromItem.ref_image_url,...(fromItem.extra_images||[])].filter(Boolean);
-  const movedUrl = fromPhotos[_dragFromIdx];
+  const fromPhotos=[fromItem.ref_image_url,...(fromItem.extra_images||[])].filter(Boolean);
+  const movedUrl=fromPhotos[_dragFromIdx];
   if(!movedUrl) return;
 
-  if(_dragSkuId === toSkuId){
-    // 같은 SKU 내 순서 변경
+  if(_dragSkuId===toSkuId){
+    // ── 같은 SKU 내 순서 변경 ──
     fromPhotos.splice(_dragFromIdx,1);
     fromPhotos.splice(toIdx,0,movedUrl);
     fromItem.ref_image_url=fromPhotos[0]||null;
     fromItem.extra_images=fromPhotos.slice(1);
-    await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+    // DOM 직접 업데이트 (새로고침 없이)
+    _updateThumbGrid(_dragSkuId, fromPhotos);
+    _updateSlider('skusl-'+_dragSkuId, fromPhotos);
+    fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'update_sku_photos',itemId:_dragSkuId,
         ref_image_url:fromItem.ref_image_url,extra_images:fromItem.extra_images})});
     toast('📷 순서 변경됨');
   } else {
-    // 다른 SKU로 사진 이동
-    const toItem = skuListAll.find(s=>String(s.id)===String(toSkuId));
+    // ── 다른 SKU로 사진 이동 ──
+    const toItem=skuListAll.find(s=>String(s.id)===String(toSkuId));
     if(!toItem) return;
-    // 원본에서 제거
     fromPhotos.splice(_dragFromIdx,1);
     fromItem.ref_image_url=fromPhotos[0]||null;
     fromItem.extra_images=fromPhotos.slice(1);
-    // 대상에 추가
     const toPhotos=[toItem.ref_image_url,...(toItem.extra_images||[])].filter(Boolean);
     toPhotos.splice(toIdx,0,movedUrl);
     toItem.ref_image_url=toPhotos[0]||null;
     toItem.extra_images=toPhotos.slice(1);
-    await Promise.all([
+    // DOM 직접 업데이트
+    _updateThumbGrid(_dragSkuId, fromPhotos);
+    _updateSlider('skusl-'+_dragSkuId, fromPhotos);
+    _updateThumbGrid(toSkuId, toPhotos);
+    _updateSlider('skusl-'+toSkuId, toPhotos);
+    Promise.all([
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'update_sku_photos',itemId:_dragSkuId,
           ref_image_url:fromItem.ref_image_url,extra_images:fromItem.extra_images})}),
@@ -2221,10 +2227,35 @@ async function lbDropTo(e, toSkuId, toIdx){
         body:JSON.stringify({action:'update_sku_photos',itemId:toSkuId,
           ref_image_url:toItem.ref_image_url,extra_images:toItem.extra_images})})
     ]);
-    toast('📷 사진 이동됨: '+toItem.model_name_ko);
+    toast('📷 '+(fromItem.model_name_ko||fromItem.model_name)+' → '+(toItem.model_name_ko||toItem.model_name)+' 이동됨');
   }
-  const srcTabMap={'model':'list','db':'db','gear':'gear'};
-  loadSkuList(srcTabMap[fromItem.source||'model']||'list');
+  _dragFromIdx=null; _dragSkuId=null;
+}
+
+// DOM 직접 업데이트 함수들 (새로고침 없이)
+function _updateThumbGrid(skuId, photos){
+  // 썸네일 그리드 재구성
+  const thumbs=document.querySelectorAll('[data-skuid="'+skuId+'"]');
+  if(!thumbs.length) return;
+  const wrap=thumbs[0].parentNode;
+  if(!wrap) return;
+  wrap.innerHTML=photos.map((url,pi)=>
+    '<div draggable="true" data-skuid="'+skuId+'" data-pi="'+pi+'" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+skuId+'\','+pi+')" style="position:relative;flex-shrink:0;transition:opacity .2s">'+
+    '<img src="'+url+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();openLightboxSlider(\'skusl-'+skuId+'\','+pi+');togglePhotoCheck(this,\''+skuId+'\','+pi+')">'+
+    '<div id="pchk-'+skuId+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div>'+
+    '</div>'
+  ).join('');
+}
+
+function _updateSlider(slId, photos){
+  if(_sliders[slId]){
+    _sliders[slId].urls=photos;
+    _sliders[slId].cur=0;
+  }
+  const img=document.getElementById(slId+'-img');
+  if(img&&photos[0]) img.src=photos[0];
+  const cnt=document.getElementById(slId+'-cnt');
+  if(cnt) cnt.textContent='1/'+photos.length;
 }
 
 let _lbUrls=[], _lbIdx=0, _lbTouchX=0;
