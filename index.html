@@ -427,9 +427,8 @@ input[type=file]{display:none}
 <!-- SKU 탭 -->
 <div id="screen-sku" class="screen">
   <div class="sku-topbar">
-    <button class="sku-back" onclick="showScreen('shoot')" style="font-size:18px;padding:6px 10px" title="홈으로">🏠</button>
+    <button class="sku-back" onclick="showScreen('result')">←</button>
     <div class="sku-title">모델 SKU 관리</div>
-    <button class="sku-back" onclick="showScreen('result')" style="font-size:18px;padding:6px 10px;margin-left:auto" title="검수결과로">↩</button>
   </div>
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
@@ -667,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778973502';
-console.error('APP VERSION: 1778973502');
+window._appVer='1778973692';
+console.error('APP VERSION: 1778973692');
 
 const ACC_MAP = {
   '가방/지갑': [
