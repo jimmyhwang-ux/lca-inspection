@@ -185,8 +185,31 @@ input[type=file]{display:none}
 <body>
 
 <div class="app-wrap">
+<!-- 로그인 화면 -->
+<div id="screen-login" class="screen active">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:#0a0a0a">
+    <div style="width:100%;max-width:360px">
+      <div style="text-align:center;margin-bottom:40px">
+        <div style="font-size:40px;margin-bottom:12px">🔍</div>
+        <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:6px">번개케어 검수</div>
+        <div style="font-size:13px;color:#555">접근 비밀번호를 입력하세요</div>
+      </div>
+      <div style="background:#111;border-radius:16px;padding:24px;border:1px solid #1a1a1a">
+        <input id="login-pw" type="password" placeholder="비밀번호"
+          style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;color:#fff;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:10px"
+          onkeydown="if(event.key==='Enter')doLogin()"
+          oninput="document.getElementById('login-err').style.display='none'">
+        <div id="login-err" style="display:none;color:#ff4444;font-size:12px;margin-bottom:10px;text-align:center">비밀번호가 틀렸습니다</div>
+        <button onclick="doLogin()" style="width:100%;background:#ff6b2b;border:none;border-radius:10px;padding:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer">
+          입장하기
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- STEP 1 -->
-<div id="screen-shoot" class="screen active">
+<div id="screen-shoot" class="screen">
   <div class="header">
     <h1>번개케어 검수</h1>
     <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
@@ -602,8 +625,65 @@ input[type=file]{display:none}
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _sliders={};
-window._appVer='1778909119';
-console.error('APP VERSION: 1778909119');
+// ── 로그인 ──────────────────────────────────────────────────
+const _TOKEN_KEY = 'lca_access_token';
+
+function getToken(){ return sessionStorage.getItem(_TOKEN_KEY)||''; }
+
+async function doLogin(){
+  const pw = document.getElementById('login-pw')?.value||'';
+  if(!pw){ document.getElementById('login-err').style.display='block'; return; }
+  try{
+    const res = await fetch('/api/inspect',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'check_password', password:pw})
+    });
+    const j = await res.json();
+    if(j.success){
+      sessionStorage.setItem(_TOKEN_KEY, pw);
+      showScreen('shoot');
+    } else {
+      document.getElementById('login-err').style.display='block';
+      document.getElementById('login-pw').value='';
+      document.getElementById('login-pw').focus();
+    }
+  }catch(e){
+    document.getElementById('login-err').textContent='서버 오류가 발생했습니다';
+    document.getElementById('login-err').style.display='block';
+  }
+}
+
+// 모든 API 요청에 토큰 헤더 자동 추가
+const _origFetch = window.fetch;
+window.fetch = function(url, opts={}){
+  if(typeof url==='string' && url.includes('/api/inspect')){
+    opts.headers = { ...(opts.headers||{}), 'x-access-token': getToken() };
+  }
+  return _origFetch(url, opts);
+};
+
+// 앱 시작 시 토큰 확인
+(async()=>{
+  const token = getToken();
+  if(!token){
+    showScreen('login');
+    return;
+  }
+  // 토큰 유효성 검사
+  try{
+    const res = await _origFetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body: JSON.stringify({action:'check_password', password:token})
+    });
+    const j = await res.json();
+    if(j.success){ showScreen('shoot'); }
+    else { sessionStorage.removeItem(_TOKEN_KEY); showScreen('login'); }
+  }catch(e){ showScreen('shoot'); } // 오프라인이면 통과
+})();
+
+window._appVer='1778909340';
+console.error('APP VERSION: 1778909340');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2434,17 +2514,18 @@ async function lbDropTo(e, toSkuId, toIdx){
 
 // DOM 직접 업데이트 함수들 (새로고침 없이)
 function _updateThumbGrid(skuId, photos){
-  // 썸네일 그리드 재구성
-  const thumbs=document.querySelectorAll('[data-skuid="'+skuId+'"]');
-  if(!thumbs.length) return;
-  const wrap=thumbs[0].parentNode;
-  if(!wrap) return;
-  wrap.innerHTML=photos.map((url,pi)=>
-    '<div draggable="true" data-skuid="'+skuId+'" data-pi="'+pi+'" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+skuId+'\','+pi+')" style="position:relative;flex-shrink:0;transition:opacity .2s">'+
-    '<img src="'+url+'" draggable="true" data-skuid="'+skuId+'" data-pi="'+pi+'" ondragstart="lbDragStart(event)" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+skuId+'\','+pi+')">'+
-    '<div id="pchk-'+skuId+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div>'+
-    '</div>'
-  ).join('');
+  // 슬라이더 방식 - 슬라이더 데이터와 이미지만 업데이트
+  const slId = 'skusl-' + skuId;
+  _updateSlider(slId, photos);
+  // 슬라이더 이미지의 data-pi도 0으로 리셋
+  const img = document.getElementById(slId+'-img');
+  if(img){
+    img.dataset.pi = 0;
+    img.dataset.skuid = skuId;
+    img.draggable = true;
+    img.ondragstart = lbDragStart;
+    img.onclick = e=>{ e.stopPropagation(); openLightbox(photos[0], photos); };
+  }
 }
 
 function _updateSlider(slId, photos){
