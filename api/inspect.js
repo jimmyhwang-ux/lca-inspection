@@ -1,6 +1,20 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  // ── 비밀번호 인증 ─────────────────────────────────────────
+  const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD;
+  if (ACCESS_PASSWORD) {
+    // check_password 액션은 인증 없이 허용
+    const body_raw = req.body;
+    const req_action = body_raw?.action;
+    if (req_action !== 'check_password') {
+      const token = req.headers['x-access-token'];
+      if (token !== ACCESS_PASSWORD) {
+        return res.status(401).json({ success: false, error: 'unauthorized' });
+      }
+    }
+  }
+
   const { imageBase64, imageMime, extras = {}, action, skuData, source: reqSource } = req.body;
 
   const IMGBB_KEY    = process.env.IMGBB_KEY;
@@ -278,6 +292,16 @@ export default async function handler(req, res) {
   }
 
   // ── SKU 목록 ──────────────────────────────────────────────────────────
+  // ── 비밀번호 확인 ──────────────────────────────────────────
+  if (action === 'check_password') {
+    const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD;
+    const { password } = req.body;
+    if (!ACCESS_PASSWORD || password === ACCESS_PASSWORD) {
+      return res.status(200).json({ success: true });
+    }
+    return res.status(200).json({ success: false, error: '비밀번호가 틀렸습니다' });
+  }
+
   if (action === 'list_sku') {
     try {
       const source = reqSource || null;
