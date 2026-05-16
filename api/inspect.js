@@ -344,25 +344,75 @@ export default async function handler(req, res) {
       const orig = items[0];
       const allPhotos = [orig.ref_image_url, ...(orig.extra_images || [])].filter(Boolean);
       const selected = photoIndices.map(i => allPhotos[i]).filter(Boolean);
-      const newItem = {
-        brand: orig.brand, model_name: orig.model_name, model_name_ko: orig.model_name_ko,
-        category: orig.category, color: orig.color,
-        size_actual: orig.size_actual, size_label: orig.size_label, sku_code: orig.sku_code,
-        accessories: orig.accessories, notes: orig.notes, site_url: orig.site_url,
-        ref_image_url: selected[0] || null,
-        extra_images: selected.slice(1),
-        source: targetSource,
-      };
-      const ins = await sb('sku_items', { method: 'POST', body: JSON.stringify(newItem),
-        headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' } });
-      const insText = await ins.text();
-      if (!ins.ok) return res.status(500).json({ success: false, error: insText });
-      // 원본 SKU 삭제 (다른 탭으로 이동 = 이동이지 복사 아님)
-      await sb(`sku_items?id=eq.${itemId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
-      });
-      return res.status(200).json({ success: true, data: JSON.parse(insText) });
+      // ── 동일 항목 존재 여부 확인 (브랜드+모델명+스타일번호+특이사항 일치) ──
+      const listR = await sb(`sku_items?source=eq.${targetSource}&select=*`);
+      const listText = await listR.text();
+      const existList = JSON.parse(listText) || [];
+      const match = existList.find(t =>
+        (t.brand||'').trim() === (orig.brand||'').trim() &&
+        (t.model_name_ko||t.model_name||'').trim() === (orig.model_name_ko||orig.model_name||'').trim() &&
+        (t.sku_code||'').trim() === (orig.sku_code||'').trim() &&
+        (t.notes||'').trim() === (orig.notes||'').trim()
+      );
+
+      if (match) {
+        // ── 기존 항목에 사진 합치기 ──
+        const existPhotos = [match.ref_image_url, ...(match.extra_images||[])].filter(Boolean);
+        const merged = [...existPhotos, ...selected].filter((v,i,a)=>a.indexOf(v)===i);
+        const patchR = await sb(`sku_items?id=eq.${match.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ ref_image_url: merged[0]||null, extra_images: merged.slice(1) }),
+          headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' }
+        });
+        const patchText = await patchR.text();
+        if (!patchR.ok) return res.status(500).json({ success: false, error: patchText });
+        // 원본에서 이동한 사진 제거
+        const remainPhotos = allPhotos.filter((_,i)=>!photoIndices.includes(i));
+        if (remainPhotos.length > 0) {
+          await sb(`sku_items?id=eq.${itemId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ ref_image_url: remainPhotos[0]||null, extra_images: remainPhotos.slice(1) }),
+            headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+          });
+        } else {
+          // 사진 모두 이동 → 원본 삭제
+          await sb(`sku_items?id=eq.${itemId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+          });
+        }
+        return res.status(200).json({ success: true, merged: true, data: JSON.parse(patchText) });
+      } else {
+        // ── 새 항목 생성 ──
+        const newItem = {
+          brand: orig.brand, model_name: orig.model_name, model_name_ko: orig.model_name_ko,
+          category: orig.category, color: orig.color,
+          size_actual: orig.size_actual, size_label: orig.size_label, sku_code: orig.sku_code,
+          accessories: orig.accessories, notes: orig.notes, site_url: orig.site_url,
+          ref_image_url: selected[0] || null,
+          extra_images: selected.slice(1),
+          source: targetSource,
+        };
+        const ins = await sb('sku_items', { method: 'POST', body: JSON.stringify(newItem),
+          headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' } });
+        const insText = await ins.text();
+        if (!ins.ok) return res.status(500).json({ success: false, error: insText });
+        // 원본에서 이동한 사진 제거
+        const remainPhotos = allPhotos.filter((_,i)=>!photoIndices.includes(i));
+        if (remainPhotos.length > 0) {
+          await sb(`sku_items?id=eq.${itemId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ ref_image_url: remainPhotos[0]||null, extra_images: remainPhotos.slice(1) }),
+            headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+          });
+        } else {
+          await sb(`sku_items?id=eq.${itemId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' }
+          });
+        }
+        return res.status(200).json({ success: true, merged: false, data: JSON.parse(insText) });
+      }
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
