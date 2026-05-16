@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778938628';
-console.error('APP VERSION: 1778938628');
+window._appVer='1778938871';
+console.error('APP VERSION: 1778938871');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -1440,7 +1440,7 @@ function renderRefList(wrapId, items, type){
           `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
         ${photos.length>=2?`<span style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px">${photos.length}</span>`:''}
       </div>
-        <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleSkuDetail('${item.id}')">
+        <div style="flex:1;min-width:0">
           <div style="color:#fff;font-size:12px;font-weight:600">${item.model_name_ko||item.model_name||'—'}</div>
           <div style="color:${color};font-size:10px">${[item.brand,item.sku_code,item.size_actual].filter(Boolean).join(' · ')}</div>
           ${item.notes?`<div style="color:#666;font-size:10px;margin-top:2px">${item.notes}</div>`:''}
@@ -2227,7 +2227,7 @@ function renderSkuList(list, wrapId){
     const accText=(item.accessories||[]).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('');
     const thumbUrl=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean)[0]||'';
     return `<div class="sku-list-item" data-skuid="${item.id}" ondragover="event.preventDefault()" ondrop="lbDropTo(event,'${item.id}',999)">
-      <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="display:flex;gap:10px;align-items:flex-start;cursor:pointer" onclick="toggleSkuDetail('${item.id}')">
         <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0">
           ${(()=>{
             const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
