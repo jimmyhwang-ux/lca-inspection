@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778937127';
-console.error('APP VERSION: 1778937127');
+window._appVer='1778937273';
+console.error('APP VERSION: 1778937273');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2374,7 +2374,7 @@ function toggleSkuDetail(id){
     const photos=s.urls;
     const total=photos.length;
     slWrap.innerHTML=photos[0]
-      ?'<img id="'+slId+'-img" src="'+photos[0]+'" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
+      ?'<img id="'+slId+'-img" src="'+photos[0]+'" draggable="true" data-skuid="'+id+'" data-pi="0" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
         +(total>1
           ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
           +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
