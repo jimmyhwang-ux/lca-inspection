@@ -666,8 +666,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1778938871';
-console.error('APP VERSION: 1778938871');
+window._appVer='1778939046';
+console.error('APP VERSION: 1778939046');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2234,7 +2234,7 @@ function renderSkuList(list, wrapId){
             _sliders['th-'+item.id]={urls:_all,cur:0};
             const thumbUrl=_all[0]||'';
             const imgHtml=thumbUrl
-              ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" onclick="event.stopPropagation();openLightbox('${thumbUrl}',_sliders['skusl-'+item.id]?.urls||_all)">`
+              ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" data-thumb-open="1" data-thumb-skuid="${item.id}">`
               :'<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>';
             const cntHtml=_all.length>=2?`<span id="th-${item.id}-cnt" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px">+${_all.length}</span>`:'';
             return imgHtml+cntHtml;
@@ -2524,6 +2524,19 @@ async function lbDropTo(e, toSkuId, toIdx){
 // 카드 완전 재렌더 (DOM 조작 대신 innerHTML 교체)
 // 썸네일 네비게이션
 let _thumbTX=0, _thumbTY=0, _focusThumbId=null;
+
+// 썸네일 클릭 이벤트 위임 (모바일/웹 모두)
+document.addEventListener('click', function(e){
+  const img = e.target.closest('img[data-thumb-open]');
+  if(!img) return;
+  e.stopPropagation();
+  e.preventDefault();
+  const skuId = img.dataset.thumbSkuid;
+  const s = _sliders['skusl-'+skuId];
+  const thS = _sliders['th-'+skuId];
+  const urls = s?.urls || thS?.urls || [img.src];
+  openLightbox(img.src, urls);
+}, true); // capture 단계에서 처리 (버블링보다 먼저)
 function thumbNav(slId, dir){
   const s=_sliders[slId]; if(!s||!s.urls||!s.urls.length) return;
   s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
