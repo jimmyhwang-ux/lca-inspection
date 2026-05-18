@@ -632,7 +632,7 @@ const _sliders={};
 // ── 로그인 ──────────────────────────────────────────────────
 const _TOKEN_KEY = 'lca_access_token';
 
-function getToken(){ return sessionStorage.getItem(_TOKEN_KEY)||''; }
+function getToken(){ return localStorage.getItem(_TOKEN_KEY)||''; }
 
 async function doLogin(){
   const pw = document.getElementById('login-pw')?.value||'';
@@ -644,7 +644,7 @@ async function doLogin(){
     });
     const j = await res.json();
     if(j.success){
-      sessionStorage.setItem(_TOKEN_KEY, pw);
+      localStorage.setItem(_TOKEN_KEY, pw);
       showScreen('shoot');
     } else {
       document.getElementById('login-err').style.display='block';
@@ -666,12 +666,25 @@ window.fetch = function(url, opts={}){
   return _origFetch(url, opts);
 };
 
-// 새로고침 시 항상 로그인 화면으로
-sessionStorage.removeItem(_TOKEN_KEY);
-showScreen('login');
+// 앱 시작 시 토큰 확인 (localStorage - 새로고침 후도 유지)
+(async()=>{
+  const token = localStorage.getItem(_TOKEN_KEY);
+  if(!token){ showScreen('login', false); return; }
+  // 토큰 유효성 검사
+  try{
+    const res = await _origFetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body: JSON.stringify({action:'check_password', password:token})
+    });
+    const j = await res.json();
+    if(j.success){ showScreen('shoot', false); }
+    else { localStorage.removeItem(_TOKEN_KEY); showScreen('login', false); }
+  }catch(e){ showScreen('shoot', false); }
+})();
 
-window._appVer='1778974871';
-console.error('APP VERSION: 1778974871');
+window._appVer='1779067571';
+console.error('APP VERSION: 1779067571');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -853,11 +866,21 @@ function removePhoto(e,key){
   updateBtn();
 }
 function updateBtn(){document.getElementById('btn-start').disabled=!photos.main;}
-function showScreen(id){
+function showScreen(id, addHistory=true){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   window.scrollTo(0,0);
+  // 뒤로가기 히스토리 추가 (login 화면은 제외)
+  if(addHistory && id !== 'login'){
+    history.pushState({screen:id}, '', '#'+id);
+  }
 }
+
+// 브라우저/모바일 뒤로가기 처리
+window.addEventListener('popstate', e=>{
+  const id = e.state?.screen || 'shoot';
+  showScreen(id, false);
+});
 function setStep(n,state){
   const el=document.getElementById('ls'+n);
   const st=document.getElementById('ls'+n+'s');
