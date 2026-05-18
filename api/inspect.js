@@ -112,6 +112,28 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── 모델명으로 Google 재검색 ────────────────────────
+  if (action === 'search_by_model') {
+    try {
+      const { brand, modelName } = req.body;
+      if (!modelName) return res.status(200).json({ success: false, error: '이미지 없음' });
+      const q = encodeURIComponent(`${brand||''} ${modelName}`.trim());
+      const s = await fetch(`https://serpapi.com/search?engine=google_shopping&q=${q}&api_key=${SERP_KEY}&num=10`);
+      const j = await s.json();
+      const results = j.shopping_results || j.organic_results || [];
+      const visualMatches = results.slice(0, 12).map(r => ({
+        title: r.title || '',
+        link: r.link || r.product_link || '',
+        thumbnail: r.thumbnail || r.image || '',
+        price: r.price || '',
+        source: r.source || r.merchant?.name || '',
+      }));
+      return res.status(200).json({ success: true, visualMatches });
+    } catch(e) {
+      return res.status(200).json({ success: false, error: e.message });
+    }
+  }
+
   // ── 모델명 한글→영문 직역 ─────────────────────────
   if (action === 'translate_model') {
     try {
