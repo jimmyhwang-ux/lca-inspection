@@ -2365,32 +2365,27 @@ async function copySkuTo(skuId, targetSource){
   }
 }
 
-// 탭 내 슬라이더를 항상 최신 데이터로 렌더링하는 통합 함수
+// 탭 내 슬라이더를 현재 썸네일 위치에 맞게 동기화 (innerHTML 교체 없이 src만 변경)
 function renderSliderInDetail(skuId){
   const slId='skusl-'+skuId;
   const thId='th-'+skuId;
-  // 항상 최신 _sliders 데이터 사용
   const thS=_sliders[thId];
   const s=_sliders[slId];
   if(!s||!s.urls||!s.urls.length) return;
-  const slWrap=document.getElementById(slId);
-  if(!slWrap) return;
-  // 썸네일 cur 우선, 없으면 탭 슬라이더 cur
+  // 썸네일 cur 우선
   const cur=(thS&&thS.cur!==undefined)?thS.cur:(s.cur||0);
-  const photos=s.urls;
-  const total=photos.length;
-  const url=photos[cur]||photos[0];
-  s.cur=cur; // 동기화
-  slWrap.innerHTML=url
-    ?('<img id="'+slId+'-img" src="'+url+'" draggable="true" data-skuid="'+skuId+'" data-pi="'+cur+'" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
-      +(total>1
-        ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
-        +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
-        +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">'+( cur+1)+'/'+total+'</span>'
-        :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'))
-    :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
+  const url=s.urls[cur]||s.urls[0];
+  s.cur=cur;
+  if(thS) thS.cur=cur;
+  // 기존 DOM의 img.src만 교체 (innerHTML 교체 안 함)
   const slImg=document.getElementById(slId+'-img');
-  if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,s.cur);};
+  const slCnt=document.getElementById(slId+'-cnt');
+  if(slImg){
+    slImg.src=url;
+    slImg.dataset.pi=cur;
+    slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,cur);};
+  }
+  if(slCnt) slCnt.textContent=`${cur+1}/${s.urls.length}`;
 }
 
 function toggleSkuDetail(id){
@@ -2656,13 +2651,14 @@ function rerenderSkuCard(skuId, photos){
     }
   }
 
-  // 5. _sliders 업데이트 → 탭 열려있으면 즉시 재렌더
+  // 5. _sliders 업데이트 → 탭/썸네일 DOM 직접 업데이트
   _sliders[slId]={urls:photos,cur:0};
   _sliders['th-'+skuId]={urls:photos,cur:0};
-  const _detailEl=document.getElementById('sku-detail-'+skuId);
-  if(_detailEl&&_detailEl.style.display!=='none'){
-    renderSliderInDetail(skuId);
-  }
+  // 탭 슬라이더 img 직접 업데이트 (열림 여부 관계없이)
+  const _slImg=document.getElementById(slId+'-img');
+  const _slCnt=document.getElementById(slId+'-cnt');
+  if(_slImg&&photos[0]){_slImg.src=photos[0];_slImg.dataset.pi=0;}
+  if(_slCnt) _slCnt.textContent='1/'+photos.length;
 }
 
 function _updateThumbGrid(skuId, photos){
