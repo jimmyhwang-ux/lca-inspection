@@ -2283,7 +2283,7 @@ function renderSkuList(list, wrapId){
                 const moveBtns=targets.map(t=>'<button onclick="event.stopPropagation();copySkuTo(\'' + item.id + '\',\'' + t.src + '\')" style="flex:1;background:' + t.bg + ';border:1px solid ' + t.border + ';color:' + t.color + ';font-size:12px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer">' + t.label + '</button>').join('');
                 const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+item.id+'\','+ pi +')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+item.id+'\','+ pi +')"><div id="pchk-'+item.id+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
                 const photoGrid='<div style="display:flex;gap:6px;margin-bottom:6px">' + moveBtns + '</div>'
-                  + (thumbChecks ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' + thumbChecks + '</div>' : '');
+                  + (thumbChecks ? '<div id="thumb-grid-'+item.id+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' + thumbChecks + '</div>' : '<div id="thumb-grid-'+item.id+'"></div>');
                 return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
                   <img id="${slId}-img" src="${allImgs[0]}"
                     draggable="true"
@@ -2654,6 +2654,16 @@ function rerenderSkuCard(skuId, photos){
   const _slCnt2=document.getElementById(slId+'-cnt');
   if(_slImg2&&photos[0]){_slImg2.src=photos[0];_slImg2.dataset.pi=0;}
   if(_slCnt2)_slCnt2.textContent='1/'+photos.length;
+  // 탭 내 사진 그리드 업데이트 (순서 변경 반영)
+  const _thumbGrid=document.getElementById('thumb-grid-'+skuId);
+  if(_thumbGrid){
+    _thumbGrid.innerHTML=photos.map((url,pi)=>
+      '<div draggable="true" data-skuid="'+skuId+'" data-pi="'+pi+'" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,''+skuId+'','+pi+')" style="position:relative;flex-shrink:0;transition:opacity .2s">'
+      +'<img src="'+url+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,''+skuId+'','+pi+')">'
+      +'<div id="pchk-'+skuId+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div>'
+      +'</div>'
+    ).join('');
+  }
 }
 
 function _updateThumbGrid(skuId, photos){
