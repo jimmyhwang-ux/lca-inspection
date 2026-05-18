@@ -691,16 +691,16 @@ window.fetch = function(url, opts={}){
     const j = await res.json();
     if(j.success){
       showScreen(targetScreen, false);
-      if(targetScreen==='sku' && targetSkuTab) setTimeout(()=>switchSkuTab(targetSkuTab),100);
+      if(targetScreen==='sku' && targetSkuTab) switchSkuTab(targetSkuTab);
     } else { localStorage.removeItem(_TOKEN_KEY); showScreen('login', false); }
   }catch(e){
     showScreen(targetScreen, false);
-    if(targetScreen==='sku' && targetSkuTab) setTimeout(()=>switchSkuTab(targetSkuTab),100);
+    if(targetScreen==='sku' && targetSkuTab) switchSkuTab(targetSkuTab);
   }
 })();
 
-window._appVer='1779068401';
-console.error('APP VERSION: 1779068401');
+window._appVer='1779068506';
+console.error('APP VERSION: 1779068506');
 
 const ACC_MAP = {
   '가방/지갑': [
