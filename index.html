@@ -182,7 +182,7 @@ input[type=file]{display:none}
 .edit-field-input:focus{border-color:#ff6b2b}
 </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <div class="app-wrap">
 <!-- 로그인 화면 -->
@@ -666,11 +666,14 @@ window.fetch = function(url, opts={}){
   return _origFetch(url, opts);
 };
 
-// 앱 시작 시 토큰 확인 (localStorage - 새로고침 후도 유지)
+// 앱 시작 시 토큰 확인 + 현재 화면 복원
 (async()=>{
   const token = localStorage.getItem(_TOKEN_KEY);
   if(!token){ showScreen('login', false); return; }
-  // 토큰 유효성 검사
+  // 현재 hash에서 화면 ID 복원
+  const validScreens = ['shoot','result','sku'];
+  const hashScreen = location.hash.replace('#','');
+  const targetScreen = validScreens.includes(hashScreen) ? hashScreen : 'shoot';
   try{
     const res = await _origFetch('/api/inspect',{
       method:'POST',
@@ -678,13 +681,13 @@ window.fetch = function(url, opts={}){
       body: JSON.stringify({action:'check_password', password:token})
     });
     const j = await res.json();
-    if(j.success){ showScreen('shoot', false); }
+    if(j.success){ showScreen(targetScreen, false); }
     else { localStorage.removeItem(_TOKEN_KEY); showScreen('login', false); }
-  }catch(e){ showScreen('shoot', false); }
+  }catch(e){ showScreen(targetScreen, false); }
 })();
 
-window._appVer='1779067571';
-console.error('APP VERSION: 1779067571');
+window._appVer='1779067844';
+console.error('APP VERSION: 1779067844');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -870,6 +873,7 @@ function showScreen(id, addHistory=true){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   window.scrollTo(0,0);
+  document.body.style.visibility='visible'; // 깜빡임 방지
   // 뒤로가기 히스토리 추가 (login 화면은 제외)
   if(addHistory && id !== 'login'){
     history.pushState({screen:id}, '', '#'+id);
@@ -878,6 +882,11 @@ function showScreen(id, addHistory=true){
 
 // 브라우저/모바일 뒤로가기 처리
 window.addEventListener('popstate', e=>{
+  // 수정 모달이 열려있으면 모달만 닫기
+  if(document.getElementById('edit-modal')?.classList.contains('open')){
+    closeEditModal();
+    return;
+  }
   const id = e.state?.screen || 'shoot';
   showScreen(id, false);
 });
@@ -2786,6 +2795,7 @@ function openEditModalById(id){
   else toast('❌ SKU를 찾을 수 없어요');
 }
 function openEditModal(i){
+  history.pushState({screen:'sku', modal:'edit'}, '', '#sku-edit');
   const item=skuListAll[i];if(!item)return;
   document.getElementById('ef-id').value=item.id;
   document.getElementById('ef-brand').value=item.brand||'';
