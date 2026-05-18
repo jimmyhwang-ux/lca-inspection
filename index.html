@@ -628,6 +628,7 @@ input[type=file]{display:none}
 <script>
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
 let resultData={}, accessories=[], skuListAll=[];
+const _skuCache={model:[],db:[],gear:[]};
 const _sliders={};
 // ── 로그인 ──────────────────────────────────────────────────
 const _TOKEN_KEY = 'lca_access_token';
@@ -2208,6 +2209,8 @@ async function loadSkuList(tab){
       return;
     }
     skuListAll=j.data||[];
+    const _ck=activeTab==='db'?'db':activeTab==='gear'?'gear':'model';
+    _skuCache[_ck]=skuListAll;
     if(activeTab==='db'||activeTab==='gear'){
       filterSkuListByCat(skuListAll,wrapId,'전체','');
     } else {
@@ -2334,8 +2337,10 @@ function getSelectedPhotoIndices(skuId, totalPhotos){
 
 // DB/검기어로 SKU 복사
 async function copySkuTo(skuId, targetSource){
-  const item=skuListAll.find(s=>String(s.id)===String(skuId));
-  if(!item){ toast('❌ SKU를 찾을 수 없어요'); return; }
+  // 현재 탭 + 전체 캐시에서 검색 (탭 전환 후에도 찾을 수 있도록)
+  const _allCached=[...skuListAll,..._skuCache.model,..._skuCache.db,..._skuCache.gear];
+  const item=_allCached.find(s=>String(s.id)===String(skuId));
+  if(!item){toast('❌ SKU를 찾을 수 없어요');return;}
   const allPhotos=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
   const selectedIndices=getSelectedPhotoIndices(skuId, allPhotos.length);
   if(!selectedIndices.length){
@@ -2424,9 +2429,13 @@ async function copySkuTo(skuId, targetSource){
       // DOM에서 카드 제거
       const card=document.querySelector(`.sku-list-item[data-skuid="${skuId}"]`);
       if(card) card.remove();
-      // skuListAll에서도 제거
       const idx=skuListAll.findIndex(s=>String(s.id)===String(skuId));
       if(idx>=0) skuListAll.splice(idx,1);
+      // 탭별 캐시에서도 제거
+      ['model','db','gear'].forEach(k=>{
+        const ci=_skuCache[k].findIndex(s=>String(s.id)===String(skuId));
+        if(ci>=0) _skuCache[k].splice(ci,1);
+      });
     } else {
       // 사진 일부만 이동 → 남은 사진으로 업데이트
       await fetch('/api/inspect',{
@@ -2447,7 +2456,9 @@ async function copySkuTo(skuId, targetSource){
       rerenderSkuCard(skuId, remainPhotos);
     }
     // 대상 탭 새로고침
-    setTimeout(()=>loadSkuList(targetTab), 300);
+    // 현재 보고있는 탭 새로고침 (대상탭이 아닌 현재 탭 기준)
+    const _at=document.querySelector('.sku-tab.active')?.id?.replace('tab-','');
+    setTimeout(()=>loadSkuList(_at||targetTab||'list'),300);
   }catch(e){
     toast('❌ 오류: '+e.message);
   }
