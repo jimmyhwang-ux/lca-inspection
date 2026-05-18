@@ -47,7 +47,9 @@ export default async function handler(req, res) {
         const url = await uploadImgbb(skuData.newImageBase64);
         extra_images = [...extra_images, url];
       }
-      const payload = { ...skuData, extra_images };
+      const { source: _src, ...rest } = req.body;
+      const srcVal = _src || 'model';
+      const payload = { ...skuData, extra_images, source: srcVal };
       delete payload.newImageBase64;
       const r = await sb('sku_items', { method: 'POST', body: JSON.stringify(payload) });
       const d = await r.json();
@@ -58,7 +60,19 @@ export default async function handler(req, res) {
   // ── SKU 목록 ──────────────────────────────────────
   if (action === 'list_sku') {
     try {
-      const r = await sb('sku_items?select=*&order=created_at.desc&limit=200');
+      const srcParam = req.body.source;
+      // source 필터: model(null/model), db, gear
+      let query = 'sku_items?select=*&order=created_at.desc&limit=500';
+      if (srcParam === 'db') {
+        query += '&source=eq.db';
+      } else if (srcParam === 'gear') {
+        query += '&source=eq.gear';
+      } else if (srcParam === 'model') {
+        // model: source가 'model' 이거나 null/없는 것
+        query += '&or=(source.eq.model,source.is.null)';
+      }
+      // srcParam 없으면 전체
+      const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
