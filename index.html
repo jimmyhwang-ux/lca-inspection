@@ -182,7 +182,7 @@ input[type=file]{display:none}
 .edit-field-input:focus{border-color:#ff6b2b}
 </style>
 </head>
-<body style="visibility:hidden">
+<body>
 
 <div class="app-wrap">
 <!-- 로그인 화면 -->
@@ -632,7 +632,7 @@ const _sliders={};
 // ── 로그인 ──────────────────────────────────────────────────
 const _TOKEN_KEY = 'lca_access_token';
 
-function getToken(){ return localStorage.getItem(_TOKEN_KEY)||''; }
+function getToken(){ return sessionStorage.getItem(_TOKEN_KEY)||''; }
 
 async function doLogin(){
   const pw = document.getElementById('login-pw')?.value||'';
@@ -644,7 +644,7 @@ async function doLogin(){
     });
     const j = await res.json();
     if(j.success){
-      localStorage.setItem(_TOKEN_KEY, pw);
+      sessionStorage.setItem(_TOKEN_KEY, pw);
       showScreen('shoot');
     } else {
       document.getElementById('login-err').style.display='block';
@@ -666,46 +666,12 @@ window.fetch = function(url, opts={}){
   return _origFetch(url, opts);
 };
 
-// 앱 시작 시 토큰 확인 + 현재 화면 복원
-(async()=>{
-  const token = localStorage.getItem(_TOKEN_KEY);
-  if(!token){ showScreen('login', false); return; }
-  // 현재 hash에서 화면 ID 복원
-  const hash = location.hash.replace('#','');
-  const validScreens = ['shoot','result','sku'];
-  // sku-list, sku-db, sku-gear, sku-save 형태 파싱
-  let targetScreen = 'shoot';
-  let targetSkuTab = null;
-  if(hash.startsWith('sku-')){
-    targetScreen = 'sku';
-    const t = hash.replace('sku-','');
-    // edit 상태는 sku 화면으로만 복원
-    targetSkuTab = (t && t !== 'edit') ? t : 'list';
-  } else if(hash === 'sku'){
-    targetScreen = 'sku';
-    targetSkuTab = 'list'; // 기본 탭
-  } else if(validScreens.includes(hash)){
-    targetScreen = hash;
-  }
-  try{
-    const res = await _origFetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':token},
-      body: JSON.stringify({action:'check_password', password:token})
-    });
-    const j = await res.json();
-    if(j.success){
-      showScreen(targetScreen, false);
-      if(targetScreen==='sku' && targetSkuTab) switchSkuTab(targetSkuTab);
-    } else { localStorage.removeItem(_TOKEN_KEY); showScreen('login', false); }
-  }catch(e){
-    showScreen(targetScreen, false);
-    if(targetScreen==='sku' && targetSkuTab) switchSkuTab(targetSkuTab);
-  }
-})();
+// 새로고침 시 항상 로그인 화면으로
+sessionStorage.removeItem(_TOKEN_KEY);
+showScreen('login');
 
-window._appVer='1779068670';
-console.error('APP VERSION: 1779068670');
+window._appVer='1778974871';
+console.error('APP VERSION: 1778974871');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -887,27 +853,11 @@ function removePhoto(e,key){
   updateBtn();
 }
 function updateBtn(){document.getElementById('btn-start').disabled=!photos.main;}
-function showScreen(id, addHistory=true){
+function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   window.scrollTo(0,0);
-  document.body.style.visibility='visible'; // 깜빡임 방지
-  // 뒤로가기 히스토리 추가 (login 화면은 제외)
-  if(addHistory && id !== 'login'){
-    history.pushState({screen:id}, '', '#'+id);
-  }
 }
-
-// 브라우저/모바일 뒤로가기 처리
-window.addEventListener('popstate', e=>{
-  // 수정 모달이 열려있으면 모달만 닫기
-  if(document.getElementById('edit-modal')?.classList.contains('open')){
-    closeEditModal();
-    return;
-  }
-  const id = e.state?.screen || 'shoot';
-  showScreen(id, false);
-});
 function setStep(n,state){
   const el=document.getElementById('ls'+n);
   const st=document.getElementById('ls'+n+'s');
@@ -2192,8 +2142,6 @@ function switchSkuTab(tab, autoCat){
     const el=document.getElementById('tab-'+t);
     if(el) el.className='sku-tab'+(tab===t?' active':'');
   });
-  // 현재 탭 hash에 항상 저장
-  history.replaceState({screen:'sku',tab}, '', '#sku-'+tab);
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
   const dbP=document.getElementById('sku-db-panel');
@@ -2431,8 +2379,10 @@ function toggleSkuDetail(id){
     if(!slWrap) return;
     const photos=s.urls;
     const total=photos.length;
-    slWrap.innerHTML=photos[0]
-      ?'<img id="'+slId+'-img" src="'+photos[0]+'" draggable="true" data-skuid="'+id+'" data-pi="0" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
+    const _curIdx = _sliders['th-'+id]?.cur || s.cur || 0;
+    const _curUrl = photos[_curIdx] || photos[0];
+    slWrap.innerHTML=_curUrl
+      ?'<img id="'+slId+'-img" src="'+_curUrl+'" draggable="true" data-skuid="'+id+'" data-pi="'+_curIdx+'" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
         +(total>1
           ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
           +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
@@ -2440,8 +2390,8 @@ function toggleSkuDetail(id){
           :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
       :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
     const slImg=document.getElementById(slId+'-img');
-    if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,0);};
-    s.cur=0;
+    s.cur=_curIdx;
+    if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,s.cur);}; 
   }
 }
 
@@ -2475,11 +2425,30 @@ function slideImg(sliderId,dir){
   const cnt=document.getElementById(sliderId+'-cnt');
   if(img){
     img.src=url;
-    img.dataset.pi=s.cur; // 드래그 시 현재 인덱스 동기화
-    // 전체 배열 전달 → 라이트박스에서 화살표/키보드 작동
+    img.dataset.pi=s.cur;
     img.onclick=e=>{e.stopPropagation();openLightbox(url,s.urls);};
   }
   if(cnt)cnt.textContent=`${s.cur+1}/${s.urls.length}`;
+
+  // 썸네일(th-)과 탭슬라이더(skusl-) 양방향 동기화
+  if(sliderId.startsWith('th-')){
+    // 썸네일 이동 → 탭 슬라이더도 동기화
+    const skuId=sliderId.replace('th-','');
+    const detailEl=document.getElementById('sku-detail-'+skuId);
+    if(detailEl&&detailEl.style.display!=='none'){
+      const tabImg=document.getElementById('skusl-'+skuId+'-img');
+      const tabCnt=document.getElementById('skusl-'+skuId+'-cnt');
+      if(tabImg){tabImg.src=url;tabImg.dataset.pi=s.cur;}
+      if(tabCnt)tabCnt.textContent=`${s.cur+1}/${s.urls.length}`;
+      if(_sliders['skusl-'+skuId]) _sliders['skusl-'+skuId].cur=s.cur;
+    }
+  } else if(sliderId.startsWith('skusl-')){
+    // 탭 슬라이더 이동 → 썸네일도 동기화
+    const skuId=sliderId.replace('skusl-','');
+    const thImg=document.getElementById('th-'+skuId+'-img');
+    if(thImg){thImg.src=url;thImg.dataset.pi=s.cur;}
+    if(_sliders['th-'+skuId]) _sliders['th-'+skuId].cur=s.cur;
+  }
 }
 
 // 드래그앤드롭 - 사진 순서 변경
@@ -2599,12 +2568,21 @@ function thumbNav(slId, dir){
   s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
   const img=document.getElementById(slId+'-img');
   const skuId=slId.replace('th-','');
+  const url=s.urls[s.cur];
   if(img){
-    img.src=s.urls[s.cur];
+    img.src=url;
     img.dataset.pi=String(s.cur);
-    img.onclick=e=>{e.stopPropagation();openLightbox(s.urls[s.cur],_sliders['skusl-'+skuId]?.urls||s.urls);};
+    img.onclick=e=>{e.stopPropagation();openLightbox(url,_sliders['skusl-'+skuId]?.urls||s.urls);};
   }
-  // +N 뱃지는 전체 장수 표시 유지
+  // 탭이 열려있으면 탭 슬라이더도 동기화
+  const detailEl=document.getElementById('sku-detail-'+skuId);
+  if(detailEl&&detailEl.style.display!=='none'){
+    const tabImg=document.getElementById('skusl-'+skuId+'-img');
+    const tabCnt=document.getElementById('skusl-'+skuId+'-cnt');
+    if(tabImg){tabImg.src=url;tabImg.dataset.pi=s.cur;}
+    if(tabCnt)tabCnt.textContent=`${s.cur+1}/${s.urls.length}`;
+    if(_sliders['skusl-'+skuId]) _sliders['skusl-'+skuId].cur=s.cur;
+  }
 }
 function thumbTouchStart(e,slId){ _thumbTX=e.touches[0].clientX; _thumbTY=e.touches[0].clientY; _focusThumbId=slId; }
 function thumbTouchEnd(e,slId){
@@ -2815,7 +2793,6 @@ function openEditModalById(id){
   else toast('❌ SKU를 찾을 수 없어요');
 }
 function openEditModal(i){
-  history.pushState({screen:'sku', modal:'edit'}, '', '#sku-edit');
   const item=skuListAll[i];if(!item)return;
   document.getElementById('ef-id').value=item.id;
   document.getElementById('ef-brand').value=item.brand||'';
@@ -3036,16 +3013,12 @@ function addSkuAccFromDrop(){
 
 function addEditAccFromDrop(sel){
   const name=sel.value;if(!name)return;
+  sel.value='';
   const accs=JSON.parse(document.getElementById('ef-accessories').value||'[]');
-  if(accs.find(a=>a.name===name)){toast('이미 추가된 항목이에요');sel.value='';return;}
+  if(accs.find(a=>a.name===name)){toast('이미 추가된 항목이에요');return;}
   accs.push({name});
   document.getElementById('ef-accessories').value=JSON.stringify(accs);
   renderEditAccList(accs);
-  // 선택 시각적 피드백
-  sel.style.borderColor='#ff6b2b';
-  sel.style.color='#ff6b2b';
-  setTimeout(()=>{ sel.style.borderColor=''; sel.style.color=''; sel.value=''; }, 600);
-  toast('✅ '+name+' 추가됨');
 }
 
 function setSkuCatFilter(cat, btn){
