@@ -2412,25 +2412,40 @@ async function copySkuTo(skuId, targetSource){
       toast(`✅ ${targetLabel}에 새 항목 생성 및 사진 ${selectedPhotos.length}장 이동됨`);
     }
 
-    // 3) 원본에서 선택된 사진 제거
+    // 3) 원본에서 선택된 사진 제거 → 사진이 0장 남으면 레코드 자체 삭제
     const remainPhotos=allPhotos.filter((_,i)=>!selectedIndices.includes(i));
-    await fetch('/api/inspect',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'update_sku', skuData:{
-        id:skuId,
-        ref_image_url:remainPhotos[0]||null,
-        extra_images:remainPhotos.slice(1)
-      }})
-    });
 
-    // 4) 체크 해제 + DOM 즉시 업데이트
-    selectedIndices.forEach(i=>{
-      const chk=document.getElementById(`pchk-${skuId}-${i}`);
-      if(chk){chk.style.display='none';}
-    });
-    item.ref_image_url=remainPhotos[0]||null;
-    item.extra_images=remainPhotos.slice(1);
-    rerenderSkuCard(skuId, remainPhotos);
+    if(remainPhotos.length===0){
+      // 사진 전부 이동 → 원본 레코드 삭제
+      await fetch('/api/inspect',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'delete_sku', skuData:{id:skuId}})
+      });
+      // DOM에서 카드 제거
+      const card=document.querySelector(`.sku-list-item[data-skuid="${skuId}"]`);
+      if(card) card.remove();
+      // skuListAll에서도 제거
+      const idx=skuListAll.findIndex(s=>String(s.id)===String(skuId));
+      if(idx>=0) skuListAll.splice(idx,1);
+    } else {
+      // 사진 일부만 이동 → 남은 사진으로 업데이트
+      await fetch('/api/inspect',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'update_sku', skuData:{
+          id:skuId,
+          ref_image_url:remainPhotos[0]||null,
+          extra_images:remainPhotos.slice(1)
+        }})
+      });
+      // 4) 체크 해제 + DOM 즉시 업데이트
+      selectedIndices.forEach(i=>{
+        const chk=document.getElementById(`pchk-${skuId}-${i}`);
+        if(chk){chk.style.display='none';}
+      });
+      item.ref_image_url=remainPhotos[0]||null;
+      item.extra_images=remainPhotos.slice(1);
+      rerenderSkuCard(skuId, remainPhotos);
+    }
     // 대상 탭 새로고침
     setTimeout(()=>loadSkuList(targetTab), 300);
   }catch(e){
