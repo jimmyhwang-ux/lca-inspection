@@ -699,8 +699,8 @@ window.fetch = function(url, opts={}){
   }
 })();
 
-window._appVer='1779068233';
-console.error('APP VERSION: 1779068233');
+window._appVer='1779068401';
+console.error('APP VERSION: 1779068401');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2187,10 +2187,8 @@ function switchSkuTab(tab, autoCat){
     const el=document.getElementById('tab-'+t);
     if(el) el.className='sku-tab'+(tab===t?' active':'');
   });
-  // 현재 탭 hash에 저장
-  if(history.state?.screen==='sku'){
-    history.replaceState({screen:'sku',tab}, '', '#sku-'+tab);
-  }
+  // 현재 탭 hash에 항상 저장
+  history.replaceState({screen:'sku',tab}, '', '#sku-'+tab);
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
   const dbP=document.getElementById('sku-db-panel');
