@@ -2342,38 +2342,77 @@ async function copySkuTo(skuId, targetSource){
     toast('⚠️ 이동할 사진을 먼저 선택해주세요 (사진 탭하면 선택)');
     return;
   }
-  const targetLabel=targetSource==='db'?'DB':'검기어';
+  const targetLabel=targetSource==='db'?'DB':targetSource==='gear'?'검기어':'모델SKU';
   toast(`⏳ ${targetLabel}로 이동 중...`);
   try{
-    // [FIX] copy_sku_to API 없음 → 프론트에서 직접 처리
     // 1) 선택된 사진 URL 추출
     const selectedPhotos=selectedIndices.map(i=>allPhotos[i]).filter(Boolean);
     if(!selectedPhotos.length){ toast('⚠️ 선택된 사진이 없어요'); return; }
 
-    // 2) 대상 탭에 새 SKU로 저장 (선택 사진만)
-    const newSkuData={
-      brand: item.brand||'',
-      model_name: item.model_name||'',
-      model_name_ko: item.model_name_ko||'',
-      category: item.category||'',
-      color: item.color||'',
-      size_actual: item.size_actual||'',
-      size_label: item.size_label||'',
-      sku_code: item.sku_code||'',
-      site_url: item.site_url||'',
-      notes: item.notes||'',
-      accessories: item.accessories||[],
-      ref_image_url: selectedPhotos[0]||'',
-      extra_images: selectedPhotos.slice(1),
-    };
-    const saveRes=await fetch('/api/inspect',{
+    // 2) 대상 탭에 브랜드+모델명+SKU코드가 동일한 기존 레코드 검색
+    const srcMap={'model':'list','db':'db','gear':'gear'};
+    const targetTab=srcMap[targetSource]||'list';
+    const listRes=await fetch('/api/inspect',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'save_sku', source:targetSource, skuData:newSkuData})
+      body:JSON.stringify({action:'list_sku', source:targetSource})
     });
-    const saveJ=await saveRes.json();
-    if(!saveJ.success) throw new Error(saveJ.error||'저장 실패');
+    const listJ=await listRes.json();
+    const targetList=listJ.success?(listJ.data||[]):[];
 
-    // 3) 원본에서 선택된 사진 제거 (이동이므로)
+    // 브랜드 + 모델명(영/한 둘다) + SKU코드 일치 여부 확인
+    const _brand=(item.brand||'').trim().toLowerCase();
+    const _modelEn=(item.model_name||'').trim().toLowerCase();
+    const _modelKo=(item.model_name_ko||'').trim().toLowerCase();
+    const _sku=(item.sku_code||'').trim().toLowerCase();
+
+    const existing=targetList.find(t=>{
+      const tBrand=(t.brand||'').trim().toLowerCase();
+      const tModelEn=(t.model_name||'').trim().toLowerCase();
+      const tModelKo=(t.model_name_ko||'').trim().toLowerCase();
+      const tSku=(t.sku_code||'').trim().toLowerCase();
+      const brandMatch=_brand&&tBrand&&_brand===tBrand;
+      const modelMatch=(_modelEn&&tModelEn&&_modelEn===tModelEn)||(_modelKo&&tModelKo&&_modelKo===tModelKo);
+      const skuMatch=_sku&&tSku&&_sku===tSku;
+      // 브랜드+모델명 일치, 또는 SKU코드만 일치
+      return (brandMatch&&modelMatch)||(skuMatch&&brandMatch);
+    });
+
+    if(existing){
+      // ── 기존 레코드에 사진만 추가 ──
+      const existingPhotos=[existing.ref_image_url,...(existing.extra_images||[])].filter(Boolean);
+      // 중복 사진 제외하고 추가
+      const newPhotos=[...existingPhotos,...selectedPhotos.filter(p=>!existingPhotos.includes(p))];
+      await fetch('/api/inspect',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'update_sku', skuData:{
+          id:existing.id,
+          ref_image_url:newPhotos[0]||null,
+          extra_images:newPhotos.slice(1)
+        }})
+      });
+      toast(`✅ 기존 ${targetLabel} 항목에 사진 ${selectedPhotos.length}장 추가됨`);
+    } else {
+      // ── 새 레코드 생성 ──
+      const newSkuData={
+        brand:item.brand||'', model_name:item.model_name||'',
+        model_name_ko:item.model_name_ko||'', category:item.category||'',
+        color:item.color||'', size_actual:item.size_actual||'',
+        size_label:item.size_label||'', sku_code:item.sku_code||'',
+        site_url:item.site_url||'', notes:item.notes||'',
+        accessories:item.accessories||[],
+        ref_image_url:selectedPhotos[0]||'',
+        extra_images:selectedPhotos.slice(1),
+      };
+      const saveRes=await fetch('/api/inspect',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'save_sku', source:targetSource, skuData:newSkuData})
+      });
+      const saveJ=await saveRes.json();
+      if(!saveJ.success) throw new Error(saveJ.error||'저장 실패');
+      toast(`✅ ${targetLabel}에 새 항목 생성 및 사진 ${selectedPhotos.length}장 이동됨`);
+    }
+
+    // 3) 원본에서 선택된 사진 제거
     const remainPhotos=allPhotos.filter((_,i)=>!selectedIndices.includes(i));
     await fetch('/api/inspect',{
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2384,20 +2423,16 @@ async function copySkuTo(skuId, targetSource){
       }})
     });
 
-    toast(`✅ ${targetLabel}에 이동됨: ${item.model_name_ko||item.model_name} (사진 ${selectedPhotos.length}장)`);
-    // 체크 해제
+    // 4) 체크 해제 + DOM 즉시 업데이트
     selectedIndices.forEach(i=>{
       const chk=document.getElementById(`pchk-${skuId}-${i}`);
       if(chk){chk.style.display='none';}
     });
-    // 탭 새로고침
-    const srcTabMap={'model':'list','db':'db','gear':'gear'};
-    const curTab=item.source||'model';
-    // skuListAll 원본 데이터 업데이트
     item.ref_image_url=remainPhotos[0]||null;
     item.extra_images=remainPhotos.slice(1);
     rerenderSkuCard(skuId, remainPhotos);
-    setTimeout(()=>loadSkuList(srcTabMap[targetSource]||'list'), 300);
+    // 대상 탭 새로고침
+    setTimeout(()=>loadSkuList(targetTab), 300);
   }catch(e){
     toast('❌ 오류: '+e.message);
   }
