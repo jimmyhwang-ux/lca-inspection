@@ -699,8 +699,8 @@ window.fetch = function(url, opts={}){
   }
 })();
 
-window._appVer='1779068009';
-console.error('APP VERSION: 1779068009');
+window._appVer='1779068233';
+console.error('APP VERSION: 1779068233');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -3033,12 +3033,16 @@ function addSkuAccFromDrop(){
 
 function addEditAccFromDrop(sel){
   const name=sel.value;if(!name)return;
-  sel.value='';
   const accs=JSON.parse(document.getElementById('ef-accessories').value||'[]');
-  if(accs.find(a=>a.name===name)){toast('이미 추가된 항목이에요');return;}
+  if(accs.find(a=>a.name===name)){toast('이미 추가된 항목이에요');sel.value='';return;}
   accs.push({name});
   document.getElementById('ef-accessories').value=JSON.stringify(accs);
   renderEditAccList(accs);
+  // 선택 시각적 피드백
+  sel.style.borderColor='#ff6b2b';
+  sel.style.color='#ff6b2b';
+  setTimeout(()=>{ sel.style.borderColor=''; sel.style.color=''; sel.value=''; }, 600);
+  toast('✅ '+name+' 추가됨');
 }
 
 function setSkuCatFilter(cat, btn){
