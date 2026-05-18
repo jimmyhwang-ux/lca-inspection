@@ -2365,34 +2365,40 @@ async function copySkuTo(skuId, targetSource){
   }
 }
 
+// 탭 내 슬라이더를 항상 최신 데이터로 렌더링하는 통합 함수
+function renderSliderInDetail(skuId){
+  const slId='skusl-'+skuId;
+  const thId='th-'+skuId;
+  // 항상 최신 _sliders 데이터 사용
+  const thS=_sliders[thId];
+  const s=_sliders[slId];
+  if(!s||!s.urls||!s.urls.length) return;
+  const slWrap=document.getElementById(slId);
+  if(!slWrap) return;
+  // 썸네일 cur 우선, 없으면 탭 슬라이더 cur
+  const cur=(thS&&thS.cur!==undefined)?thS.cur:(s.cur||0);
+  const photos=s.urls;
+  const total=photos.length;
+  const url=photos[cur]||photos[0];
+  s.cur=cur; // 동기화
+  slWrap.innerHTML=url
+    ?('<img id="'+slId+'-img" src="'+url+'" draggable="true" data-skuid="'+skuId+'" data-pi="'+cur+'" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
+      +(total>1
+        ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
+        +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
+        +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">'+( cur+1)+'/'+total+'</span>'
+        :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>'))
+    :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
+  const slImg=document.getElementById(slId+'-img');
+  if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,s.cur);};
+}
+
 function toggleSkuDetail(id){
   const el=document.getElementById('sku-detail-'+id);
   if(!el)return;
   const open=el.style.display==='none';
   el.style.display=open?'block':'none';
-  // 열 때 슬라이더 데이터 최신화
-  if(open){
-    const slId='skusl-'+id;
-    const s=_sliders[slId];
-    if(!s||!s.urls) return;
-    const slWrap=document.getElementById(slId);
-    if(!slWrap) return;
-    const photos=s.urls;
-    const total=photos.length;
-    const _curIdx = _sliders['th-'+id]?.cur || s.cur || 0;
-    const _curUrl = photos[_curIdx] || photos[0];
-    slWrap.innerHTML=_curUrl
-      ?'<img id="'+slId+'-img" src="'+_curUrl+'" draggable="true" data-skuid="'+id+'" data-pi="'+_curIdx+'" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
-        +(total>1
-          ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
-          +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
-          +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/'+total+'</span>'
-          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
-      :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
-    const slImg=document.getElementById(slId+'-img');
-    s.cur=_curIdx;
-    if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,s.cur);}; 
-  }
+  if(open) renderSliderInDetail(id);
 }
 
 let _lensCards=[];
@@ -2650,24 +2656,12 @@ function rerenderSkuCard(skuId, photos){
     }
   }
 
-    // 5. _sliders 업데이트 + 탭 열려있으면 즉시 슬라이더 재렌더
-  _sliders[slId] = {urls: photos, cur: 0};
-  const _detailEl = document.getElementById('sku-detail-'+skuId);
-  if(_detailEl && _detailEl.style.display !== 'none'){
-    const _slWrap = document.getElementById(slId);
-    if(_slWrap){
-      const _total = photos.length;
-      _slWrap.innerHTML = photos[0]
-        ?'<img id="'+slId+'-img" src="'+photos[0]+'" draggable="true" data-skuid="'+skuId+'" data-pi="0" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
-        +(_total>1
-          ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
-          +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
-          +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/'+_total+'</span>'
-          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
-        :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
-      const _slImg = document.getElementById(slId+'-img');
-      if(_slImg) _slImg.onclick = e=>{ e.stopPropagation(); openLightboxSlider(slId,0); };
-    }
+  // 5. _sliders 업데이트 → 탭 열려있으면 즉시 재렌더
+  _sliders[slId]={urls:photos,cur:0};
+  _sliders['th-'+skuId]={urls:photos,cur:0};
+  const _detailEl=document.getElementById('sku-detail-'+skuId);
+  if(_detailEl&&_detailEl.style.display!=='none'){
+    renderSliderInDetail(skuId);
   }
 }
 
