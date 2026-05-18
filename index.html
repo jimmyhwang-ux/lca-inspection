@@ -2283,7 +2283,7 @@ function renderSkuList(list, wrapId){
                 const moveBtns=targets.map(t=>'<button onclick="event.stopPropagation();copySkuTo(\'' + item.id + '\',\'' + t.src + '\')" style="flex:1;background:' + t.bg + ';border:1px solid ' + t.border + ';color:' + t.color + ';font-size:12px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer">' + t.label + '</button>').join('');
                 const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+item.id+'\','+ pi +')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+item.id+'\','+ pi +')"><div id="pchk-'+item.id+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
                 const photoGrid='<div style="display:flex;gap:6px;margin-bottom:6px">' + moveBtns + '</div>'
-                  + (thumbChecks ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' + thumbChecks + '</div>' : '');
+                  + (thumbChecks ? '<div id="tgrid-'+item.id+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' + thumbChecks + '</div>' : '<div id="tgrid-'+item.id+'"></div>');
                 return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
                   <img id="${slId}-img" src="${allImgs[0]}"
                     draggable="true"
@@ -2370,26 +2370,21 @@ function toggleSkuDetail(id){
   if(!el)return;
   const open=el.style.display==='none';
   el.style.display=open?'block':'none';
-  // 열 때 슬라이더 데이터 최신화
   if(open){
     const slId='skusl-'+id;
     const s=_sliders[slId];
-    if(!s||!s.urls) return;
-    const slWrap=document.getElementById(slId);
-    if(!slWrap) return;
-    const photos=s.urls;
-    const total=photos.length;
-    slWrap.innerHTML=photos[0]
-      ?'<img id="'+slId+'-img" src="'+photos[0]+'" draggable="true" data-skuid="'+id+'" data-pi="0" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
-        +(total>1
-          ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
-          +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
-          +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/'+total+'</span>'
-          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
-      :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
+    if(!s||!s.urls||!s.urls.length)return;
+    // 썸네일 cur 우선, 없으면 현재 cur
+    const thS=_sliders['th-'+id];
+    const cur=(thS&&thS.cur!=null)?thS.cur:(s.cur||0);
+    s.cur=cur;
+    const url=s.urls[cur]||s.urls[0];
+    const total=s.urls.length;
+    // 기존 img/cnt 직접 업데이트 (innerHTML 교체 안 함)
     const slImg=document.getElementById(slId+'-img');
-    if(slImg) slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,0);};
-    s.cur=0;
+    const slCnt=document.getElementById(slId+'-cnt');
+    if(slImg){slImg.src=url;slImg.dataset.pi=cur;slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,cur);};}
+    if(slCnt)slCnt.textContent=`${cur+1}/${total}`;
   }
 }
 
@@ -2421,13 +2416,25 @@ function slideImg(sliderId,dir){
   const url=s.urls[s.cur];
   const img=document.getElementById(sliderId+'-img');
   const cnt=document.getElementById(sliderId+'-cnt');
-  if(img){
-    img.src=url;
-    img.dataset.pi=s.cur; // 드래그 시 현재 인덱스 동기화
-    // 전체 배열 전달 → 라이트박스에서 화살표/키보드 작동
-    img.onclick=e=>{e.stopPropagation();openLightbox(url,s.urls);};
-  }
+  if(img){img.src=url;img.dataset.pi=s.cur;img.onclick=e=>{e.stopPropagation();openLightbox(url,s.urls);};}
   if(cnt)cnt.textContent=`${s.cur+1}/${s.urls.length}`;
+  // 탭 ↔ 헤더 썸네일 양방향 동기화
+  if(sliderId.startsWith('skusl-')){
+    const id=sliderId.replace('skusl-','');
+    const thImg=document.getElementById('th-'+id+'-img');
+    if(thImg){thImg.src=url;thImg.dataset.pi=s.cur;}
+    if(_sliders['th-'+id])_sliders['th-'+id].cur=s.cur;
+  } else if(sliderId.startsWith('th-')){
+    const id=sliderId.replace('th-','');
+    const detEl=document.getElementById('sku-detail-'+id);
+    if(detEl&&detEl.style.display!=='none'){
+      const tabImg=document.getElementById('skusl-'+id+'-img');
+      const tabCnt=document.getElementById('skusl-'+id+'-cnt');
+      if(tabImg){tabImg.src=url;tabImg.dataset.pi=s.cur;}
+      if(tabCnt)tabCnt.textContent=`${s.cur+1}/${s.urls.length}`;
+      if(_sliders['skusl-'+id])_sliders['skusl-'+id].cur=s.cur;
+    }
+  }
 }
 
 // 드래그앤드롭 - 사진 순서 변경
@@ -2545,14 +2552,19 @@ document.addEventListener('click', function(e){
 function thumbNav(slId, dir){
   const s=_sliders[slId]; if(!s||!s.urls||!s.urls.length) return;
   s.cur=(s.cur+dir+s.urls.length)%s.urls.length;
+  const url=s.urls[s.cur];
   const img=document.getElementById(slId+'-img');
   const skuId=slId.replace('th-','');
-  if(img){
-    img.src=s.urls[s.cur];
-    img.dataset.pi=String(s.cur);
-    img.onclick=e=>{e.stopPropagation();openLightbox(s.urls[s.cur],_sliders['skusl-'+skuId]?.urls||s.urls);};
+  if(img){img.src=url;img.dataset.pi=String(s.cur);img.onclick=e=>{e.stopPropagation();openLightbox(url,_sliders['skusl-'+skuId]?.urls||s.urls);};}
+  // 탭 열려있으면 탭 슬라이더도 동기화
+  const detEl=document.getElementById('sku-detail-'+skuId);
+  if(detEl&&detEl.style.display!=='none'){
+    const tabImg=document.getElementById('skusl-'+skuId+'-img');
+    const tabCnt=document.getElementById('skusl-'+skuId+'-cnt');
+    if(tabImg){tabImg.src=url;tabImg.dataset.pi=s.cur;}
+    if(tabCnt)tabCnt.textContent=`${s.cur+1}/${s.urls.length}`;
+    if(_sliders['skusl-'+skuId])_sliders['skusl-'+skuId].cur=s.cur;
   }
-  // +N 뱃지는 전체 장수 표시 유지
 }
 function thumbTouchStart(e,slId){ _thumbTX=e.touches[0].clientX; _thumbTY=e.touches[0].clientY; _focusThumbId=slId; }
 function thumbTouchEnd(e,slId){
@@ -2584,60 +2596,48 @@ document.addEventListener('mouseover',e=>{
 
 function rerenderSkuCard(skuId, photos){
   // 1. skuListAll 데이터 동기화
-  const item = skuListAll.find(s=>String(s.id)===String(skuId));
-  if(!item) return;
-  item.ref_image_url = photos[0]||null;
-  item.extra_images = photos.slice(1);
+  const item=skuListAll.find(s=>String(s.id)===String(skuId));
+  if(!item)return;
+  item.ref_image_url=photos[0]||null;
+  item.extra_images=photos.slice(1);
 
-  // 2. 슬라이더 데이터 업데이트
-  const slId = 'skusl-' + skuId;
-  if(_sliders[slId]){
-    _sliders[slId].urls = photos;
-    _sliders[slId].cur = 0;
-  }
+  // 2. _sliders 업데이트
+  const slId='skusl-'+skuId;
+  const thSlId='th-'+skuId;
+  _sliders[slId]={urls:photos,cur:0};
+  _sliders[thSlId]={urls:photos,cur:0};
 
-  // 3. 썸네일 업데이트
-  const thSlId = 'th-' + skuId;
-  _sliders[thSlId] = {urls:photos, cur:0};
-  const thImg = document.getElementById(thSlId+'-img');
-  if(thImg){
-    if(photos[0]){ thImg.src=photos[0]; thImg.dataset.pi=0; }
-    else { thImg.style.display='none'; }
-  }
-  const thCnt = document.getElementById(thSlId+'-cnt');
+  // 3. 헤더 썸네일(52px) 업데이트
+  const thImg=document.getElementById(thSlId+'-img');
+  if(thImg){thImg.src=photos[0]||'';thImg.dataset.pi=0;}
+  const thCnt=document.getElementById(thSlId+'-cnt');
   if(thCnt){
-    if(photos.length>=2){ thCnt.textContent='+'+photos.length; thCnt.style.display=''; }
+    if(photos.length>=2){thCnt.textContent='+'+photos.length;thCnt.style.display='';}
     else thCnt.style.display='none';
-  } else if(photos.length>=2){
-    // 뱃지 없으면 생성
-    const wrap=thImg?.parentNode;
-    if(wrap){
-      const span=document.createElement('span');
-      span.id=thSlId+'-cnt';
-      span.style.cssText='position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px';
-      span.textContent='+'+photos.length;
-      wrap.appendChild(span);
-    }
   }
 
-    // 5. _sliders 업데이트 + 탭 열려있으면 즉시 슬라이더 재렌더
-  _sliders[slId] = {urls: photos, cur: 0};
-  const _detailEl = document.getElementById('sku-detail-'+skuId);
-  if(_detailEl && _detailEl.style.display !== 'none'){
-    const _slWrap = document.getElementById(slId);
-    if(_slWrap){
-      const _total = photos.length;
-      _slWrap.innerHTML = photos[0]
-        ?'<img id="'+slId+'-img" src="'+photos[0]+'" draggable="true" data-skuid="'+skuId+'" data-pi="0" ondragstart="lbDragStart(event)" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in">'
-        +(_total>1
-          ?'<button data-slid="'+slId+'" data-dir="-1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>'
-          +'<button data-slid="'+slId+'" data-dir="1" onclick="event.stopPropagation();slideImg(this.dataset.slid,parseInt(this.dataset.dir))" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>'
-          +'<span id="'+slId+'-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/'+_total+'</span>'
-          :'<span style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px">1/1</span>')
-        :'<div style="padding:16px;text-align:center;font-size:20px;opacity:.3">📄</div>';
-      const _slImg = document.getElementById(slId+'-img');
-      if(_slImg) _slImg.onclick = e=>{ e.stopPropagation(); openLightboxSlider(slId,0); };
-    }
+  // 4. 탭 큰 슬라이더 img/cnt 직접 업데이트 (탭 열림 여부 무관)
+  const slImg=document.getElementById(slId+'-img');
+  const slCnt=document.getElementById(slId+'-cnt');
+  if(slImg){slImg.src=photos[0]||'';slImg.dataset.pi=0;}
+  if(slCnt)slCnt.textContent='1/'+photos.length;
+
+  // 5. 탭 내 사진 그리드 업데이트 (순서 반영)
+  const tgrid=document.getElementById('tgrid-'+skuId);
+  if(tgrid){
+    tgrid.innerHTML=photos.map((url,pi)=>
+      '<div draggable="true" data-skuid="'+skuId+'" data-pi="'+pi
+      +'" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()"'
+      +' ondrop="lbDropTo(event,''+skuId+'','+pi+')"'
+      +' style="position:relative;flex-shrink:0;transition:opacity .2s">'
+      +'<img src="'+url+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;'
+      +'border:1.5px solid #2a2a2a;cursor:pointer;display:block"'
+      +' onclick="event.stopPropagation();togglePhotoCheck(this,''+skuId+'','+pi+')">'
+      +'<div id="pchk-'+skuId+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;'
+      +'width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;'
+      +'font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div>'
+      +'</div>'
+    ).join('');
   }
 }
 
