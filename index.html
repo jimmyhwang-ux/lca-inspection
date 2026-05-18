@@ -671,9 +671,17 @@ window.fetch = function(url, opts={}){
   const token = localStorage.getItem(_TOKEN_KEY);
   if(!token){ showScreen('login', false); return; }
   // 현재 hash에서 화면 ID 복원
+  const hash = location.hash.replace('#','');
   const validScreens = ['shoot','result','sku'];
-  const hashScreen = location.hash.replace('#','');
-  const targetScreen = validScreens.includes(hashScreen) ? hashScreen : 'shoot';
+  // sku-list, sku-db, sku-gear, sku-save 형태 파싱
+  let targetScreen = 'shoot';
+  let targetSkuTab = null;
+  if(hash.startsWith('sku-')){
+    targetScreen = 'sku';
+    targetSkuTab = hash.replace('sku-',''); // list, db, gear, save
+  } else if(validScreens.includes(hash)){
+    targetScreen = hash;
+  }
   try{
     const res = await _origFetch('/api/inspect',{
       method:'POST',
@@ -681,13 +689,18 @@ window.fetch = function(url, opts={}){
       body: JSON.stringify({action:'check_password', password:token})
     });
     const j = await res.json();
-    if(j.success){ showScreen(targetScreen, false); }
-    else { localStorage.removeItem(_TOKEN_KEY); showScreen('login', false); }
-  }catch(e){ showScreen(targetScreen, false); }
+    if(j.success){
+      showScreen(targetScreen, false);
+      if(targetScreen==='sku' && targetSkuTab) setTimeout(()=>switchSkuTab(targetSkuTab),100);
+    } else { localStorage.removeItem(_TOKEN_KEY); showScreen('login', false); }
+  }catch(e){
+    showScreen(targetScreen, false);
+    if(targetScreen==='sku' && targetSkuTab) setTimeout(()=>switchSkuTab(targetSkuTab),100);
+  }
 })();
 
-window._appVer='1779067844';
-console.error('APP VERSION: 1779067844');
+window._appVer='1779068009';
+console.error('APP VERSION: 1779068009');
 
 const ACC_MAP = {
   '가방/지갑': [
@@ -2174,6 +2187,10 @@ function switchSkuTab(tab, autoCat){
     const el=document.getElementById('tab-'+t);
     if(el) el.className='sku-tab'+(tab===t?' active':'');
   });
+  // 현재 탭 hash에 저장
+  if(history.state?.screen==='sku'){
+    history.replaceState({screen:'sku',tab}, '', '#sku-'+tab);
+  }
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
   const dbP=document.getElementById('sku-db-panel');
