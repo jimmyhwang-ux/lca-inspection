@@ -1136,13 +1136,9 @@ function renderDbMatchCards(matches){
     }
   }
 
-  // [FIX] 참고자료 자동 로드 — 항상 새 모델명으로 갱신 (캐시 무시)
+  // 참고자료 자동 로드 — 매칭된 모델명으로
   const _refModelName = matches[0]?.model_name_ko || matches[0]?.model_name || '';
   if(_refModelName){
-    // 참고자료 검색 input도 새 모델명으로 즉시 업데이트
-    const _refInput = document.getElementById('ref-search-input');
-    if(_refInput) _refInput.value = _refModelName;
-    _refDataAll = []; // 캐시 초기화 → 항상 새로 로드
     loadRefData(_refModelName);
   }
 }
@@ -1383,21 +1379,31 @@ const SIZE_CONFIG = {
 let _refDataAll = []; // 전체 DB+검기어 데이터 캐시
 
 async function loadRefData(modelName){
-  // 모델명으로 DB/검기어에서 참고자료 검색
+  // [FIX] Promise.all 동시호출(400 에러) → 순차 직렬 호출로 변경
+  // 각 응답을 개별 체크해서 실패해도 다른 쪽 데이터는 표시
+  let dbList = [], gearList = [];
   try{
-    const [dbRes, gearRes] = await Promise.all([
-      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'list_sku',source:'db'})}),
-      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'list_sku',source:'gear'})})
-    ]);
-    const dbJ = await dbRes.json();
-    const gearJ = await gearRes.json();
-    const dbList = (dbJ.data||[]).map(s=>({...s,_refType:'db'}));
-    const gearList = (gearJ.data||[]).map(s=>({...s,_refType:'gear'}));
-    _refDataAll = [...dbList, ...gearList];
-    searchRefData(modelName);
-  }catch(e){ console.warn('참고자료 로드 실패',e); }
+    const dbRes = await fetch('/api/inspect',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'list_sku', source:'db'})
+    });
+    if(dbRes.ok){
+      const dbJ = await dbRes.json();
+      if(dbJ.success) dbList = (dbJ.data||[]).map(s=>({...s,_refType:'db'}));
+    }
+  }catch(e){ console.warn('DB 참고자료 로드 실패', e); }
+  try{
+    const gearRes = await fetch('/api/inspect',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'list_sku', source:'gear'})
+    });
+    if(gearRes.ok){
+      const gearJ = await gearRes.json();
+      if(gearJ.success) gearList = (gearJ.data||[]).map(s=>({...s,_refType:'gear'}));
+    }
+  }catch(e){ console.warn('검기어 참고자료 로드 실패', e); }
+  _refDataAll = [...dbList, ...gearList];
+  searchRefData(modelName);
 }
 
 function searchRefData(q){
@@ -1566,9 +1572,6 @@ function saveField(id,input){
   // 모델명 변경 시 Google Images 재검색 (사용자가 직접 수정한 경우만)
   if((id==='r-model-ko'||id==='r-model')&&_wasEditing&&val!=='—'){
     const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
-    // [FIX] 참고자료 검색 input 즉시 업데이트
-    const _refInput=document.getElementById('ref-search-input');
-    if(_refInput) _refInput.value=val;
     reSearchByModel(brand, val);
   }
   if(id==='r-sku'&&val==='—'){
@@ -1635,14 +1638,6 @@ async function reSearchByModel(brand, modelName){
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
       // 렌즈 재검색 후 DB도 재매칭 시도 (적용 중에는 스킵)
       if(modelName&&modelName!=='—'&&!window._skipDbRematch){
-        // [FIX] DB 카드 초기화 — 이전 카드가 남아있지 않도록
-        const _dbWrap=document.getElementById('db-match-wrap');
-        if(_dbWrap) _dbWrap.innerHTML='<div style="padding:10px 14px;font-size:12px;color:#444">DB 재검색 중...</div>';
-        window._cardMatches=[];  // 캐시 초기화 → renderDbMatchCards가 반드시 재렌더
-        // [FIX] 참고자료도 새 모델명으로 갱신
-        _refDataAll=[];  // 캐시 초기화
-        const _refSec=document.getElementById('ref-section');
-        if(_refSec) _refSec.style.display='none';
         setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
       }
       window._skipDbRematch=false;
@@ -1956,14 +1951,7 @@ async function searchDbFromField(fieldId,val){
         (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
       );
     }
-    if(matches.length>=1){
-      renderDbMatchCards(matches);
-    } else {
-      // [FIX] 매칭 결과 없으면 DB 카드 영역 "미등록" 표시로 교체
-      const _dbW=document.getElementById('db-match-wrap');
-      if(_dbW) _dbW.innerHTML=`<div class="db-new-badge">⚠️ 미등록 SKU — DB에 등록된 정보가 없습니다</div>`;
-      window._cardMatches=[];
-    }
+    if(matches.length>=1) renderDbMatchCards(matches);
   }catch(e){console.warn('자동조회 실패',e);}
 }
 
