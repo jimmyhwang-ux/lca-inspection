@@ -2770,7 +2770,21 @@ function openEditModal(i){
   document.getElementById('ef-model').value=item.model_name||'';
   document.getElementById('ef-cat').value=item.category||'';
   document.getElementById('ef-color').value=item.color||'';
-  (function(){const _el=document.getElementById('ef-size-hidden');if(_el)_el.value=item.size_actual||'';})()
+  (function(){
+    // ef-size-hidden 없으면 생성
+    let _el=document.getElementById('ef-size-hidden');
+    if(!_el){
+      _el=document.createElement('input');
+      _el.type='hidden'; _el.id='ef-size-hidden';
+      document.getElementById('ef-size-wrap')?.parentNode?.appendChild(_el);
+    }
+    if(_el) _el.value=item.size_actual||'';
+    const _disp=document.getElementById('ef-size-display');
+    if(_disp){
+      _disp.textContent=item.size_actual||'탭하여 입력';
+      _disp.style.color=item.size_actual?'#f0f0f0':'#555';
+    }
+  })()
   document.getElementById('ef-size-name').value=item.size_label||'';
   document.getElementById('ef-sku').value=item.sku_code||'';
   document.getElementById('ef-url').value=item.site_url||'';
