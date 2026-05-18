@@ -678,7 +678,12 @@ window.fetch = function(url, opts={}){
   let targetSkuTab = null;
   if(hash.startsWith('sku-')){
     targetScreen = 'sku';
-    targetSkuTab = hash.replace('sku-',''); // list, db, gear, save
+    const t = hash.replace('sku-','');
+    // edit 상태는 sku 화면으로만 복원
+    targetSkuTab = (t && t !== 'edit') ? t : 'list';
+  } else if(hash === 'sku'){
+    targetScreen = 'sku';
+    targetSkuTab = 'list'; // 기본 탭
   } else if(validScreens.includes(hash)){
     targetScreen = hash;
   }
@@ -699,8 +704,8 @@ window.fetch = function(url, opts={}){
   }
 })();
 
-window._appVer='1779068506';
-console.error('APP VERSION: 1779068506');
+window._appVer='1779068670';
+console.error('APP VERSION: 1779068670');
 
 const ACC_MAP = {
   '가방/지갑': [
