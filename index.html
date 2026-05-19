@@ -773,13 +773,13 @@ function triggerFile(id){document.getElementById(id).click()}
 function processImage(src, key, fileSrc){
   const img=new Image();
   img.onload=()=>{
-    const MAX=800;
+    const MAX=1200;
     let w=img.width,h=img.height;
     if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
     const canvas=document.createElement('canvas');
     canvas.width=w;canvas.height=h;
     canvas.getContext('2d').drawImage(img,0,0,w,h);
-    const dataUrl=canvas.toDataURL('image/jpeg',0.72);
+    const dataUrl=canvas.toDataURL('image/jpeg',0.85);
     photos[key]={file:fileSrc||null,dataUrl,mime:'image/jpeg'};
     const prev=document.getElementById('prev-'+key);
     if(prev){prev.src=dataUrl;prev.style.display='block';}
@@ -821,11 +821,11 @@ document.addEventListener('paste',e=>{
     reader.onload=ev=>{
       const img=new Image();
       img.onload=()=>{
-        const MAX=800;let w=img.width,h=img.height;
+        const MAX=1200;let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
         const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        const dataUrl=canvas.toDataURL('image/jpeg',0.72);
+        const dataUrl=canvas.toDataURL('image/jpeg',0.85);
         inp._dataUrls.push(dataUrl);
         if(wrap){wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px';addSkuPhotoThumb(wrap,dataUrl,inp);}
         toast('📷 사진 추가됨 (붙여넣기)');
@@ -847,11 +847,11 @@ document.addEventListener('paste',e=>{
     reader.onload=ev=>{
       const img=new Image();
       img.onload=()=>{
-        const MAX=800;let w=img.width,h=img.height;
+        const MAX=1200;let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
         const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        const dataUrl=canvas.toDataURL('image/jpeg',0.72);
+        const dataUrl=canvas.toDataURL('image/jpeg',0.85);
         if(efInput){
           efInput._dataUrls=[...(efInput._dataUrls||[]),dataUrl];
           const wrap=document.getElementById('ef-new-photo-preview');
@@ -1781,11 +1781,11 @@ async function previewSkuPhotos(input){
       r.onload=e=>{
         const img=new Image();
         img.onload=()=>{
-          const MAX=800;let w=img.width,h=img.height;
+          const MAX=1200;let w=img.width,h=img.height;
           if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
           const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
           canvas.getContext('2d').drawImage(img,0,0,w,h);
-          resolve(canvas.toDataURL('image/jpeg',0.72));
+          resolve(canvas.toDataURL('image/jpeg',0.85));
         };
         img.src=e.target.result;
       };
@@ -3106,11 +3106,11 @@ async function previewEditPhotos(input){
     reader.onload=e=>{
       const img=new Image();
       img.onload=()=>{
-        const MAX=800;let w=img.width,h=img.height;
+        const MAX=1200;let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
         const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg',0.72));
+        resolve(canvas.toDataURL('image/jpeg',0.85));
       };
       img.src=e.target.result;
     };
