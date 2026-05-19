@@ -443,14 +443,25 @@ input[type=file]{display:none}
     <div style="margin-bottom:10px">
       <div id="sku-new-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
       <input type="file" id="sku-new-photo" accept="image/*" multiple style="display:none" onchange="previewSkuPhotos(this)">
-      <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #2a2a2a;color:#888;border-radius:10px;padding:10px;font-size:12px;cursor:pointer">📷 사진 추가 (또는 붙여넣기)</button>
+      <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#888;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">📷</span><span>사진 추가 <span style="font-size:11px;color:#555">· 탭하거나 붙여넣기</span></span></button>
     </div>
     <div class="sku-card">
-      <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—" list="brand-list" autocomplete="off"></div>
       <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—" oninput="onSkuModelKoInput(this)"></div>
       <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="sku-model" type="text" placeholder="—"></div>
-      <div class="sku-row"><div class="sku-key">카테고리</div><input class="sku-input" id="sku-cat" type="text" placeholder="—" oninput="onSkuCatInput(this)"></div>
-      <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—"></div>
+      <div class="sku-row"><div class="sku-key">카테고리</div>
+      <select class="sku-input" id="sku-cat" onchange="onSkuCatInput(this)" style="background:#111;color:#f0f0f0;border:none;outline:none;font-family:inherit;font-size:14px;cursor:pointer">
+        <option value="">—</option>
+        <option value="가방/지갑">가방/지갑</option>
+        <option value="의류">의류</option>
+        <option value="시계">시계</option>
+        <option value="주얼리">주얼리</option>
+        <option value="신발">신발</option>
+        <option value="모자">모자</option>
+        <option value="스카프">스카프</option>
+        <option value="벨트">벨트</option>
+      </select></div>
+      <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—" list="color-list" autocomplete="off"></div>
       <div class="sku-row"><div class="sku-key">실측 사이즈</div><div class="sku-input" id="sku-size-wrap" onclick="editSkuSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="sku-size-display" style="color:#555;font-size:12px">탭하여 입력</span></div></div>
       <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
@@ -553,11 +564,22 @@ input[type=file]{display:none}
       </label>
       <div id="ef-new-photo-preview" style="margin-top:6px"></div>
     </div>
-    <div class="edit-field-row"><div class="edit-field-label">브랜드</div><input class="edit-field-input" id="ef-brand" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">브랜드</div><input class="edit-field-input" id="ef-brand" type="text" list="brand-list" autocomplete="off"></div>
     <div class="edit-field-row"><div class="edit-field-label">모델명 (한글)</div><input class="edit-field-input" id="ef-model-ko" type="text" oninput="onEfModelKoInput(this)"></div>
     <div class="edit-field-row"><div class="edit-field-label">모델명 (영문)</div><input class="edit-field-input" id="ef-model" type="text"></div>
-    <div class="edit-field-row"><div class="edit-field-label">카테고리</div><input class="edit-field-input" id="ef-cat" type="text" oninput="onEfCatInput(this)"></div>
-    <div class="edit-field-row"><div class="edit-field-label">컬러</div><input class="edit-field-input" id="ef-color" type="text"></div>
+    <div class="edit-field-row"><div class="edit-field-label">카테고리</div>
+    <select class="edit-field-input" id="ef-cat" onchange="onEfCatInput(this)" style="background:#1a1a1a;color:#f0f0f0;border:1px solid #2a2a2a;border-radius:10px;padding:10px 14px;font-family:inherit;font-size:14px;cursor:pointer;width:100%">
+      <option value="">—</option>
+      <option value="가방/지갑">가방/지갑</option>
+      <option value="의류">의류</option>
+      <option value="시계">시계</option>
+      <option value="주얼리">주얼리</option>
+      <option value="신발">신발</option>
+      <option value="모자">모자</option>
+      <option value="스카프">스카프</option>
+      <option value="벨트">벨트</option>
+    </select></div>
+    <div class="edit-field-row"><div class="edit-field-label">컬러</div><input class="edit-field-input" id="ef-color" type="text" list="color-list" autocomplete="off"></div>
     <div class="edit-field-row"><div class="edit-field-label">실측 사이즈</div><div class="edit-field-input" id="ef-size-wrap" onclick="editEfSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="ef-size-display" style="color:#555;font-size:12px">탭하여 입력</span></div></div>
     <div class="edit-field-row"><div class="edit-field-label">사이즈 명칭</div><input class="edit-field-input" id="ef-size-name" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">스타일 번호</div><input class="edit-field-input" id="ef-sku" type="text"></div>
@@ -2165,7 +2187,13 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
   if(!wrap) return;
   let filtered=list;
   if(catFilter&&catFilter!=='전체') filtered=filtered.filter(s=>s.category?.includes(catFilter.replace('/지갑','')));
-  if(q) filtered=filtered.filter(s=>(s.brand+s.model_name+s.model_name_ko+(s.notes||'')).toLowerCase().includes(q.toLowerCase()));
+  if(q){
+    const tokens=q.toLowerCase().split(/\s+/).filter(Boolean);
+    filtered=filtered.filter(s=>{
+      const hay=(s.brand+' '+s.model_name+' '+s.model_name_ko+' '+(s.notes||'')+(s.color||'')+(s.sku_code||'')).toLowerCase();
+      return tokens.every(t=>hay.includes(t));
+    });
+  }
   if(!filtered.length){ wrap.innerHTML='<div class="sku-empty">검색 결과 없음</div>'; return; }
   renderSkuList(filtered, wrapId);
 }
@@ -3223,5 +3251,93 @@ function toast(msg,ms=2200){
   setTimeout(()=>t.classList.remove('show'),ms);
 }
 </script>
+
+<!-- 브랜드/컬러 datalist -->
+<datalist id="brand-list">
+  <option value="고야드">
+  <option value="구찌">
+  <option value="까르띠에">
+  <option value="꼴로에">
+  <option value="다미아니">
+  <option value="디올">
+  <option value="라도">
+  <option value="로에베">
+  <option value="론진">
+  <option value="롤렉스">
+  <option value="루이비통">
+  <option value="르메르">
+  <option value="마르니">
+  <option value="멀버리">
+  <option value="메종마르지엘라">
+  <option value="몽블랑">
+  <option value="몽클레어">
+  <option value="무스너클">
+  <option value="미도">
+  <option value="미우미우">
+  <option value="반클리프아펠">
+  <option value="발렌시아가">
+  <option value="발렌티노">
+  <option value="버버리">
+  <option value="보테가베네타">
+  <option value="부쉐론">
+  <option value="불가리">
+  <option value="브라이틀링">
+  <option value="생로랑">
+  <option value="샤넬">
+  <option value="셀린느">
+  <option value="쇼메">
+  <option value="쇼파드">
+  <option value="스톤아일랜드">
+  <option value="아이더블유씨">
+  <option value="에르메스">
+  <option value="오데마피게">
+  <option value="오리스">
+  <option value="오메가">
+  <option value="제니스">
+  <option value="지방시">
+  <option value="질샌더">
+  <option value="태그호이어">
+  <option value="톰브라운">
+  <option value="튜더">
+  <option value="티쏘">
+  <option value="티파니">
+  <option value="파라점퍼스">
+  <option value="페라가모">
+  <option value="펜디">
+  <option value="프라다">
+  <option value="프랑크뮬러">
+  <option value="프레드">
+  <option value="프레드릭 콘스탄트">
+  <option value="피아제">
+  <option value="해밀턴">
+</datalist>
+<datalist id="color-list">
+  <option value="블랙">
+  <option value="화이트">
+  <option value="베이지">
+  <option value="브라운">
+  <option value="카멜">
+  <option value="탄">
+  <option value="네이비">
+  <option value="블루">
+  <option value="카키">
+  <option value="그린">
+  <option value="레드">
+  <option value="버건디">
+  <option value="핑크">
+  <option value="퍼플">
+  <option value="그레이">
+  <option value="실버">
+  <option value="골드">
+  <option value="로즈골드">
+  <option value="오렌지">
+  <option value="옐로우">
+  <option value="멀티">
+  <option value="에크루">
+  <option value="아이보리">
+  <option value="카라멜">
+  <option value="모카">
+  <option value="샴페인">
+</datalist>
 </body>
 </html>
