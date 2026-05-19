@@ -23,12 +23,15 @@ export default async function handler(req, res) {
     }
   }
 
+  // Supabase 요청 헬퍼 — Range 헤더로 1000행 기본 제한 해제
   const sb = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
+      'Range-Unit': 'items',
+      'Range': '0-9999',
       'Prefer': opts.prefer ?? 'return=representation',
       ...(opts.headers || {})
     }
@@ -207,7 +210,6 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
 
     const imgbbPromise = uploadImgbb(imageBase64);
 
-    // 검수 시 model + null(시트에서 올린 데이터) 모두 매칭
     const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
       .then(r => r.json())
       .catch(() => []);
