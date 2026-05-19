@@ -2232,10 +2232,14 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
         (s.brand||'')+' '+(s.model_name||'')+' '+(s.model_name_ko||'')+' '+
         (s.notes||'')+' '+(s.color||'')+' '+(s.sku_code||'')
       ).toLowerCase();
-      // 각 토큰이 hay에 포함되거나, 한→영 매핑값이 포함되면 매칭
+      // 각 토큰이 hay에 포함되거나, 부분 한→영 매핑값이 포함되면 매칭
       return tokens.every(t=>{
-        const en=(typeof BRAND_KO_MAP!=='undefined'&&BRAND_KO_MAP[t])||'';
-        return hay.includes(t)||(en&&hay.includes(en));
+        if(hay.includes(t)) return true;
+        if(typeof resolveTokenToEnglish!=='undefined'){
+          const enList=resolveTokenToEnglish(t);
+          return enList.some(en=>hay.includes(en));
+        }
+        return false;
       });
     });
   }
@@ -3202,10 +3206,19 @@ const BRAND_KO_MAP={
   '멀버리':'mulberry','코치':'coach','케이트스페이드':'kate spade',
 };
 
+// 부분 한글 입력(예: "까")으로 BRAND_KO_MAP의 영문값 목록 반환
+function resolveTokenToEnglish(t){
+  if(BRAND_KO_MAP[t]) return [BRAND_KO_MAP[t]];
+  const results=[];
+  for(const [ko,en] of Object.entries(BRAND_KO_MAP)){
+    if(ko.startsWith(t)||ko.includes(t)) results.push(en);
+  }
+  return results;
+}
+
 function filterSkuList(){
   const raw=document.getElementById('sku-search').value.trim();
   const q=raw.toLowerCase();
-  // 공백 구분 토큰 분리 — 부분 문자열도 각 토큰이 모두 포함되면 매칭
   const tokens=q.split(/\s+/).filter(Boolean);
 
   const filtered=skuListAll.filter(i=>{
@@ -3219,10 +3232,10 @@ function filterSkuList(){
     const color=(i.color||'').toLowerCase();
     const notes=(i.notes||'').toLowerCase();
     const hay=brand+' '+modelEn+' '+modelKo+' '+sku+' '+color+' '+notes;
-    // 모든 토큰이 hay에 포함되면 매칭 (부분 문자열 + 한→영 매핑도 체크)
     const textOk=tokens.every(t=>{
-      const en=BRAND_KO_MAP[t]||'';
-      return hay.includes(t)||(en&&hay.includes(en));
+      if(hay.includes(t)) return true;
+      const enList=resolveTokenToEnglish(t);
+      return enList.some(en=>hay.includes(en));
     });
     return catOk&&textOk;
   });
