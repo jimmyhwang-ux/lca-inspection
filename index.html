@@ -931,14 +931,27 @@ async function startInspection(){
     for(const k of['label1','label2','label3','logo','origin','back']){
       if(photos[k])extras[k]=photos[k].dataUrl.split(',')[1];
     }
-    const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({imageBase64:base64,imageMime:mime,extras})
-    });
-    if(!res.ok){const e=await res.json();throw new Error(e.error||'API 오류');}
+    // Overloaded 시 최대 3회 재시도 (5초 간격)
+    let res, data;
+    for(let _try=0;_try<3;_try++){
+      if(_try>0){
+        toast(`⏳ Claude 과부하 중... ${_try}회 재시도 (5초 후)`);
+        await delay(5000);
+      }
+      res=await fetch('/api/inspect',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({imageBase64:base64,imageMime:mime,extras})
+      });
+      if(res.ok) break;
+      const eBody=await res.clone().json().catch(()=>({error:'API 오류'}));
+      const eMsg=(eBody.error||'').toLowerCase();
+      if(eMsg.includes('overload')&&_try<2) continue;
+      throw new Error(eBody.error||'API 오류');
+    }
+    if(!res.ok){const e=await res.json().catch(()=>({error:'API 오류'}));throw new Error(e.error||'API 오류');}
     setStep(1,'done');setStep(2,'active');
     await delay(300);setStep(2,'done');setStep(3,'active');
-    const data=await res.json();
+    data=await res.json();
     setStep(3,'done');setStep(4,'active');
     resultData=data;
     window._userResetDb=false; // 새 검수 시 초기화
@@ -1843,8 +1856,8 @@ function editEfSize(){
     const inp=document.getElementById('sef-'+f.id);
     if(inp){ inp.addEventListener('blur',doSave); inp.setAttribute('onclick','event.stopPropagation()'); }
   });
-  const first=document.getElementById('sef-'+cfg[0].id);
-  if(first) first.focus();
+  // 수정 모달에서는 자동 focus 하지 않음 (blur 이벤트로 값이 사라지는 문제 방지)
+  // first.focus() 제거
 }
 
 function saveEfSize(cfg){
@@ -3020,26 +3033,21 @@ function openEditModal(i){
   document.getElementById('ef-accessories').value=JSON.stringify(efAccs);
   renderEditAccList(efAccs);
   document.getElementById('edit-modal').classList.add('open');
-  // 수정 모달 열릴 때 사이즈 인풋 렌더 + 기존 값 주입
+  // 수정 모달 열릴 때 사이즈 값 표시
   setTimeout(()=>{
-    // ef-size-hidden에 값이 있으면 wrap.dataset.cat을 초기화해서 강제 재렌더
-    const efSizeWrap=document.getElementById('ef-size-wrap');
-    if(efSizeWrap) efSizeWrap.dataset.cat='';
-    editEfSize();
-    // 렌더 후 hidden 값 기반으로 인풋에 주입
-    setTimeout(()=>{
-      const hidden=document.getElementById('ef-size-hidden');
-      const wrap=document.getElementById('ef-size-wrap');
-      if(hidden&&hidden.value&&wrap&&wrap.querySelector('input')){
-        const cat=(document.getElementById('ef-cat')?.value||'').trim();
-        const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-        const nums=hidden.value.match(/\d+(\.\d+)?/g)||[];
-        cfg.forEach((f,i)=>{
-          const inp=document.getElementById('sef-'+f.id);
-          if(inp&&nums[i]) inp.value=nums[i];
-        });
-      }
-    },60);
+    const hidden=document.getElementById('ef-size-hidden');
+    const wrap=document.getElementById('ef-size-wrap');
+    if(!wrap) return;
+    const sizeVal=hidden?.value||'';
+    if(sizeVal){
+      // 기존 값이 있으면 텍스트로 표시 (탭하면 인풋 열림)
+      wrap.dataset.cat='';
+      wrap.innerHTML=`<span style="font-size:13px;font-weight:700;color:#fff">${sizeVal}</span>`;
+    } else {
+      // 값 없으면 인풋 렌더
+      wrap.dataset.cat='';
+      editEfSize();
+    }
   },80);
 }
 function renderEditPhotos(urls){
