@@ -410,7 +410,8 @@ input[type=file]{display:none}
     <div id="acc-list"></div>
     <div class="acc-add-row">
       <div class="cat-tabs" id="cat-tabs">
-        <button class="cat-btn active" onclick="setCat('가방/지갑',this)">가방/지갑</button>
+        <button class="cat-btn active" onclick="setCat('가방',this)">가방</button>
+        <button class="cat-btn" onclick="setCat('지갑',this)">지갑</button>
         <button class="cat-btn" onclick="setCat('주얼리',this)">주얼리</button>
         <button class="cat-btn" onclick="setCat('의류',this)">의류</button>
         <button class="cat-btn" onclick="setCat('신발',this)">신발</button>
@@ -488,7 +489,8 @@ input[type=file]{display:none}
       <div class="sku-row"><div class="sku-key">카테고리</div>
       <select class="sku-input" id="sku-cat" onchange="onSkuCatInput(this)" style="background:#111;color:#f0f0f0;border:none;outline:none;font-family:inherit;font-size:14px;cursor:pointer">
         <option value="">—</option>
-        <option value="가방/지갑">가방/지갑</option>
+        <option value="가방">가방</option>
+        <option value="지갑">지갑</option>
         <option value="의류">의류</option>
         <option value="시계">시계</option>
         <option value="주얼리">주얼리</option>
@@ -509,7 +511,8 @@ input[type=file]{display:none}
       <div id="sku-acc-list"></div>
       <div class="acc-add-row">
         <div class="cat-tabs" id="sku-acc-cat-tabs">
-          <button class="cat-btn active" onclick="setSkuAccCat('가방/지갑',this)">가방/지갑</button>
+          <button class="cat-btn active" onclick="setSkuAccCat('가방',this)">가방</button>
+          <button class="cat-btn" onclick="setSkuAccCat('지갑',this)">지갑</button>
           <button class="cat-btn" onclick="setSkuAccCat('주얼리',this)">주얼리</button>
           <button class="cat-btn" onclick="setSkuAccCat('의류',this)">의류</button>
           <button class="cat-btn" onclick="setSkuAccCat('신발',this)">신발</button>
@@ -547,7 +550,8 @@ input[type=file]{display:none}
     <div id="sku-count-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#111;border-radius:10px;border:1px solid #1e1e1e"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="sku-cat-tabs">
       <button class="cat-btn active" onclick="setSkuCatFilter('전체',this)">전체</button>
-      <button class="cat-btn" onclick="setSkuCatFilter('가방/지갑',this)">가방/지갑</button>
+      <button class="cat-btn" onclick="setSkuCatFilter('가방',this)">가방</button>
+      <button class="cat-btn" onclick="setSkuCatFilter('지갑',this)">지갑</button>
       <button class="cat-btn" onclick="setSkuCatFilter('주얼리',this)">주얼리</button>
       <button class="cat-btn" onclick="setSkuCatFilter('의류',this)">의류</button>
       <button class="cat-btn" onclick="setSkuCatFilter('신발',this)">신발</button>
@@ -566,7 +570,8 @@ input[type=file]{display:none}
     <div id="gear-count-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#111;border-radius:10px;border:1px solid #1e1e1e"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="gear-cat-tabs">
       <button class="cat-btn active" onclick="setGearCatFilter('전체',this)">전체</button>
-      <button class="cat-btn" onclick="setGearCatFilter('가방/지갑',this)">가방/지갑</button>
+      <button class="cat-btn" onclick="setGearCatFilter('가방',this)">가방</button>
+      <button class="cat-btn" onclick="setGearCatFilter('지갑',this)">지갑</button>
       <button class="cat-btn" onclick="setGearCatFilter('주얼리',this)">주얼리</button>
       <button class="cat-btn" onclick="setGearCatFilter('의류',this)">의류</button>
       <button class="cat-btn" onclick="setGearCatFilter('신발',this)">신발</button>
@@ -608,7 +613,8 @@ input[type=file]{display:none}
     <div class="edit-field-row"><div class="edit-field-label">카테고리</div>
     <select class="edit-field-input" id="ef-cat" onchange="onEfCatInput(this)" style="background:#1a1a1a;color:#f0f0f0;border:1px solid #2a2a2a;border-radius:10px;padding:10px 14px;font-family:inherit;font-size:14px;cursor:pointer;width:100%">
       <option value="">—</option>
-      <option value="가방/지갑">가방/지갑</option>
+      <option value="가방">가방</option>
+      <option value="지갑">지갑</option>
       <option value="의류">의류</option>
       <option value="시계">시계</option>
       <option value="주얼리">주얼리</option>
@@ -630,7 +636,8 @@ input[type=file]{display:none}
       <div class="edit-field-label">부속품</div>
       <div id="ef-acc-list" style="display:flex;flex-direction:column;gap:2px;margin-bottom:8px"></div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px" id="ef-acc-cat-tabs">
-        <button class="cat-btn active" onclick="setEfAccCat('가방/지갑',this)">가방/지갑</button>
+        <button class="cat-btn active" onclick="setEfAccCat('가방',this)">가방</button>
+        <button class="cat-btn" onclick="setEfAccCat('지갑',this)">지갑</button>
         <button class="cat-btn" onclick="setEfAccCat('주얼리',this)">주얼리</button>
         <button class="cat-btn" onclick="setEfAccCat('의류',this)">의류</button>
         <button class="cat-btn" onclick="setEfAccCat('신발',this)">신발</button>
@@ -718,13 +725,16 @@ window._appVer='1778974871';
 console.error('APP VERSION: 1778974871');
 
 const ACC_MAP = {
-  '가방/지갑': [
+  '가방': [
     '열쇠 1개','열쇠 2개','자물쇠','자물쇠 커버 (키벨)','네임택',
     '연장 스트랩','핸들 스트랩','레더 스트랩','체인 스트랩','패브릭 스트랩','스트랩패드',
     '키퍼(스트랩 후프) 1개','키퍼(스트랩 후프) 2개','키퍼(스트랩 후프) 3개','키퍼(스트랩 후프) 4개',
     '이너파우치','참장식','핸들 홀더 (손잡이 고정)',
     '거울','키드지갑','미니파우치',
     '속지갑 1개','속지갑 2개','훅 클로저','밑판','탈착형 키링','리본','여분단추','여분링크','여분끈'
+  ],
+  '지갑': [
+    '열쇠 1개','열쇠 2개','자물쇠','자물쇠 커버 (키벨)','네임택','속지갑 1개','속지갑 2개','탈착형 키링','여분끈'
   ],
   '주얼리': [
     '클러치(금속형)','클러치(액세서리형)','실크줄','체인','여분 체인'
@@ -1213,7 +1223,7 @@ async function renderResult(){
   }).join('');
 
   if(analysis.category){
-    const catMap={'가방':' 가방/지갑','지갑':'가방/지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
+    const catMap={'가방':'가방','지갑':'지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
     const matched=Object.entries(catMap).find(([k])=>analysis.category.includes(k));
     if(matched){
       const target=matched[1].trim();
@@ -1409,7 +1419,8 @@ let _sizeVal='';
 const SIZE_CONFIG = {
   '가방':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
   '지갑':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'}],
-  '가방/지갑':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
+  '가방':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
+  '지갑':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
   '의류':    [{id:'sz-w',label:'사이즈',unit:'',text:true,wide:true}],
   '신발':    [{id:'sz-w',label:'사이즈',unit:'',text:true,wide:true}],
   '시계':    [{id:'sz-w',label:'가로',unit:'mm'},{id:'sz-h',label:'세로',unit:'mm',opt:true}],
@@ -1510,7 +1521,7 @@ function toggleRefPanel(){
 function showCatPicker(tagEl){
   const existing=document.getElementById('cat-picker-popup');
   if(existing){existing.remove();return;}
-  const cats=['가방/지갑','주얼리','의류','신발','시계','벨트','기타'];
+  const cats=['가방','지갑','주얼리','의류','신발','시계','벨트','기타'];
   const popup=document.createElement('div');
   popup.id='cat-picker-popup';
   popup.style.cssText='position:absolute;z-index:999;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.6);min-width:130px';
@@ -1542,9 +1553,9 @@ function showCatPicker(tagEl){
 }
 
 function syncCatTab(category){
-  const catToTab={'가방':'가방/지갑','지갑':'가방/지갑','가방/지갑':'가방/지갑',
-    '주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계','벨트':'가방/지갑'};
-  const tabName=catToTab[category]||'가방/지갑';
+  const catToTab={'가방':'가방','지갑':'지갑','가방/지갑':'가방',
+    '주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계','벨트':'가방'};
+  const tabName=catToTab[category]||'가방';
   document.querySelectorAll('#cat-tabs .cat-btn').forEach(btn=>{
     if(btn.textContent.trim()===tabName){
       btn.classList.add('active');
@@ -1556,14 +1567,14 @@ function syncCatTab(category){
 }
 function getCurrentCat(){
   const btn=document.querySelector('#cat-tabs .cat-btn.active');
-  if(!btn) return '가방/지갑';
+  if(!btn) return '가방';
   const t=btn.textContent.trim();
   return t;
 }
 
 function getSizeConfig(){
   const cat=getCurrentCat();
-  return SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+  return SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
 }
 
 function buildSizeInput(cfg, nums){
@@ -1809,7 +1820,7 @@ function editEfSize(){
   const wrap=document.getElementById('ef-size-wrap');
   if(!wrap) return;
   const cat=(document.getElementById('ef-cat')?.value||'').trim();
-  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
   const curCat=wrap.dataset.cat;
   if(wrap.querySelector('input')&&curCat===cat) return;
   wrap.dataset.cat=cat;
@@ -1873,7 +1884,7 @@ function editSkuSize(){
   if(!wrap) return;
   // 카테고리가 바뀌면 재렌더 (현재 카테고리와 렌더된 카테고리 비교)
   const cat=(document.getElementById('sku-cat')?.value||'').trim();
-  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
   const curRenderedCat=wrap.dataset.cat;
   if(wrap.querySelector('input') && curRenderedCat===cat) return; // 같은 카테고리면 유지
   // 기존 값 파싱
@@ -2055,7 +2066,7 @@ function goToSku(){
   document.getElementById('sku-model').value=document.getElementById('r-model').textContent.replace('—','');
   // 카테고리: 부속품 탭 active 버튼 우선, 없으면 AI 분석값
   const _activeCatBtn=document.querySelector('#cat-tabs .cat-btn.active');
-  const _catMap={'가방/지갑':'가방','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
+  const _catMap={'가방':'가방','지갑':'지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
   const _catFromTab=_activeCatBtn?(_catMap[_activeCatBtn.textContent.trim()]||_activeCatBtn.textContent.trim()):'';
   document.getElementById('sku-cat').value=_catFromTab||a.category||'';
   document.getElementById('sku-color').value=a.color||'';
@@ -2085,7 +2096,7 @@ function goToSku(){
       const sizeWrap=document.getElementById('sku-size-wrap');
       if(hidden&&hidden.value&&sizeWrap&&sizeWrap.querySelector('input')){
         const cat=(document.getElementById('sku-cat')?.value||'').trim();
-        const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+        const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
         const nums=hidden.value.match(/\d+(\.\d+)?/g)||[];
         cfg.forEach((f,i)=>{
           const inp=document.getElementById('ssku-'+f.id);
@@ -2135,7 +2146,7 @@ async function saveToSupabase(source, btnEl){
   // 저장 전 사이즈 인풋값 강제 반영 (blur 없이 저장버튼 누른 경우 대비)
   try{
     const sizeCat=(document.getElementById('sku-cat')?.value||'').trim();
-    const sizeCfg=SIZE_CONFIG[sizeCat]||SIZE_CONFIG['가방/지갑'];
+    const sizeCfg=SIZE_CONFIG[sizeCat]||SIZE_CONFIG['가방'];
     const sizeWrap=document.getElementById('sku-size-wrap');
     if(sizeWrap&&sizeWrap.querySelector('input')){
       saveSkuSize(sizeCfg);
@@ -2250,7 +2261,11 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
   const wrap=document.getElementById(wrapId);
   if(!wrap) return;
   let filtered=list;
-  if(catFilter&&catFilter!=='전체') filtered=filtered.filter(s=>s.category?.includes(catFilter.replace('/지갑','')));
+  if(catFilter&&catFilter!=='전체') filtered=filtered.filter(s=>{
+    let c=(s.category||'').trim();
+    if(c==='가방/지갑') c='가방'; // 구 데이터 호환
+    return c===catFilter;
+  });
   if(q){
     const tokens=q.toLowerCase().split(/\s+/).filter(Boolean);
     filtered=filtered.filter(s=>{
@@ -2312,11 +2327,13 @@ function updateCountBar(list, wrapId){
   const barId = wrapId==='gear-list-wrap' ? 'gear-count-bar' : 'sku-count-bar';
   const bar = document.getElementById(barId);
   if(!bar) return;
-  const cats=['가방/지갑','의류','시계','주얼리','신발','모자','스카프','벨트'];
+  const cats=['가방','지갑','의류','시계','주얼리','신발','모자','스카프','벨트'];
   const total = list.length;
   const catCounts = {};
   list.forEach(s=>{
-    const c=(s.category||'기타').trim();
+    // 구 데이터 호환: '가방/지갑' → '가방'으로 정규화
+    let c=(s.category||'기타').trim();
+    if(c==='가방/지갑') c='가방';
     catCounts[c]=(catCounts[c]||0)+1;
   });
   const catItems = cats
@@ -3249,7 +3266,8 @@ function filterSkuList(){
 
   const filtered=skuListAll.filter(i=>{
     const cat=i.category||'';
-    const catOk=_skuCatFilter==='전체'||cat===_skuCatFilter||cat.includes(_skuCatFilter)||_skuCatFilter.includes(cat);
+    let _normCat=cat; if(_normCat==='가방/지갑') _normCat='가방';
+    const catOk=_skuCatFilter==='전체'||_normCat===_skuCatFilter;
     if(!q) return catOk;
     const brand=(i.brand||'').toLowerCase();
     const modelEn=(i.model_name||'').toLowerCase();
