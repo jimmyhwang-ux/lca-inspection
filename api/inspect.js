@@ -75,7 +75,7 @@ export default async function handler(req, res) {
   if (action === 'list_sku') {
     try {
       const srcParam = req.body.source;
-      let query = 'sku_items?select=*&order=created_at.desc&limit=500';
+      let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
       if (srcParam === 'db') {
         query += '&source=eq.db';
       } else if (srcParam === 'gear') {
@@ -210,7 +210,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
 
     const imgbbPromise = uploadImgbb(imageBase64);
 
-    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=500')
+    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
       .then(r => r.json())
       .catch(() => []);
 
