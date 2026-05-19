@@ -2076,7 +2076,24 @@ function goToSku(){
   switchSkuTab('save');
   showScreen('sku');
   // 카테고리에 맞는 사이즈 필드 자동 표시
-  setTimeout(()=>editSkuSize(), 100);
+  // hidden에 값을 먼저 넣은 뒤 editSkuSize가 파싱하도록 순서 보장
+  setTimeout(()=>{
+    editSkuSize();
+    // editSkuSize 렌더 후에도 hidden 값 유지 보장
+    setTimeout(()=>{
+      const hidden=document.getElementById('sku-size-hidden');
+      const sizeWrap=document.getElementById('sku-size-wrap');
+      if(hidden&&hidden.value&&sizeWrap&&sizeWrap.querySelector('input')){
+        const cat=(document.getElementById('sku-cat')?.value||'').trim();
+        const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방/지갑'];
+        const nums=hidden.value.match(/\d+(\.\d+)?/g)||[];
+        cfg.forEach((f,i)=>{
+          const inp=document.getElementById('ssku-'+f.id);
+          if(inp&&nums[i]) inp.value=nums[i];
+        });
+      }
+    },50);
+  }, 100);
 }
 
 function renderSkuAccList(){
@@ -2115,6 +2132,15 @@ function addSkuAcc(){
 async function saveToSupabase(source, btnEl){
   const btn=btnEl||document.querySelector('.sku-save-btn');
   if(btn){btn.disabled=true;btn.textContent='⏳ 저장 중...';}
+  // 저장 전 사이즈 인풋값 강제 반영 (blur 없이 저장버튼 누른 경우 대비)
+  try{
+    const sizeCat=(document.getElementById('sku-cat')?.value||'').trim();
+    const sizeCfg=SIZE_CONFIG[sizeCat]||SIZE_CONFIG['가방/지갑'];
+    const sizeWrap=document.getElementById('sku-size-wrap');
+    if(sizeWrap&&sizeWrap.querySelector('input')){
+      saveSkuSize(sizeCfg);
+    }
+  }catch(_){}
   try{
     // 사진 imgbb 업로드
     const uploadedUrls=[];
