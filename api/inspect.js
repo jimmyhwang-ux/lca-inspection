@@ -1,3 +1,8 @@
+// Vercel 함수 타임아웃 60초로 설정 (기본 10초 → 초과 시 Overloaded처럼 보임)
+export const config = {
+  maxDuration: 60,
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -8,6 +13,15 @@ export default async function handler(req, res) {
   const CLAUDE_KEY   = process.env.CLAUDE_KEY;
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+  // 접근 토큰 검증 (check_password 액션은 제외)
+  if (action !== 'check_password') {
+    const token = req.headers['x-access-token'];
+    const ACCESS_PW = process.env.ACCESS_PASSWORD || 'lca2024';
+    if (token !== ACCESS_PW) {
+      return res.status(401).json({ success: false, error: '인증 필요' });
+    }
+  }
 
   const sb = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
@@ -61,17 +75,14 @@ export default async function handler(req, res) {
   if (action === 'list_sku') {
     try {
       const srcParam = req.body.source;
-      // source 필터: model(null/model), db, gear
       let query = 'sku_items?select=*&order=created_at.desc&limit=500';
       if (srcParam === 'db') {
         query += '&source=eq.db';
       } else if (srcParam === 'gear') {
         query += '&source=eq.gear';
       } else if (srcParam === 'model') {
-        // model: source가 'model' 이거나 null/없는 것
         query += '&or=(source.eq.model,source.is.null)';
       }
-      // srcParam 없으면 전체
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
@@ -101,7 +112,7 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── 이미지 단건 업로드 (프론트에서 imgbb에 직접 업로드) ──────────────
+  // ── 이미지 단건 업로드 ────────────────────────────
   if (action === 'upload_image') {
     try {
       const { imageBase64: b64 } = req.body;
@@ -177,38 +188,55 @@ export default async function handler(req, res) {
       }
     }
 
-    const [imageUrl, claudeRes] = await Promise.all([
-      uploadImgbb(imageBase64),
-      fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
+    // ── imgbb 업로드 + Claude 분석 + Supabase DB 동시 실행 ──
+    // (기존: Claude → DB 순차 실행 → 타임아웃 위험)
+    // (수정: 3개 동시 실행 → 전체 시간 단축)
+    const claudePromise = fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,  // 1024 → 800으로 줄여 응답 속도 개선
+        system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
 {"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
 verdict: pass/review/fail, confidence: 0-100 정수`,
-          messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답' }] }]
-        })
-      }).then(r => r.json())
+        messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답' }] }]
+      })
+    }).then(r => r.json());
+
+    const imgbbPromise = uploadImgbb(imageBase64);
+
+    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=500')
+      .then(r => r.json())
+      .catch(() => []);
+
+    // 3개 동시 실행
+    const [claudeRes, imageUrl, dbData] = await Promise.all([
+      claudePromise,
+      imgbbPromise,
+      dbPromise,
     ]);
 
-    if (claudeRes.error) throw new Error('Claude 오류: ' + claudeRes.error.message);
+    if (claudeRes.error) {
+      const msg = claudeRes.error.message || '';
+      throw new Error('Claude 오류: ' + msg);
+    }
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
     // DB 매칭
     let dbMatch = null;
     try {
-      const dbRes = await sb('sku_items?select=*&limit=500');
-      const dbData = await dbRes.json();
       if (Array.isArray(dbData) && dbData.length > 0) {
         const aiBrand   = (analysis.brand || '').toLowerCase().trim();
         const aiModel   = (analysis.model_name || '').toLowerCase().trim();
         const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
         const aiSku     = (analysis.sku || '').toLowerCase().trim();
 
-        // 1단계: 모든 후보 점수 계산
         const candidates = [];
         for (const item of dbData) {
           const dbBrand   = (item.brand || '').toLowerCase().trim();
@@ -240,26 +268,29 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           if (score >= 50) candidates.push({item, score});
         }
 
-        // 2단계: 최고점 후보 중 notes 있는 것 우선 선택
         if (candidates.length > 0) {
           const maxScore = Math.max(...candidates.map(c => c.score));
           const topCandidates = candidates.filter(c => c.score === maxScore);
-          // notes 있는 아이템 우선, 없으면 첫 번째
           const withNotes = topCandidates.find(c => c.item.notes && c.item.notes.trim());
           dbMatch = (withNotes || topCandidates[0]).item;
         }
       }
     } catch (e) { console.warn('DB skip:', e.message); }
 
-    // Google Lens
+    // Google Lens — 타임아웃 방지를 위해 5초 제한
     let visualMatches = [];
     try {
-      const s = await fetch(`https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`);
+      const lensController = new AbortController();
+      const lensTimeout = setTimeout(() => lensController.abort(), 5000);
+      const s = await fetch(
+        `https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`,
+        { signal: lensController.signal }
+      );
+      clearTimeout(lensTimeout);
       const j = await s.json();
       visualMatches = j.visual_matches || [];
-    } catch (e) { console.warn('Lens skip'); }
+    } catch (e) { console.warn('Lens skip:', e.message); }
 
-    // dbMatch extra_images 정규화 (null/undefined → 빈 배열)
     if (dbMatch) {
       dbMatch = {
         ...dbMatch,
@@ -267,7 +298,12 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         ref_image_url: dbMatch.ref_image_url || null,
       };
     }
-    return res.status(200).json({ success: true, imageUrl, analysis, dbMatch, visualMatches: visualMatches.slice(0, 12) });
+
+    return res.status(200).json({
+      success: true, imageUrl, analysis, dbMatch,
+      visualMatches: visualMatches.slice(0, 12)
+    });
+
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
