@@ -2365,6 +2365,20 @@ function renderSkuList(list, wrapId){
 
 // 사진 선택 체크 토글
 function togglePhotoCheck(imgEl, skuId, photoIdx){
+  // 1) 확대 이미지(슬라이더) 업데이트
+  const slId='skusl-'+skuId;
+  const slImg=document.getElementById(slId+'-img');
+  const slCnt=document.getElementById(slId+'-cnt');
+  if(slImg){
+    slImg.src=imgEl.src;
+    slImg.dataset.pi=photoIdx;
+    slImg.onclick=e=>{e.stopPropagation();openLightboxSlider(slId,photoIdx);};
+    if(_sliders[slId]) _sliders[slId].cur=photoIdx;
+  }
+  if(slCnt&&_sliders[slId]){
+    slCnt.textContent=`${photoIdx+1}/${_sliders[slId].urls.length}`;
+  }
+  // 2) 체크 표시 토글
   const chk=document.getElementById(`pchk-${skuId}-${photoIdx}`);
   if(!chk) return;
   const on=chk.style.display!=='flex';
