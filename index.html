@@ -541,8 +541,8 @@ input[type=file]{display:none}
 
   <div id="sku-list-panel" style="display:none">
     <div style="margin-bottom:10px">
-      <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;margin-bottom:6px" oninput="filterSkuList()">
-      <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuNotes(this.value)">
+      <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;margin-bottom:6px" oninput="filterSkuList()" oncompositionend="filterSkuList()">
+      <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuNotes(this.value)" oncompositionend="filterSkuNotes(this.value)">
     </div>
     <div id="sku-count-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#111;border-radius:10px;border:1px solid #1e1e1e"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="sku-cat-tabs">
@@ -560,8 +560,8 @@ input[type=file]{display:none}
   <!-- 검기어 패널 (모델SKU와 동일 구조) -->
   <div id="sku-gear-panel" style="display:none">
     <div style="margin-bottom:10px">
-      <input id="gear-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:6px" oninput="filterSkuList(this.value,'gear-list-wrap')">
-      <input id="gear-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuNotesByWrap(this.value,'gear-list-wrap')">
+      <input id="gear-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:6px" oninput="filterSkuList(this.value,'gear-list-wrap')" oncompositionend="filterSkuList(this.value,'gear-list-wrap')">
+      <input id="gear-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuNotesByWrap(this.value,'gear-list-wrap')" oncompositionend="filterSkuNotesByWrap(this.value,'gear-list-wrap')">
     </div>
     <div id="gear-count-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#111;border-radius:10px;border:1px solid #1e1e1e"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="gear-cat-tabs">
@@ -2228,8 +2228,15 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
   if(q){
     const tokens=q.toLowerCase().split(/\s+/).filter(Boolean);
     filtered=filtered.filter(s=>{
-      const hay=(s.brand+' '+s.model_name+' '+s.model_name_ko+' '+(s.notes||'')+(s.color||'')+(s.sku_code||'')).toLowerCase();
-      return tokens.every(t=>hay.includes(t));
+      const hay=(
+        (s.brand||'')+' '+(s.model_name||'')+' '+(s.model_name_ko||'')+' '+
+        (s.notes||'')+' '+(s.color||'')+' '+(s.sku_code||'')
+      ).toLowerCase();
+      // 각 토큰이 hay에 포함되거나, 한→영 매핑값이 포함되면 매칭
+      return tokens.every(t=>{
+        const en=(typeof BRAND_KO_MAP!=='undefined'&&BRAND_KO_MAP[t])||'';
+        return hay.includes(t)||(en&&hay.includes(en));
+      });
     });
   }
   if(!filtered.length){ wrap.innerHTML='<div class="sku-empty">검색 결과 없음</div>'; return; }
@@ -3198,7 +3205,8 @@ const BRAND_KO_MAP={
 function filterSkuList(){
   const raw=document.getElementById('sku-search').value.trim();
   const q=raw.toLowerCase();
-  const qEn=BRAND_KO_MAP[q]||'';
+  // 공백 구분 토큰 분리 — 부분 문자열도 각 토큰이 모두 포함되면 매칭
+  const tokens=q.split(/\s+/).filter(Boolean);
 
   const filtered=skuListAll.filter(i=>{
     const cat=i.category||'';
@@ -3208,9 +3216,14 @@ function filterSkuList(){
     const modelEn=(i.model_name||'').toLowerCase();
     const modelKo=(i.model_name_ko||'').toLowerCase();
     const sku=(i.sku_code||'').toLowerCase();
-    const textOk=
-      brand.includes(q)||modelEn.includes(q)||modelKo.includes(q)||sku.includes(q)||
-      (qEn&&brand.includes(qEn));
+    const color=(i.color||'').toLowerCase();
+    const notes=(i.notes||'').toLowerCase();
+    const hay=brand+' '+modelEn+' '+modelKo+' '+sku+' '+color+' '+notes;
+    // 모든 토큰이 hay에 포함되면 매칭 (부분 문자열 + 한→영 매핑도 체크)
+    const textOk=tokens.every(t=>{
+      const en=BRAND_KO_MAP[t]||'';
+      return hay.includes(t)||(en&&hay.includes(en));
+    });
     return catOk&&textOk;
   });
   renderSkuList(filtered);
