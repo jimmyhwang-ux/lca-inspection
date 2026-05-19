@@ -434,7 +434,6 @@ input[type=file]{display:none}
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
     <div class="sku-tab" id="tab-list" onclick="switchSkuTab('list')">모델SKU</div>
-    <div class="sku-tab" id="tab-db" onclick="switchSkuTab('db')">DB</div>
     <div class="sku-tab" id="tab-gear" onclick="switchSkuTab('gear')">검기어</div>
   </div>
 
@@ -488,7 +487,6 @@ input[type=file]{display:none}
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="saveToSupabase('model',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ff6b2b;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 SKU</button>
-      <button onclick="saveToSupabase('db',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#0a1a2a;color:#007aff;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(0,122,255,.4)">💾 DB</button>
       <button onclick="saveToSupabase('gear',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
     </div>
     <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #2a2a2a;color:#444;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
@@ -509,22 +507,7 @@ input[type=file]{display:none}
     </div>
     <div id="sku-list-wrap"><div class="sku-empty">불러오는 중...</div></div>
   </div>
-  <!-- DB 패널 (모델SKU와 동일 구조) -->
-  <div id="sku-db-panel" style="display:none">
-    <div style="margin-bottom:10px">
-      <input id="db-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:6px" oninput="filterSkuList(this.value,'db-list-wrap')">
-      <input id="db-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;box-sizing:border-box" oninput="filterSkuNotesByWrap(this.value,'db-list-wrap')">
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="db-cat-tabs">
-      <button class="cat-btn active" onclick="setDbCatFilter('전체',this)">전체</button>
-      <button class="cat-btn" onclick="setDbCatFilter('가방/지갑',this)">가방/지갑</button>
-      <button class="cat-btn" onclick="setDbCatFilter('주얼리',this)">주얼리</button>
-      <button class="cat-btn" onclick="setDbCatFilter('의류',this)">의류</button>
-      <button class="cat-btn" onclick="setDbCatFilter('신발',this)">신발</button>
-      <button class="cat-btn" onclick="setDbCatFilter('시계',this)">시계</button>
-    </div>
-    <div id="db-list-wrap"><div class="sku-empty">불러오는 중...</div></div>
-  </div>
+
 
   <!-- 검기어 패널 (모델SKU와 동일 구조) -->
   <div id="sku-gear-panel" style="display:none">
@@ -1662,7 +1645,7 @@ async function translateToEn(koName, targetEnId){
 
 async function autoTranslateModelName(koName){
   try{
-    const srcMap={'list':'model','db':'db','gear':'gear'};
+    const srcMap={'list':'model','gear':'gear'};
     const srcFilter=srcMap[activeTab]||null;
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -2128,7 +2111,7 @@ async function saveToSupabase(source, btnEl){
       const _srcLabel={'model':'모델SKU','db':'DB','gear':'검기어'}[source||'model']||'모델SKU';
       toast(`✅ ${_srcLabel}에 저장되었습니다`);
       const savedCat=document.getElementById('sku-cat').value||'전체';
-      const _srcTab={'model':'list','db':'db','gear':'gear'}[source||'model']||'list';
+      const _srcTab={'model':'list','gear':'gear'}[source||'model']||'list';
       setTimeout(()=>switchSkuTab(_srcTab, savedCat), 600);
     } else throw new Error(j.error||'저장 실패');
   }catch(e){
@@ -2139,7 +2122,7 @@ async function saveToSupabase(source, btnEl){
 }
 
 function switchSkuTab(tab, autoCat){
-  ['save','list','db','gear'].forEach(t=>{
+  ['save','list','gear'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.className='sku-tab'+(tab===t?' active':'');
   });
@@ -2189,11 +2172,11 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
 
 async function loadSkuList(tab){
   const activeTab=tab||'list';
-  const wrapId=activeTab==='db'?'db-list-wrap':activeTab==='gear'?'gear-list-wrap':'sku-list-wrap';
+  const wrapId=activeTab==='gear'?'gear-list-wrap':'sku-list-wrap';
   const wrap=document.getElementById(wrapId);
   if(wrap) wrap.innerHTML='<div class="sku-empty">불러오는 중...</div>';
   try{
-    const srcMap={'list':'model','db':'db','gear':'gear'};
+    const srcMap={'list':'model','gear':'gear'};
     const srcFilter=srcMap[activeTab]||null;
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -2209,9 +2192,9 @@ async function loadSkuList(tab){
       return;
     }
     skuListAll=j.data||[];
-    const _ck=activeTab==='db'?'db':activeTab==='gear'?'gear':'model';
+    const _ck=activeTab==='gear'?'gear':'model';
     _skuCache[_ck]=skuListAll;
-    if(activeTab==='db'||activeTab==='gear'){
+    if(activeTab==='gear'){
       filterSkuListByCat(skuListAll,wrapId,'전체','');
     } else {
       renderSkuList(skuListAll);
@@ -2278,9 +2261,9 @@ function renderSkuList(list, wrapId){
                 _sliders[slId]={urls:allImgs,cur:0};
                 // 탭별 이동 버튼 구성
                 const moveTargets={
-                  'model':[{src:'db',label:'DB로 이동',bg:'#0a1a2a',border:'rgba(0,122,255,.4)',color:'#007aff'},{src:'gear',label:'검기어로 이동',bg:'#1a1200',border:'rgba(186,117,23,.4)',color:'#BA7517'}],
-                  'db':[{src:'model',label:'모델SKU로 이동',bg:'#1a1200',border:'rgba(34,197,94,.4)',color:'#22c55e'},{src:'gear',label:'검기어로 이동',bg:'#1a1200',border:'rgba(186,117,23,.4)',color:'#BA7517'}],
-                  'gear':[{src:'model',label:'모델SKU로 이동',bg:'#1a1200',border:'rgba(34,197,94,.4)',color:'#22c55e'},{src:'db',label:'DB로 이동',bg:'#0a1a2a',border:'rgba(0,122,255,.4)',color:'#007aff'}],
+                  'model':[{src:'gear',label:'검기어로 이동',bg:'#1a1200',border:'rgba(186,117,23,.4)',color:'#BA7517'}],
+
+                  'gear':[{src:'model',label:'모델SKU로 이동',bg:'#1a1200',border:'rgba(34,197,94,.4)',color:'#22c55e'}],
                 };
                 const targets=moveTargets[itemSource]||moveTargets['model'];
                 const moveBtns=targets.map(t=>'<button onclick="event.stopPropagation();copySkuTo(\'' + item.id + '\',\'' + t.src + '\')" style="flex:1;background:' + t.bg + ';border:1px solid ' + t.border + ';color:' + t.color + ';font-size:12px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer">' + t.label + '</button>').join('');
@@ -2355,7 +2338,7 @@ async function copySkuTo(skuId, targetSource){
     if(!selectedPhotos.length){ toast('⚠️ 선택된 사진이 없어요'); return; }
 
     // 2) 대상 탭에 브랜드+모델명+SKU코드가 동일한 기존 레코드 검색
-    const srcMap={'model':'list','db':'db','gear':'gear'};
+    const srcMap={'model':'list','gear':'gear'};
     const targetTab=srcMap[targetSource]||'list';
     const listRes=await fetch('/api/inspect',{
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2432,7 +2415,7 @@ async function copySkuTo(skuId, targetSource){
       const idx=skuListAll.findIndex(s=>String(s.id)===String(skuId));
       if(idx>=0) skuListAll.splice(idx,1);
       // 탭별 캐시에서도 제거
-      ['model','db','gear'].forEach(k=>{
+      ['model','gear'].forEach(k=>{
         const ci=_skuCache[k].findIndex(s=>String(s.id)===String(skuId));
         if(ci>=0) _skuCache[k].splice(ci,1);
       });
