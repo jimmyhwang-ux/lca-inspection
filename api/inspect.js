@@ -81,7 +81,7 @@ export default async function handler(req, res) {
       } else if (srcParam === 'gear') {
         query += '&source=eq.gear';
       } else if (srcParam === 'model') {
-        query += '&or=(source.eq.model,source.is.null)';
+        query += '&source=eq.model';
       }
       const r = await sb(query);
       const d = await r.json();
@@ -188,9 +188,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── imgbb 업로드 + Claude 분석 + Supabase DB 동시 실행 ──
-    // (기존: Claude → DB 순차 실행 → 타임아웃 위험)
-    // (수정: 3개 동시 실행 → 전체 시간 단축)
     const claudePromise = fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -200,7 +197,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,  // 1024 → 800으로 줄여 응답 속도 개선
+        max_tokens: 800,
         system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
 {"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
 verdict: pass/review/fail, confidence: 0-100 정수`,
@@ -210,11 +207,11 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
 
     const imgbbPromise = uploadImgbb(imageBase64);
 
+    // 검수 시 model + null(시트에서 올린 데이터) 모두 매칭
     const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
       .then(r => r.json())
       .catch(() => []);
 
-    // 3개 동시 실행
     const [claudeRes, imageUrl, dbData] = await Promise.all([
       claudePromise,
       imgbbPromise,
