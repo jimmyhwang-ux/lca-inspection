@@ -3020,6 +3020,27 @@ function openEditModal(i){
   document.getElementById('ef-accessories').value=JSON.stringify(efAccs);
   renderEditAccList(efAccs);
   document.getElementById('edit-modal').classList.add('open');
+  // 수정 모달 열릴 때 사이즈 인풋 렌더 + 기존 값 주입
+  setTimeout(()=>{
+    // ef-size-hidden에 값이 있으면 wrap.dataset.cat을 초기화해서 강제 재렌더
+    const efSizeWrap=document.getElementById('ef-size-wrap');
+    if(efSizeWrap) efSizeWrap.dataset.cat='';
+    editEfSize();
+    // 렌더 후 hidden 값 기반으로 인풋에 주입
+    setTimeout(()=>{
+      const hidden=document.getElementById('ef-size-hidden');
+      const wrap=document.getElementById('ef-size-wrap');
+      if(hidden&&hidden.value&&wrap&&wrap.querySelector('input')){
+        const cat=(document.getElementById('ef-cat')?.value||'').trim();
+        const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+        const nums=hidden.value.match(/\d+(\.\d+)?/g)||[];
+        cfg.forEach((f,i)=>{
+          const inp=document.getElementById('sef-'+f.id);
+          if(inp&&nums[i]) inp.value=nums[i];
+        });
+      }
+    },60);
+  },80);
 }
 function renderEditPhotos(urls){
   const wrap=document.getElementById('ef-photos-wrap');
@@ -3141,6 +3162,13 @@ function addEditAcc(){
 function closeEditModal(){document.getElementById('edit-modal').classList.remove('open');}
 
 async function saveEditSku(){
+  // 저장 전 사이즈 인풋값 강제 반영 (blur 없이 저장버튼 누른 경우 대비)
+  try{
+    const efCat=(document.getElementById('ef-cat')?.value||'').trim();
+    const efCfg=SIZE_CONFIG[efCat]||SIZE_CONFIG['가방'];
+    const efWrap=document.getElementById('ef-size-wrap');
+    if(efWrap&&efWrap.querySelector('input')) saveEfSize(efCfg);
+  }catch(_){}
   const id=document.getElementById('ef-id').value;
   const photoInput=document.getElementById('ef-new-photo');
   const newDataUrls=photoInput._dataUrls||[];
