@@ -262,9 +262,45 @@ input[type=file]{display:none}
         <button type="button" class="rm-btn" id="rm-back" style="display:none" onclick="removePhoto(event,'back')">✕</button>
       </div>
       <input type="file" id="file-back" accept="image/*" onchange="loadPhoto(this,'back')">
+      <div class="slot-sm" id="slot-add1" onclick="document.getElementById('file-add1').click()">
+        <img class="preview" id="prev-add1" src="" alt="">
+        <div class="slot-inner"><div class="slot-icon">➕</div><div class="slot-label">추가 1</div></div>
+        <button type="button" class="rm-btn" id="rm-add1" style="display:none" onclick="removePhoto(event,'add1')">✕</button>
+      </div>
+      <input type="file" id="file-add1" accept="image/*" onchange="loadPhoto(this,'add1')">
+      <div class="slot-sm" id="slot-add2" onclick="document.getElementById('file-add2').click()">
+        <img class="preview" id="prev-add2" src="" alt="">
+        <div class="slot-inner"><div class="slot-icon">➕</div><div class="slot-label">추가 2</div></div>
+        <button type="button" class="rm-btn" id="rm-add2" style="display:none" onclick="removePhoto(event,'add2')">✕</button>
+      </div>
+      <input type="file" id="file-add2" accept="image/*" onchange="loadPhoto(this,'add2')">
+      <div class="slot-sm" id="slot-add3" onclick="document.getElementById('file-add3').click()">
+        <img class="preview" id="prev-add3" src="" alt="">
+        <div class="slot-inner"><div class="slot-icon">➕</div><div class="slot-label">추가 3</div></div>
+        <button type="button" class="rm-btn" id="rm-add3" style="display:none" onclick="removePhoto(event,'add3')">✕</button>
+      </div>
+      <input type="file" id="file-add3" accept="image/*" onchange="loadPhoto(this,'add3')">
+      <div class="slot-sm" id="slot-add4" onclick="document.getElementById('file-add4').click()">
+        <img class="preview" id="prev-add4" src="" alt="">
+        <div class="slot-inner"><div class="slot-icon">➕</div><div class="slot-label">추가 4</div></div>
+        <button type="button" class="rm-btn" id="rm-add4" style="display:none" onclick="removePhoto(event,'add4')">✕</button>
+      </div>
+      <input type="file" id="file-add4" accept="image/*" onchange="loadPhoto(this,'add4')">
+      <div class="slot-sm" id="slot-add5" onclick="document.getElementById('file-add5').click()">
+        <img class="preview" id="prev-add5" src="" alt="">
+        <div class="slot-inner"><div class="slot-icon">➕</div><div class="slot-label">추가 5</div></div>
+        <button type="button" class="rm-btn" id="rm-add5" style="display:none" onclick="removePhoto(event,'add5')">✕</button>
+      </div>
+      <input type="file" id="file-add5" accept="image/*" onchange="loadPhoto(this,'add5')">
+      <div class="slot-sm" id="slot-add6" onclick="document.getElementById('file-add6').click()">
+        <img class="preview" id="prev-add6" src="" alt="">
+        <div class="slot-inner"><div class="slot-icon">➕</div><div class="slot-label">추가 6</div></div>
+        <button type="button" class="rm-btn" id="rm-add6" style="display:none" onclick="removePhoto(event,'add6')">✕</button>
+      </div>
+      <input type="file" id="file-add6" accept="image/*" onchange="loadPhoto(this,'add6')">
     </div>
   </div>
-  <div class="hint">💡 라벨·로고·원산지 추가사진은 AI 신뢰도를 높입니다</div>
+  <div class="hint">💡 라벨·로고·원산지·추가사진은 AI 신뢰도를 높입니다</div>
   <div class="cta-wrap">
     <div style="display:flex;gap:8px">
       <button class="btn-main" id="btn-start" onclick="startInspection()" disabled style="flex:3">분석 시작</button>
@@ -631,7 +667,7 @@ input[type=file]{display:none}
 <div class="toast" id="toast"></div>
 
 <script>
-const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null};
+const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null,add1:null,add2:null,add3:null,add4:null,add5:null,add6:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _skuCache={model:[],db:[],gear:[]};
 const _sliders={};
@@ -751,7 +787,7 @@ function loadPhoto(input,key){
   reader.readAsDataURL(file);
 }
 
-const SLOT_ORDER=['main','label1','label2','label3','logo','origin','back'];
+const SLOT_ORDER=['main','label1','label2','label3','logo','origin','back','add1','add2','add3','add4','add5','add6'];
 document.addEventListener('paste',e=>{
   const items=[...(e.clipboardData?.items||[])];
   const imgItem=items.find(it=>it.type.startsWith('image/'));
