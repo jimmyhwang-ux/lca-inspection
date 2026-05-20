@@ -255,11 +255,12 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             else {
               const w1 = aiModel.split(' ').filter(w => w.length >= 3);
               const w2 = dbModel.split(' ').filter(w => w.length >= 3);
-              if (w1.length >= 2) {
+              // 단어 1개라도 완전 포함이면 매칭 허용
+              if (w1.length >= 1) {
                 const hits = w1.filter(w => w2.includes(w)).length;
                 const ratio = hits / w1.length;
-                // 단어 60% 이상 일치해야 매칭
-                if (ratio >= 0.6) score = Math.round(ratio * 60);
+                if (w1.length === 1 && hits === 1) score = Math.max(score, 55);
+                else if (ratio >= 0.6) score = Math.round(ratio * 60);
               }
             }
           }
@@ -267,7 +268,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           // ── 한글 모델명 매칭 ──────────────────────────────────────
           if (aiModelKo && dbModelKo) {
             if (aiModelKo === dbModelKo) score = Math.max(score, 95);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 65);
+            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
           }
 
           // 최소 점수 70 이상만 매칭 (기존 50 → 70으로 강화)
