@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779254175 -->
+  <!-- v1779254890 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779254175';
-console.error('APP VERSION: 1779254175');
+window._appVer='1779254890';
+console.error('APP VERSION: 1779254890');
 
 const ACC_MAP = {
   '가방': [
@@ -1760,7 +1760,7 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
-      window._skipDbRematch=false;
+      setTimeout(()=>{ window._skipDbRematch=false; }, 1000); // 1초 후 해제
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
     }
@@ -1790,6 +1790,7 @@ async function translateToEn(koName, targetEnId){
 }
 
 async function autoTranslateModelName(koName){
+  if(window._skipDbRematch) return; // 자동 적용 중엔 번역/재매칭 차단
   try{
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -2042,6 +2043,7 @@ function onEfModelKoInput(input){
 
 function onResultFieldInput(input,id){
   clearTimeout(_dbSearchTimer);
+  if(window._skipDbRematch) return; // 자동 적용 중엔 재매칭 차단
   const val=input.value.trim();
   if(!val||val.length<2)return;
   _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
