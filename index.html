@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779242668 -->
+  <!-- v1778772226 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -728,8 +728,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779242668';
-console.error('APP VERSION: 1779242668');
+window._appVer='1779243491';
+console.error('APP VERSION: 1779243491');
 
 const ACC_MAP = {
   '가방': [
@@ -3103,16 +3103,18 @@ function openEditModal(i){
 }
 function renderEditPhotos(urls){
   const wrap=document.getElementById('ef-photos-wrap');
-  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:visible;padding:12px 4px 4px 4px;scrollbar-width:none';
+  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:visible;padding:16px 4px 6px 4px;scrollbar-width:none';
+  // 슬라이더 등록 (onclick에서 JSON 직렬화 문제 방지)
+  window._efPhotoUrls = urls;
   wrap.innerHTML=urls.map((url,idx)=>`
     <div draggable="true" data-efidx="${idx}"
       ondragstart="efDragStart(event)"
       ondragover="event.preventDefault();event.currentTarget.style.opacity='0.6'"
       ondragleave="event.currentTarget.style.opacity='1'"
       ondrop="efDrop(event,${idx})"
-      style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:4px">
+      style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:16px">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
-        onclick="openLightbox('${url}',${JSON.stringify(urls)})" alt="">
+        onclick="openLightbox(window._efPhotoUrls[${idx}], window._efPhotoUrls)" alt="">
       <button onclick="deleteEditPhoto(${idx})"
         style="position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:#ef4444;border:2px solid #0d0d0d;color:#fff;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:10">✕</button>
     </div>`).join('');
