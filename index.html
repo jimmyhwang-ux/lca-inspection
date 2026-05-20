@@ -173,10 +173,10 @@ input[type=file]{display:none}
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
 .edit-modal.open{opacity:1;pointer-events:all}
-.edit-sheet{background:#111;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .25s}
+.edit-sheet{background:#111;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;overflow-x:visible;transform:translateY(100%);transition:transform .25s}
 .edit-modal.open .edit-sheet{transform:translateY(0)}
 .edit-sheet-handle{width:36px;height:4px;background:#2a2a2a;border-radius:2px;margin:0 auto 16px}
-.edit-field-row{margin-bottom:12px}
+.edit-field-row{margin-bottom:12px;overflow:visible}
 .edit-field-label{font-size:11px;color:#bbb;margin-bottom:5px}
 .edit-field-input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 13px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
 .edit-field-input:focus{border-color:#ff6b2b}
@@ -600,7 +600,7 @@ input[type=file]{display:none}
     </div>
     <div class="edit-field-row">
       <div class="edit-field-label">사진</div>
-      <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:8px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
+      <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:16px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
       <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#ccc;width:fit-content">
         + 사진 추가
         <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none" onchange="previewEditPhotos(this)">
@@ -2407,7 +2407,8 @@ function renderSkuPage(wrapId){
       <div style="display:flex;gap:10px;align-items:flex-start;cursor:pointer" onclick="toggleSkuDetail('${item.id}')">
         <div class="sku-thumb-wrap" style="position:relative;flex-shrink:0">
           ${(()=>{
-            const _all=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+            const _rawImgs=typeof item.extra_images==='string'?JSON.parse(item.extra_images||'[]'):item.extra_images||[];
+            const _all=[item.ref_image_url,..._rawImgs].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i&&typeof v==='string'&&v.startsWith('http'));
             _sliders['th-'+item.id]={urls:_all,cur:0};
             const thumbUrl=_all[0]||'';
             const imgHtml=thumbUrl
@@ -3066,8 +3067,14 @@ function openEditModal(i){
   document.getElementById('ef-sku').value=item.sku_code||'';
   document.getElementById('ef-url').value=item.site_url||'';
   document.getElementById('ef-notes').value=item.notes||'';
-  const imgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean);
-  const unique=[...new Set(imgs)];
+  // extra_images가 문자열로 올 경우 파싱
+  let _extraImgs = item.extra_images||[];
+  if(typeof _extraImgs === 'string'){
+    try{ _extraImgs = JSON.parse(_extraImgs); }catch(_){ _extraImgs = []; }
+  }
+  if(!Array.isArray(_extraImgs)) _extraImgs = [];
+  const imgs=[...(item.ref_image_url?[item.ref_image_url]:[]),..._extraImgs].filter(Boolean);
+  const unique=[...new Set(imgs)].filter(u=>typeof u==='string'&&u.startsWith('http'));
   document.getElementById('ef-extra-images').value=JSON.stringify(unique);
   renderEditPhotos(unique);
   document.getElementById('ef-new-photo').value='';
@@ -3224,7 +3231,10 @@ async function saveEditSku(){
   const id=document.getElementById('ef-id').value;
   const photoInput=document.getElementById('ef-new-photo');
   const newDataUrls=photoInput._dataUrls||[];
-  const existingImages=JSON.parse(document.getElementById('ef-extra-images').value||'[]');
+  const _efRaw=document.getElementById('ef-extra-images').value||'[]';
+  let existingImages=[];
+  try{ existingImages=JSON.parse(_efRaw); }catch(_){ existingImages=[]; }
+  if(!Array.isArray(existingImages)) existingImages=[];
 
   let uploadedUrls=[];
   if(newDataUrls.length>0){
