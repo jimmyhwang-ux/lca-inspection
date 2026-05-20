@@ -151,10 +151,13 @@ export default async function handler(req, res) {
       { type: 'image', source: { type: 'base64', media_type: imageMime||'image/jpeg', data: imageBase64 } },
       { type: 'text', text: '본품 전체샷' }
     ];
+    // 추가 이미지 최대 3장만 전송 (과부하 방지)
+    let extraCount = 0;
     for (const [key, b64] of Object.entries(extras)) {
-      if (b64) {
+      if (b64 && extraCount < 3) {
         imageContents.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } });
         imageContents.push({ type: 'text', text: key });
+        extraCount++;
       }
     }
 
