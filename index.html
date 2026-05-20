@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779264029';
-console.error('APP VERSION: 1779264029');
+window._appVer='1779264232';
+console.error('APP VERSION: 1779264232');
 
 const ACC_MAP = {
   '가방': [
@@ -2052,55 +2052,79 @@ function onResultFieldInput(input,id){
 
 async function searchDbFromField(fieldId,val){
 try{
-const res=await fetch('/api/inspect',{
-method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({action:'list_sku',source:'model'})
-});
-const j=await res.json();
-if(!j.success||!j.data)return;
-const list=j.data;
-const v=val.toLowerCase();
-// 현재 화면의 브랜드 가져오기 (브랜드 필터 적용)
-const curBrand=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim().toLowerCase();
-let matches=[];
-if(fieldId==='r-sku'){
-matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
-}
-if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
-// 1차: 완전 일치
-matches=list.filter(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
-// 2차: 부분 일치 (브랜드 필터 적용)
-if(!matches.length){
-const partial=list.filter(i=>
-(i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
-(i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
-);
-// 브랜드 필터: BRAND_KO_MAP으로 영문↔한글 변환 포함
-if(curBrand){
-  const normCur=curBrand.replace(/\s+/g,'');
-  // 영문→한글 변환
-  // BRAND_KO_MAP은 한글→영문 맵이므로 영문→한글은 역방향으로 찾기
-  // 예: normCur='louisvuitton' → 값이 'louis vuitton'인 키 '루이비통' 찾기
-  const curKo=(Object.entries(BRAND_KO_MAP).find(([ko,en])=>
-    en.replace(/\s+/g,'').toLowerCase()===normCur ||
-    en.toLowerCase()===curBrand
-  )?.[0] || '').toLowerCase();
-  const brandFiltered=partial.filter(i=>{
-    const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
-    if(db.includes(normCur)||normCur.includes(db)) return true;
-    if(curKo && db.includes(curKo.replace(/\s+/g,''))) return true;
-    // DB 한글→영문 역방향
-    const dbEn=Object.entries(BRAND_KO_MAP).find(([,v])=>db.includes(v.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
-    if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
-    return false;
+  const res=await fetch('/api/inspect',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'list_sku',source:'model'})
   });
-  matches=brandFiltered.length?brandFiltered:[];
-} else {
-  matches=partial;
-}
-}
-}
-if(matches.length>=1) renderDbMatchCards(matches);
+  const j=await res.json();
+  if(!j.success||!j.data)return;
+  const list=j.data;
+  const v=val.toLowerCase().trim();
+  if(!v||v.length<1) return;
+
+  const curBrand=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim().toLowerCase();
+  const normCur=curBrand.replace(/\s+/g,'');
+  const curKo=(Object.entries(BRAND_KO_MAP).find(([ko,en])=>
+    en.replace(/\s+/g,'').toLowerCase()===normCur||en.toLowerCase()===curBrand
+  )?.[0]||'').toLowerCase();
+
+  function matchBrand(item){
+    if(!curBrand) return true;
+    const db=(item.brand||'').toLowerCase().replace(/\s+/g,'');
+    if(!db) return false;
+    if(db===normCur||normCur.includes(db)||db.includes(normCur)) return true;
+    if(curKo&&db.includes(curKo.replace(/\s+/g,''))) return true;
+    return false;
+  }
+
+  const SIZE_CODES=new Set(['bb','pm','gm','mm','sm','xs','xl','os','ns','wb','tp']);
+  function calcScore(item){
+    let score=0;
+    const dbM=(item.model_name||'').toLowerCase();
+    const dbK=(item.model_name_ko||'').toLowerCase();
+    if(v&&dbM){
+      if(v===dbM) score=100;
+      else if(dbM.includes(v)||v.includes(dbM)) score=70;
+      else{
+        const w1=v.split(' ').filter(w=>w.length>=2);
+        const w2=dbM.split(' ').filter(w=>w.length>=2);
+        if(w1.length>=1){
+          const hits=w1.filter(w=>w2.includes(w)).length;
+          const ratio=hits/w1.length;
+          if(w1.length===1&&hits===1) score=Math.max(score,60);
+          else if(ratio>=0.6) score=Math.max(score,Math.round(ratio*60));
+        }
+      }
+    }
+    if(v&&dbK){
+      if(v===dbK) score=Math.max(score,95);
+      else if(dbK.includes(v)||v.includes(dbK)) score=Math.max(score,70);
+      else{
+        const wK1=v.split(' ').filter(w=>w.length>=1&&!SIZE_CODES.has(w));
+        const wK2=dbK.split(' ');
+        if(wK1.length>=1){
+          const koHits=wK1.filter(w=>wK2.includes(w)).length;
+          const koRatio=koHits/wK1.length;
+          if(wK1.length===1&&koHits===1) score=Math.max(score,70);
+          else if(wK1.length>=2&&koRatio>=0.7) score=Math.max(score,Math.round(koRatio*80));
+        }
+      }
+    }
+    return score;
+  }
+
+  let matches=[];
+  if(fieldId==='r-sku'){
+    matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
+  } else {
+    const scored=list
+      .filter(i=>matchBrand(i))
+      .map(i=>({item:i,score:calcScore(i)}))
+      .filter(c=>c.score>=70)
+      .sort((a,b)=>b.score-a.score);
+    matches=scored.slice(0,10).map(c=>c.item);
+  }
+  if(matches.length>=1) renderDbMatchCards(matches);
 }catch(e){console.warn('자동조회 실패',e);}
 }
 
