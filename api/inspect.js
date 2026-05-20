@@ -66,9 +66,8 @@ export default async function handler(req, res) {
     try {
       const srcParam = req.body.source;
       let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
-      if (srcParam === 'db')    query += '&source=eq.db';
-      else if (srcParam === 'gear')  query += '&source=eq.gear';
-      else if (srcParam === 'model') query += '&or=(source.eq.model,source.is.null)';
+      if (srcParam === 'gear') query += '&source=eq.gear';
+      // gear 외엔 source 필터 없이 전체 조회 (다른 사람 데이터 포함)
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
@@ -152,10 +151,13 @@ export default async function handler(req, res) {
       { type: 'image', source: { type: 'base64', media_type: imageMime||'image/jpeg', data: imageBase64 } },
       { type: 'text', text: '본품 전체샷' }
     ];
+    // 추가 이미지 최대 3장만 전송 (과부하 방지)
+    let extraCount = 0;
     for (const [key, b64] of Object.entries(extras)) {
-      if (b64) {
+      if (b64 && extraCount < 3) {
         imageContents.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } });
         imageContents.push({ type: 'text', text: key });
+        extraCount++;
       }
     }
 
@@ -171,8 +173,16 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       })
     }).then(r => r.json());
 
-    const imgbbPromise = uploadImgbb(imageBase64);
-    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000').then(r => r.json()).catch(() => []);
+    const imgbbPromise = uploadImgbb(imageBase64).catch(e => {
+      console.warn('[imgbb 실패]', e.message); return ''; // 실패해도 계속 진행
+    });
+    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
+      .then(async r => {
+        const data = await r.json();
+        console.log('[DB]', r.status, Array.isArray(data)?data.length:'ERR:'+JSON.stringify(data).slice(0,80));
+        return Array.isArray(data) ? data : [];
+      })
+      .catch(e => { console.error('[DB fetch error]', e.message); return []; });
 
     const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imgbbPromise, dbPromise]);
 
@@ -267,26 +277,26 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             }
           }
 
-          // ── 한글 모델명 매칭 ──────────────────────────────────────
+          // ── 한글 모델명 매칭 (토큰 단위) ─────────────────────────
           if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
-            else {
-              // 한글 단어 단위 매칭 (bb/pm/gm 등 사이즈 코드 제외)
-              const SIZE_CODES = new Set(['bb','pm','gm','mm','sm','xs','xl','os','ns','wb','tp']);
-              const wKo1 = aiModelKo.split(' ').filter(w => w.length >= 1 && !SIZE_CODES.has(w));
-              const wKo2 = dbModelKo.split(' ').filter(w => w.length >= 1);
-              if (wKo1.length >= 1) {
-                const koHits = wKo1.filter(w => wKo2.includes(w)).length;
-                const koRatio = koHits / wKo1.length;
-                if (wKo1.length === 1 && koHits === 1) score = Math.max(score, 70);
-                else if (wKo1.length >= 2 && koRatio >= 0.7) score = Math.max(score, Math.round(koRatio * 80));
+            if (aiModelKo === dbModelKo) {
+              score = Math.max(score, 95);
+            } else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) {
+              score = Math.max(score, 70);
+            } else {
+              // 토큰 단위 매칭: "포셋 악세수아" → ['포셋','악세수아'] 중 하나라도 포함되면 매칭
+              const koToks = aiModelKo.split(/\s+/).filter(w => w.length >= 2);
+              if (koToks.length > 0) {
+                const hits = koToks.filter(t => dbModelKo.includes(t)).length;
+                if (hits > 0) {
+                  score = Math.max(score, Math.round(60 + (hits / koToks.length) * 30));
+                }
               }
             }
           }
 
-          // 최소 점수 70 이상만 매칭
-          if (score >= 70) candidates.push({ item, score });
+          // 최소 점수 60 이상만 매칭
+          if (score >= 60) candidates.push({ item, score });
         }
 
         if (candidates.length > 0) {
