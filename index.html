@@ -875,6 +875,49 @@ function initDbCardSizeInputs(idx){
   }
 }
 
+
+function initResultSizeInputs(category, sizeActual){
+  const w=document.getElementById('r-size-w');
+  const h=document.getElementById('r-size-h');
+  const d=document.getElementById('r-size-d');
+  const sep1=document.getElementById('r-sep1');
+  const sep2=document.getElementById('r-sep2');
+  const unit=document.getElementById('r-size-unit');
+  if(!w) return;
+  const nums=(sizeActual||'').match(/\d+(\.\d+)?/g)||[];
+  if(category==='시계'){
+    w.placeholder='케이스직경'; if(nums[0]) w.value=nums[0];
+    if(h){h.style.display='none';} if(d){d.style.display='none';}
+    if(sep1) sep1.style.display='none'; if(sep2) sep2.style.display='none';
+    if(unit) unit.textContent='mm';
+  } else if(category==='주얼리'){
+    w.placeholder='폭'; if(nums[0]) w.value=nums[0];
+    if(h){h.style.display='none';} if(d){d.style.display='none';}
+    if(sep1) sep1.style.display='none'; if(sep2) sep2.style.display='none';
+    if(unit) unit.textContent='mm';
+  } else {
+    w.placeholder='가로'; if(nums[0]) w.value=nums[0];
+    if(h){h.placeholder='세로';h.style.display='';if(nums[1]) h.value=nums[1];}
+    if(d){d.placeholder='높이';d.style.display='';if(nums[2]) d.value=nums[2];}
+    if(sep1) sep1.style.display=''; if(sep2) sep2.style.display='';
+    if(unit) unit.textContent='cm';
+  }
+}
+
+function getResultSizeActual(){
+  const w=document.getElementById('r-size-w')?.value||'';
+  const h=document.getElementById('r-size-h');
+  const d=document.getElementById('r-size-d');
+  const unit=document.getElementById('r-size-unit')?.textContent||'cm';
+  const hv=h?.style.display!=='none'?h?.value||'':'';
+  const dv=d?.style.display!=='none'?d?.value||'':'';
+  const parts=[];
+  if(w) parts.push(w);
+  if(hv) parts.push(hv);
+  if(dv) parts.push(dv);
+  return parts.length ? parts.join(' × ')+unit : '';
+}
+
 function _openMainPhoto(){
   if(!photos.main) return;
   const all=Object.values(photos).filter(Boolean).map(p=>p.dataUrl);
@@ -964,8 +1007,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779266817';
-console.error('APP VERSION: 1779266817');
+window._appVer='1779281643';
+console.error('APP VERSION: 1779281643');
 
 const ACC_MAP = {
   '가방': [
@@ -1834,47 +1877,12 @@ function renderRefList(wrapId, items, type){
 }
 
 function toggleRefPanel(){
-  const panel = document.getElementById('ref-panel');
-  const btn = document.getElementById('ref-toggle-btn');
-  if(!panel||!btn) return;
-  const open = panel.style.display==='none';
-  panel.style.display = open ? 'block' : 'none';
-  btn.textContent = open ? '접기 ▴' : '펼치기 ▾';
-}
-
-// 카테고리 강제 변경 팝업
-function showCatPicker(tagEl){
-  const existing=document.getElementById('cat-picker-popup');
-  if(existing){existing.remove();return;}
-  const cats=['가방','지갑','주얼리','의류','신발','시계','벨트','기타'];
-  const popup=document.createElement('div');
-  popup.id='cat-picker-popup';
-  popup.style.cssText='position:absolute;z-index:999;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.6);min-width:130px';
-  cats.forEach(cat=>{
-    const btn=document.createElement('button');
-    btn.textContent=cat;
-    btn.style.cssText='background:none;border:none;color:#ccc;font-size:13px;padding:6px 12px;border-radius:8px;cursor:pointer;text-align:left';
-    btn.onmouseenter=()=>btn.style.background='#2a2a2a';
-    btn.onmouseleave=()=>btn.style.background='none';
-    btn.onclick=()=>{
-      // 카테고리 탭 강제 변경
-      syncCatTab(cat);
-      // 태그 텍스트 업데이트
-      if(tagEl) tagEl.textContent=cat+' ✎';
-      popup.remove();
-      toast('카테고리: '+cat);
-    };
-    popup.appendChild(btn);
-  });
-  // 팝업 위치
-  const rect=tagEl.getBoundingClientRect();
-  popup.style.top=(rect.bottom+window.scrollY+4)+'px';
-  popup.style.left=(rect.left+window.scrollX)+'px';
-  document.body.appendChild(popup);
-  // 외부 클릭 시 닫기
-  setTimeout(()=>document.addEventListener('click',function h(e){
-    if(!popup.contains(e.target)&&e.target!==tagEl){popup.remove();document.removeEventListener('click',h);}
-  }),100);
+  const panel=document.getElementById('ref-panel');
+  const icon=document.getElementById('ref-toggle-icon');
+  if(!panel) return;
+  const open=panel.style.display==='none';
+  panel.style.display=open?'block':'none';
+  if(icon) icon.style.transform=open?'rotate(180deg)':'rotate(0)';
 }
 
 function syncCatTab(category){
