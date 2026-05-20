@@ -733,8 +733,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779244014';
-console.error('APP VERSION: 1779244014');
+window._appVer='1779246289';
+console.error('APP VERSION: 1779246289');
 
 const ACC_MAP = {
   '가방': [
@@ -2245,6 +2245,7 @@ async function saveToSupabase(source, btnEl){
 }
 
 function switchSkuTab(tab, autoCat){
+  _activeSkuTab=tab||'list';
   ['save','list','gear'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.className='sku-tab'+(tab===t?' active':'');
@@ -3286,12 +3287,35 @@ async function saveEditSku(){
       body:JSON.stringify({action:'update_sku',skuData:{id,...data}})
     });
     const j=await res.json();
-    if(j.success){toast('✅ 수정되었습니다');closeEditModal();loadSkuList();}
+    if(j.success){
+      toast('✅ 수정되었습니다');
+      closeEditModal();
+      // 현재 탭/카테고리 유지하며 새로고침
+      const _curTab=_activeSkuTab||'list';
+      const _curCat=_skuCatFilter||'전체';
+      loadSkuList(_curTab).then(()=>{
+        if(_curCat&&_curCat!=='전체'){
+          // 카테고리 필터 복원
+          const _tabs=document.querySelectorAll('#sku-cat-tabs .cat-btn, #gear-cat-tabs .cat-btn');
+          _tabs.forEach(b=>{
+            if(b.textContent.trim()===_curCat){
+              b.classList.add('active');
+            } else {
+              b.classList.remove('active');
+            }
+          });
+          _skuCatFilter=_curCat;
+          const _wrapId=_curTab==='gear'?'gear-list-wrap':'sku-list-wrap';
+          filterSkuListByCat(skuListAll,_wrapId,_curCat,'');
+        }
+      });
+    }
     else throw new Error(j.error);
   }catch(e){toast('❌ 수정 실패: '+e.message);}
 }
 
 let _skuCatFilter='전체';
+let _activeSkuTab='list'; // 현재 활성 탭 추적
 function setEfAccCat(cat, btn){
   document.querySelectorAll('#ef-acc-cat-tabs .cat-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
