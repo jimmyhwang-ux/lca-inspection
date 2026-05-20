@@ -235,6 +235,18 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
         const aiSku     = (analysis.sku || '').toLowerCase().trim();
 
+        // 소재명/카테고리명을 모델명으로 잘못 분석한 경우 매칭 스킵
+        const GENERIC_MODEL_WORDS = [
+          'canvas','캔버스','leather','레더','가죽','모노그램','monogram','damier','다미에',
+          '가방','지갑','백','bag','wallet','purse','unknown','기타','없음','없다',
+          'fabric','패브릭','suede','스웨이드','denim','데님','nylon','나일론',
+        ];
+        const aiModelIsGeneric = GENERIC_MODEL_WORDS.includes(aiModel) || GENERIC_MODEL_WORDS.includes(aiModelKo);
+        if (aiModelIsGeneric && !aiSku) {
+          console.log('[DB] 일반 소재/카테고리명 감지 — 매칭 스킵:', aiModel, aiModelKo);
+          // 매칭 스킵 (dbMatches = [] 유지)
+        } else {
+
         const candidates = [];
         for (const item of dbData) {
           const dbBrand   = (item.brand || '').toLowerCase().trim();
@@ -298,6 +310,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           dbMatches = topCandidates.slice(0, 5).map(c => c.item);
         }
       }
+        } // end of !aiModelIsGeneric
     } catch (e) { console.error('[DB matching error]', e.message); }
     console.log('[DB] dbData len:', Array.isArray(dbData) ? dbData.length : 'NOT ARRAY', 'dbMatches:', dbMatches.length);
 
