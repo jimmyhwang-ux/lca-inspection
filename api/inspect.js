@@ -272,10 +272,22 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             }
           }
 
-          // ── 한글 모델명 매칭 ──────────────────────────────────────
+          // ── 한글 모델명 매칭 (토큰 단위) ─────────────────────────
           if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
+            if (aiModelKo === dbModelKo) {
+              score = Math.max(score, 95);
+            } else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) {
+              score = Math.max(score, 70);
+            } else {
+              // 토큰 단위 매칭: "포셋 악세수아" → ['포셋','악세수아'] 중 하나라도 포함되면 매칭
+              const koToks = aiModelKo.split(/\s+/).filter(w => w.length >= 2);
+              if (koToks.length > 0) {
+                const hits = koToks.filter(t => dbModelKo.includes(t)).length;
+                if (hits > 0) {
+                  score = Math.max(score, Math.round(60 + (hits / koToks.length) * 30));
+                }
+              }
+            }
           }
 
           // 최소 점수 60 이상만 매칭
