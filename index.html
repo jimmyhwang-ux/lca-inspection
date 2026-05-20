@@ -464,7 +464,7 @@ input[type=file]{display:none}
 <!-- SKU 탭 -->
 <div id="screen-sku" class="screen">
   <div class="sku-topbar">
-    <button class="sku-back" onclick="showScreen('result')">←</button>
+    <button class="sku-back" onclick="showScreen(_skuPrevScreen||'shoot')">←</button>
     <div class="sku-title">모델 SKU 관리</div>
     <button onclick="showScreen('shoot')" style="margin-left:auto;background:none;border:none;color:#bbb;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   </div>
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779248732';
-console.error('APP VERSION: 1779248732');
+window._appVer='1779250089';
+console.error('APP VERSION: 1779250089');
 
 const ACC_MAP = {
   '가방': [
@@ -2154,11 +2154,13 @@ function applyDbMatchItem(idx){
 }
 
 function openSkuOnly(){
+  _skuPrevScreen='shoot';
   switchSkuTab('list');
   showScreen('sku');
-  document.querySelector('.sku-back').onclick=()=>showScreen('shoot');
+  // 뒤로가기는 _skuPrevScreen으로 처리됨
 }
 function goToSku(){
+  _skuPrevScreen='result';
   const a=resultData.analysis||{};
   document.getElementById('sku-brand').value=document.getElementById('r-brand').textContent.replace('—','');
   document.getElementById('sku-model-ko').value=document.getElementById('r-model-ko').textContent.replace('—','');
@@ -3392,6 +3394,7 @@ async function saveEditSku(){
 
 let _skuCatFilter='전체';
 let _activeSkuTab='list'; // 현재 활성 탭 추적
+let _skuPrevScreen='shoot'; // SKU탭 진입 전 화면
 function setEfAccCat(cat, btn){
   document.querySelectorAll('#ef-acc-cat-tabs .cat-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
