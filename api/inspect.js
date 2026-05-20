@@ -180,6 +180,46 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
+  // ── 한글↔영문 브랜드 매핑 ────────────────────────────────────
+  const BRAND_MAP = {
+    'gucci':'구찌','louisvuitton':'루이비통','louisvuitton':'루이비통',
+    'hermes':'에르메스','chanel':'샤넬','dior':'디올','prada':'프라다',
+    'balenciaga':'발렌시아가','saintlaurent':'생로랑','ysl':'생로랑',
+    'bottegaveneta':'보테가베네타','celine':'셀린느','loewe':'로에베',
+    'fendi':'펜디','valentino':'발렌티노','givenchy':'지방시',
+    'burberry':'버버리','moncler':'몽클레어','thombrowne':'톰브라운',
+    'miumiu':'미우미우','maisonmargiela':'메종마르지엘라',
+    'goyard':'고야드','delvaux':'델보','cartier':'까르띠에',
+    'rolex':'롤렉스','omega':'오메가','tagheuer':'태그호이어',
+    'patekphilippe':'파텍필립','audemarspiguet':'오데마피게',
+    'iwc':'아이더블유씨','breitling':'브라이틀링',
+    'bulgari':'불가리','bvlgari':'불가리','tiffany':'티파니',
+    'vancleefarpe':'반클리프','chaumet':'쇼메','fred':'프레드',
+    'ferragamo':'페라가모','mulberry':'멀버리','coach':'코치',
+    'hamilton':'해밀턴','tissot':'티쏘','longines':'론진',
+    'frederiqueconstant':'프레드릭 콘스탄트',
+    'tiffanyco':'티파니앤코','tiffany&co':'티파니앤코',
+  };
+
+  function normBrand(b) {
+    return b.toLowerCase().replace(/[\s\-&·]/g, '');
+  }
+
+  function brandMatches(aiBrand, dbBrand) {
+    if (!aiBrand || !dbBrand) return false;
+    const ai = normBrand(aiBrand);
+    const db = normBrand(dbBrand);
+    if (db.includes(ai) || ai.includes(db)) return true;
+    // 한글 → 영문 변환 후 비교
+    const aiEn = BRAND_MAP[ai] ? normBrand(BRAND_MAP[ai]) : ai;
+    const dbEn = BRAND_MAP[db] ? normBrand(BRAND_MAP[db]) : db;
+    if (aiEn && dbEn && (aiEn.includes(dbEn) || dbEn.includes(aiEn))) return true;
+    // 반대 방향도
+    const aiFromDb = Object.entries(BRAND_MAP).find(([k,v]) => normBrand(v) === db)?.[0];
+    if (aiFromDb && (ai.includes(aiFromDb) || aiFromDb.includes(ai))) return true;
+    return false;
+  }
+
     // ── DB 매칭 (브랜드 필수 일치 + 높은 점수 기준 강화) ─────────
     let dbMatches = [];
     try {
@@ -196,11 +236,9 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-          // ── 브랜드 필수 일치 (없으면 스킵) ──────────────────────
+          // ── 브랜드 필수 일치 (한글↔영문 변환 포함) ──────────────
           if (!aiBrand || !dbBrand) continue;
-          // 브랜드가 서로 포함 관계여야 매칭 허용
-          const brandMatch = dbBrand.includes(aiBrand) || aiBrand.includes(dbBrand);
-          if (!brandMatch) continue;
+          if (!brandMatches(aiBrand, dbBrand)) continue;
 
           // ── SKU 완전 일치: 최고 점수 ─────────────────────────────
           if (aiSku && dbSku && aiSku === dbSku) {
