@@ -3096,7 +3096,7 @@ function openEditModal(i){
 }
 function renderEditPhotos(urls){
   const wrap=document.getElementById('ef-photos-wrap');
-  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding:8px 4px 4px 4px;scrollbar-width:none';
+  wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:visible;padding:12px 4px 4px 4px;scrollbar-width:none';
   wrap.innerHTML=urls.map((url,idx)=>`
     <div draggable="true" data-efidx="${idx}"
       ondragstart="efDragStart(event)"
@@ -3246,7 +3246,7 @@ async function saveEditSku(){
   const allImages=[...existingImages,...uploadedUrls];
   const newRef=allImages[0]||'';
 
-  const efAccs=JSON.parse(document.getElementById('ef-accessories')?.value||'[]');
+  const efAccs=JSON.parse(document.getElementById('ef-accessories')?.value||'[]').map(a=>typeof a==='string'?{name:a,status:''}:{name:a.name||a,status:a.status||''});
   const data={
     brand:document.getElementById('ef-brand').value,
     model_name_ko:document.getElementById('ef-model-ko').value,
