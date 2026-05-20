@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1778772226 -->
+  <!-- v1779252047 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779250089';
-console.error('APP VERSION: 1779250089');
+window._appVer='1779252047';
+console.error('APP VERSION: 1779252047');
 
 const ACC_MAP = {
   '가방': [
@@ -1510,17 +1510,20 @@ const SIZE_CONFIG = {
 let _refDataAll = []; // 전체 DB+검기어 데이터 캐시
 
 async function loadRefData(modelName){
-  // 모델명으로 DB/검기어에서 참고자료 검색
+  // 모델명으로 전체 SKU + 검기어에서 참고자료 검색
   try{
-    const [dbRes, gearRes] = await Promise.all([
+    const [allRes, gearRes] = await Promise.all([
+      // source 필터 없이 전체 조회 (누가 적재했든 모두 포함)
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'list_sku',source:'db'})}),
+        body:JSON.stringify({action:'list_sku'})}),
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'list_sku',source:'gear'})})
     ]);
-    const dbJ = await dbRes.json();
+    const allJ = await allRes.json();
     const gearJ = await gearRes.json();
-    const dbList = (dbJ.data||[]).map(s=>({...s,_refType:'db'}));
+    // gear ID 셋 만들어서 중복 제거, gear 아닌 나머지를 db 참고자료로
+    const gearIds = new Set((gearJ.data||[]).map(s=>String(s.id)));
+    const dbList = (allJ.data||[]).filter(s=>!gearIds.has(String(s.id))).map(s=>({...s,_refType:'db'}));
     const gearList = (gearJ.data||[]).map(s=>({...s,_refType:'gear'}));
     _refDataAll = [...dbList, ...gearList];
     searchRefData(modelName);
