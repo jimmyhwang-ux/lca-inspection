@@ -732,13 +732,32 @@ async function dbCardUploadPhotos(files, itemId, idx){
     // DB 업데이트
     await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:allImgs[0],extra_images:allImgs.slice(1)}})});
-    // 썸네일 미리보기
+    // 썸네일 미리보기 (삭제 버튼 포함)
     const photoWrap=document.getElementById('dbedit-photos-'+idx);
     if(photoWrap){
+      photoWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;overflow:visible;padding-top:8px';
       urls.forEach(url=>{
+        const wrap=document.createElement('div');
+        wrap.style.cssText='position:relative;flex-shrink:0';
         const img=document.createElement('img');
-        img.src=url;img.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid rgba(34,197,94,.4)';
-        photoWrap.appendChild(img);
+        img.src=url;
+        img.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid rgba(34,197,94,.4);display:block';
+        const del=document.createElement('button');
+        del.textContent='✕';
+        del.style.cssText='position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;line-height:1';
+        del.onclick=async()=>{
+          // DB에서 해당 사진 제거
+          const c=(window._cardMatches||[])[idx];
+          if(!c) return;
+          const allImgs=[...(c.ref_image_url?[c.ref_image_url]:[]),...(c.extra_images||[])].filter(u=>u!==url);
+          await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:allImgs[0]||null,extra_images:allImgs.slice(1)}})});
+          c.ref_image_url=allImgs[0]||null; c.extra_images=allImgs.slice(1);
+          wrap.remove();
+          toast('🗑 사진 삭제됨');
+        };
+        wrap.appendChild(img); wrap.appendChild(del);
+        photoWrap.appendChild(wrap);
       });
     }
     if(drop) drop.textContent='📷 사진 드래그 또는 탭하여 추가';
@@ -799,6 +818,34 @@ async function saveDbCardEdit(itemId, idx){
 function initDbCardSizeInputs(idx){
   const card=(window._cardMatches||[])[idx];
   if(!card) return;
+
+  // 기존 사진 썸네일 표시
+  const photoWrap=document.getElementById('dbedit-photos-'+idx);
+  if(photoWrap){
+    const existImgs=[...(card.ref_image_url?[card.ref_image_url]:[]),...(card.extra_images||[])].filter(Boolean);
+    photoWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;overflow:visible;padding-top:8px';
+    existImgs.forEach(url=>{
+      const wrap=document.createElement('div');
+      wrap.style.cssText='position:relative;flex-shrink:0';
+      const img=document.createElement('img');
+      img.src=url; img.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid rgba(34,197,94,.4);display:block';
+      img.onerror=()=>wrap.remove();
+      const del=document.createElement('button');
+      del.textContent='✕';
+      del.style.cssText='position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;line-height:1';
+      del.onclick=async()=>{
+        const allImgs=[...(card.ref_image_url?[card.ref_image_url]:[]),...(card.extra_images||[])].filter(u=>u!==url);
+        const itemId=card.id;
+        await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:allImgs[0]||null,extra_images:allImgs.slice(1)}})});
+        card.ref_image_url=allImgs[0]||null; card.extra_images=allImgs.slice(1);
+        wrap.remove(); toast('🗑 사진 삭제됨');
+      };
+      wrap.appendChild(img); wrap.appendChild(del);
+      photoWrap.appendChild(wrap);
+    });
+  }
+
   const cat=card.category||'가방';
   const cur=card.size_actual||'';
   const nums=cur.match(/\d+(\.\d+)?/g)||[];
@@ -917,8 +964,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779266244';
-console.error('APP VERSION: 1779266244');
+window._appVer='1779266497';
+console.error('APP VERSION: 1779266497');
 
 const ACC_MAP = {
   '가방': [
@@ -1375,7 +1422,7 @@ function renderDbCard(idx){
           <input type="file" id="dbedit-file-${idx}" accept="image/*" multiple style="display:none"
             onchange="dbCardFilePhoto(this,'${m.id}',${idx})">
         </div>
-        <div id="dbedit-photos-${idx}" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
+        <div id="dbedit-photos-${idx}" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;overflow:visible;padding-top:8px"></div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <!-- 실측사이즈 입력 -->
           <div>
