@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779257129 -->
+  <!-- v1779257953 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779257129';
-console.error('APP VERSION: 1779257129');
+window._appVer='1779257953';
+console.error('APP VERSION: 1779257953');
 
 const ACC_MAP = {
   '가방': [
@@ -2069,42 +2069,36 @@ matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
 if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
 // 1차: 완전 일치
 matches=list.filter(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
-// 2차: 부분 일치 (includes)
+// 2차: 부분일치 + 토큰 매칭 — 브랜드 필터 먼저 적용
 if(!matches.length){
-const partial=list.filter(i=>
-(i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
-(i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
+// 브랜드 필터 함수
+const normCur=curBrand.replace(/\s+/g,'');
+const curKo=curBrand?(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||'').toLowerCase():'';
+const brandOk=(i)=>{
+  if(!curBrand) return true;
+  const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
+  if(db.includes(normCur)||normCur.includes(db)) return true;
+  if(curKo&&db.includes(curKo.replace(/\s+/g,''))) return true;
+  const dbEn=Object.entries(BRAND_KO_MAP).find(([,val])=>db.includes(val.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
+  if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
+  return false;
+};
+// 브랜드 필터 적용된 목록만 대상
+const brandList=curBrand?list.filter(brandOk):list;
+// includes 매칭
+const partial=brandList.filter(i=>
+  (i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
+  (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
 );
-// 3차: 토큰 단위 매칭 — "포셋"→"포쉐트", "악세수아", "모노그램" 등 단어 하나만 맞아도 매칭
+// 토큰 매칭 — 단어 하나만 맞아도
 const vToks=v.split(/\s+/).filter(w=>w.length>=2);
-const tokenMatched=vToks.length>0?list.filter(i=>{
+const tokenMatched=vToks.length>0?brandList.filter(i=>{
   const ko=(i.model_name_ko||'').toLowerCase();
   const en=(i.model_name||'').toLowerCase();
   return vToks.some(t=>ko.includes(t)||en.includes(t));
 }):[];
-const combined=[...partial,...tokenMatched.filter(t=>!partial.some(p=>p.id===t.id))];
-// 브랜드 필터: BRAND_KO_MAP으로 영문↔한글 변환 포함
-if(curBrand){
-  const normCur=curBrand.replace(/\s+/g,'');
-  // 영문→한글 변환
-  const curKo=(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||'').toLowerCase();
-  const brandFiltered=partial.filter(i=>{
-    const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
-    if(db.includes(normCur)||normCur.includes(db)) return true;
-    if(curKo && db.includes(curKo.replace(/\s+/g,''))) return true;
-    // DB 한글→영문 역방향
-    const dbEn=Object.entries(BRAND_KO_MAP).find(([,v])=>db.includes(v.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
-    if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
-    return false;
-  });
-  matches=brandFiltered.length?brandFiltered:combined.filter(i=>{
-    const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
-    return db.includes(normCur)||normCur.includes(db)||(curKo&&db.includes(curKo.replace(/\s+/g,'')));
-  });
-  if(!matches.length) matches=combined;
-} else {
-  matches=combined;
-}
+// 합치기 (중복 제거)
+matches=[...partial,...tokenMatched.filter(t=>!partial.some(p=>p.id===t.id))];
 }
 }
 if(matches.length>=1){
