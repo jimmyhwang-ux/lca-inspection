@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779253654 -->
+  <!-- v1779254175 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779253654';
-console.error('APP VERSION: 1779253654');
+window._appVer='1779254175';
+console.error('APP VERSION: 1779254175');
 
 const ACC_MAP = {
   '가방': [
@@ -1760,10 +1760,6 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
-      // 렌즈 재검색 후 DB도 재매칭 시도 (적용 중에는 스킵)
-      if(modelName&&modelName!=='—'&&!window._skipDbRematch){
-        setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
-      }
       window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
@@ -2096,7 +2092,16 @@ if(curBrand){
 }
 }
 }
-if(matches.length>=1) renderDbMatchCards(matches);
+if(matches.length>=1){
+  // 이전 매칭 카드/상태 초기화 후 새로 렌더
+  window._userResetDb=false;
+  window._appliedCardId=null;
+  window._cardMatches=[];
+  window._dbEnriched=[];
+  const dbWrap=document.getElementById('db-match-wrap');
+  if(dbWrap) dbWrap.innerHTML='';
+  renderDbMatchCards(matches);
+}
 }catch(e){console.warn('자동조회 실패',e);}
 }
 
