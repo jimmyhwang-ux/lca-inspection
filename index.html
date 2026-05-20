@@ -1792,11 +1792,9 @@ async function translateToEn(koName, targetEnId){
 
 async function autoTranslateModelName(koName){
   try{
-    const srcMap={'list':'model','gear':'gear'};
-    const srcFilter=srcMap[activeTab]||null;
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku',source:srcFilter})
+      body:JSON.stringify({action:'list_sku'})
     });
     const j=await res.json();
     if(j.success&&j.data){
@@ -2054,7 +2052,7 @@ async function searchDbFromField(fieldId,val){
 try{
 const res=await fetch('/api/inspect',{
 method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({action:'list_sku',source:'model'})
+body:JSON.stringify({action:'list_sku'})
 });
 const j=await res.json();
 if(!j.success||!j.data)return;
@@ -2401,11 +2399,12 @@ async function loadSkuList(tab){
   const wrap=document.getElementById(wrapId);
   if(wrap) wrap.innerHTML='<div class="sku-empty">불러오는 중...</div>';
   try{
-    const srcMap={'list':'model','gear':'gear'};
-    const srcFilter=srcMap[activeTab]||null;
+    // gear 탭만 gear 필터링, 모델SKU 탭은 전체 조회 (다른 사람 데이터도 표시)
+    const srcFilter=activeTab==='gear'?'gear':null;
+    const bodyData=srcFilter?{action:'list_sku',source:srcFilter}:{action:'list_sku'};
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku',source:srcFilter})
+      body:JSON.stringify(bodyData)
     });
     const j=await res.json();
     console.error('[loadSkuList] 응답:', JSON.stringify({
