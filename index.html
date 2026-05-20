@@ -733,8 +733,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779243742';
-console.error('APP VERSION: 1779243742');
+window._appVer='1779244014';
+console.error('APP VERSION: 1779244014');
 
 const ACC_MAP = {
   '가방': [
@@ -1140,7 +1140,8 @@ function renderDbCard(idx){
   const slHtml=total>0?`
     <div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:6px;background:#1a1a1a">
       <img id="${slId}-img" src="${allImgs[0]}" style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in"
-        onclick="event.stopPropagation();openLightboxSlider('${slId}',_sliders['${slId}']?.cur||0)">
+        onclick="event.stopPropagation();openLightboxSlider('${slId}',_sliders['${slId}']?.cur||0)"
+        onerror="this.closest('[id^=dbsl]').style.display='none'">
       ${total>1?`
         <button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
         <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
@@ -2417,7 +2418,7 @@ function renderSkuPage(wrapId){
             _sliders['th-'+item.id]={urls:_all,cur:0};
             const thumbUrl=_all[0]||'';
             const imgHtml=thumbUrl
-              ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" data-thumb-open="1" data-thumb-skuid="${item.id}">`
+              ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" data-thumb-open="1" data-thumb-skuid="${item.id}" onerror="this.style.display='none'">`
               :'<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>';
             const cntHtml=_all.length>=2?`<span id="th-${item.id}-cnt" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px">+${_all.length}</span>`:'';
             return imgHtml+cntHtml;
@@ -3118,7 +3119,8 @@ function renderEditPhotos(urls){
       ondrop="efDrop(event,${idx})"
       style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:16px">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
-        onclick="openLightbox(window._efPhotoUrls[${idx}], window._efPhotoUrls)" alt="">
+        onclick="openLightbox(window._efPhotoUrls[${idx}], window._efPhotoUrls)" alt=""
+        onerror="this.parentNode.style.display='none'">
       <button onclick="deleteEditPhoto(${idx})"
         style="position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:#ef4444;border:2px solid #0d0d0d;color:#fff;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:10">✕</button>
     </div>`).join('');
