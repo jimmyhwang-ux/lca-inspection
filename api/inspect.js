@@ -165,8 +165,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001', max_tokens: 800,
         system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
-{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
-verdict: pass/review/fail, confidence: 0-100 정수`,
+{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
+verdict: pass/review/fail, confidence: 0-100 정수
+model_name_ko: 알 수 있는 정보 최대한 기재 (소재·패턴·모델명·사이즈 중 아는 것 전부). 예: "모노그램 캔버스 네버풀 MM", "모노그램", "네버풀", "알마 BB" 등 — null 금지.`,
         messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답' }] }]
       })
     }).then(r => r.json());
@@ -235,18 +236,6 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
         const aiSku     = (analysis.sku || '').toLowerCase().trim();
 
-        // 소재명/카테고리명을 모델명으로 잘못 분석한 경우 매칭 스킵
-        const GENERIC_MODEL_WORDS = [
-          'canvas','캔버스','leather','레더','가죽','모노그램','monogram','damier','다미에',
-          '가방','지갑','백','bag','wallet','purse','unknown','기타','없음','없다',
-          'fabric','패브릭','suede','스웨이드','denim','데님','nylon','나일론',
-        ];
-        const aiModelIsGeneric = GENERIC_MODEL_WORDS.includes(aiModel) || GENERIC_MODEL_WORDS.includes(aiModelKo);
-        if (aiModelIsGeneric && !aiSku) {
-          console.log('[DB] 일반 소재/카테고리명 감지 — 매칭 스킵:', aiModel, aiModelKo);
-          // 매칭 스킵 (dbMatches = [] 유지)
-        } else {
-
         const candidates = [];
         for (const item of dbData) {
           const dbBrand   = (item.brand || '').toLowerCase().trim();
@@ -268,27 +257,36 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
 
           let score = 0;
 
-          // ── 영문 모델명 매칭 ──────────────────────────────────────
-          if (aiModel && dbModel) {
-            if (aiModel === dbModel) score = 100;
-            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
-            else {
-              const w1 = aiModel.split(' ').filter(w => w.length >= 2);
-              const w2 = dbModel.split(' ').filter(w => w.length >= 2);
-              // 단어 1개라도 완전 포함이면 매칭 허용
-              if (w1.length >= 1) {
-                const hits = w1.filter(w => w2.includes(w)).length;
-                const ratio = hits / w1.length;
-                if (w1.length === 1 && hits === 1) score = Math.max(score, 60);
-                else if (ratio >= 0.6) score = Math.round(ratio * 60);
+          // ── 한글 모델명 토큰 매칭 (메인) ─────────────────────────
+          // "모노그램" 하나만 뱉어도 "모노그램 캔버스 네버풀 MM"에 매칭
+          // 매칭 단어 많을수록 높은 점수 → 정확한 항목이 상위 카드로
+          if (aiModelKo && dbModelKo) {
+            if (aiModelKo === dbModelKo) {
+              score = Math.max(score, 100);
+            } else {
+              const aiToks = aiModelKo.split(/[\s·\/]+/).filter(w => w.length >= 2);
+              if (aiToks.length > 0) {
+                const hits = aiToks.filter(t => dbModelKo.includes(t)).length;
+                if (hits > 0) {
+                  score = Math.max(score, Math.round(60 + (hits / aiToks.length) * 35));
+                }
               }
             }
           }
 
-          // ── 한글 모델명 매칭 ──────────────────────────────────────
-          if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
+          // ── 영문 모델명 토큰 매칭 ────────────────────────────────
+          if (aiModel && dbModel) {
+            if (aiModel === dbModel) {
+              score = Math.max(score, 100);
+            } else {
+              const aiToks = aiModel.split(/\s+/).filter(w => w.length >= 2);
+              if (aiToks.length > 0) {
+                const hits = aiToks.filter(t => dbModel.includes(t)).length;
+                if (hits > 0) {
+                  score = Math.max(score, Math.round(55 + (hits / aiToks.length) * 35));
+                }
+              }
+            }
           }
 
           // 최소 점수 60 이상만 매칭
@@ -310,7 +308,6 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           dbMatches = topCandidates.slice(0, 5).map(c => c.item);
         }
       }
-        } // end of !aiModelIsGeneric
     } catch (e) { console.error('[DB matching error]', e.message); }
     console.log('[DB] dbData len:', Array.isArray(dbData) ? dbData.length : 'NOT ARRAY', 'dbMatches:', dbMatches.length);
 
