@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779252428 -->
+  <!-- v1779252890 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779252428';
-console.error('APP VERSION: 1779252428');
+window._appVer='1779252890';
+console.error('APP VERSION: 1779252890');
 
 const ACC_MAP = {
   '가방': [
@@ -2052,6 +2052,11 @@ function onResultFieldInput(input,id){
 }
 
 async function searchDbFromField(fieldId,val){
+// 소재명/카테고리명은 매칭 스킵
+const _GENERIC=['canvas','캔버스','leather','레더','가죽','모노그램','monogram','damier','다미에',
+  '가방','지갑','백','bag','wallet','purse','unknown','기타','없음','fabric','패브릭',
+  'suede','스웨이드','denim','데님','nylon','나일론'];
+if(_GENERIC.includes(val.toLowerCase().trim())){return;}
 try{
 const res=await fetch('/api/inspect',{
 method:'POST',headers:{'Content-Type':'application/json'},
