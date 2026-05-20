@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779259346 -->
+  <!-- v1779260579 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779259346';
-console.error('APP VERSION: 1779259346');
+window._appVer='1779260579';
+console.error('APP VERSION: 1779260579');
 
 const ACC_MAP = {
   '가방': [
@@ -984,12 +984,13 @@ async function startInspection(){
     for(const k of['label1','label2','label3','logo','origin','back']){
       if(photos[k])extras[k]=photos[k].dataUrl.split(',')[1];
     }
-    // Overloaded 시 최대 3회 재시도 (5초 간격)
+    // Overloaded 시 최대 6회 재시도 (10초 간격, 지수 백오프)
     let res, data;
-    for(let _try=0;_try<3;_try++){
+    for(let _try=0;_try<6;_try++){
       if(_try>0){
-        toast(`⏳ Claude 과부하 중... ${_try}회 재시도 (5초 후)`);
-        await delay(5000);
+        const wait=Math.min(10000*_try, 40000); // 10초, 20초, 30초, 40초...
+        toast(`⏳ Claude 과부하 중... ${_try}회 재시도 (${wait/1000}초 후)`);
+        await delay(wait);
       }
       res=await fetch('/api/inspect',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -998,7 +999,7 @@ async function startInspection(){
       if(res.ok) break;
       const eBody=await res.clone().json().catch(()=>({error:'API 오류'}));
       const eMsg=(eBody.error||'').toLowerCase();
-      if(eMsg.includes('overload')&&_try<2) continue;
+      if(eMsg.includes('overload')&&_try<5) continue;
       throw new Error(eBody.error||'API 오류');
     }
     if(!res.ok){const e=await res.json().catch(()=>({error:'API 오류'}));throw new Error(e.error||'API 오류');}
@@ -1080,15 +1081,12 @@ function applyCardMatch(idx, cardId){
   applyDbMatch(item, cardId);
 }
 
-let _applyLock=false;
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
-  // 타이머 클리어 + 2초간 재매칭 차단
-  clearTimeout(_dbSearchTimer);
+  // 연쇄 방지: _searchDbRunning 리셋 (사용자 타이머는 건드리지 않음)
   _searchDbRunning=false;
-  _applyLock=true;
-  setTimeout(()=>{ _applyLock=false; }, 2000);
+  window._userEditingField=false;
   // 이미 적용된 카드 재클릭 → 해제
   const selCard=cardId?document.getElementById(cardId):null;
   if(selCard&&selCard.style.border==='2px solid rgb(34, 197, 94)'){
@@ -2049,7 +2047,6 @@ function onEfModelKoInput(input){
 
 function onResultFieldInput(input,id){
   clearTimeout(_dbSearchTimer);
-  if(_applyLock) return; // applyDbMatch 직후엔 재매칭 차단
   const val=input.value.trim();
   if(!val||val.length<2)return;
   _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
