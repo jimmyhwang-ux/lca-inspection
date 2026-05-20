@@ -66,9 +66,9 @@ export default async function handler(req, res) {
     try {
       const srcParam = req.body.source;
       let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
-      if (srcParam === 'db')    query += '&source=eq.db';
-      else if (srcParam === 'gear')  query += '&source=eq.gear';
-      else if (srcParam === 'model') query += '&or=(source.eq.model,source.is.null)';
+      // gear 탭만 gear로 필터링, 나머지(model·null·미전송)는 전체 조회
+      if (srcParam === 'gear') query += '&source=eq.gear';
+      // db, model, undefined 모두 전체 반환 (다른 사람이 등록한 데이터도 포함)
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
