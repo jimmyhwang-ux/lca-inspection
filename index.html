@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779248093';
-console.error('APP VERSION: 1779248093');
+window._appVer='1779248732';
+console.error('APP VERSION: 1779248732');
 
 const ACC_MAP = {
   '가방': [
@@ -2051,29 +2051,52 @@ function onResultFieldInput(input,id){
 }
 
 async function searchDbFromField(fieldId,val){
-  try{
-    // 검수 화면에서는 모델SKU(source='model') 전체에서 매칭
-    const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku',source:'model'})
-    });
-    const j=await res.json();
-    if(!j.success||!j.data)return;
-    const list=j.data;
-    const v=val.toLowerCase();
-    let matches=[];
-    if(fieldId==='r-sku'){
-      matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
-    }
-    if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
-      matches=list.filter(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
-      if(!matches.length) matches=list.filter(i=>
-        (i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
-        (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
-      );
-    }
-    if(matches.length>=1) renderDbMatchCards(matches);
-  }catch(e){console.warn('자동조회 실패',e);}
+try{
+const res=await fetch('/api/inspect',{
+method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({action:'list_sku',source:'model'})
+});
+const j=await res.json();
+if(!j.success||!j.data)return;
+const list=j.data;
+const v=val.toLowerCase();
+// 현재 화면의 브랜드 가져오기 (브랜드 필터 적용)
+const curBrand=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim().toLowerCase();
+let matches=[];
+if(fieldId==='r-sku'){
+matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
+}
+if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
+// 1차: 완전 일치
+matches=list.filter(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
+// 2차: 부분 일치 (브랜드 필터 적용)
+if(!matches.length){
+const partial=list.filter(i=>
+(i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
+(i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
+);
+// 브랜드 필터: BRAND_KO_MAP으로 영문↔한글 변환 포함
+if(curBrand){
+  const normCur=curBrand.replace(/\s+/g,'');
+  // 영문→한글 변환
+  const curKo=(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||'').toLowerCase();
+  const brandFiltered=partial.filter(i=>{
+    const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
+    if(db.includes(normCur)||normCur.includes(db)) return true;
+    if(curKo && db.includes(curKo.replace(/\s+/g,''))) return true;
+    // DB 한글→영문 역방향
+    const dbEn=Object.entries(BRAND_KO_MAP).find(([,v])=>db.includes(v.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
+    if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
+    return false;
+  });
+  matches=brandFiltered.length?brandFiltered:[];
+} else {
+  matches=partial;
+}
+}
+}
+if(matches.length>=1) renderDbMatchCards(matches);
+}catch(e){console.warn('자동조회 실패',e);}
 }
 
 
