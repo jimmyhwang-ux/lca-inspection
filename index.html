@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779258657 -->
+  <!-- v1779259346 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779258657';
-console.error('APP VERSION: 1779258657');
+window._appVer='1779259346';
+console.error('APP VERSION: 1779259346');
 
 const ACC_MAP = {
   '가방': [
@@ -1080,9 +1080,15 @@ function applyCardMatch(idx, cardId){
   applyDbMatch(item, cardId);
 }
 
+let _applyLock=false;
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
+  // 타이머 클리어 + 2초간 재매칭 차단
+  clearTimeout(_dbSearchTimer);
+  _searchDbRunning=false;
+  _applyLock=true;
+  setTimeout(()=>{ _applyLock=false; }, 2000);
   // 이미 적용된 카드 재클릭 → 해제
   const selCard=cardId?document.getElementById(cardId):null;
   if(selCard&&selCard.style.border==='2px solid rgb(34, 197, 94)'){
@@ -1094,6 +1100,7 @@ function applyDbMatch(item, cardId){
   const rBrand = document.getElementById('r-brand');
   const rModelKo = document.getElementById('r-model-ko');
   const rModel = document.getElementById('r-model');
+  window._userEditingField=false; // applyDbMatch에 의한 변경임을 표시
   if(rBrand && item.brand) rBrand.textContent = item.brand;
   if(rModelKo && item.model_name_ko) rModelKo.textContent = item.model_name_ko;
   if(rModel && item.model_name) rModel.textContent = item.model_name;
@@ -2042,6 +2049,7 @@ function onEfModelKoInput(input){
 
 function onResultFieldInput(input,id){
   clearTimeout(_dbSearchTimer);
+  if(_applyLock) return; // applyDbMatch 직후엔 재매칭 차단
   const val=input.value.trim();
   if(!val||val.length<2)return;
   _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
