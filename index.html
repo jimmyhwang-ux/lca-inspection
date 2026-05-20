@@ -678,6 +678,13 @@ input[type=file]{display:none}
 <script>
 
 // accessories 안전 변환 헬퍼
+function _thumbErr(img){
+  img.style.display='none';
+  var ph=document.createElement('div');
+  ph.style.cssText='width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a';
+  ph.textContent='📦';
+  img.parentNode.insertBefore(ph, img.nextSibling);
+}
 function _openMainPhoto(){
   if(!photos.main) return;
   const all=Object.values(photos).filter(Boolean).map(p=>p.dataUrl);
@@ -767,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779246983';
-console.error('APP VERSION: 1779246983');
+window._appVer='1779247215';
+console.error('APP VERSION: 1779247215');
 
 const ACC_MAP = {
   '가방': [
@@ -2452,10 +2459,9 @@ function renderSkuPage(wrapId){
             const _all=[item.ref_image_url,..._rawImgs].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i&&typeof v==='string'&&v.startsWith('http'));
             _sliders['th-'+item.id]={urls:_all,cur:0};
             const thumbUrl=_all[0]||'';
-            const _ph='<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>';
             const imgHtml=thumbUrl
-              ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" data-thumb-open="1" data-thumb-skuid="${item.id}" onerror="this.outerHTML='${_ph}'">`
-              :_ph;
+              ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block" data-thumb-open="1" data-thumb-skuid="${item.id}" onerror="_thumbErr(this)">`
+              :'<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #2a2a2a">📦</div>';
             const cntHtml=_all.length>=2?`<span id="th-${item.id}-cnt" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px">+${_all.length}</span>`:'';
             return imgHtml+cntHtml;
           })()}
