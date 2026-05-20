@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779255528 -->
+  <!-- v1779256057 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779255528';
-console.error('APP VERSION: 1779255528');
+window._appVer='1779256057';
+console.error('APP VERSION: 1779256057');
 
 const ACC_MAP = {
   '가방': [
@@ -1758,10 +1758,6 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
-      // 렌즈 재검색 후 DB도 재매칭 시도 (적용 중에는 스킵)
-      if(modelName&&modelName!=='—'&&!window._skipDbRematch){
-        setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
-      }
       window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
@@ -2051,11 +2047,14 @@ function onResultFieldInput(input,id){
   _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
 }
 
+let _searchDbRunning=false;
 async function searchDbFromField(fieldId,val){
+if(_searchDbRunning) return; // 중복 실행 방지
+_searchDbRunning=true;
 try{
 const res=await fetch('/api/inspect',{
 method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({action:'list_sku',source:'model'})
+body:JSON.stringify({action:'list_sku'})
 });
 const j=await res.json();
 if(!j.success||!j.data)return;
@@ -2096,8 +2095,11 @@ if(curBrand){
 }
 }
 }
-if(matches.length>=1) renderDbMatchCards(matches);
-}catch(e){console.warn('자동조회 실패',e);}
+if(matches.length>=1){
+  clearTimeout(_dbSearchTimer); // 혹시 남은 타이머 제거
+  renderDbMatchCards(matches);
+}
+}catch(e){console.warn('자동조회 실패',e);} finally{_searchDbRunning=false;}
 }
 
 
