@@ -678,6 +678,11 @@ input[type=file]{display:none}
 <script>
 
 // accessories 안전 변환 헬퍼
+function _openMainPhoto(){
+  if(!photos.main) return;
+  const all=Object.values(photos).filter(Boolean).map(p=>p.dataUrl);
+  openLightbox(photos.main.dataUrl, all);
+}
 function safeAccArr(accs){
   if(Array.isArray(accs)) return accs.map(a=>typeof a==='string'?{name:a,status:''}:{name:a.name||a,status:a.status||''});
   if(typeof accs==='string'&&accs&&accs!=='없음') return accs.split(',').map(s=>({name:s.trim(),status:''})).filter(a=>a.name);
@@ -728,8 +733,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779243491';
-console.error('APP VERSION: 1779243491');
+window._appVer='1779243742';
+console.error('APP VERSION: 1779243742');
 
 const ACC_MAP = {
   '가방': [
@@ -1224,7 +1229,7 @@ async function renderResult(){
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
-    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="openLightbox('${photos.main.dataUrl}', Object.values(photos).filter(Boolean).map(p=>p.dataUrl))">`;
+    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="_openMainPhoto()">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||'—';
@@ -3104,8 +3109,7 @@ function openEditModal(i){
 function renderEditPhotos(urls){
   const wrap=document.getElementById('ef-photos-wrap');
   wrap.style.cssText='display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:visible;padding:16px 4px 6px 4px;scrollbar-width:none';
-  // 슬라이더 등록 (onclick에서 JSON 직렬화 문제 방지)
-  window._efPhotoUrls = urls;
+  window._efPhotoUrls=urls;
   wrap.innerHTML=urls.map((url,idx)=>`
     <div draggable="true" data-efidx="${idx}"
       ondragstart="efDragStart(event)"
