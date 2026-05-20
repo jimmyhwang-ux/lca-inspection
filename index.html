@@ -2261,6 +2261,10 @@ function switchSkuTab(tab, autoCat){
 }
 
 let _dbCatFilter='전체', _gearCatFilter='전체';
+// 페이지네이션
+const PAGE_SIZE = 30;
+let _skuPage = 1, _gearPage = 1;
+let _skuFilteredList = [], _gearFilteredList = [];
 function setDbCatFilter(cat,btn){
   _dbCatFilter=cat;
   document.querySelectorAll('#db-cat-tabs .cat-btn').forEach(b=>b.classList.remove('active'));
@@ -2370,12 +2374,33 @@ function renderSkuList(list, wrapId){
   const wrap=document.getElementById(wrapId||'sku-list-wrap');
   if(!wrap) return;
   updateCountBar(list, wrapId||'sku-list-wrap');
+  // 페이지네이션 상태 저장
+  const isGear = (wrapId||'sku-list-wrap')==='gear-list-wrap';
+  if(isGear){ _gearFilteredList=list; _gearPage=1; }
+  else { _skuFilteredList=list; _skuPage=1; }
+  renderSkuPage(wrapId||'sku-list-wrap');
+}
+function renderSkuPage(wrapId){
+  const isGear = wrapId==='gear-list-wrap';
+  const list = isGear ? _gearFilteredList : _skuFilteredList;
+  const page = isGear ? _gearPage : _skuPage;
+  const wrap = document.getElementById(wrapId);
+  if(!wrap) return;
   if(!list.length){
     const q=document.getElementById('sku-search')?.value.trim()||'';
     wrap.innerHTML=`<div class="sku-empty">${q?'검색 결과가 없습니다':'등록된 SKU가 없습니다'}</div>`;
     return;
   }
-  wrap.innerHTML=list.map((item,i)=>{
+  const start = (page-1)*PAGE_SIZE;
+  const pageList = list.slice(start, start+PAGE_SIZE);
+  const totalPages = Math.ceil(list.length/PAGE_SIZE);
+  const pagerHtml = totalPages>1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0;flex-wrap:wrap">
+      <button onclick="skuGoPage('${wrapId}',${page-1})" ${page<=1?'disabled':''} style="background:#1a1a1a;border:1px solid #2a2a2a;color:${page<=1?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">‹ 이전</button>
+      <span style="font-size:12px;color:#bbb">${page} / ${totalPages}페이지 <span style="color:#555">(${list.length}건)</span></span>
+      <button onclick="skuGoPage('${wrapId}',${page+1})" ${page>=totalPages?'disabled':''} style="background:#1a1a1a;border:1px solid #2a2a2a;color:${page>=totalPages?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">다음 ›</button>
+    </div>` : '';
+  wrap.innerHTML = pageList.map((item,i)=>{
     const accText=safeAccArr(item.accessories).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('');
     const thumbUrl=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean)[0]||'';
     return `<div class="sku-list-item" data-skuid="${item.id}" ondragover="event.preventDefault()" ondrop="lbDropTo(event,'${item.id}',999)">
@@ -2458,7 +2483,17 @@ function renderSkuList(list, wrapId){
         </div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + pagerHtml;
+  wrap.scrollTop = 0;
+}
+function skuGoPage(wrapId, page){
+  const isGear = wrapId==='gear-list-wrap';
+  const list = isGear ? _gearFilteredList : _skuFilteredList;
+  const totalPages = Math.ceil(list.length/PAGE_SIZE);
+  if(page<1||page>totalPages) return;
+  if(isGear) _gearPage=page; else _skuPage=page;
+  renderSkuPage(wrapId);
+  window.scrollTo(0,document.getElementById('screen-sku').offsetTop||0);
 }
 
 // 사진 선택 체크 토글
