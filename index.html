@@ -684,8 +684,42 @@ function _openMainPhoto(){
   openLightbox(photos.main.dataUrl, all);
 }
 function safeAccArr(accs){
-  if(Array.isArray(accs)) return accs.map(a=>typeof a==='string'?{name:a,status:''}:{name:a.name||a,status:a.status||''});
-  if(typeof accs==='string'&&accs&&accs!=='없음') return accs.split(',').map(s=>({name:s.trim(),status:''})).filter(a=>a.name);
+  // null/undefined → 빈 배열
+  if(!accs) return [];
+  // 이미 배열인 경우
+  if(Array.isArray(accs)){
+    return accs
+      .map(a=>{
+        if(!a) return null;
+        if(typeof a==='string'){
+          // "[]" 같은 빈 배열 문자열 제거
+          const t=a.trim();
+          if(!t||t==='[]'||t==='{}') return null;
+          return {name:t,status:''};
+        }
+        if(typeof a==='object'){
+          const n=(a.name||'').trim();
+          if(!n||n==='[]'||n==='{}') return null;
+          return {name:n,status:a.status||''};
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+  // 문자열인 경우 (CSV에서 가져온 경우)
+  if(typeof accs==='string'){
+    const t=accs.trim();
+    if(!t||t==='[]'||t==='없음'||t==='{}') return [];
+    // JSON 배열 문자열 시도
+    if(t.startsWith('[')){
+      try{
+        const parsed=JSON.parse(t);
+        return safeAccArr(parsed);
+      }catch(_){}
+    }
+    // 콤마 구분 문자열
+    return t.split(',').map(s=>s.trim()).filter(s=>s&&s!=='[]').map(s=>({name:s,status:''}));
+  }
   return [];
 }
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null,add1:null,add2:null,add3:null,add4:null,add5:null,add6:null};
@@ -733,8 +767,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779246289';
-console.error('APP VERSION: 1779246289');
+window._appVer='1779246498';
+console.error('APP VERSION: 1779246498');
 
 const ACC_MAP = {
   '가방': [
@@ -2444,7 +2478,7 @@ function renderSkuPage(wrapId){
             ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
             ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
           </div>
-          ${safeAccArr(item.accessories).length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${safeAccArr(item.accessories).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:''}
+          ${(()=>{const _a=safeAccArr(item.accessories);return _a.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${_a.map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:'';})()}
           ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#bbb;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
           <div id="sku-detail-${item.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
             ${(()=>{
@@ -3287,6 +3321,7 @@ async function saveEditSku(){
       body:JSON.stringify({action:'update_sku',skuData:{id,...data}})
     });
     const j=await res.json();
+    console.error('[saveEditSku] 응답:', JSON.stringify({status:res.status, success:j.success, error:j.error}));
     if(j.success){
       toast('✅ 수정되었습니다');
       closeEditModal();
