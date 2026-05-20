@@ -66,9 +66,8 @@ export default async function handler(req, res) {
     try {
       const srcParam = req.body.source;
       let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
-      // gear 탭만 gear로 필터링, 나머지(model·null·미전송)는 전체 조회
       if (srcParam === 'gear') query += '&source=eq.gear';
-      // db, model, undefined 모두 전체 반환 (다른 사람이 등록한 데이터도 포함)
+      // gear 외엔 source 필터 없이 전체 조회 (다른 사람 데이터 포함)
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
@@ -165,21 +164,14 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001', max_tokens: 800,
         system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
-{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
-verdict: pass/review/fail, confidence: 0-100 정수
-model_name_ko: 알 수 있는 정보 최대한 기재 (소재·패턴·모델명·사이즈 중 아는 것 전부). 예: "모노그램 캔버스 네버풀 MM", "모노그램", "네버풀", "알마 BB" 등 — null 금지.`,
+{"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
+verdict: pass/review/fail, confidence: 0-100 정수`,
         messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: 'JSON만 응답' }] }]
       })
     }).then(r => r.json());
 
     const imgbbPromise = uploadImgbb(imageBase64);
-    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
-      .then(async r => {
-        const data = await r.json();
-        console.log('[DB] status:', r.status, 'isArray:', Array.isArray(data), 'len:', Array.isArray(data) ? data.length : JSON.stringify(data).slice(0,100));
-        return data;
-      })
-      .catch(e => { console.error('[DB] fetch error:', e.message); return []; });
+    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000').then(r => r.json()).catch(() => []);
 
     const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imgbbPromise, dbPromise]);
 
@@ -257,44 +249,27 @@ model_name_ko: 알 수 있는 정보 최대한 기재 (소재·패턴·모델명
 
           let score = 0;
 
-          const _aiKoToks = (aiModelKo||'').split(/[\s·\/]+/).filter(w=>w.length>=2);
-          const _aiEnToks = (aiModel||'').split(/\s+/).filter(w=>w.length>=2);
-
-          // ── 한글 모델명 토큰 매칭 (메인) ─────────────────────────
-          // 매칭 단어 많을수록 + DB 모델명 짧을수록(구체적) 높은 점수
-          if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) {
-              score = Math.max(score, 100);
-            } else {
-              const aiToks = _aiKoToks;
-              if (aiToks.length > 0) {
-                const hits = aiToks.filter(t => dbModelKo.includes(t)).length;
-                if (hits > 0) {
-                  const matchRatio = hits / aiToks.length;
-                  const dbToks = dbModelKo.split(/[\s·\/]+/).filter(w=>w.length>=2);
-                  const specificity = hits / Math.max(dbToks.length, 1);
-                  score = Math.max(score, Math.round(60 + matchRatio * 30 + specificity * 10));
-                }
+          // ── 영문 모델명 매칭 ──────────────────────────────────────
+          if (aiModel && dbModel) {
+            if (aiModel === dbModel) score = 100;
+            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
+            else {
+              const w1 = aiModel.split(' ').filter(w => w.length >= 2);
+              const w2 = dbModel.split(' ').filter(w => w.length >= 2);
+              // 단어 1개라도 완전 포함이면 매칭 허용
+              if (w1.length >= 1) {
+                const hits = w1.filter(w => w2.includes(w)).length;
+                const ratio = hits / w1.length;
+                if (w1.length === 1 && hits === 1) score = Math.max(score, 60);
+                else if (ratio >= 0.6) score = Math.round(ratio * 60);
               }
             }
           }
 
-          // ── 영문 모델명 토큰 매칭 ────────────────────────────────
-          if (aiModel && dbModel) {
-            if (aiModel === dbModel) {
-              score = Math.max(score, 100);
-            } else {
-              const aiToks = _aiEnToks;
-              if (aiToks.length > 0) {
-                const hits = aiToks.filter(t => dbModel.includes(t)).length;
-                if (hits > 0) {
-                  const matchRatio = hits / aiToks.length;
-                  const dbToks = dbModel.split(/\s+/).filter(w=>w.length>=2);
-                  const specificity = hits / Math.max(dbToks.length, 1);
-                  score = Math.max(score, Math.round(55 + matchRatio * 30 + specificity * 10));
-                }
-              }
-            }
+          // ── 한글 모델명 매칭 ──────────────────────────────────────
+          if (aiModelKo && dbModelKo) {
+            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
+            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
           }
 
           // 최소 점수 60 이상만 매칭
@@ -316,8 +291,7 @@ model_name_ko: 알 수 있는 정보 최대한 기재 (소재·패턴·모델명
           dbMatches = topCandidates.slice(0, 5).map(c => c.item);
         }
       }
-    } catch (e) { console.error('[DB matching error]', e.message); }
-    console.log('[DB] dbData len:', Array.isArray(dbData) ? dbData.length : 'NOT ARRAY', 'dbMatches:', dbMatches.length);
+    } catch (e) { console.warn('DB skip:', e.message); }
 
     // Google Lens
     let visualMatches = [];
