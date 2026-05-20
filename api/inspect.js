@@ -1,7 +1,4 @@
-// Vercel 함수 타임아웃 60초로 설정 (기본 10초 → 초과 시 Overloaded처럼 보임)
-export const config = {
-  maxDuration: 60,
-};
+export const config = { maxDuration: 60 };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -14,16 +11,12 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-  // 접근 토큰 검증 (check_password 액션은 제외)
   if (action !== 'check_password') {
     const token = req.headers['x-access-token'];
     const ACCESS_PW = process.env.ACCESS_PASSWORD || 'lca2024';
-    if (token !== ACCESS_PW) {
-      return res.status(401).json({ success: false, error: '인증 필요' });
-    }
+    if (token !== ACCESS_PW) return res.status(401).json({ success: false, error: '인증 필요' });
   }
 
-  // Supabase 요청 헬퍼
   const sb = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
@@ -37,7 +30,6 @@ export default async function handler(req, res) {
     }
   });
 
-  // imgbb 업로드 헬퍼
   const uploadImgbb = async (b64) => {
     const form = new URLSearchParams();
     form.append('key', IMGBB_KEY);
@@ -48,15 +40,12 @@ export default async function handler(req, res) {
     return j.data.url;
   };
 
-  // ── 비밀번호 확인 ──────────────────────────────────
   if (action === 'check_password') {
     const ACCESS_PW = process.env.ACCESS_PASSWORD || 'lca2024';
     const { password } = req.body;
-    if (password === ACCESS_PW) return res.status(200).json({ success: true });
-    return res.status(200).json({ success: false });
+    return res.status(200).json({ success: password === ACCESS_PW });
   }
 
-  // ── SKU 저장 ──────────────────────────────────────
   if (action === 'save_sku') {
     try {
       let extra_images = skuData.extra_images || [];
@@ -64,8 +53,7 @@ export default async function handler(req, res) {
         const url = await uploadImgbb(skuData.newImageBase64);
         extra_images = [...extra_images, url];
       }
-      const { source: _src, ...rest } = req.body;
-      const srcVal = _src || 'model';
+      const srcVal = req.body.source || 'model';
       const payload = { ...skuData, extra_images, source: srcVal };
       delete payload.newImageBase64;
       const r = await sb('sku_items', { method: 'POST', body: JSON.stringify(payload) });
@@ -74,61 +62,41 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── SKU 목록 ──────────────────────────────────────
   if (action === 'list_sku') {
     try {
       const srcParam = req.body.source;
       let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
-      if (srcParam === 'db') {
-        query += '&source=eq.db';
-      } else if (srcParam === 'gear') {
-        query += '&source=eq.gear';
-      } else if (srcParam === 'model') {
-        query += '&source=eq.model';
-      }
+      if (srcParam === 'db')    query += '&source=eq.db';
+      else if (srcParam === 'gear')  query += '&source=eq.gear';
+      else if (srcParam === 'model') query += '&source=eq.model';
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── SKU 수정 ──────────────────────────────────────
   if (action === 'update_sku') {
     try {
       const { id, newImageBase64, ...fields } = skuData;
       if (!id) return res.status(400).json({ success: false, error: 'id 없음' });
-
       if (newImageBase64) {
         const url = await uploadImgbb(newImageBase64);
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
-
-      // accessories가 배열인지 확인 후 JSON 직렬화
-      if (fields.accessories && !Array.isArray(fields.accessories)) {
-        fields.accessories = [];
-      }
-
+      if (fields.accessories && !Array.isArray(fields.accessories)) fields.accessories = [];
       const r = await sb(`sku_items?id=eq.${id}`, {
         method: 'PATCH',
         prefer: 'return=minimal',
         body: JSON.stringify(fields)
       });
-
-      // PATCH return=minimal 은 204 No Content → 성공
-      if (r.status === 204 || r.status === 200) {
-        return res.status(200).json({ success: true });
-      }
+      if (r.status === 204 || r.status === 200) return res.status(200).json({ success: true });
       const d = await r.json();
-      // 오류 응답인 경우
-      if (d.code || d.message) {
-        return res.status(200).json({ success: false, error: d.message || JSON.stringify(d) });
-      }
+      if (d.code || d.message) return res.status(200).json({ success: false, error: d.message || JSON.stringify(d) });
       return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── SKU 삭제 ──────────────────────────────────────
   if (action === 'delete_sku') {
     try {
       await sb(`sku_items?id=eq.${skuData.id}`, { method: 'DELETE', prefer: '' });
@@ -136,73 +104,52 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── 이미지 단건 업로드 ────────────────────────────
   if (action === 'upload_image') {
     try {
-      const { imageBase64: b64 } = req.body;
-      const url = await uploadImgbb(b64);
+      const url = await uploadImgbb(req.body.imageBase64);
       return res.status(200).json({ url });
-    } catch (e) {
-      return res.status(500).json({ url: '', error: e.message });
-    }
+    } catch (e) { return res.status(500).json({ url: '', error: e.message }); }
   }
 
-  // ── 모델명으로 Google 재검색 ────────────────────────
   if (action === 'search_by_model') {
     try {
       const { brand, modelName } = req.body;
-      if (!modelName) return res.status(200).json({ success: false, error: '이미지 없음' });
+      if (!modelName) return res.status(200).json({ success: false, error: '모델명 없음' });
       const q = encodeURIComponent(`${brand||''} ${modelName}`.trim());
       const s = await fetch(`https://serpapi.com/search?engine=google_shopping&q=${q}&api_key=${SERP_KEY}&num=10`);
       const j = await s.json();
       const results = j.shopping_results || j.organic_results || [];
       const visualMatches = results.slice(0, 12).map(r => ({
-        title: r.title || '',
-        link: r.link || r.product_link || '',
-        thumbnail: r.thumbnail || r.image || '',
-        price: r.price || '',
-        source: r.source || r.merchant?.name || '',
+        title: r.title||'', link: r.link||r.product_link||'',
+        thumbnail: r.thumbnail||r.image||'', price: r.price||'',
+        source: r.source||r.merchant?.name||'',
       }));
       return res.status(200).json({ success: true, visualMatches });
-    } catch(e) {
-      return res.status(200).json({ success: false, error: e.message });
-    }
+    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
   }
 
-  // ── 모델명 한글→영문 직역 ─────────────────────────
   if (action === 'translate_model') {
     try {
       const { modelNameKo } = req.body;
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': CLAUDE_KEY,
-          'anthropic-version': '2023-06-01'
-        },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 60,
-          messages: [{
-            role: 'user',
-            content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}`
-          }]
+          model: 'claude-haiku-4-5-20251001', max_tokens: 60,
+          messages: [{ role: 'user', content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}` }]
         })
       });
       const j = await r.json();
-      const en = (j.content?.[0]?.text || '').trim().split('\n')[0];
-      return res.status(200).json({ model_name_en: en });
-    } catch (e) {
-      return res.status(500).json({ model_name_en: '' });
-    }
+      return res.status(200).json({ model_name_en: (j.content?.[0]?.text||'').trim().split('\n')[0] });
+    } catch (e) { return res.status(500).json({ model_name_en: '' }); }
   }
 
-  // ── 메인 검수 ─────────────────────────────────────
+  // ── 메인 검수 ─────────────────────────────────────────────────
   if (!imageBase64) return res.status(400).json({ error: '이미지 없음' });
 
   try {
     const imageContents = [
-      { type: 'image', source: { type: 'base64', media_type: imageMime || 'image/jpeg', data: imageBase64 } },
+      { type: 'image', source: { type: 'base64', media_type: imageMime||'image/jpeg', data: imageBase64 } },
       { type: 'text', text: '본품 전체샷' }
     ];
     for (const [key, b64] of Object.entries(extras)) {
@@ -214,14 +161,9 @@ export default async function handler(req, res) {
 
     const claudePromise = fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_KEY,
-        'anthropic-version': '2023-06-01'
-      },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
+        model: 'claude-haiku-4-5-20251001', max_tokens: 800,
         system: `명품·패션 감정사. 사진 보고 JSON만 응답. 다른 텍스트 절대 금지.
 {"brand":"영문브랜드명","category":"가방/의류/시계/쥬얼리/벨트/모자/신발/기타","model_name":"영문모델명","model_name_ko":"한글모델명(없으면null)","sku":null,"color":"색상","size":null,"confidence":85,"verdict":"pass","verdict_reason":"판정근거한줄","price_range":"참고가격","origin":null,"authenticity_notes":"확인포인트"}
 verdict: pass/review/fail, confidence: 0-100 정수`,
@@ -230,26 +172,16 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     }).then(r => r.json());
 
     const imgbbPromise = uploadImgbb(imageBase64);
+    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000').then(r => r.json()).catch(() => []);
 
-    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
-      .then(r => r.json())
-      .catch(() => []);
+    const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imgbbPromise, dbPromise]);
 
-    const [claudeRes, imageUrl, dbData] = await Promise.all([
-      claudePromise,
-      imgbbPromise,
-      dbPromise,
-    ]);
-
-    if (claudeRes.error) {
-      const msg = claudeRes.error.message || '';
-      throw new Error('Claude 오류: ' + msg);
-    }
+    if (claudeRes.error) throw new Error('Claude 오류: ' + (claudeRes.error.message||''));
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // DB 매칭
-    let dbMatch = null;
+    // ── DB 매칭 (브랜드 필수 일치 + 높은 점수 기준 강화) ─────────
+    let dbMatches = [];
     try {
       if (Array.isArray(dbData) && dbData.length > 0) {
         const aiBrand   = (analysis.brand || '').toLowerCase().trim();
@@ -264,35 +196,59 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-          if (aiBrand && dbBrand && !dbBrand.includes(aiBrand) && !aiBrand.includes(dbBrand)) continue;
-          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({item, score: 200}); continue; }
+          // ── 브랜드 필수 일치 (없으면 스킵) ──────────────────────
+          if (!aiBrand || !dbBrand) continue;
+          // 브랜드가 서로 포함 관계여야 매칭 허용
+          const brandMatch = dbBrand.includes(aiBrand) || aiBrand.includes(dbBrand);
+          if (!brandMatch) continue;
+
+          // ── SKU 완전 일치: 최고 점수 ─────────────────────────────
+          if (aiSku && dbSku && aiSku === dbSku) {
+            candidates.push({ item, score: 200 });
+            continue;
+          }
 
           let score = 0;
+
+          // ── 영문 모델명 매칭 ──────────────────────────────────────
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
-            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 60;
+            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
             else {
-              const w1 = aiModel.split(' ').filter(w => w.length >= 2);
-              const w2 = dbModel.split(' ').filter(w => w.length >= 2);
-              if (w1.length > 0) {
+              const w1 = aiModel.split(' ').filter(w => w.length >= 3);
+              const w2 = dbModel.split(' ').filter(w => w.length >= 3);
+              if (w1.length >= 2) {
                 const hits = w1.filter(w => w2.includes(w)).length;
                 const ratio = hits / w1.length;
-                if (ratio >= 0.6) score = Math.round(ratio * 50);
+                // 단어 60% 이상 일치해야 매칭
+                if (ratio >= 0.6) score = Math.round(ratio * 60);
               }
             }
           }
+
+          // ── 한글 모델명 매칭 ──────────────────────────────────────
           if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) score = Math.max(score, 90);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 55);
+            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
+            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 65);
           }
-          if (score >= 50) candidates.push({item, score});
+
+          // 최소 점수 70 이상만 매칭 (기존 50 → 70으로 강화)
+          if (score >= 70) candidates.push({ item, score });
         }
 
         if (candidates.length > 0) {
-          const maxScore = Math.max(...candidates.map(c => c.score));
-          const topCandidates = candidates.filter(c => c.score === maxScore);
-          const withNotes = topCandidates.find(c => c.item.notes && c.item.notes.trim());
-          dbMatch = (withNotes || topCandidates[0]).item;
+          // 점수 내림차순 정렬
+          candidates.sort((a, b) => b.score - a.score);
+          const maxScore = candidates[0].score;
+          // 최고점 ±10점 이내만 표시 (너무 낮은 것 제외)
+          const topCandidates = candidates.filter(c => c.score >= maxScore - 10);
+          // 특이사항 있는 것 우선, 최대 5개
+          topCandidates.sort((a, b) => {
+            const aN = a.item.notes ? 1 : 0;
+            const bN = b.item.notes ? 1 : 0;
+            return bN - aN;
+          });
+          dbMatches = topCandidates.slice(0, 5).map(c => c.item);
         }
       }
     } catch (e) { console.warn('DB skip:', e.message); }
@@ -311,16 +267,17 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       visualMatches = j.visual_matches || [];
     } catch (e) { console.warn('Lens skip:', e.message); }
 
-    if (dbMatch) {
-      dbMatch = {
-        ...dbMatch,
-        extra_images: Array.isArray(dbMatch.extra_images) ? dbMatch.extra_images : [],
-        ref_image_url: dbMatch.ref_image_url || null,
-      };
-    }
+    // dbMatches 후처리
+    dbMatches = dbMatches.map(m => ({
+      ...m,
+      extra_images: Array.isArray(m.extra_images) ? m.extra_images : [],
+      ref_image_url: m.ref_image_url || null,
+    }));
 
     return res.status(200).json({
-      success: true, imageUrl, analysis, dbMatch,
+      success: true, imageUrl, analysis,
+      dbMatch: dbMatches[0] || null,
+      dbMatches,
       visualMatches: visualMatches.slice(0, 12)
     });
 
