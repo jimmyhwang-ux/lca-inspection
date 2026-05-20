@@ -685,6 +685,50 @@ function _thumbErr(img){
   ph.textContent='📦';
   img.parentNode.insertBefore(ph, img.nextSibling);
 }
+
+async function saveDbCardEdit(itemId, idx){
+  const size_actual = document.getElementById('dbedit-size-'+idx)?.value||'';
+  const size_label  = document.getElementById('dbedit-sizelabel-'+idx)?.value||'';
+  const sku_code    = document.getElementById('dbedit-sku-'+idx)?.value||'';
+  const notes       = document.getElementById('dbedit-notes-'+idx)?.value||'';
+  const site_url    = document.getElementById('dbedit-url-'+idx)?.value||'';
+
+  // 현재 카드 매칭 데이터도 업데이트
+  const card = (window._cardMatches||[])[idx];
+
+  try{
+    const res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku', skuData:{
+        id: itemId,
+        size_actual, size_label, sku_code, notes, site_url
+      }})
+    });
+    const j = await res.json();
+    if(j.success){
+      toast('✅ DB 저장 완료!');
+      // 화면 필드도 즉시 반영
+      if(card){
+        card.size_actual = size_actual;
+        card.size_label  = size_label;
+        card.sku_code    = sku_code;
+        card.notes       = notes;
+        card.site_url    = site_url;
+      }
+      // 결과 화면 필드 업데이트
+      const sizeEl = document.getElementById('r-size');
+      const sizeNameEl = document.getElementById('r-size-name');
+      const skuEl = document.getElementById('r-sku');
+      if(sizeEl && size_actual){ sizeEl.textContent=size_actual; sizeEl.className='info-cell-val'; }
+      if(sizeNameEl && size_label){ sizeNameEl.textContent=size_label; sizeNameEl.className='info-cell-val'; }
+      if(skuEl && sku_code){ skuEl.textContent=sku_code; skuEl.className='info-cell-val'; }
+    } else {
+      toast('❌ 저장 실패: '+(j.error||''));
+    }
+  }catch(e){ toast('❌ 오류: '+e.message); }
+}
+
 function _openMainPhoto(){
   if(!photos.main) return;
   const all=Object.values(photos).filter(Boolean).map(p=>p.dataUrl);
@@ -774,8 +818,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779264232';
-console.error('APP VERSION: 1779264232');
+window._appVer='1779265275';
+console.error('APP VERSION: 1779265275');
 
 const ACC_MAP = {
   '가방': [
@@ -1217,6 +1261,41 @@ function renderDbCard(idx){
         ${accList?'부속품: '+accList+'<br>':''}
         ${m.notes?`<span style="color:#f59e0b;font-size:11px;display:block;margin-top:4px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b">📄 특이사항: ${m.notes}</span>`:''}
         ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 7px;text-decoration:none">🔗 사이트</a>`:''}
+      </div>
+      <!-- 인라인 편집 UI -->
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(34,197,94,.2)">
+        <div style="font-size:10px;color:#22c55e;font-weight:700;margin-bottom:8px">✏️ DB 수정</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">실측사이즈</span>
+            <input id="dbedit-size-${idx}" type="text" value="${m.size_actual||''}" placeholder="가로 cm × 세로 cm × 높이 cm"
+              style="flex:1;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:inherit">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">사이즈명칭</span>
+            <input id="dbedit-sizelabel-${idx}" type="text" value="${m.size_label||''}" placeholder="예: 미니, BB, PM"
+              style="flex:1;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:inherit">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">스타일번호</span>
+            <input id="dbedit-sku-${idx}" type="text" value="${m.sku_code||''}" placeholder="SKU 코드"
+              style="flex:1;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:inherit">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">특이사항</span>
+            <input id="dbedit-notes-${idx}" type="text" value="${(m.notes||'').replace(/"/g,'&quot;')}" placeholder="메모"
+              style="flex:1;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:inherit">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">사이트URL</span>
+            <input id="dbedit-url-${idx}" type="text" value="${m.site_url||''}" placeholder="https://..."
+              style="flex:1;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:inherit">
+          </div>
+        </div>
+        <button onclick="event.stopPropagation();saveDbCardEdit('${m.id}',${idx})"
+          style="width:100%;margin-top:8px;background:#22c55e;color:#000;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">
+          💾 DB 저장
+        </button>
       </div>
     </div>
   </div>`;
