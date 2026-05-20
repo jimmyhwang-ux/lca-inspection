@@ -2284,6 +2284,7 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
   if(catFilter&&catFilter!=='전체') filtered=filtered.filter(s=>{
     let c=(s.category||'').trim();
     if(c==='가방/지갑') c='가방'; // 구 데이터 호환
+    if(c==='주얼리/액세서리') c='주얼리'; // 구 데이터 호환
     return c===catFilter;
   });
   if(q){
@@ -2354,6 +2355,7 @@ function updateCountBar(list, wrapId){
     // 구 데이터 호환: '가방/지갑' → '가방'으로 정규화
     let c=(s.category||'기타').trim();
     if(c==='가방/지갑') c='가방';
+    if(c==='주얼리/액세서리') c='주얼리';
     catCounts[c]=(catCounts[c]||0)+1;
   });
   const catItems = cats
@@ -3309,7 +3311,7 @@ function filterSkuList(){
 
   const filtered=skuListAll.filter(i=>{
     const cat=i.category||'';
-    let _normCat=cat; if(_normCat==='가방/지갑') _normCat='가방';
+    let _normCat=cat; if(_normCat==='가방/지갑') _normCat='가방'; if(_normCat==='주얼리/액세서리') _normCat='주얼리';
     const catOk=_skuCatFilter==='전체'||_normCat===_skuCatFilter;
     if(!q) return catOk;
     const brand=(i.brand||'').toLowerCase();
