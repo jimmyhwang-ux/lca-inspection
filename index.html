@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779262002 -->
+  <!-- v1778772226 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779262002';
-console.error('APP VERSION: 1779262002');
+window._appVer='1779262788';
+console.error('APP VERSION: 1779262788');
 
 const ACC_MAP = {
   '가방': [
@@ -826,13 +826,13 @@ function triggerFile(id){document.getElementById(id).click()}
 function processImage(src, key, fileSrc){
   const img=new Image();
   img.onload=()=>{
-    const MAX=800; // 과부하 방지: 1200→800
+    const MAX=1200;
     let w=img.width,h=img.height;
     if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
     const canvas=document.createElement('canvas');
     canvas.width=w;canvas.height=h;
     canvas.getContext('2d').drawImage(img,0,0,w,h);
-    const dataUrl=canvas.toDataURL('image/jpeg',0.75); // 품질 0.85→0.75
+    const dataUrl=canvas.toDataURL('image/jpeg',0.85);
     photos[key]={file:fileSrc||null,dataUrl,mime:'image/jpeg'};
     const prev=document.getElementById('prev-'+key);
     if(prev){prev.src=dataUrl;prev.style.display='block';}
@@ -984,13 +984,12 @@ async function startInspection(){
     for(const k of['label1','label2','label3','logo','origin','back']){
       if(photos[k])extras[k]=photos[k].dataUrl.split(',')[1];
     }
-    // Overloaded 시 최대 6회 재시도 (10초 간격, 지수 백오프)
+    // Overloaded 시 최대 3회 재시도 (5초 간격)
     let res, data;
-    for(let _try=0;_try<6;_try++){
+    for(let _try=0;_try<3;_try++){
       if(_try>0){
-        const wait=Math.min(10000*_try, 40000); // 10초, 20초, 30초, 40초...
-        toast(`⏳ Claude 과부하 중... ${_try}회 재시도 (${wait/1000}초 후)`);
-        await delay(wait);
+        toast(`⏳ Claude 과부하 중... ${_try}회 재시도 (5초 후)`);
+        await delay(5000);
       }
       res=await fetch('/api/inspect',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -999,7 +998,7 @@ async function startInspection(){
       if(res.ok) break;
       const eBody=await res.clone().json().catch(()=>({error:'API 오류'}));
       const eMsg=(eBody.error||'').toLowerCase();
-      if(eMsg.includes('overload')&&_try<5) continue;
+      if(eMsg.includes('overload')&&_try<2) continue;
       throw new Error(eBody.error||'API 오류');
     }
     if(!res.ok){const e=await res.json().catch(()=>({error:'API 오류'}));throw new Error(e.error||'API 오류');}
@@ -1012,7 +1011,6 @@ async function startInspection(){
     window._cardMatches=[];
     window._dbEnriched=[];
     window._appliedCardId=null;
-    _searchDbRunning=false; // 검색 플래그 초기화
   _refDataAll = []; // 참고자료 캐시 초기화
   const _refSec=document.getElementById('ref-section'); if(_refSec) _refSec.style.display='none';
   const _refPanel=document.getElementById('ref-panel'); if(_refPanel) _refPanel.style.display='none';
@@ -1085,15 +1083,6 @@ function applyCardMatch(idx, cardId){
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
-  // 연쇄 방지: 활성 input blur → oninput 재트리거 차단
-  _searchDbRunning=false;
-  window._userEditingField=false;
-  // r-model-ko, r-model, r-sku 중 input 상태인 것 강제 blur
-  ['r-model-ko','r-model','r-sku'].forEach(fid=>{
-    const el=document.getElementById(fid);
-    const inp=el?.querySelector('input');
-    if(inp) inp.blur();
-  });
   // 이미 적용된 카드 재클릭 → 해제
   const selCard=cardId?document.getElementById(cardId):null;
   if(selCard&&selCard.style.border==='2px solid rgb(34, 197, 94)'){
@@ -1105,7 +1094,6 @@ function applyDbMatch(item, cardId){
   const rBrand = document.getElementById('r-brand');
   const rModelKo = document.getElementById('r-model-ko');
   const rModel = document.getElementById('r-model');
-  window._userEditingField=false; // applyDbMatch에 의한 변경임을 표시
   if(rBrand && item.brand) rBrand.textContent = item.brand;
   if(rModelKo && item.model_name_ko) rModelKo.textContent = item.model_name_ko;
   if(rModel && item.model_name) rModel.textContent = item.model_name;
@@ -1470,8 +1458,6 @@ function addAccessory(){
 function editField(id){
   const el=document.getElementById(id);
   const cur=el.textContent;
-  // 모델명/SKU 필드 편집 시작 시 검색 플래그 초기화
-  if(id==='r-model'||id==='r-model-ko'||id==='r-sku') _searchDbRunning=false;
 
   if(id==='r-size'){
     // 이미 편집 중이면 재호출 방지
@@ -1502,11 +1488,6 @@ function editField(id){
   window._userEditingField=true;
   inp.focus();
   inp.select();
-  // 기존 값이 있으면 탭하자마자 자동 검색 (변경 없이 탭만 해도 검색됨)
-  if(isSearch && cur && cur!=='—' && cur.trim().length>=2){
-    clearTimeout(_dbSearchTimer);
-    _dbSearchTimer=setTimeout(()=>searchDbFromField(id,cur.trim()),800);
-  }
 }
 
 let _sizeVal='';
@@ -1529,18 +1510,17 @@ const SIZE_CONFIG = {
 let _refDataAll = []; // 전체 DB+검기어 데이터 캐시
 
 async function loadRefData(modelName){
-  // 모델명으로 전체 SKU + 검기어에서 참고자료 검색
+  // 모델명으로 DB/검기어에서 참고자료 검색
   try{
-    const [allRes, gearRes] = await Promise.all([
+    const [dbRes, gearRes] = await Promise.all([
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'list_sku'})}),
+        body:JSON.stringify({action:'list_sku',source:'db'})}),
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'list_sku',source:'gear'})})
     ]);
-    const allJ = await allRes.json();
+    const dbJ = await dbRes.json();
     const gearJ = await gearRes.json();
-    const gearIds = new Set((gearJ.data||[]).map(s=>String(s.id)));
-    const dbList = (allJ.data||[]).filter(s=>!gearIds.has(String(s.id))).map(s=>({...s,_refType:'db'}));
+    const dbList = (dbJ.data||[]).map(s=>({...s,_refType:'db'}));
     const gearList = (gearJ.data||[]).map(s=>({...s,_refType:'gear'}));
     _refDataAll = [...dbList, ...gearList];
     searchRefData(modelName);
@@ -1777,6 +1757,10 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
+      // 렌즈 재검색 후 DB도 재매칭 시도 (적용 중에는 스킵)
+      if(modelName&&modelName!=='—'&&!window._skipDbRematch){
+        setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
+      }
       window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
@@ -1808,11 +1792,11 @@ async function translateToEn(koName, targetEnId){
 
 async function autoTranslateModelName(koName){
   try{
-    const srcFilter=activeTab==='gear'?'gear':null;
-    const bodyData=srcFilter?{action:'list_sku',source:srcFilter}:{action:'list_sku'};
+    const srcMap={'list':'model','gear':'gear'};
+    const srcFilter=srcMap[activeTab]||null;
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(bodyData)
+      body:JSON.stringify({action:'list_sku',source:srcFilter})
     });
     const j=await res.json();
     if(j.success&&j.data){
@@ -2066,14 +2050,11 @@ function onResultFieldInput(input,id){
   _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
 }
 
-let _searchDbRunning=false;
 async function searchDbFromField(fieldId,val){
-if(_searchDbRunning) return; // 중복 실행 방지
-_searchDbRunning=true;
 try{
 const res=await fetch('/api/inspect',{
 method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({action:'list_sku'})
+body:JSON.stringify({action:'list_sku',source:'model'})
 });
 const j=await res.json();
 if(!j.success||!j.data)return;
@@ -2088,43 +2069,36 @@ matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
 if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
 // 1차: 완전 일치
 matches=list.filter(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
-// 2차: 부분일치 + 토큰 매칭 — 브랜드 필터 먼저 적용
+// 2차: 부분 일치 (브랜드 필터 적용)
 if(!matches.length){
-// 브랜드 필터 함수
-const normCur=curBrand.replace(/\s+/g,'');
-const curKo=curBrand?(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||'').toLowerCase():'';
-const brandOk=(i)=>{
-  if(!curBrand) return true;
-  const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
-  if(db.includes(normCur)||normCur.includes(db)) return true;
-  if(curKo&&db.includes(curKo.replace(/\s+/g,''))) return true;
-  const dbEn=Object.entries(BRAND_KO_MAP).find(([,val])=>db.includes(val.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
-  if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
-  return false;
-};
-// 브랜드 필터 적용된 목록만 대상
-const brandList=curBrand?list.filter(brandOk):list;
-// includes 매칭
-const partial=brandList.filter(i=>
-  (i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
-  (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
+const partial=list.filter(i=>
+(i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
+(i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
 );
-// 토큰 매칭 — 단어 하나만 맞아도
-const vToks=v.split(/\s+/).filter(w=>w.length>=2);
-const tokenMatched=vToks.length>0?brandList.filter(i=>{
-  const ko=(i.model_name_ko||'').toLowerCase();
-  const en=(i.model_name||'').toLowerCase();
-  return vToks.some(t=>ko.includes(t)||en.includes(t));
-}):[];
-// 합치기 (중복 제거)
-matches=[...partial,...tokenMatched.filter(t=>!partial.some(p=>p.id===t.id))];
+// 브랜드 필터: BRAND_KO_MAP으로 영문↔한글 변환 포함
+if(curBrand){
+  const normCur=curBrand.replace(/\s+/g,'');
+  // 영문→한글 변환
+  // BRAND_KO_MAP에서 영문→한글 변환 (공백 제거 후 검색)
+  const curKo=(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||
+    Object.entries(BRAND_KO_MAP).find(([k])=>k.replace(/\s+/g,'')===normCur)?.[1]||'').toLowerCase();
+  const brandFiltered=partial.filter(i=>{
+    const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
+    if(db.includes(normCur)||normCur.includes(db)) return true;
+    if(curKo && db.includes(curKo.replace(/\s+/g,''))) return true;
+    // DB 한글→영문 역방향
+    const dbEn=Object.entries(BRAND_KO_MAP).find(([,v])=>db.includes(v.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
+    if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
+    return false;
+  });
+  matches=brandFiltered.length?brandFiltered:[];
+} else {
+  matches=partial;
 }
 }
-if(matches.length>=1){
-  clearTimeout(_dbSearchTimer); // 혹시 남은 타이머 제거
-  renderDbMatchCards(matches);
 }
-}catch(e){console.warn('자동조회 실패',e);} finally{_searchDbRunning=false;}
+if(matches.length>=1) renderDbMatchCards(matches);
+}catch(e){console.warn('자동조회 실패',e);}
 }
 
 
@@ -2429,11 +2403,11 @@ async function loadSkuList(tab){
   const wrap=document.getElementById(wrapId);
   if(wrap) wrap.innerHTML='<div class="sku-empty">불러오는 중...</div>';
   try{
-    const srcFilter=activeTab==='gear'?'gear':null;
-    const bodyData=srcFilter?{action:'list_sku',source:srcFilter}:{action:'list_sku'};
+    const srcMap={'list':'model','gear':'gear'};
+    const srcFilter=srcMap[activeTab]||null;
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(bodyData)
+      body:JSON.stringify({action:'list_sku',source:srcFilter})
     });
     const j=await res.json();
     console.error('[loadSkuList] 응답:', JSON.stringify({
