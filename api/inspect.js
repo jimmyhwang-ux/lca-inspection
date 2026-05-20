@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // Supabase 요청 헬퍼 — Range 헤더로 1000행 기본 제한 해제
+  // Supabase 요청 헬퍼
   const sb = (path, opts = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
     headers: {
@@ -96,13 +96,34 @@ export default async function handler(req, res) {
   if (action === 'update_sku') {
     try {
       const { id, newImageBase64, ...fields } = skuData;
+      if (!id) return res.status(400).json({ success: false, error: 'id 없음' });
+
       if (newImageBase64) {
         const url = await uploadImgbb(newImageBase64);
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
-      const r = await sb(`sku_items?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(fields) });
+
+      // accessories가 배열인지 확인 후 JSON 직렬화
+      if (fields.accessories && !Array.isArray(fields.accessories)) {
+        fields.accessories = [];
+      }
+
+      const r = await sb(`sku_items?id=eq.${id}`, {
+        method: 'PATCH',
+        prefer: 'return=minimal',
+        body: JSON.stringify(fields)
+      });
+
+      // PATCH return=minimal 은 204 No Content → 성공
+      if (r.status === 204 || r.status === 200) {
+        return res.status(200).json({ success: true });
+      }
       const d = await r.json();
+      // 오류 응답인 경우
+      if (d.code || d.message) {
+        return res.status(200).json({ success: false, error: d.message || JSON.stringify(d) });
+      }
       return res.status(200).json({ success: true, data: d });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
@@ -276,7 +297,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       }
     } catch (e) { console.warn('DB skip:', e.message); }
 
-    // Google Lens — 타임아웃 방지를 위해 5초 제한
+    // Google Lens
     let visualMatches = [];
     try {
       const lensController = new AbortController();
