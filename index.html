@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779255170 -->
+  <!-- v1779255350 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779255170';
-console.error('APP VERSION: 1779255170');
+window._appVer='1779255350';
+console.error('APP VERSION: 1779255350');
 
 const ACC_MAP = {
   '가방': [
@@ -1251,8 +1251,14 @@ function renderDbMatchCards(matches){
     renderDbCard(0);
   }
 
-  // 첫 번째 카드 자동 적용 제거 — 카드만 표시하고 사용자가 직접 적용
-  // (자동 적용 시 연쇄 재매칭 버그 발생으로 제거)
+  // 첫 번째 카드 자동 적용 — 수동 해제 후엔 스킵
+  if(!window._userResetDb){
+    try {
+      applyDbMatch(matches[0],'db-card-0');
+    } catch(e) {
+      console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
+    }
+  }
 
   // 참고자료 자동 로드 — 매칭된 모델명으로
   const _refModelName = matches[0]?.model_name_ko || matches[0]?.model_name || '';
@@ -1341,12 +1347,6 @@ async function renderResult(){
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
-      // 최초 1회만 자동 적용 (연쇄 방지: _skipDbRematch로 이후 차단)
-      if(!window._userResetDb && enriched.length>0){
-        window._skipDbRematch=true;
-        applyDbMatch(enriched[0],'db-card-0');
-        setTimeout(()=>{ window._skipDbRematch=false; }, 2000);
-      }
 
     })();
 
@@ -1513,7 +1513,6 @@ async function loadRefData(modelName){
   // 모델명으로 전체 SKU + 검기어에서 참고자료 검색
   try{
     const [allRes, gearRes] = await Promise.all([
-      // source 필터 없이 전체 조회 (누가 적재했든 모두 포함)
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'list_sku'})}),
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1521,7 +1520,6 @@ async function loadRefData(modelName){
     ]);
     const allJ = await allRes.json();
     const gearJ = await gearRes.json();
-    // gear ID 셋 만들어서 중복 제거, gear 아닌 나머지를 db 참고자료로
     const gearIds = new Set((gearJ.data||[]).map(s=>String(s.id)));
     const dbList = (allJ.data||[]).filter(s=>!gearIds.has(String(s.id))).map(s=>({...s,_refType:'db'}));
     const gearList = (gearJ.data||[]).map(s=>({...s,_refType:'gear'}));
@@ -1760,7 +1758,11 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
-      setTimeout(()=>{ window._skipDbRematch=false; }, 1000); // 1초 후 해제
+      // 렌즈 재검색 후 DB도 재매칭 시도 (적용 중에는 스킵)
+      if(modelName&&modelName!=='—'&&!window._skipDbRematch){
+        setTimeout(()=>searchDbFromField('r-model-ko', modelName), 300);
+      }
+      window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
     }
@@ -1790,11 +1792,12 @@ async function translateToEn(koName, targetEnId){
 }
 
 async function autoTranslateModelName(koName){
-  if(window._skipDbRematch) return; // 자동 적용 중엔 번역/재매칭 차단
   try{
+    const srcFilter=activeTab==='gear'?'gear':null;
+    const bodyData=srcFilter?{action:'list_sku',source:srcFilter}:{action:'list_sku'};
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku'})
+      body:JSON.stringify(bodyData)
     });
     const j=await res.json();
     if(j.success&&j.data){
@@ -2043,7 +2046,6 @@ function onEfModelKoInput(input){
 
 function onResultFieldInput(input,id){
   clearTimeout(_dbSearchTimer);
-  if(window._skipDbRematch) return; // 자동 적용 중엔 재매칭 차단
   const val=input.value.trim();
   if(!val||val.length<2)return;
   _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
@@ -2053,7 +2055,7 @@ async function searchDbFromField(fieldId,val){
 try{
 const res=await fetch('/api/inspect',{
 method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({action:'list_sku'})
+body:JSON.stringify({action:'list_sku',source:'model'})
 });
 const j=await res.json();
 if(!j.success||!j.data)return;
@@ -2094,17 +2096,7 @@ if(curBrand){
 }
 }
 }
-if(matches.length>=1){
-  // 이전 매칭 카드/상태 초기화 후 새로 렌더
-  window._userResetDb=true; // 자동 적용 방지
-  window._appliedCardId=null;
-  window._cardMatches=[];
-  window._dbEnriched=[];
-  const dbWrap=document.getElementById('db-match-wrap');
-  if(dbWrap) dbWrap.innerHTML='';
-  renderDbMatchCards(matches);
-  window._userResetDb=false;
-}
+if(matches.length>=1) renderDbMatchCards(matches);
 }catch(e){console.warn('자동조회 실패',e);}
 }
 
@@ -2410,12 +2402,11 @@ async function loadSkuList(tab){
   const wrap=document.getElementById(wrapId);
   if(wrap) wrap.innerHTML='<div class="sku-empty">불러오는 중...</div>';
   try{
-    // gear 탭만 gear 필터링, 모델SKU 탭은 전체 조회 (다른 사람 데이터도 표시)
-    const srcFilter=activeTab==='gear'?'gear':null;
-    const bodyData=srcFilter?{action:'list_sku',source:srcFilter}:{action:'list_sku'};
+    const srcMap={'list':'model','gear':'gear'};
+    const srcFilter=srcMap[activeTab]||null;
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(bodyData)
+      body:JSON.stringify({action:'list_sku',source:srcFilter})
     });
     const j=await res.json();
     console.error('[loadSkuList] 응답:', JSON.stringify({
