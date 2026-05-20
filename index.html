@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779247215';
-console.error('APP VERSION: 1779247215');
+window._appVer='1779248093';
+console.error('APP VERSION: 1779248093');
 
 const ACC_MAP = {
   '가방': [
@@ -1008,6 +1008,9 @@ async function startInspection(){
     setStep(3,'done');setStep(4,'active');
     resultData=data;
     window._userResetDb=false; // 새 검수 시 초기화
+    window._cardMatches=[];
+    window._dbEnriched=[];
+    window._appliedCardId=null;
   _refDataAll = []; // 참고자료 캐시 초기화
   const _refSec=document.getElementById('ref-section'); if(_refSec) _refSec.style.display='none';
   const _refPanel=document.getElementById('ref-panel'); if(_refPanel) _refPanel.style.display='none';
@@ -1265,6 +1268,12 @@ function renderDbMatchCards(matches){
 }
 
 async function renderResult(){
+  // 새 검수 시작 시 이전 카드 데이터 완전 초기화
+  window._cardMatches = [];
+  window._dbEnriched = [];
+  window._userResetDb = false;
+  window._appliedCardId = null;
+  document.getElementById('db-match-wrap').innerHTML = '';
   const{analysis,visualMatches=[],dbMatch}=resultData;
   const conf=analysis.confidence||0;
   const badge=document.getElementById('conf-badge');
