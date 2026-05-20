@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779262788';
-console.error('APP VERSION: 1779262788');
+window._appVer='1779264029';
+console.error('APP VERSION: 1779264029');
 
 const ACC_MAP = {
   '가방': [
@@ -2079,9 +2079,12 @@ const partial=list.filter(i=>
 if(curBrand){
   const normCur=curBrand.replace(/\s+/g,'');
   // 영문→한글 변환
-  // BRAND_KO_MAP에서 영문→한글 변환 (공백 제거 후 검색)
-  const curKo=(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||
-    Object.entries(BRAND_KO_MAP).find(([k])=>k.replace(/\s+/g,'')===normCur)?.[1]||'').toLowerCase();
+  // BRAND_KO_MAP은 한글→영문 맵이므로 영문→한글은 역방향으로 찾기
+  // 예: normCur='louisvuitton' → 값이 'louis vuitton'인 키 '루이비통' 찾기
+  const curKo=(Object.entries(BRAND_KO_MAP).find(([ko,en])=>
+    en.replace(/\s+/g,'').toLowerCase()===normCur ||
+    en.toLowerCase()===curBrand
+  )?.[0] || '').toLowerCase();
   const brandFiltered=partial.filter(i=>{
     const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
     if(db.includes(normCur)||normCur.includes(db)) return true;
