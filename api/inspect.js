@@ -238,7 +238,9 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
 
           // ── 브랜드 필수 일치 (한글↔영문 변환 포함) ──────────────
           if (!aiBrand || !dbBrand) continue;
-          if (!brandMatches(aiBrand, dbBrand)) continue;
+          // Unknown 브랜드면 브랜드 필터 건너뜀 (모델명으로만 매칭)
+          const isUnknownBrand = ['unknown','기타','알수없음','unidentified'].includes(aiBrand.toLowerCase());
+          if (!isUnknownBrand && !brandMatches(aiBrand, dbBrand)) continue;
 
           // ── SKU 완전 일치: 최고 점수 ─────────────────────────────
           if (aiSku && dbSku && aiSku === dbSku) {
