@@ -1070,7 +1070,14 @@ function applyDbMatch(item, cardId){
   }
 
   // ── 5. 부속품 ────────────────────────────────────────────────
-  accessories = (item.accessories || []).map(a => ({name: a.name, status: a.status || ''}));
+  const _accs = item.accessories;
+  if(Array.isArray(_accs)){
+    accessories = _accs.map(a => typeof a==='string'?{name:a,status:''}:{name:a.name||a,status:a.status||''});
+  } else if(typeof _accs==='string' && _accs && _accs!=='없음'){
+    accessories = _accs.split(',').map(s=>({name:s.trim(),status:''})).filter(a=>a.name);
+  } else {
+    accessories = [];
+  }
   renderAcc();
 
   // ── 6. 카드 하이라이트 ──────────────────────────────────────
