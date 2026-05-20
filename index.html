@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779254890 -->
+  <!-- v1779255170 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779254890';
-console.error('APP VERSION: 1779254890');
+window._appVer='1779255170';
+console.error('APP VERSION: 1779255170');
 
 const ACC_MAP = {
   '가방': [
@@ -1251,14 +1251,8 @@ function renderDbMatchCards(matches){
     renderDbCard(0);
   }
 
-  // 첫 번째 카드 자동 적용 — 수동 해제 후엔 스킵
-  if(!window._userResetDb){
-    try {
-      applyDbMatch(matches[0],'db-card-0');
-    } catch(e) {
-      console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
-    }
-  }
+  // 첫 번째 카드 자동 적용 제거 — 카드만 표시하고 사용자가 직접 적용
+  // (자동 적용 시 연쇄 재매칭 버그 발생으로 제거)
 
   // 참고자료 자동 로드 — 매칭된 모델명으로
   const _refModelName = matches[0]?.model_name_ko || matches[0]?.model_name || '';
@@ -1347,6 +1341,12 @@ async function renderResult(){
       });
       window._dbEnriched=enriched;
       renderDbMatchCards(enriched);
+      // 최초 1회만 자동 적용 (연쇄 방지: _skipDbRematch로 이후 차단)
+      if(!window._userResetDb && enriched.length>0){
+        window._skipDbRematch=true;
+        applyDbMatch(enriched[0],'db-card-0');
+        setTimeout(()=>{ window._skipDbRematch=false; }, 2000);
+      }
 
     })();
 
@@ -2096,13 +2096,14 @@ if(curBrand){
 }
 if(matches.length>=1){
   // 이전 매칭 카드/상태 초기화 후 새로 렌더
-  window._userResetDb=false;
+  window._userResetDb=true; // 자동 적용 방지
   window._appliedCardId=null;
   window._cardMatches=[];
   window._dbEnriched=[];
   const dbWrap=document.getElementById('db-match-wrap');
   if(dbWrap) dbWrap.innerHTML='';
   renderDbMatchCards(matches);
+  window._userResetDb=false;
 }
 }catch(e){console.warn('자동조회 실패',e);}
 }
