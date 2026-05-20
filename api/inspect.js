@@ -68,7 +68,7 @@ export default async function handler(req, res) {
       let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
       if (srcParam === 'db')    query += '&source=eq.db';
       else if (srcParam === 'gear')  query += '&source=eq.gear';
-      else if (srcParam === 'model') query += '&source=eq.model';
+      else if (srcParam === 'model') query += '&or=(source.eq.model,source.is.null)';
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
@@ -255,13 +255,13 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             if (aiModel === dbModel) score = 100;
             else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
             else {
-              const w1 = aiModel.split(' ').filter(w => w.length >= 3);
-              const w2 = dbModel.split(' ').filter(w => w.length >= 3);
+              const w1 = aiModel.split(' ').filter(w => w.length >= 2);
+              const w2 = dbModel.split(' ').filter(w => w.length >= 2);
               // 단어 1개라도 완전 포함이면 매칭 허용
               if (w1.length >= 1) {
                 const hits = w1.filter(w => w2.includes(w)).length;
                 const ratio = hits / w1.length;
-                if (w1.length === 1 && hits === 1) score = Math.max(score, 55);
+                if (w1.length === 1 && hits === 1) score = Math.max(score, 60);
                 else if (ratio >= 0.6) score = Math.round(ratio * 60);
               }
             }
@@ -273,8 +273,8 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
           }
 
-          // 최소 점수 70 이상만 매칭 (기존 50 → 70으로 강화)
-          if (score >= 70) candidates.push({ item, score });
+          // 최소 점수 60 이상만 매칭
+          if (score >= 60) candidates.push({ item, score });
         }
 
         if (candidates.length > 0) {
