@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779256057 -->
+  <!-- v1779256789 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779256057';
-console.error('APP VERSION: 1779256057');
+window._appVer='1779256789';
+console.error('APP VERSION: 1779256789');
 
 const ACC_MAP = {
   '가방': [
@@ -2404,11 +2404,11 @@ async function loadSkuList(tab){
   const wrap=document.getElementById(wrapId);
   if(wrap) wrap.innerHTML='<div class="sku-empty">불러오는 중...</div>';
   try{
-    const srcMap={'list':'model','gear':'gear'};
-    const srcFilter=srcMap[activeTab]||null;
+    const srcFilter=activeTab==='gear'?'gear':null;
+    const bodyData=srcFilter?{action:'list_sku',source:srcFilter}:{action:'list_sku'};
     const res=await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'list_sku',source:srcFilter})
+      body:JSON.stringify(bodyData)
     });
     const j=await res.json();
     console.error('[loadSkuList] 응답:', JSON.stringify({
