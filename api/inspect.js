@@ -171,7 +171,13 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     }).then(r => r.json());
 
     const imgbbPromise = uploadImgbb(imageBase64);
-    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000').then(r => r.json()).catch(() => []);
+    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
+      .then(async r => {
+        const data = await r.json();
+        console.log('[DB]', r.status, Array.isArray(data)?data.length:'ERR:'+JSON.stringify(data).slice(0,80));
+        return Array.isArray(data) ? data : [];
+      })
+      .catch(e => { console.error('[DB fetch error]', e.message); return []; });
 
     const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imgbbPromise, dbPromise]);
 
