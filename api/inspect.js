@@ -257,18 +257,23 @@ model_name_ko: 알 수 있는 정보 최대한 기재 (소재·패턴·모델명
 
           let score = 0;
 
+          const _aiKoToks = (aiModelKo||'').split(/[\s·\/]+/).filter(w=>w.length>=2);
+          const _aiEnToks = (aiModel||'').split(/\s+/).filter(w=>w.length>=2);
+
           // ── 한글 모델명 토큰 매칭 (메인) ─────────────────────────
-          // "모노그램" 하나만 뱉어도 "모노그램 캔버스 네버풀 MM"에 매칭
-          // 매칭 단어 많을수록 높은 점수 → 정확한 항목이 상위 카드로
+          // 매칭 단어 많을수록 + DB 모델명 짧을수록(구체적) 높은 점수
           if (aiModelKo && dbModelKo) {
             if (aiModelKo === dbModelKo) {
               score = Math.max(score, 100);
             } else {
-              const aiToks = aiModelKo.split(/[\s·\/]+/).filter(w => w.length >= 2);
+              const aiToks = _aiKoToks;
               if (aiToks.length > 0) {
                 const hits = aiToks.filter(t => dbModelKo.includes(t)).length;
                 if (hits > 0) {
-                  score = Math.max(score, Math.round(60 + (hits / aiToks.length) * 35));
+                  const matchRatio = hits / aiToks.length;
+                  const dbToks = dbModelKo.split(/[\s·\/]+/).filter(w=>w.length>=2);
+                  const specificity = hits / Math.max(dbToks.length, 1);
+                  score = Math.max(score, Math.round(60 + matchRatio * 30 + specificity * 10));
                 }
               }
             }
@@ -279,11 +284,14 @@ model_name_ko: 알 수 있는 정보 최대한 기재 (소재·패턴·모델명
             if (aiModel === dbModel) {
               score = Math.max(score, 100);
             } else {
-              const aiToks = aiModel.split(/\s+/).filter(w => w.length >= 2);
+              const aiToks = _aiEnToks;
               if (aiToks.length > 0) {
                 const hits = aiToks.filter(t => dbModel.includes(t)).length;
                 if (hits > 0) {
-                  score = Math.max(score, Math.round(55 + (hits / aiToks.length) * 35));
+                  const matchRatio = hits / aiToks.length;
+                  const dbToks = dbModel.split(/\s+/).filter(w=>w.length>=2);
+                  const specificity = hits / Math.max(dbToks.length, 1);
+                  score = Math.max(score, Math.round(55 + matchRatio * 30 + specificity * 10));
                 }
               }
             }
