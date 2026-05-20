@@ -170,7 +170,9 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       })
     }).then(r => r.json());
 
-    const imgbbPromise = uploadImgbb(imageBase64);
+    const imgbbPromise = uploadImgbb(imageBase64).catch(e => {
+      console.warn('[imgbb 실패]', e.message); return ''; // 실패해도 계속 진행
+    });
     const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
       .then(async r => {
         const data = await r.json();
