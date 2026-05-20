@@ -686,47 +686,146 @@ function _thumbErr(img){
   img.parentNode.insertBefore(ph, img.nextSibling);
 }
 
-async function saveDbCardEdit(itemId, idx){
-  const size_actual = document.getElementById('dbedit-size-'+idx)?.value||'';
-  const size_label  = document.getElementById('dbedit-sizelabel-'+idx)?.value||'';
-  const sku_code    = document.getElementById('dbedit-sku-'+idx)?.value||'';
-  const notes       = document.getElementById('dbedit-notes-'+idx)?.value||'';
-  const site_url    = document.getElementById('dbedit-url-'+idx)?.value||'';
+// DB 카드 사진 드롭/파일 처리
+async function dbCardDropPhoto(event, itemId, idx){
+  const files=[...event.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
+  if(!files.length) return;
+  await dbCardUploadPhotos(files, itemId, idx);
+}
+async function dbCardFilePhoto(input, itemId, idx){
+  const files=[...input.files];
+  if(!files.length) return;
+  await dbCardUploadPhotos(files, itemId, idx);
+  input.value='';
+}
+async function dbCardUploadPhotos(files, itemId, idx){
+  const drop=document.getElementById('dbedit-drop-'+idx);
+  if(drop) drop.textContent='⏳ 업로드 중...';
+  try{
+    const urls=[];
+    for(const file of files){
+      const b64=await new Promise(resolve=>{
+        const r=new FileReader();
+        r.onload=e=>{
+          const img=new Image();
+          img.onload=()=>{
+            const MAX=1200;let w=img.width,h=img.height;
+            if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+            const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+            canvas.getContext('2d').drawImage(img,0,0,w,h);
+            resolve(canvas.toDataURL('image/jpeg',0.85).split(',')[1]);
+          };
+          img.src=e.target.result;
+        };
+        r.readAsDataURL(file);
+      });
+      const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'upload_image',imageBase64:b64})});
+      const j=await res.json();
+      if(j.url) urls.push(j.url);
+    }
+    if(!urls.length){ toast('❌ 업로드 실패'); return; }
+    // 현재 카드의 기존 이미지에 추가
+    const card=(window._cardMatches||[])[idx];
+    const existImgs=[...(card?.ref_image_url?[card.ref_image_url]:[]),...(card?.extra_images||[])].filter(Boolean);
+    const allImgs=[...existImgs,...urls];
+    // DB 업데이트
+    await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:allImgs[0],extra_images:allImgs.slice(1)}})});
+    // 썸네일 미리보기
+    const photoWrap=document.getElementById('dbedit-photos-'+idx);
+    if(photoWrap){
+      urls.forEach(url=>{
+        const img=document.createElement('img');
+        img.src=url;img.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid rgba(34,197,94,.4)';
+        photoWrap.appendChild(img);
+      });
+    }
+    if(drop) drop.textContent='📷 사진 드래그 또는 탭하여 추가';
+    // 카드 이미지 업데이트
+    if(card){ card.ref_image_url=allImgs[0]; card.extra_images=allImgs.slice(1); }
+    toast('✅ 사진 '+urls.length+'장 추가됨!');
+  }catch(e){
+    if(drop) drop.textContent='📷 사진 드래그 또는 탭하여 추가';
+    toast('❌ 오류: '+e.message);
+  }
+}
 
-  // 현재 카드 매칭 데이터도 업데이트
-  const card = (window._cardMatches||[])[idx];
+async function saveDbCardEdit(itemId, idx){
+  // 실측사이즈 수집 (카테고리별)
+  const sw=document.getElementById('dbedit-sw-'+idx)?.value||'';
+  const sh=document.getElementById('dbedit-sh-'+idx)?.value||'';
+  const sd=document.getElementById('dbedit-sd-'+idx)?.value||'';
+  const card=(window._cardMatches||[])[idx];
+  const cat=(card?.category||'가방');
+  let size_actual='';
+  if(cat==='시계'){ if(sw) size_actual=sw+'mm'; }
+  else if(cat==='주얼리'){ if(sw) size_actual='폭 '+sw+'mm'; }
+  else {
+    const parts=[];
+    if(sw) parts.push('가로 '+sw+'cm');
+    if(sh) parts.push('세로 '+sh+'cm');
+    if(sd) parts.push('높이 '+sd+'cm');
+    size_actual=parts.join(' × ');
+  }
+  // 기존 값 유지 (필드 비어있으면 기존값)
+  if(!size_actual) size_actual=document.getElementById('dbedit-size-'+idx)?.value||card?.size_actual||'';
+
+  const size_label = document.getElementById('dbedit-sizelabel-'+idx)?.value||'';
+  const sku_code   = document.getElementById('dbedit-sku-'+idx)?.value||'';
+  const notes      = document.getElementById('dbedit-notes-'+idx)?.value||'';
+  const site_url   = document.getElementById('dbedit-url-'+idx)?.value||'';
 
   try{
-    const res = await fetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'update_sku', skuData:{
-        id: itemId,
-        size_actual, size_label, sku_code, notes, site_url
-      }})
+    const res=await fetch('/api/inspect',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,size_actual,size_label,sku_code,notes,site_url}})
     });
-    const j = await res.json();
+    const j=await res.json();
     if(j.success){
       toast('✅ DB 저장 완료!');
-      // 화면 필드도 즉시 반영
-      if(card){
-        card.size_actual = size_actual;
-        card.size_label  = size_label;
-        card.sku_code    = sku_code;
-        card.notes       = notes;
-        card.site_url    = site_url;
-      }
-      // 결과 화면 필드 업데이트
-      const sizeEl = document.getElementById('r-size');
-      const sizeNameEl = document.getElementById('r-size-name');
-      const skuEl = document.getElementById('r-sku');
-      if(sizeEl && size_actual){ sizeEl.textContent=size_actual; sizeEl.className='info-cell-val'; }
-      if(sizeNameEl && size_label){ sizeNameEl.textContent=size_label; sizeNameEl.className='info-cell-val'; }
-      if(skuEl && sku_code){ skuEl.textContent=sku_code; skuEl.className='info-cell-val'; }
-    } else {
-      toast('❌ 저장 실패: '+(j.error||''));
-    }
+      if(card){ card.size_actual=size_actual;card.size_label=size_label;card.sku_code=sku_code;card.notes=notes;card.site_url=site_url; }
+      const sizeEl=document.getElementById('r-size');
+      const sizeNameEl=document.getElementById('r-size-name');
+      const skuEl=document.getElementById('r-sku');
+      if(sizeEl&&size_actual){sizeEl.textContent=size_actual;sizeEl.className='info-cell-val';}
+      if(sizeNameEl&&size_label){sizeNameEl.textContent=size_label;sizeNameEl.className='info-cell-val';}
+      if(skuEl&&sku_code){skuEl.textContent=sku_code;skuEl.className='info-cell-val';}
+    } else { toast('❌ 저장 실패: '+(j.error||'')); }
   }catch(e){ toast('❌ 오류: '+e.message); }
+}
+
+
+function initDbCardSizeInputs(idx){
+  const card=(window._cardMatches||[])[idx];
+  if(!card) return;
+  const cat=card.category||'가방';
+  const cur=card.size_actual||'';
+  const nums=cur.match(/\d+(\.\d+)?/g)||[];
+  const sw=document.getElementById('dbedit-sw-'+idx);
+  const sh=document.getElementById('dbedit-sh-'+idx);
+  const sd=document.getElementById('dbedit-sd-'+idx);
+  const sep1=document.getElementById('dbedit-sep1-'+idx);
+  const sep2=document.getElementById('dbedit-sep2-'+idx);
+  const unit=document.getElementById('dbedit-unit-'+idx);
+  if(!sw) return;
+  if(cat==='시계'){
+    sw.placeholder='케이스'; if(nums[0]) sw.value=nums[0];
+    if(sh) sh.style.display='none'; if(sd) sd.style.display='none';
+    if(sep1) sep1.style.display='none'; if(sep2) sep2.style.display='none';
+    if(unit) unit.textContent='mm';
+  } else if(cat==='주얼리'){
+    sw.placeholder='폭'; if(nums[0]) sw.value=nums[0];
+    if(sh) sh.style.display='none'; if(sd) sd.style.display='none';
+    if(sep1) sep1.style.display='none'; if(sep2) sep2.style.display='none';
+    if(unit) unit.textContent='mm';
+  } else {
+    sw.placeholder='가로'; if(nums[0]) sw.value=nums[0];
+    if(sh){ sh.placeholder='세로'; if(nums[1]) sh.value=nums[1]; sh.style.display=''; }
+    if(sd){ sd.placeholder='높이'; if(nums[2]) sd.value=nums[2]; sd.style.display=''; }
+    if(sep1) sep1.style.display=''; if(sep2) sep2.style.display='';
+    if(unit) unit.textContent='cm';
+  }
 }
 
 function _openMainPhoto(){
@@ -818,8 +917,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779265275';
-console.error('APP VERSION: 1779265275');
+window._appVer='1779266244';
+console.error('APP VERSION: 1779266244');
 
 const ACC_MAP = {
   '가방': [
@@ -1265,11 +1364,33 @@ function renderDbCard(idx){
       <!-- 인라인 편집 UI -->
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(34,197,94,.2)">
         <div style="font-size:10px;color:#22c55e;font-weight:700;margin-bottom:8px">✏️ DB 수정</div>
+        <!-- 사진 드래그앤드롭 -->
+        <div id="dbedit-drop-${idx}"
+          ondragover="event.preventDefault();this.style.borderColor='#22c55e'"
+          ondragleave="this.style.borderColor='rgba(34,197,94,.3)'"
+          ondrop="event.preventDefault();this.style.borderColor='rgba(34,197,94,.3)';dbCardDropPhoto(event,'${m.id}',${idx})"
+          style="border:2px dashed rgba(34,197,94,.3);border-radius:8px;padding:12px;text-align:center;font-size:11px;color:#bbb;margin-bottom:8px;cursor:pointer;transition:border-color .15s"
+          onclick="document.getElementById('dbedit-file-${idx}').click()">
+          📷 사진 드래그 또는 탭하여 추가
+          <input type="file" id="dbedit-file-${idx}" accept="image/*" multiple style="display:none"
+            onchange="dbCardFilePhoto(this,'${m.id}',${idx})">
+        </div>
+        <div id="dbedit-photos-${idx}" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"></div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">실측사이즈</span>
-            <input id="dbedit-size-${idx}" type="text" value="${m.size_actual||''}" placeholder="가로 cm × 세로 cm × 높이 cm"
-              style="flex:1;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:inherit">
+          <!-- 실측사이즈 입력 -->
+          <div>
+            <div style="font-size:10px;color:#bbb;margin-bottom:4px">실측사이즈</div>
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap" id="dbedit-size-inputs-${idx}">
+              <input id="dbedit-sw-${idx}" type="number" inputmode="decimal" placeholder="가로" value=""
+                style="width:48px;text-align:center;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px;font-size:12px;color:#fff;outline:none">
+              <span style="color:#555;font-size:10px" id="dbedit-sep1-${idx}">×</span>
+              <input id="dbedit-sh-${idx}" type="number" inputmode="decimal" placeholder="세로" value=""
+                style="width:48px;text-align:center;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px;font-size:12px;color:#fff;outline:none">
+              <span style="color:#555;font-size:10px" id="dbedit-sep2-${idx}">×</span>
+              <input id="dbedit-sd-${idx}" type="number" inputmode="decimal" placeholder="높이" value=""
+                style="width:48px;text-align:center;background:#0a1a0a;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:5px;font-size:12px;color:#fff;outline:none">
+              <span style="color:#bbb;font-size:10px" id="dbedit-unit-${idx}">cm</span>
+            </div>
           </div>
           <div style="display:flex;gap:6px;align-items:center">
             <span style="font-size:10px;color:#bbb;width:60px;flex-shrink:0">사이즈명칭</span>
@@ -1300,6 +1421,8 @@ function renderDbCard(idx){
     </div>
   </div>`;
 
+  // 사이즈 입력 초기화
+  setTimeout(()=>initDbCardSizeInputs(idx),50);
   // 적용 상태 복원
   if(window._appliedCardId==='db-card-0'){
     const btn=document.getElementById('apply-btn-0');
