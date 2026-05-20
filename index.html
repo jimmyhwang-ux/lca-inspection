@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779260579 -->
+  <!-- v1779261527 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -774,8 +774,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779260579';
-console.error('APP VERSION: 1779260579');
+window._appVer='1779261527';
+console.error('APP VERSION: 1779261527');
 
 const ACC_MAP = {
   '가방': [
@@ -826,13 +826,13 @@ function triggerFile(id){document.getElementById(id).click()}
 function processImage(src, key, fileSrc){
   const img=new Image();
   img.onload=()=>{
-    const MAX=1200;
+    const MAX=800; // 과부하 방지: 1200→800
     let w=img.width,h=img.height;
     if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
     const canvas=document.createElement('canvas');
     canvas.width=w;canvas.height=h;
     canvas.getContext('2d').drawImage(img,0,0,w,h);
-    const dataUrl=canvas.toDataURL('image/jpeg',0.85);
+    const dataUrl=canvas.toDataURL('image/jpeg',0.75); // 품질 0.85→0.75
     photos[key]={file:fileSrc||null,dataUrl,mime:'image/jpeg'};
     const prev=document.getElementById('prev-'+key);
     if(prev){prev.src=dataUrl;prev.style.display='block';}
@@ -1084,9 +1084,15 @@ function applyCardMatch(idx, cardId){
 function applyDbMatch(item, cardId){
   if(!item){ console.warn('[applyDbMatch] item is undefined'); return; }
   console.error('[APPLY]', cardId, 'sku='+item.sku_code, 'size='+item.size_actual);
-  // 연쇄 방지: _searchDbRunning 리셋 (사용자 타이머는 건드리지 않음)
+  // 연쇄 방지: 활성 input blur → oninput 재트리거 차단
   _searchDbRunning=false;
   window._userEditingField=false;
+  // r-model-ko, r-model, r-sku 중 input 상태인 것 강제 blur
+  ['r-model-ko','r-model','r-sku'].forEach(fid=>{
+    const el=document.getElementById(fid);
+    const inp=el?.querySelector('input');
+    if(inp) inp.blur();
+  });
   // 이미 적용된 카드 재클릭 → 해제
   const selCard=cardId?document.getElementById(cardId):null;
   if(selCard&&selCard.style.border==='2px solid rgb(34, 197, 94)'){
