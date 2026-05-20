@@ -272,15 +272,14 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             if (aiModelKo === dbModelKo) score = Math.max(score, 95);
             else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
             else {
-              // 한글 단어 단위 매칭
-              const wKo1 = aiModelKo.split(' ').filter(w => w.length >= 1);
+              // 한글 단어 단위 매칭 (bb/pm/gm 등 사이즈 코드 제외)
+              const SIZE_CODES = new Set(['bb','pm','gm','mm','sm','xs','xl','os','ns','wb','tp']);
+              const wKo1 = aiModelKo.split(' ').filter(w => w.length >= 1 && !SIZE_CODES.has(w));
               const wKo2 = dbModelKo.split(' ').filter(w => w.length >= 1);
               if (wKo1.length >= 1) {
                 const koHits = wKo1.filter(w => wKo2.includes(w)).length;
                 const koRatio = koHits / wKo1.length;
-                // 단어 1개: 완전 일치 시 70점
                 if (wKo1.length === 1 && koHits === 1) score = Math.max(score, 70);
-                // 단어 2개 이상: 70% 이상 일치 시 점수 부여
                 else if (wKo1.length >= 2 && koRatio >= 0.7) score = Math.max(score, Math.round(koRatio * 80));
               }
             }
