@@ -781,8 +781,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779327897';
-console.error('APP VERSION: 1779327897');
+window._appVer='1779328233';
+console.error('APP VERSION: 1779328233');
 
 const ACC_MAP = {
   '가방': [
@@ -1195,7 +1195,7 @@ function renderDbCard(idx){
     const mId = `dbc-${i}`;
     const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     const isApplied = window._appliedCardId === `db-card-${i}`;
-    const accList = (m.accessories||[]).map(a=>a.name||a).join(', ');
+    const accList = safeAccArr(m.accessories).map(a=>a.name||a).join(', ');
     const imgThumb = allImgs[0]
       ? `<img src="${allImgs[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`
       : `<span style="font-size:14px;opacity:.3">📷</span>`;
@@ -1371,6 +1371,56 @@ function searchInDbCards(val){
     const haystack=[(m.model_name_ko||''),(m.model_name||''),(m.sku_code||''),(m.brand||'')].join(' ').toLowerCase();
     card.style.display=haystack.includes(v)?'':'none';
   });
+}
+
+
+async function deleteDbPic(itemId, picIdx, mId){
+  const matches=window._cardMatches||[];
+  const m=matches.find(item=>String(item.id)===String(itemId));
+  if(!m) return;
+  const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean);
+  allImgs.splice(picIdx,1);
+  const newRef=allImgs[0]||null;
+  const newExtras=allImgs.slice(1);
+  try{
+    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:newRef,extra_images:newExtras}})});
+    const j=await res.json();
+    if(j.success){
+      toast('✅ 사진 삭제됨');
+      m.ref_image_url=newRef; m.extra_images=newExtras;
+      renderDbCard(0);
+    } else toast('❌ 삭제 실패');
+  }catch(e){ toast('❌ 오류: '+e.message); }
+}
+
+async function dbUploadPic(itemId, mId){
+  const input=document.createElement('input');
+  input.type='file'; input.accept='image/*'; input.multiple=true;
+  input.onchange=async(e)=>{
+    const files=[...e.target.files]; if(!files.length) return;
+    for(const file of files){
+      const reader=new FileReader();
+      reader.onload=async(ev)=>{
+        const img=new Image(); img.onload=async()=>{
+          const MAX=1200;let w=img.width,h=img.height;
+          if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          const b64=c.toDataURL('image/jpeg',0.85).split(',')[1];
+          const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
+          const j=await res.json();
+          if(j.success){
+            toast('✅ 사진 추가됨');
+            const matches=window._cardMatches||[];
+            const m=matches.find(item=>String(item.id)===String(itemId));
+            if(m&&j.data?.[0]){ Object.assign(m,j.data[0]); renderDbCard(0); }
+          } else toast('❌ 사진 업로드 실패');
+        };img.src=ev.target.result;};reader.readAsDataURL(file);
+    }
+  };
+  input.click();
 }
 
 function toggleDbPic(id){
