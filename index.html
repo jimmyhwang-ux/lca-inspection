@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779325154 -->
+  <!-- v1779325348 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -801,8 +801,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779325154';
-console.error('APP VERSION: 1779325154');
+window._appVer='1779325348';
+console.error('APP VERSION: 1779325348');
 
 const ACC_MAP = {
   '가방': [
@@ -1462,39 +1462,9 @@ async function renderResult(){
 
 
   if(dbMatches.length){
-    const dbWrapRef=document.getElementById('db-match-wrap');
-    dbWrapRef.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#bbb">SKU 데이터 로딩 중...</div>';
-    (async()=>{
-      let freshList=[];
-      try{
-        const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
-        const j=await r.json();
-        if(j.success&&j.data) freshList=j.data;
-      }catch(_){}
-      skuListAll=freshList;
-
-      const enriched=dbMatches.map(m=>{
-        // freshList에서 동일 ID 찾아서 최신 데이터로 보완
-        const full=freshList.find(s=>String(s.id)===String(m.id));
-        // full 우선, m으로 보완 (m이 full을 덮어쓰지 않도록)
-        const merged={
-          ...m,
-          // full의 값이 있으면 우선 사용
-          size_actual: full?.size_actual||m.size_actual||'',
-          size_label:  full?.size_label ||m.size_label ||'',
-          sku_code:    full?.sku_code   ||m.sku_code   ||'',
-          notes:       (full?.notes||m.notes||'').trim(),
-          accessories: full?.accessories||m.accessories||[],
-          extra_images:(full?.extra_images||m.extra_images||[]),
-          ref_image_url:(full?.ref_image_url||m.ref_image_url||''),
-          site_url:    full?.site_url   ||m.site_url   ||'',
-        };
-        return merged;
-      });
-      window._dbEnriched=enriched;
-      renderDbMatchCards(enriched);
-
-    })();
+    // 백엔드에서 받은 데이터 바로 사용 (추가 API 호출 제거 → 로딩 빠름)
+    window._dbEnriched = dbMatches;
+    renderDbMatchCards(dbMatches);
 
   } else {
     dbWrap.innerHTML='';
