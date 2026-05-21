@@ -1426,6 +1426,8 @@ function _renderDbCardList(items){
     catWrap.appendChild(catLabelEl);
     catWrap.appendChild(catSelEl);
     metaRow.appendChild(catWrap);
+    // catSelEl에 직접 onchange 할당 (DOM append 전/후 무관하게 작동)
+    (function(sel, mid){ sel.onchange = function(){ onDbCardCatChange(mid, this.value); }; })(catSelEl, mId);
 
     // 사이즈명칭
     const sizeWrap = document.createElement('div');
@@ -1535,11 +1537,8 @@ function _renderDbCardList(items){
     panel.appendChild(picSection);
     card.appendChild(panel);
     content.appendChild(card);
-
-    // DOM에 들어간 직후 onchange 연결 — 클로저로 mId 캡처
+    // acc-sel onchange도 직접 할당 (catSelEl은 위에서 이미 처리)
     (function(mid){
-      var cs = document.getElementById(mid+'-cat');
-      if(cs) cs.onchange = function(){ onDbCardCatChange(mid, this.value); };
       var as = document.getElementById(mid+'-acc-sel');
       if(as) as.onchange = function(){ if(this.value) addDbCardAcc(mid, this); };
     })(mId);
