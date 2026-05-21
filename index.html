@@ -1406,20 +1406,13 @@ function _renderDbCardList(items){
     const metaRow = document.createElement('div');
     metaRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap';
 
-    // 카테고리 select
+    // 카테고리 — data-mid 속성으로 식별, addEventListener는 렌더 후 연결
+    const catOpts = catList.map(function(c){ return '<option value="'+c+'"'+(c===mCat?' selected':'')+'>'+c+'</option>'; }).join('');
     const catWrap = document.createElement('div');
     catWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    const catLabel = document.createElement('span'); catLabel.style.cssText='font-size:9px;color:#555'; catLabel.textContent='카테고리';
-    const catSel = document.createElement('select');
-    catSel.id = mId+'-cat';
-    catSel.style.cssText = 'background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none';
-    catList.forEach(function(c){
-      const opt = document.createElement('option'); opt.value=c; opt.textContent=c;
-      if(c===mCat) opt.selected=true;
-      catSel.appendChild(opt);
-    });
-    (function(mid){ catSel.onchange = function(){ onDbCardCatChange(mid, this.value); }; })(mId);
-    catWrap.appendChild(catLabel); catWrap.appendChild(catSel); metaRow.appendChild(catWrap);
+    catWrap.innerHTML = '<span style="font-size:9px;color:#555">카테고리</span>'
+      +'<select id="'+mId+'-cat" data-mid="'+mId+'" style="background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none">'+catOpts+'</select>';
+    metaRow.appendChild(catWrap);
 
     // 사이즈명칭
     const sizeWrap = document.createElement('div');
@@ -1455,23 +1448,11 @@ function _renderDbCardList(items){
 
     const accSelWrap = document.createElement('div');
     accSelWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    const accSelLabel = document.createElement('span');
-    accSelLabel.style.cssText = 'font-size:9px;color:#555';
-    accSelLabel.textContent = '부속품 추가';
-    const accSel = document.createElement('select');
-    accSel.id = mId+'-acc-sel';
-    accSel.style.cssText = 'width:110px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none';
-    const accOptDefault = document.createElement('option');
-    accOptDefault.value = ''; accOptDefault.textContent = '-- 선택 --';
-    accSel.appendChild(accOptDefault);
-    (ACC_MAP[mCat]||ACC_MAP['가방']).forEach(function(a){
-      const opt = document.createElement('option');
-      opt.value = a; opt.textContent = a;
-      accSel.appendChild(opt);
-    });
-    (function(mid){ accSel.onchange = function(){ if(this.value) addDbCardAcc(mid, this); }; })(mId);
-    accSelWrap.appendChild(accSelLabel);
-    accSelWrap.appendChild(accSel);
+    accSelWrap.innerHTML = '<span style="font-size:9px;color:#555">부속품 추가</span>'
+      +'<select id="'+mId+'-acc-sel" data-mid="'+mId+'" style="width:110px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none">'
+      +'<option value="">-- 선택 --</option>'
+      +(ACC_MAP[mCat]||ACC_MAP['가방']).map(function(a){ return '<option value="'+a+'">'+a+'</option>'; }).join('')
+      +'</select>';
     accRow.appendChild(accSelWrap);
 
     const accTagsWrap = document.createElement('div');
@@ -1541,6 +1522,17 @@ function _renderDbCardList(items){
     panel.appendChild(picSection);
     card.appendChild(panel);
     content.appendChild(card);
+
+    // 카테고리 select addEventListener (렌더 후 연결 — 이스케이프 문제 없음)
+    var _catSel = content.querySelector('#'+mId+'-cat');
+    if(_catSel){
+      (function(mid){ _catSel.addEventListener('change', function(){ onDbCardCatChange(mid, this.value); }); })(mId);
+    }
+    // 부속품 select addEventListener
+    var _accSel = content.querySelector('#'+mId+'-acc-sel');
+    if(_accSel){
+      (function(mid){ _accSel.addEventListener('change', function(){ if(this.value) addDbCardAcc(mid, this); }); })(mId);
+    }
   });
 
   // 실측 입력 초기화 — select 실제값 기준
@@ -1582,8 +1574,8 @@ function onDbCardCatChange(mId, cat){
   initDbCardActualInputs(mId, cat, '');
   const sel = document.getElementById(mId+'-acc-sel');
   if(sel){
-    const items = (ACC_MAP[cat]||ACC_MAP['가방']).map(function(a){ return '<option>'+a+'</option>'; }).join('');
-    sel.innerHTML = '<option value="">-- 선택 --</option>' + items;
+    sel.innerHTML = '<option value="">-- 선택 --</option>'
+      + (ACC_MAP[cat]||ACC_MAP['가방']).map(function(a){ return '<option value="'+a+'">'+a+'</option>'; }).join('');
   }
 }
 
@@ -2242,36 +2234,53 @@ async function _rematchSkuByModel(brand, modelName){
     const listJ = await listRes.json();
     if(!listJ.success || !listJ.data) return;
     const list = listJ.data;
-    const v = modelName.toLowerCase();
+    const v = modelName.trim().toLowerCase();
+    if(!v) return;
     const normBrand = (brand||'').toLowerCase().replace(/\s+/g,'');
-    const brandOk = function(item){
-      if(!normBrand) return true;
+
+    // 브랜드 필터 — 반드시 적용 (브랜드 없으면 매칭 안 함)
+    if(!normBrand){ console.warn('SKU재매칭: 브랜드 없어 스킵'); return; }
+    const brandList = list.filter(function(item){
       const db = (item.brand||'').toLowerCase().replace(/\s+/g,'');
       return db.includes(normBrand) || normBrand.includes(db);
-    };
-    const brandList = normBrand ? list.filter(brandOk) : list;
+    });
+    if(!brandList.length) return;
+
     // 1차: 완전일치
     let found = brandList.filter(function(i){
-      return (i.model_name||'').toLowerCase()===v || (i.model_name_ko||'').toLowerCase()===v;
+      const ko=(i.model_name_ko||'').trim().toLowerCase();
+      const en=(i.model_name||'').trim().toLowerCase();
+      return ko===v || en===v;
     });
-    // 2차: 부분일치 + 토큰
+
+    // 2차: v가 모델명에 포함 (단방향 — 검색어가 모델명 안에 있어야 함)
     if(!found.length){
-      const partial = brandList.filter(function(i){
-        const ko=(i.model_name_ko||'').toLowerCase(), en=(i.model_name||'').toLowerCase();
-        return ko.includes(v)||en.includes(v)||v.includes(ko)||v.includes(en);
+      found = brandList.filter(function(i){
+        const ko=(i.model_name_ko||'').toLowerCase();
+        const en=(i.model_name||'').toLowerCase();
+        return ko.includes(v) || en.includes(v);
       });
-      const vToks = v.split(/\s+/).filter(function(w){ return w.length>=2; });
-      const tokenMatched = vToks.length ? brandList.filter(function(i){
-        const ko=(i.model_name_ko||'').toLowerCase(), en=(i.model_name||'').toLowerCase();
-        return vToks.some(function(t){ return ko.includes(t)||en.includes(t); });
-      }) : [];
-      found = [...partial, ...tokenMatched.filter(function(t){ return !partial.some(function(p){ return p.id===t.id; }); })];
     }
+
+    // 3차: 토큰 매칭 — 검색어 토큰이 모두 모델명에 포함될 때만
+    if(!found.length){
+      const toks = v.split(/\s+/).filter(function(t){ return t.length>=2; });
+      if(toks.length){
+        found = brandList.filter(function(i){
+          const ko=(i.model_name_ko||'').toLowerCase();
+          const en=(i.model_name||'').toLowerCase();
+          return toks.every(function(t){ return ko.includes(t) || en.includes(t); });
+        });
+      }
+    }
+
     if(found.length){
       window._userResetDb = false;
       window._appliedCardId = null;
       renderDbMatchCards(found);
       toast('✅ SKU 재매칭: '+found.length+'건');
+    } else {
+      toast('⚠️ "'+modelName+'" SKU 없음');
     }
   }catch(e){ console.warn('SKU 재매칭 실패',e); }
 }
