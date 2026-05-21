@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779325348 -->
+  <!-- v1779325721 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -336,7 +336,7 @@ input[type=file]{display:none}
 <div id="screen-result" class="screen">
   <div class="result-card" style="position:relative">
     <div class="result-thumb" style="position:relative">
-      <div id="res-thumb" style="cursor:pointer" onclick="openResultPhotos()">
+      <div id="res-thumb">
         <div class="result-thumb-ph">📦</div>
       </div>
       <!-- 사진 추가 버튼 -->
@@ -801,8 +801,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779325348';
-console.error('APP VERSION: 1779325348');
+window._appVer='1779325721';
+console.error('APP VERSION: 1779325721');
 
 const ACC_MAP = {
   '가방': [
@@ -1287,9 +1287,9 @@ function renderDbCard(idx){
 
   const itemsHtml = matches.map((m, i) => {
     const mId = `dbc-${i}`;
-    const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+    const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     const isApplied = window._appliedCardId === `db-card-${i}`;
-    const accList = (m.accessories||[]).map(a=>a.name||a).join(', ');
+    const accList = (Array.isArray(m.accessories)?m.accessories:[]).map(a=>a.name||a).join(', ');
     const imgThumb = allImgs[0]
       ? `<img src="${allImgs[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`
       : `<span style="font-size:14px;opacity:.3">📷</span>`;
@@ -1416,6 +1416,7 @@ function renderDbMatchCards(matches){
 async function renderResult(){
   // 새 검수 시작 시 이전 카드 데이터 완전 초기화
   window._cardMatches = [];
+  _resultExtraPhotos = [];
   window._dbEnriched = [];
   window._userResetDb = false;
   window._appliedCardId = null;
@@ -1426,7 +1427,10 @@ async function renderResult(){
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
-    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="_openMainPhoto()">`;
+    const resThumb = document.getElementById('res-thumb');
+    resThumb.innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px">`;
+    resThumb.style.cursor='pointer';
+    resThumb.onclick = openResultPhotos;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||'—';
@@ -1705,7 +1709,7 @@ function renderRefList(wrapId, items, type){
       const rId = `ref-${type}-${idx}`;
       const photos = [item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
       const thumb = photos[0]||'';
-      const accList = (item.accessories||[]).map(a=>a.name||a).join(', ');
+      const accList = (Array.isArray(item.accessories)?item.accessories:[]).map(a=>a.name||a).join(', ');
       const mCat = item.category||'가방';
       const catOpts = catList.map(c=>`<option value="${c}" ${mCat===c?'selected':''}>${c}</option>`).join('');
       const picThumbs = photos.map(url=>
