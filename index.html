@@ -194,6 +194,18 @@ input[type=file]{display:none}
     gap: 10px !important;
   }
 }
+
+/* ── PC 너비 제한 해제 ─── */
+@media(min-width:768px){
+  .app-wrap{max-width:760px}
+}
+@media(min-width:1024px){
+  .app-wrap{max-width:960px}
+}
+@media(min-width:1280px){
+  .app-wrap{max-width:1100px}
+}
+
 </style>
 </head>
 <body>
@@ -803,8 +815,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779342800';
-console.error('APP VERSION: 1779342800');
+window._appVer='1779343020';
+console.error('APP VERSION: 1779343020');
 
 const ACC_MAP = {
   '가방': [
