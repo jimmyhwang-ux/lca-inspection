@@ -803,8 +803,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779341912';
-console.error('APP VERSION: 1779341912');
+window._appVer='1779342235';
+console.error('APP VERSION: 1779342235');
 
 const ACC_MAP = {
   '가방': [
@@ -1120,9 +1120,10 @@ function applyDbMatch(item, cardId){
     if(inp) inp.blur();
   });
   // 이미 적용된 카드 재클릭 → 해제
-  const selCard=cardId?document.getElementById(cardId):null;
-  if(selCard&&selCard.style.border==='2px solid rgb(34, 197, 94)'){
+  if(cardId && window._appliedCardId === cardId){
+    window._appliedCardId = null;
     resetToAi();
+    renderDbCard(0);
     return;
   }
 
