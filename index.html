@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779327183 -->
+  <!-- v1779322429 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,11 +15,6 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:15px;min-height:100vh;padding-bottom:100px}
 .app-wrap{max-width:480px;margin:0 auto}
-@media(min-width:900px){
-  .app-wrap{max-width:960px}
-  /* PC: SKU 매칭 카드 */
-  .db-match-card{font-size:13px}
-}
 @media(min-width:600px){
   .app-wrap{border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;min-height:100vh}
   .slot-big{min-height:90px}
@@ -220,10 +215,7 @@ input[type=file]{display:none}
     <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
   </div>
   <div class="photo-wrap">
-    <div class="slot-big" id="slot-main" onclick="document.getElementById('file-main').click()"
-      ondragover="event.preventDefault();this.style.borderColor='#ff6b2b'"
-      ondragleave="this.style.borderColor=''"
-      ondrop="event.preventDefault();this.style.borderColor='';if(event.dataTransfer.files[0])loadPhotoFile(event.dataTransfer.files[0],'main')">
+    <div class="slot-big" id="slot-main" onclick="document.getElementById('file-main').click()">
       <img class="preview" id="prev-main" src="" alt="">
       <div class="slot-inner">
         <div class="slot-icon">📦</div>
@@ -328,26 +320,14 @@ input[type=file]{display:none}
     <div class="step" id="ls1"><div class="step-ic">📤</div><div><div class="step-name">이미지 업로드</div><div class="step-desc">imgbb 호스팅</div></div><div class="step-st" id="ls1s">○</div></div>
     <div class="step" id="ls2"><div class="step-ic">🔎</div><div><div class="step-name">Google Lens 시각 검색</div><div class="step-desc">유사 상품 매칭</div></div><div class="step-st" id="ls2s">○</div></div>
     <div class="step" id="ls3"><div class="step-ic">🤖</div><div><div class="step-name">AI 분석</div><div class="step-desc">브랜드·모델·진위 판정</div></div><div class="step-st" id="ls3s">○</div></div>
-    <div class="step" id="ls4"><div class="step-ic">🗄️</div><div><div class="step-name">내부 SKU 조회</div><div class="step-desc">SKU 매칭</div></div><div class="step-st" id="ls4s">○</div></div>
+    <div class="step" id="ls4"><div class="step-ic">🗄️</div><div><div class="step-name">내부 DB 조회</div><div class="step-desc">SKU DB 매칭</div></div><div class="step-st" id="ls4s">○</div></div>
   </div>
 </div>
 
 <!-- STEP 3: 결과 -->
 <div id="screen-result" class="screen">
-  <div class="result-card" style="position:relative">
-    <div class="result-thumb" style="position:relative">
-      <div id="res-thumb">
-        <div class="result-thumb-ph">📦</div>
-      </div>
-      <!-- 사진 추가 버튼 -->
-      <div id="res-add-btn" onclick="document.getElementById('res-extra-file').click()" title="사진 추가"
-        style="display:none;position:absolute;bottom:4px;right:4px;width:22px;height:22px;background:rgba(0,0,0,.7);border-radius:50%;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:12px;z-index:10">+</div>
-      <input type="file" id="res-extra-file" accept="image/*" style="display:none" onchange="addResultPhoto(this)">
-    </div>
-    <!-- 추가 사진 목록 (썸네일 클릭 시 펼침) -->
-    <div id="res-extra-photos" style="display:none;position:absolute;left:0;right:0;top:100%;background:#111;border:0.5px solid #2a2a2a;border-radius:0 0 12px 12px;padding:8px;z-index:20">
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px" id="res-extra-list"></div>
-    </div>
+  <div class="result-card">
+    <div class="result-thumb"><div id="res-thumb"><div class="result-thumb-ph">📦</div></div></div>
     <div class="result-meta">
       <div class="conf-badge" id="conf-badge">신뢰도 —%</div>
       <div class="result-brand" id="r-brand">—</div>
@@ -358,7 +338,7 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- ① SKU 매칭 영역 (초록 테두리) -->
+  <!-- ① DB 매칭 영역 (초록 테두리) -->
   <div id="db-match-wrap"></div>
 
   <!-- ② 참고자료 아코디언 -->
@@ -399,7 +379,7 @@ input[type=file]{display:none}
   <div style="margin:0 16px;border:1px solid rgba(255,107,43,.3);border-radius:14px;overflow:hidden;background:#111" id="result-body">
 
   <!-- 미등록 SKU 헤더 (미등록일 때만 표시) -->
-  <div id="unregistered-header" style="display:none;padding:10px 14px;border-bottom:1px solid #1a1a1a">
+  <div id="unregistered-header" style="display:block;padding:10px 14px;border-bottom:1px solid #1a1a1a">
     <span style="color:#f59e0b;font-size:12px;font-weight:700">⚠️ 미등록 SKU — 신규 등록</span>
   </div>
 
@@ -801,8 +781,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779327183';
-console.error('APP VERSION: 1779327183');
+window._appVer='1779327897';
+console.error('APP VERSION: 1779327897');
 
 const ACC_MAP = {
   '가방': [
@@ -986,76 +966,6 @@ function removePhoto(e,key){
   document.getElementById('file-'+key).value='';
   updateBtn();
 }
-// 검수결과 썸네일 클릭 → 추가 사진 패널 토글
-let _resultExtraPhotos = [];
-function openResultPhotos(){
-  const panel = document.getElementById('res-extra-photos');
-  if(!panel) return;
-  const open = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = open ? 'block' : 'none';
-  if(open) renderResultExtraPhotos();
-}
-
-function renderResultExtraPhotos(){
-  const list = document.getElementById('res-extra-list');
-  if(!list) return;
-  const mainUrl = photos.main?.dataUrl || '';
-  const allUrls = [mainUrl, ...(_resultExtraPhotos||[])].filter(Boolean);
-  list.innerHTML = allUrls.map((url,i)=>`
-    <div style="position:relative;flex-shrink:0">
-      <img src="${url}" onclick="openLightbox('${url}',[${allUrls.map(u=>"'"+u+"'").join(',')}])"
-        style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:zoom-in;border:0.5px solid #2a2a2a">
-      ${i>0?`<div onclick="removeResultPhoto(${i-1})" style="position:absolute;top:2px;right:2px;width:14px;height:14px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;cursor:pointer">✕</div>`:''}
-    </div>`).join('')
-  + `<div onclick="document.getElementById('res-extra-file').click()"
-      style="width:60px;height:60px;border-radius:6px;border:1.5px dashed #ff6b2b;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#1a0a00">
-      <span style="color:#ff6b2b;font-size:18px;line-height:1">+</span>
-      <span style="font-size:8px;color:#555;margin-top:2px">추가</span>
-    </div>`;
-  // 추가 버튼 표시
-  const addBtn = document.getElementById('res-add-btn');
-  if(addBtn) addBtn.style.display = 'flex';
-}
-
-function addResultPhoto(input){
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    _resultExtraPhotos.push(e.target.result);
-    renderResultExtraPhotos();
-    input.value = '';
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeResultPhoto(idx){
-  _resultExtraPhotos.splice(idx, 1);
-  renderResultExtraPhotos();
-}
-
-// 파일로 직접 로드 (드래그앤드롭용)
-function loadPhotoFile(file, slot){
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX=800, q=0.75;
-      let w=img.width, h=img.height;
-      if(w>MAX||h>MAX){ if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      const dataUrl=canvas.toDataURL('image/jpeg',q);
-      photos[slot]={file,dataUrl};
-      const slotEl=document.getElementById('slot-'+slot);
-      if(slotEl){ slotEl.classList.add('filled'); const pv=slotEl.querySelector('img.preview'); if(pv){pv.src=dataUrl;pv.style.display='block';} }
-      updateBtn();
-    };
-    img.src=e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
 function updateBtn(){document.getElementById('btn-start').disabled=!photos.main;}
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1157,7 +1067,7 @@ function resetToAi(){
   accessories=[];
   renderAcc();
   // 카드 하이라이트 전부 해제
-  document.querySelectorAll('#db-match-wrap [id^="db-card-"]').forEach(c=>{
+  document.querySelectorAll('#db-match-wrap .db-match-card').forEach(c=>{
     c.style.border='1px solid rgba(34,197,94,.15)';
     c.style.background='rgba(34,197,94,.02)';
     c.style.opacity='1';
@@ -1239,7 +1149,7 @@ function applyDbMatch(item, cardId){
   renderAcc();
 
   // ── 6. 카드 하이라이트 ──────────────────────────────────────
-  document.querySelectorAll('#db-match-wrap [id^="db-card-"]').forEach(card => {
+  document.querySelectorAll('#db-match-wrap .db-match-card').forEach(card => {
     const isSel = card.id === cardId;
     card.style.border     = isSel ? '2px solid #22c55e' : '1px solid rgba(34,197,94,.15)';
     card.style.background = isSel ? 'rgba(34,197,94,.12)' : 'rgba(34,197,94,.02)';
@@ -1268,31 +1178,12 @@ function applyDbMatch(item, cardId){
     reSearchByModel(_applyBrand, _applyModel);
   }
 
-  // 체크박스만 DOM에서 직접 업데이트 (renderDbCard 재호출 금지 - 무한루프 방지)
-  window._appliedCardId = cardId;
-  document.querySelectorAll('#db-match-wrap [id^="db-card-"]').forEach(card => {
-    const isSel = card.id === cardId;
-    const chk = card.querySelector('[data-chk]');
-    if(chk){
-      chk.style.background = isSel ? '#22c55e' : 'transparent';
-      chk.style.border = isSel ? '1.5px solid #22c55e' : '1.5px solid #2a2a2a';
-      chk.innerHTML = isSel ? '<span style="font-size:10px;color:#000;font-weight:900">✓</span>' : '';
-    }
-    const applyBtn = card.querySelector('[id^="apply-btn-"]');
-    if(applyBtn){
-      applyBtn.textContent = isSel ? '✓적용됨' : '적용';
-      applyBtn.style.background = isSel ? '#22c55e' : '#1a3a1a';
-      applyBtn.style.color = isSel ? '#000' : '#22c55e';
-    }
-    card.style.background = isSel ? 'rgba(34,197,94,.05)' : '';
-  });
-
   toast('✅ 적용됨: ' + _applyModel);
 }
 
 let _dbMultiItems = [];
 
-// SKU 매칭 카드 — 전체 렌더
+// SKU 매칭 카드 단일 렌더 (네비게이션 방식)
 function renderDbCard(idx){
   const matches = window._cardMatches || [];
   if(!matches.length) return;
@@ -1302,104 +1193,190 @@ function renderDbCard(idx){
 
   const itemsHtml = matches.map((m, i) => {
     const mId = `dbc-${i}`;
-    const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+    const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     const isApplied = window._appliedCardId === `db-card-${i}`;
-    const accList = (Array.isArray(m.accessories)?m.accessories:[]).map(a=>a.name||a).join(', ');
+    const accList = (m.accessories||[]).map(a=>a.name||a).join(', ');
     const imgThumb = allImgs[0]
       ? `<img src="${allImgs[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`
       : `<span style="font-size:14px;opacity:.3">📷</span>`;
     const mCat = m.category||'가방';
     const catOpts = catList.map(c=>`<option value="${c}" ${mCat===c?'selected':''}>${c}</option>`).join('');
-    const picThumbs = allImgs.map((url,pi)=>`
+
+    // 사진 썸네일들
+    const picThumbs = allImgs.map(url=>`
       <div style="position:relative;flex-shrink:0">
-        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;border:0.5px solid #2a2a2a;cursor:zoom-in"
-          onclick="event.stopPropagation();openLightbox('${url}',[${allImgs.map(u=>"'"+u.replace(/'/g,"\'")+"'").join(',')}])">
+        <div style="width:72px;height:72px;border-radius:8px;overflow:hidden;border:0.5px solid #2a2a2a">
           <img src="${url}" style="width:100%;height:100%;object-fit:cover">
         </div>
-        <div onclick="event.stopPropagation();deleteDbPic('${m.id}',${pi},'${mId}')"
-          style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;z-index:5">✕</div>
+        <div onclick="deleteDbCardPhoto('${m.id}','${url}',${i})" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff">✕</div>
       </div>`).join('');
-    const addPicBtn = `<div
-      onclick="event.stopPropagation();dbUploadPic('${m.id}','${mId}')"
-      ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='#22c55e';this.style.background='#0d2a0d'"
-      ondragleave="this.style.borderColor='rgba(34,197,94,.4)';this.style.background='#0a1a0a'"
-      ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='rgba(34,197,94,.4)';this.style.background='#0a1a0a';dropResultPhotoToSku('${m.id}','${mId}')"
-      style="width:64px;height:64px;border-radius:8px;border:1.5px dashed rgba(34,197,94,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#0a1a0a;transition:all .15s">
-      <span style="color:rgba(34,197,94,.6);font-size:20px;line-height:1">+</span>
-      <span style="font-size:9px;color:#555;margin-top:2px">드래그/추가</span>
+    const addPicBtn = `<div onclick="document.getElementById('dbc-file-${i}').click()"
+      ondragover="event.preventDefault()"
+      ondrop="event.preventDefault();dbcDropPhoto(event,'${m.id}',${i})"
+      style="width:72px;height:72px;border-radius:8px;border:1.5px dashed rgba(34,197,94,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#0a1a0a">
+      <span style="color:rgba(34,197,94,.6);font-size:22px;line-height:1">+</span>
+      <span style="font-size:9px;color:#555;margin-top:2px">드래그</span>
+      <input type="file" id="dbc-file-${i}" accept="image/*" multiple style="display:none" onchange="dbcFilePhoto(this,'${m.id}',${i})">
     </div>`;
 
-    return `<div id="db-card-${i}"
-      ondragover="event.preventDefault();this.style.outline='2px solid rgba(34,197,94,.6)'"
-      ondragleave="this.style.outline=''"
-      ondrop="event.preventDefault();this.style.outline='';if(window._dragResultPhotoUrl)dropResultPhotoToSku('${m.id}','${mId}')"
-      style="${i>0?'border-top:0.5px solid #1e1e1e':''}${isApplied?';background:rgba(34,197,94,.03)':''}">
+    return `<div id="db-card-${i}" style="${i>0?'border-top:0.5px solid #1e1e1e':''}">
       <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px">
-        <!-- 체크박스 + 번호 + 썸네일 -->
+        <!-- 번호 + 썸네일 -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
-          <div data-chk onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" style="width:16px;height:16px;border-radius:4px;background:${isApplied?'#22c55e':'transparent'};border:1.5px solid ${isApplied?'#22c55e':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
-            ${isApplied?'<span style="font-size:10px;color:#000;font-weight:900">✓</span>':''}
-          </div>
           <span style="font-size:10px;color:#555">${i+1}.</span>
           <div onclick="toggleDbPic('${mId}-pics')" style="width:40px;height:40px;border-radius:6px;background:${allImgs.length?'#1a3a1a':'#1a1a1a'};border:0.5px solid ${allImgs.length?'rgba(34,197,94,.4)':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0">${imgThumb}</div>
         </div>
-        <!-- 1행 + 2행 -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
-          <!-- 1행: 모델명 | SKU (수정가능) -->
-          <div style="display:flex;align-items:center;gap:6px;min-width:0">
-            <input id="${mId}-model-ko" value="${(m.model_name_ko||m.model_name||'').replace(/"/g,'&quot;')}" placeholder="모델명"
-              style="flex:1;min-width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:5px;padding:3px 7px;color:#fff;font-size:12px;font-weight:700;outline:none">
-            <span style="color:#2a2a2a;font-size:10px;flex-shrink:0">|</span>
-            <input id="${mId}-sku" value="${(m.sku_code||'').replace(/"/g,'&quot;')}" placeholder="SKU"
-              style="width:90px;flex-shrink:0;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:5px;padding:3px 7px;color:#22c55e;font-size:11px;font-weight:700;outline:none">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+          <!-- 1행: 모델명+SKU 고정 (말줄임) -->
+          <div style="display:flex;align-items:center;gap:4px">
+            <div style="flex:1;overflow:hidden;display:flex;align-items:center;gap:4px">
+              <span style="font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.model_name_ko||m.model_name||'—'}</span>
+              <span style="color:#2a2a2a;font-size:10px;flex-shrink:0">|</span>
+              <span style="font-size:11px;color:#22c55e;font-weight:700;flex-shrink:0;white-space:nowrap">${m.sku_code||'—'}</span>
+            </div>
+            <button onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" id="apply-btn-${i}"
+              style="background:${isApplied?'#22c55e':'#1a3a1a'};border:none;color:${isApplied?'#000':'#22c55e'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+              ${isApplied?'✓적용됨':'적용'}
+            </button>
           </div>
-          <!-- 2행: 카테고리|사이즈|컬러|실측|부속품|메모|URL (가로스크롤, 수정가능) -->
+          <!-- 2행: 카테고리|사이즈|컬러|실측|부속품|메모|URL 항상 가로스크롤 -->
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-            <div style="display:flex;align-items:center;gap:4px;min-width:max-content;padding-bottom:2px">
-              <select id="${mId}-cat" style="width:58px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 4px;color:#888;font-size:11px;outline:none;flex-shrink:0">${catOpts}</select>
+            <div style="display:flex;align-items:center;gap:5px;min-width:max-content;padding-bottom:2px">
+              <span style="font-size:11px;color:#888;white-space:nowrap">${m.category||'—'}</span>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <input id="${mId}-size" value="${(m.size_label||'').replace(/"/g,'&quot;')}" placeholder="사이즈"
-                style="width:44px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;outline:none;flex-shrink:0">
+              <span style="font-size:11px;color:#888;white-space:nowrap">${m.size_label||'—'}</span>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <input id="${mId}-color" value="${(m.color||'').replace(/"/g,'&quot;')}" placeholder="컬러"
-                style="width:54px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;outline:none;flex-shrink:0">
+              <span style="font-size:11px;color:#888;white-space:nowrap">${m.color||'—'}</span>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <input id="${mId}-actual" value="${(m.size_actual||'').replace(/"/g,'&quot;')}" placeholder="실측"
-                style="width:74px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
+              <span style="font-size:11px;color:#555;white-space:nowrap">실측 ${m.size_actual||'—'}</span>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <input id="${mId}-acc" value="${accList.replace(/"/g,'&quot;')}" placeholder="부속품"
-                style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
+              <span style="font-size:11px;color:#555;white-space:nowrap">부속품 ${accList||'—'}</span>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <input id="${mId}-notes" value="${(m.notes||'').replace(/"/g,'&quot;')}" placeholder="메모"
-                style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
+              <span style="font-size:11px;color:#555;white-space:nowrap">메모 ${m.notes||'—'}</span>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <input id="${mId}-url" value="${(m.site_url||'').replace(/"/g,'&quot;')}" placeholder="URL"
-                style="width:100px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#007aff;font-size:11px;outline:none;flex-shrink:0">
-              <button onclick="saveDbCardEditById('${m.id}','${mId}')"
-                style="background:#22c55e;border:none;color:#000;font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;cursor:pointer;flex-shrink:0;white-space:nowrap">💾</button>
+              ${m.site_url
+                ? `<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#007aff;white-space:nowrap">URL 🔗</a>`
+                : `<span style="font-size:11px;color:#555;white-space:nowrap">URL —</span>`}
             </div>
           </div>
         </div>
       </div>
-      <!-- 📷 탭 → 2행 아래 사진 펼쳐짐 -->
+      <!-- 📷 탭 → 사진 + 수정 input 가로스크롤 -->
       <div id="${mId}-pics" style="display:none;padding:0 12px 10px 60px">
-        <div style="display:flex;gap:6px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+        <!-- 사진 (드래그앤드롭) -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
           ${picThumbs}
           ${addPicBtn}
+        </div>
+        <!-- 수정 input 가로스크롤 (1행+2행 전체) -->
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <div style="display:flex;align-items:center;gap:5px;min-width:max-content;padding-bottom:4px">
+            <input id="${mId}-model-ko" value="${(m.model_name_ko||'').replace(/"/g,'&quot;')}" placeholder="모델명" style="width:130px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">
+            <input id="${mId}-sku" value="${(m.sku_code||'').replace(/"/g,'&quot;')}" placeholder="SKU" style="width:70px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#22c55e;font-size:11px;font-weight:700;flex-shrink:0">
+            <select id="${mId}-cat" style="width:66px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 5px;color:#fff;font-size:11px;flex-shrink:0">${catOpts}</select>
+            <input id="${mId}-size" value="${(m.size_label||'').replace(/"/g,'&quot;')}" placeholder="사이즈" style="width:44px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
+            <input id="${mId}-color" value="${(m.color||'').replace(/"/g,'&quot;')}" placeholder="컬러" style="width:56px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
+            <input id="${mId}-actual" value="${(m.size_actual||'').replace(/"/g,'&quot;')}" placeholder="실측" style="width:72px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
+            <input id="${mId}-notes" value="${(m.notes||'').replace(/"/g,'&quot;')}" placeholder="메모" style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
+            <input id="${mId}-url" value="${(m.site_url||'').replace(/"/g,'&quot;')}" placeholder="URL" style="width:90px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
+            <button onclick="saveDbCardEditById('${m.id}','${mId}')" style="background:#22c55e;border:none;color:#000;font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;white-space:nowrap">💾</button>
+          </div>
         </div>
       </div>
     </div>`;
   }).join('');
 
-  dbWrap.innerHTML = `<div style="margin:0 0 4px">
+  dbWrap.innerHTML = `<div style="margin:0 16px 4px">
     <div style="background:#111;border-radius:10px;border:0.5px solid rgba(34,197,94,.25);overflow:hidden">
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid #1e1e1e">
-        <span style="font-size:11px;color:#ccc;font-weight:600">✅ SKU 매칭 — 기존 수정</span>
-        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(34,197,94,.3)">SKU ${matches.length}</span>
+        <span style="font-size:11px;color:#ccc;font-weight:600">✅ DB 매칭 — 기존 수정</span>
+        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(34,197,94,.3)">DB ${matches.length}</span>
+        <div style="flex:1"></div>
+        <div style="position:relative;display:flex;align-items:center">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:7px;pointer-events:none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="모델명·SKU 검색..." oninput="searchInDbCards(this.value)"
+            style="background:#0d1f0d;border:0.5px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 8px 4px 24px;color:#fff;font-size:11px;width:120px;outline:none">
+        </div>
       </div>
       ${itemsHtml}
     </div>
   </div>`;
+}
+
+
+// DB 카드 사진 드롭
+async function dbcDropPhoto(event, itemId, idx){
+  const files=[...event.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
+  if(!files.length) return;
+  await dbcUploadPhotos(files, itemId, idx);
+}
+// DB 카드 파일 선택
+async function dbcFilePhoto(input, itemId, idx){
+  const files=[...input.files];
+  if(!files.length) return;
+  await dbcUploadPhotos(files, itemId, idx);
+  input.value='';
+}
+// DB 카드 사진 업로드
+async function dbcUploadPhotos(files, itemId, idx){
+  for(const file of files){
+    const b64=await new Promise(resolve=>{
+      const r=new FileReader();
+      r.onload=e=>{
+        const img=new Image(); img.onload=()=>{
+          const MAX=1200;let w=img.width,h=img.height;
+          if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(c.toDataURL('image/jpeg',0.85).split(',')[1]);
+        };img.src=e.target.result;};r.readAsDataURL(file);
+    });
+    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'upload_image',imageBase64:b64})});
+    const j=await res.json();
+    if(j.url){
+      const card=(window._cardMatches||[])[idx];
+      if(card){
+        if(!card.ref_image_url) card.ref_image_url=j.url;
+        else card.extra_images=[...(card.extra_images||[]),j.url];
+        await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:card.ref_image_url,extra_images:card.extra_images||[]}})});
+      }
+      toast('✅ 사진 추가됨!');
+      renderDbCard(idx);
+    }
+  }
+}
+// DB 카드 사진 삭제
+async function deleteDbCardPhoto(itemId, url, idx){
+  const card=(window._cardMatches||[])[idx];
+  if(!card) return;
+  const allImgs=[...(card.ref_image_url?[card.ref_image_url]:[]),...(card.extra_images||[])].filter(u=>u!==url);
+  card.ref_image_url=allImgs[0]||null;
+  card.extra_images=allImgs.slice(1);
+  await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:card.ref_image_url,extra_images:card.extra_images}})});
+  toast('🗑 사진 삭제됨');
+  renderDbCard(idx);
+}
+// DB 카드 내 검색
+function searchInDbCards(val){
+  const v=(val||'').toLowerCase().trim();
+  const cards=document.querySelectorAll('[id^="db-card-"]');
+  const matches=window._cardMatches||[];
+  cards.forEach((card,i)=>{
+    const m=matches[i];
+    if(!m){card.style.display='';return;}
+    if(!v){card.style.display='';return;}
+    const haystack=[(m.model_name_ko||''),(m.model_name||''),(m.sku_code||''),(m.brand||'')].join(' ').toLowerCase();
+    card.style.display=haystack.includes(v)?'':'none';
+  });
+}
+
+function toggleDbPic(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display=el.style.display==='none'||!el.style.display?'block':'none';
 }
 
 function renderDbMatchCards(matches){
@@ -1410,7 +1387,7 @@ function renderDbMatchCards(matches){
   // 카드 ID가 동일하면 innerHTML 스킵 (깜빡임 방지)
   const _newIds=matches.map(m=>String(m.id)).join(',');
   const _oldIds=(window._cardMatches||[]).map(m=>String(m.id)).join(',');
-  const _doRender=_newIds!==_oldIds||!dbWrap.querySelector('#db-card-0');
+  const _doRender=_newIds!==_oldIds||!dbWrap.querySelector('.db-match-card');
   window._cardMatches=matches;
 
   // 슬라이더 데이터 세팅
@@ -1421,7 +1398,8 @@ function renderDbMatchCards(matches){
 
   if(_doRender){
     window._dbMatchIdx=0;
-    renderDbCard(0); // renderDbCard가 전체 카드 렌더
+    dbWrap.innerHTML=`<div class="db-match-card" id="db-card-0"></div>`;
+    renderDbCard(0);
   }
 
   // 첫 번째 카드 자동 적용 — 수동 해제 후엔 스킵
@@ -1443,7 +1421,6 @@ function renderDbMatchCards(matches){
 async function renderResult(){
   // 새 검수 시작 시 이전 카드 데이터 완전 초기화
   window._cardMatches = [];
-  _resultExtraPhotos = [];
   window._dbEnriched = [];
   window._userResetDb = false;
   window._appliedCardId = null;
@@ -1454,14 +1431,7 @@ async function renderResult(){
   badge.textContent='신뢰도 '+conf+'%';
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
-    const resThumb = document.getElementById('res-thumb');
-    resThumb.innerHTML=`<img src="${photos.main.dataUrl}"
-      draggable="true"
-      ondragstart="event.dataTransfer.setData('text/plain','result-main');window._dragResultPhotoUrl=photos.main.dataUrl;"
-      style="width:100%;height:auto;display:block;object-fit:cover;cursor:grab;border-radius:12px"
-      title="SKU 매칭 카드로 드래그하여 사진 추가">`;
-    resThumb.style.cursor='pointer';
-    resThumb.onclick = openResultPhotos;
+    document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="_openMainPhoto()">`;
   }
   document.getElementById('r-brand').textContent=analysis.brand||'—';
   document.getElementById('r-model-ko').textContent=analysis.model_name_ko||'—';
@@ -1480,7 +1450,7 @@ async function renderResult(){
   }).join('');
 
   if(analysis.category){
-    const catMap={'가방':'가방','지갑':'지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
+    const catMap={'가방':'가방','지갑':'지갑','주얼리':'주얼리','쥬얼리':'주얼리','액세서리':'주얼리','jewelry':'주얼리','의류':'의류','신발':'신발','시계':'시계','watch':'시계','bag':'가방','wallet':'지갑'};
     const matched=Object.entries(catMap).find(([k])=>analysis.category.includes(k));
     if(matched){
       const target=matched[1].trim();
@@ -1497,9 +1467,39 @@ async function renderResult(){
 
 
   if(dbMatches.length){
-    // 백엔드에서 받은 데이터 바로 사용 (추가 API 호출 제거 → 로딩 빠름)
-    window._dbEnriched = dbMatches;
-    renderDbMatchCards(dbMatches);
+    const dbWrapRef=document.getElementById('db-match-wrap');
+    dbWrapRef.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#bbb">DB 데이터 로딩 중...</div>';
+    (async()=>{
+      let freshList=[];
+      try{
+        const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
+        const j=await r.json();
+        if(j.success&&j.data) freshList=j.data;
+      }catch(_){}
+      skuListAll=freshList;
+
+      const enriched=dbMatches.map(m=>{
+        // freshList에서 동일 ID 찾아서 최신 데이터로 보완
+        const full=freshList.find(s=>String(s.id)===String(m.id));
+        // full 우선, m으로 보완 (m이 full을 덮어쓰지 않도록)
+        const merged={
+          ...m,
+          // full의 값이 있으면 우선 사용
+          size_actual: full?.size_actual||m.size_actual||'',
+          size_label:  full?.size_label ||m.size_label ||'',
+          sku_code:    full?.sku_code   ||m.sku_code   ||'',
+          notes:       (full?.notes||m.notes||'').trim(),
+          accessories: full?.accessories||m.accessories||[],
+          extra_images:(full?.extra_images||m.extra_images||[]),
+          ref_image_url:(full?.ref_image_url||m.ref_image_url||''),
+          site_url:    full?.site_url   ||m.site_url   ||'',
+        };
+        return merged;
+      });
+      window._dbEnriched=enriched;
+      renderDbMatchCards(enriched);
+
+    })();
 
   } else {
     dbWrap.innerHTML='';
@@ -1525,7 +1525,7 @@ async function renderResult(){
     const modelName=document.getElementById('r-model-ko')?.textContent?.trim();
     if(modelName&&modelName!=='—'&&!_refDataAll.length) loadRefData(modelName);
   }, 1200);
-  // 사이즈: AI 이미지 분석값만 (SKU 매칭은 renderDbMatchCards에서 처리)
+  // 사이즈: AI 이미지 분석값만 (SKU DB 매칭은 renderDbMatchCards에서 처리)
   const _finalSize=_aiSize||'';
   const _finalSizeName=_aiSizeName||_lensSizeName||'';
 
@@ -1693,30 +1693,27 @@ function searchRefData(q){
   if(input && q !== undefined) input.value = q;
   const query = (q||input?.value||'').trim().toLowerCase();
 
-  const matchItem = s => !query
-    || (s.model_name_ko||s.model_name||'').toLowerCase().includes(query)
-    || (s.sku_code||'').toLowerCase().includes(query)  // 스타일번호 검색
-    || (s.notes||'').toLowerCase().includes(query);
-  // 참고자료: 검기어만 표시 (SKU 매칭 카드에 이미 표시되므로 DB 제외)
-  const gearItems = _refDataAll.filter(s=>s._refType==='gear').filter(matchItem);
+  const dbItems = _refDataAll.filter(s=>s._refType==='db').filter(s=>
+    !query || (s.model_name_ko||s.model_name||'').toLowerCase().includes(query)
+      || (s.notes||'').toLowerCase().includes(query)
+  );
+  const gearItems = _refDataAll.filter(s=>s._refType==='gear').filter(s=>
+    !query || (s.model_name_ko||s.model_name||'').toLowerCase().includes(query)
+      || (s.notes||'').toLowerCase().includes(query)
+  );
 
-  // 배지 업데이트 (검기어만)
+  // 배지 업데이트
   const dbCnt = document.getElementById('ref-db-cnt');
   const gearCnt = document.getElementById('ref-gear-cnt');
-  if(dbCnt) dbCnt.style.display='none';
+  if(dbCnt){ dbCnt.textContent='DB '+dbItems.length; dbCnt.style.display=dbItems.length?'inline':'none'; }
   if(gearCnt){ gearCnt.textContent='검기어 '+gearItems.length; gearCnt.style.display=gearItems.length?'inline':'none'; }
 
-  // 섹션 표시 여부 (검기어가 있을 때만)
+  // 섹션 표시 여부
   const refSection = document.getElementById('ref-section');
-  if(refSection) refSection.style.display = gearItems.length ? 'block' : 'none';
+  if(refSection) refSection.style.display = _refDataAll.length ? 'block' : 'none';
 
-  // 정보 많은 항목 상단 정렬
-  const scoreItem = s => (s.size_actual?2:0) + (s.color?1:0) + (s.size_label?1:0)
-    + ((Array.isArray(s.accessories)?s.accessories:[]).length>0?2:0) + (s.notes?1:0)
-    + ((Array.isArray(s.extra_images)?s.extra_images:[]).length>0?2:0) + (s.ref_image_url?1:0)
-    + (s.site_url?1:0);
-  gearItems.sort((a,b)=>scoreItem(b)-scoreItem(a));
-  renderRefList('ref-db-list', [], 'db');
+  // 패널 내용 렌더
+  renderRefList('ref-db-list', dbItems, 'db');
   renderRefList('ref-gear-list', gearItems, 'gear');
 }
 
@@ -1724,221 +1721,30 @@ function renderRefList(wrapId, items, type){
   const wrap = document.getElementById(wrapId);
   if(!wrap) return;
   if(!items.length){ wrap.innerHTML=''; return; }
-  const color  = type==='db' ? '#007aff' : '#BA7517';
-  const bg     = type==='db' ? '#0a1218' : '#18120a';
+  const color = type==='db' ? '#007aff' : '#BA7517';
+  const bg = type==='db' ? '#0a1218' : '#18120a';
   const border = type==='db' ? 'rgba(0,122,255,.2)' : 'rgba(186,117,23,.2)';
-  const ibg    = type==='db' ? '#05111a' : '#130e04';
-  const iborder= type==='db' ? 'rgba(0,122,255,.25)' : 'rgba(186,117,23,.25)';
-  const label  = type==='db' ? 'SKU 각인 자료' : '검기어 판정불가 사례';
-  const catList = ['가방','지갑','주얼리','의류','신발','시계','기타'];
-
+  const label = type==='db' ? 'DB 각인 자료' : '검기어 판정불가 사례';
   wrap.innerHTML = `
     <div style="font-size:10px;color:${color};font-weight:600;margin-bottom:4px;padding-left:2px">■ ${label}</div>
-    ${items.map((item, idx)=>{
-      const rId = `ref-${type}-${idx}`;
-      const photos = [item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
-      const thumb = photos[0]||'';
-      const accList = (Array.isArray(item.accessories)?item.accessories:[]).map(a=>a.name||a).join(', ');
-      const mCat = item.category||'가방';
-      const catOpts = catList.map(c=>`<option value="${c}" ${mCat===c?'selected':''}>${c}</option>`).join('');
-      const picThumbs = photos.map(url=>
-        `<div style="position:relative;flex-shrink:0">
-          <div style="width:56px;height:56px;border-radius:6px;overflow:hidden;border:0.5px solid #2a2a2a">
-            <img src="${url}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in" onclick="openLightboxRef(this)" data-urls="${photos.join(',')}">
-          </div>
-        </div>`
-      ).join('');
-      const addBtn = `<div onclick="refUploadPic('${item.id}','${rId}')" style="width:56px;height:56px;border-radius:6px;border:1.5px dashed ${color};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:${ibg}">
-        <span style="color:${color};font-size:18px;line-height:1;opacity:.6">+</span>
-        <span style="font-size:8px;color:#555;margin-top:2px">드래그</span>
-      </div>`;
-
-      return `<div style="background:${bg};border:0.5px solid ${border};border-radius:8px;margin-bottom:6px;overflow:hidden">
-        <!-- 1행: 썸네일 + 모델명|SKU 고정 -->
-        <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px">
-          <div onclick="toggleRefPic('${rId}-pics')" style="width:40px;height:40px;border-radius:6px;overflow:hidden;background:#1a1a1a;border:0.5px solid #2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
-            ${thumb?`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:14px;opacity:.3">📷</span>`}
-          </div>
-          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
-            <!-- 1행 -->
-            <div style="display:flex;align-items:center;gap:6px">
-              <input id="${rId}-model-ko" value="${(item.model_name_ko||item.model_name||'').replace(/"/g,'&quot;')}" placeholder="모델명"
-                style="flex:1;min-width:80px;background:${ibg};border:1px solid ${iborder};border-radius:5px;padding:3px 6px;color:#fff;font-size:12px;font-weight:700;outline:none">
-              <span style="color:#2a2a2a;font-size:10px;flex-shrink:0">|</span>
-              <input id="${rId}-sku" value="${(item.sku_code||'').replace(/"/g,'&quot;')}" placeholder="SKU"
-                style="width:82px;flex-shrink:0;background:${ibg};border:1px solid ${iborder};border-radius:5px;padding:3px 6px;color:${color};font-size:11px;font-weight:700;outline:none">
-            </div>
-            <!-- 2행: 가로스크롤 수정 가능 -->
-            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-              <div style="display:flex;align-items:center;gap:4px;min-width:max-content;padding-bottom:2px">
-                <select id="${rId}-cat" style="width:56px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 4px;color:#888;font-size:11px;outline:none;flex-shrink:0">${catOpts}</select>
-                <span style="color:#2a2a2a;font-size:10px">|</span>
-                <input id="${rId}-size" value="${(item.size_label||'').replace(/"/g,'&quot;')}" placeholder="사이즈"
-                  style="width:44px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 5px;color:#888;font-size:11px;outline:none;flex-shrink:0">
-                <span style="color:#2a2a2a;font-size:10px">|</span>
-                <input id="${rId}-color" value="${(item.color||'').replace(/"/g,'&quot;')}" placeholder="컬러"
-                  style="width:54px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 5px;color:#888;font-size:11px;outline:none;flex-shrink:0">
-                <span style="color:#2a2a2a;font-size:10px">|</span>
-                <input id="${rId}-actual" value="${(item.size_actual||'').replace(/"/g,'&quot;')}" placeholder="실측"
-                  style="width:72px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
-                <span style="color:#2a2a2a;font-size:10px">|</span>
-                <input id="${rId}-acc" value="${accList.replace(/"/g,'&quot;')}" placeholder="부속품"
-                  style="width:80px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
-                <span style="color:#2a2a2a;font-size:10px">|</span>
-                <input id="${rId}-notes" value="${(item.notes||'').replace(/"/g,'&quot;')}" placeholder="메모"
-                  style="width:80px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
-                <span style="color:#2a2a2a;font-size:10px">|</span>
-                <input id="${rId}-url" value="${(item.site_url||'').replace(/"/g,'&quot;')}" placeholder="URL"
-                  style="width:96px;background:${ibg};border:1px solid ${iborder};border-radius:4px;padding:2px 5px;color:#007aff;font-size:11px;outline:none;flex-shrink:0">
-                <button onclick="saveRefItem('${item.id}','${rId}')"
-                  style="background:${color};border:none;color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;cursor:pointer;flex-shrink:0;white-space:nowrap">💾</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- 📷 탭 → 사진 펼침 -->
-        <div id="${rId}-pics" style="display:none;padding:0 10px 8px 58px">
-          <div style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
-            ${picThumbs}
-            ${addBtn}
-          </div>
+    ${items.map(item=>{
+      const photos=[item.ref_image_url,...(item.extra_images||[])].filter(Boolean);
+      const thumb=photos[0]||'';
+      return `<div style="background:${bg};border:0.5px solid ${border};border-radius:8px;padding:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">
+        <div style="position:relative;flex-shrink:0">
+        ${thumb?`<img src="${thumb}" onclick="openLightboxRef(this)" data-urls="${photos.join(',')}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block">`:
+          `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
+        ${photos.length>=2?`<span style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px">${photos.length}</span>`:''}
+      </div>
+        <div style="flex:1;min-width:0">
+          <div style="color:#fff;font-size:12px;font-weight:600">${item.model_name_ko||item.model_name||'—'}</div>
+          <div style="color:${color};font-size:10px">${[item.brand,item.sku_code,item.size_actual].filter(Boolean).join(' · ')}</div>
+          ${item.notes?`<div style="color:#ccc;font-size:10px;margin-top:2px">${item.notes}</div>`:''}
         </div>
       </div>`;
     }).join('')}`;
 }
 
-async function dropResultPhotoToSku(itemId, mId){
-  const url = window._dragResultPhotoUrl;
-  if(!url){ toast('드래그할 사진이 없습니다'); return; }
-  // base64 → upload
-  const b64 = url.split(',')[1];
-  if(!b64){ toast('사진 형식 오류'); return; }
-  try{
-    const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
-    const j = await res.json();
-    if(j.success){
-      toast('✅ 검수 사진이 SKU에 추가됐습니다');
-      // 카드 데이터 업데이트
-      const matches = window._cardMatches||[];
-      const idx = matches.findIndex(m=>String(m.id)===String(itemId));
-      if(idx>=0){
-        const existing = matches[idx];
-        const extras = Array.isArray(existing.extra_images) ? existing.extra_images : [];
-        if(!existing.ref_image_url){
-          existing.ref_image_url = url;
-        } else {
-          existing.extra_images = [...extras, url];
-        }
-        renderDbCard(0);
-      }
-      window._dragResultPhotoUrl = null;
-    } else { toast('❌ 사진 추가 실패: '+(j.error||'')); }
-  }catch(e){ toast('❌ 오류: '+e.message); }
-}
-
-async function dbUploadPic(itemId, mId){
-  const input = document.createElement('input');
-  input.type='file'; input.accept='image/*';
-  input.onchange = async(e)=>{
-    const file=e.target.files[0]; if(!file) return;
-    const reader=new FileReader();
-    reader.onload=async(ev)=>{
-      const b64=ev.target.result.split(',')[1];
-      try{
-        const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
-        const j=await res.json();
-        if(j.success){
-          toast('✅ 사진 추가됨');
-          // 카드 새로고침
-          const matches=window._cardMatches||[];
-          const idx=matches.findIndex(m=>String(m.id)===String(itemId));
-          if(idx>=0&&j.data?.[0]){
-            matches[idx]={...matches[idx],...j.data[0]};
-            renderDbCard(0);
-          }
-        } else toast('❌ 사진 업로드 실패');
-      }catch(e){ toast('❌ 오류: '+e.message); }
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
-}
-
-async function deleteDbPic(itemId, picIdx, mId){
-  if(!confirm('사진을 삭제하시겠습니까?')) return;
-  const matches=window._cardMatches||[];
-  const m=matches.find(item=>String(item.id)===String(itemId));
-  if(!m) return;
-  const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean);
-  allImgs.splice(picIdx,1);
-  const newRef=allImgs[0]||null;
-  const newExtras=allImgs.slice(1);
-  try{
-    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:newRef,extra_images:newExtras}})});
-    const j=await res.json();
-    if(j.success){
-      toast('✅ 사진 삭제됨');
-      m.ref_image_url=newRef; m.extra_images=newExtras;
-      renderDbCard(0);
-    } else toast('❌ 삭제 실패');
-  }catch(e){ toast('❌ 오류: '+e.message); }
-}
-
-function toggleRefPic(id){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.style.display=el.style.display==='none'||!el.style.display?'block':'none';
-}
-
-async function saveRefItem(itemId, rId){
-  const modelKo = document.getElementById(rId+'-model-ko')?.value.trim()||'';
-  const skuCode = document.getElementById(rId+'-sku')?.value.trim()||'';
-  const cat     = document.getElementById(rId+'-cat')?.value||'';
-  const size    = document.getElementById(rId+'-size')?.value.trim()||'';
-  const color   = document.getElementById(rId+'-color')?.value.trim()||'';
-  const actual  = document.getElementById(rId+'-actual')?.value.trim()||'';
-  const acc     = document.getElementById(rId+'-acc')?.value.trim()||'';
-  const notes   = document.getElementById(rId+'-notes')?.value.trim()||'';
-  const url     = document.getElementById(rId+'-url')?.value.trim()||'';
-  if(!itemId||itemId==='undefined'){ toast('저장할 항목 ID가 없습니다'); return; }
-  try{
-    const res = await fetch('/api/inspect',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action:'update_sku', skuData:{
-        id:itemId, model_name_ko:modelKo, sku_code:skuCode,
-        category:cat, size_label:size, color, size_actual:actual,
-        notes, site_url:url
-      }})
-    });
-    const j = await res.json();
-    if(j.success){ toast('✅ 참고자료 저장 완료'); }
-    else { toast('❌ 저장 실패: '+(j.error||'')); }
-  }catch(e){ toast('❌ 오류: '+e.message); }
-}
-
-async function refUploadPic(itemId, rId){
-  const input = document.createElement('input');
-  input.type='file'; input.accept='image/*';
-  input.onchange = async(e)=>{
-    const file=e.target.files[0]; if(!file)return;
-    const reader=new FileReader();
-    reader.onload=async(ev)=>{
-      const b64=ev.target.result.split(',')[1];
-      try{
-        const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
-        const j=await res.json();
-        if(j.success){ toast('✅ 사진 추가됨'); loadRefData(document.getElementById('ref-search-input')?.value||''); }
-        else toast('❌ 사진 업로드 실패');
-      }catch(e){ toast('❌ 오류: '+e.message); }
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
-}
 function toggleRefPanel(){
   const panel = document.getElementById('ref-panel');
   const btn = document.getElementById('ref-toggle-btn');
@@ -2464,44 +2270,25 @@ if(matches.length>=1){
 
 
 async function saveDbCardEditById(itemId, mId){
-  // 새 renderDbCard의 input ID 형식: mId+'-model-ko', mId+'-sku' 등
+  const brand   = document.getElementById(mId+'-brand')?.value.trim()||'';
   const modelKo = document.getElementById(mId+'-model-ko')?.value.trim()||'';
+  const color   = document.getElementById(mId+'-color')?.value.trim()||'';
   const skuCode = document.getElementById(mId+'-sku')?.value.trim()||'';
   const cat     = document.getElementById(mId+'-cat')?.value||'';
-  const size    = document.getElementById(mId+'-size')?.value.trim()||'';
-  const color   = document.getElementById(mId+'-color')?.value.trim()||'';
-  const actual  = document.getElementById(mId+'-actual')?.value.trim()||'';
-  const notes   = document.getElementById(mId+'-notes')?.value.trim()||'';
-  const url     = document.getElementById(mId+'-url')?.value.trim()||'';
-  // brand는 r-brand에서
-  const brand   = document.getElementById(mId+'-brand')?.value.trim()
-                || document.getElementById('r-brand')?.textContent?.trim()||'';
-
   if(!itemId||itemId==='undefined'){ toast('저장할 항목 ID가 없습니다'); return; }
   try{
     const res = await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'update_sku', skuData:{
-        id:itemId, brand, model_name_ko:modelKo, color,
-        sku_code:skuCode, category:cat,
-        size_label:size, size_actual:actual,
-        notes:notes, site_url:url
+        id:itemId, brand, model_name_ko:modelKo, color, sku_code:skuCode, category:cat
       }})
     });
     const j = await res.json();
     if(j.success){
-      toast('✅ SKU 저장 완료');
-      // 검수 결과 화면 업데이트
+      toast('✅ DB 저장 완료');
       if(brand) document.getElementById('r-brand').textContent = brand;
-      if(modelKo){
-        document.getElementById('r-model-ko').textContent = modelKo;
-        // 참고자료 검색어 자동 업데이트
-        const refInput = document.getElementById('ref-search-input');
-        if(refInput){ refInput.value = modelKo; searchRefData(modelKo); }
-        loadRefData(modelKo);
-      }
+      if(modelKo) document.getElementById('r-model-ko').textContent = modelKo;
       if(skuCode) document.getElementById('r-sku').textContent = skuCode;
-      if(size) document.getElementById('r-size-name').textContent = size;
     } else { toast('❌ 저장 실패: '+(j.error||'')); }
   }catch(e){ toast('❌ 오류: '+e.message); }
 }
@@ -2523,7 +2310,7 @@ async function saveDbCardEdit(itemId){
     });
     const j = await res.json();
     if(j.success){
-      toast('✅ SKU 저장 완료');
+      toast('✅ DB 저장 완료');
       // 검수 결과 화면도 업데이트
       if(brand) document.getElementById('r-brand').textContent = brand;
       if(modelKo) document.getElementById('r-model-ko').textContent = modelKo;
