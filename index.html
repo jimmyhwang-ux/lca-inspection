@@ -1211,7 +1211,7 @@ let _dbMultiItems = [];
 
 // ── SKU 매칭 탭 UI ──────────────────────────────────────────
 // _dbActiveTab: 'sku' | 'gear' | 'search'
-let _dbActiveTab = 'sku';
+var _dbActiveTab = 'sku';
 
 function renderDbCard(idx){
   const matches = window._cardMatches || [];
@@ -1480,6 +1480,67 @@ function _renderDbCardList(items){
 }
 
 
+
+// ── DB 카드 실측 입력 초기화 ────────────────────────────────
+function initDbCardActualInputs(mId, cat, curVal){
+  const wrap = document.getElementById(mId+'-actual-inputs');
+  if(!wrap) return;
+  const nums = (curVal||'').match(/\d+(\.\d+)?/g)||[];
+  const iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#aaa;font-size:11px;outline:none';
+  const sep = 'color:#444;font-size:10px;flex-shrink:0';
+  if(cat==='시계'){
+    wrap.innerHTML = '<input id="'+mId+'-sw" type="number" value="'+(nums[0]||'')+'" placeholder="0" style="'+iStyle+';width:46px"><span style="'+sep+'">mm</span>';
+  } else if(cat==='주얼리'){
+    wrap.innerHTML = '<input id="'+mId+'-sw" type="number" value="'+(nums[0]||'')+'" placeholder="폭" style="'+iStyle+';width:46px"><span style="'+sep+'">mm</span>';
+  } else {
+    wrap.innerHTML = '<input id="'+mId+'-sw" type="number" value="'+(nums[0]||'')+'" placeholder="가" style="'+iStyle+';width:46px">'
+      +'<span style="'+sep+'">×</span>'
+      +'<input id="'+mId+'-sh" type="number" value="'+(nums[1]||'')+'" placeholder="세" style="'+iStyle+';width:46px">'
+      +'<span style="'+sep+'">×</span>'
+      +'<input id="'+mId+'-sd" type="number" value="'+(nums[2]||'')+'" placeholder="높" style="'+iStyle+';width:46px">'
+      +'<span style="'+sep+'">cm</span>';
+  }
+}
+
+// 카테고리 변경 → 실측 + 부속품 드롭다운 동시 갱신
+function onDbCardCatChange(mId, cat){
+  initDbCardActualInputs(mId, cat, '');
+  const sel = document.getElementById(mId+'-acc-sel');
+  if(sel){
+    const items = (ACC_MAP[cat]||ACC_MAP['가방']).map(function(a){ return '<option>'+a+'</option>'; }).join('');
+    sel.innerHTML = '<option value="">-- 선택 --</option>' + items;
+  }
+}
+
+// 부속품 추가 (중복 방지)
+function addDbCardAcc(mId, sel){
+  const name = sel.value; if(!name) return;
+  sel.value = '';
+  const tags = document.getElementById(mId+'-acc-tags');
+  if(!tags) return;
+  const existing = Array.from(tags.querySelectorAll('span')).map(function(s){ return s.textContent.replace(' ✕','').trim(); });
+  if(existing.includes(name)) return;
+  const span = document.createElement('span');
+  span.style.cssText = 'font-size:10px;background:#0a2a0a;border:0.5px solid rgba(34,197,94,.3);border-radius:100px;padding:2px 7px;color:#22c55e;white-space:nowrap;cursor:pointer';
+  span.textContent = name + ' ✕';
+  span.onclick = function(){ span.remove(); };
+  tags.appendChild(span);
+}
+function removeDbCardAcc(mId, name, el){ el.remove(); }
+
+// 실측값 수집
+function getDbCardActual(mId, cat){
+  const sw = document.getElementById(mId+'-sw')||{value:''};
+  const sh = document.getElementById(mId+'-sh')||{value:''};
+  const sd = document.getElementById(mId+'-sd')||{value:''};
+  if(cat==='시계') return sw.value?sw.value+'mm':'';
+  if(cat==='주얼리') return sw.value?'폭 '+sw.value+'mm':'';
+  const parts=[];
+  if(sw.value) parts.push('가로 '+sw.value+'cm');
+  if(sh.value) parts.push('세로 '+sh.value+'cm');
+  if(sd.value) parts.push('높이 '+sd.value+'cm');
+  return parts.join(' × ');
+}
 
 function toggleDbCardEdit(mId){
   const panel = document.getElementById(mId+'-edit');
@@ -1923,14 +1984,6 @@ function renderRefList(wrapId, items, type){
     }).join('')}`;
 }
 
-function toggleRefPanel(){
-  const panel = document.getElementById('ref-panel');
-  const btn = document.getElementById('ref-toggle-btn');
-  if(!panel||!btn) return;
-  const open = panel.style.display==='none';
-  panel.style.display = open ? 'block' : 'none';
-  btn.textContent = open ? '접기 ▴' : '펼치기 ▾';
-}
 
 // 카테고리 강제 변경 팝업
 function showCatPicker(tagEl){
@@ -2507,9 +2560,27 @@ async function saveDbCardEditById(itemId, mId){
     const j = await res.json();
     if(j.success){
       toast('✅ DB 저장 완료');
-      if(brand) document.getElementById('r-brand').textContent = brand;
-      if(modelKo) document.getElementById('r-model-ko').textContent = modelKo;
-      if(skuCode) document.getElementById('r-sku').textContent = skuCode;
+      // 현재 적용된 카드인 경우 상단 결과 영역도 업데이트
+      const mIdxStr = mId.replace('dbc-','');
+      const isApplied = window._appliedCardId === 'db-card-'+mIdxStr;
+      if(isApplied){
+        if(brand) document.getElementById('r-brand').textContent = brand;
+        if(modelKo) document.getElementById('r-model-ko').textContent = modelKo;
+        if(skuCode) document.getElementById('r-sku').textContent = skuCode;
+      }
+      // _cardMatches 캐시도 업데이트
+      const mIdx = parseInt(mIdxStr);
+      const cached = (window._cardMatches||[])[mIdx];
+      if(cached){
+        if(brand) cached.brand = brand;
+        if(modelKo) cached.model_name_ko = modelKo;
+        if(skuCode) cached.sku_code = skuCode;
+        if(cat) cached.category = cat;
+        const actualVal = getDbCardActual(mId, cat||cached.category||'가방');
+        if(actualVal) cached.size_actual = actualVal;
+        const accTags = document.getElementById(mId+'-acc-tags');
+        if(accTags) cached.accessories = Array.from(accTags.querySelectorAll('span')).map(function(s){ return {name:s.textContent.replace(' ✕','').trim()}; });
+      }
     } else { toast('❌ 저장 실패: '+(j.error||'')); }
   }catch(e){ toast('❌ 오류: '+e.message); }
 }
