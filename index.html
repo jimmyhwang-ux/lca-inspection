@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779326416 -->
+  <!-- v1779327025 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -801,8 +801,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779326416';
-console.error('APP VERSION: 1779326416');
+window._appVer='1779327025';
+console.error('APP VERSION: 1779327025');
 
 const ACC_MAP = {
   '가방': [
@@ -1268,9 +1268,24 @@ function applyDbMatch(item, cardId){
     reSearchByModel(_applyBrand, _applyModel);
   }
 
-  // 체크박스 상태 업데이트를 위해 카드 재렌더
+  // 체크박스만 DOM에서 직접 업데이트 (renderDbCard 재호출 금지 - 무한루프 방지)
   window._appliedCardId = cardId;
-  if(window._cardMatches && window._cardMatches.length) renderDbCard(0);
+  document.querySelectorAll('#db-match-wrap [id^="db-card-"]').forEach(card => {
+    const isSel = card.id === cardId;
+    const chk = card.querySelector('[data-chk]');
+    if(chk){
+      chk.style.background = isSel ? '#22c55e' : 'transparent';
+      chk.style.border = isSel ? '1.5px solid #22c55e' : '1.5px solid #2a2a2a';
+      chk.innerHTML = isSel ? '<span style="font-size:10px;color:#000;font-weight:900">✓</span>' : '';
+    }
+    const applyBtn = card.querySelector('[id^="apply-btn-"]');
+    if(applyBtn){
+      applyBtn.textContent = isSel ? '✓적용됨' : '적용';
+      applyBtn.style.background = isSel ? '#22c55e' : '#1a3a1a';
+      applyBtn.style.color = isSel ? '#000' : '#22c55e';
+    }
+    card.style.background = isSel ? 'rgba(34,197,94,.05)' : '';
+  });
 
   toast('✅ 적용됨: ' + _applyModel);
 }
@@ -1314,11 +1329,15 @@ function renderDbCard(idx){
       <span style="font-size:9px;color:#555;margin-top:2px">드래그/추가</span>
     </div>`;
 
-    return `<div id="db-card-${i}" style="${i>0?'border-top:0.5px solid #1e1e1e':''}${isApplied?';background:rgba(34,197,94,.03)':''}">
+    return `<div id="db-card-${i}"
+      ondragover="event.preventDefault();this.style.outline='2px solid rgba(34,197,94,.6)'"
+      ondragleave="this.style.outline=''"
+      ondrop="event.preventDefault();this.style.outline='';if(window._dragResultPhotoUrl)dropResultPhotoToSku('${m.id}','${mId}')"
+      style="${i>0?'border-top:0.5px solid #1e1e1e':''}${isApplied?';background:rgba(34,197,94,.03)':''}">
       <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px">
         <!-- 체크박스 + 번호 + 썸네일 -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
-          <div onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" style="width:16px;height:16px;border-radius:4px;background:${isApplied?'#22c55e':'transparent'};border:1.5px solid ${isApplied?'#22c55e':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <div data-chk onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" style="width:16px;height:16px;border-radius:4px;background:${isApplied?'#22c55e':'transparent'};border:1.5px solid ${isApplied?'#22c55e':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
             ${isApplied?'<span style="font-size:10px;color:#000;font-weight:900">✓</span>':''}
           </div>
           <span style="font-size:10px;color:#555">${i+1}.</span>
