@@ -1237,6 +1237,23 @@ function renderDbCard(idx){
 function _buildDbTabUI(){
   const dbWrap = document.getElementById('db-match-wrap');
   if(!dbWrap) return;
+
+  // ── 이벤트 위임: document에 딱 한 번만 등록 ────────────────
+  // document는 절대 교체되지 않으므로 renderDbMatchCards 후에도 유지
+  if(!window._dbCardDelegateReady){
+    window._dbCardDelegateReady = true;
+    document.addEventListener('change', function(e){
+      var sel = e.target;
+      if(!sel || sel.tagName !== 'SELECT') return;
+      var id = sel.id||'';
+      if(/^dbc-\d+-cat$/.test(id)){
+        onDbCardCatChange(id.replace(/-cat$/,''), sel.value);
+      }
+      if(/^dbc-\d+-acc-sel$/.test(id) && sel.value){
+        addDbCardAcc(id.replace(/-acc-sel$/,''), sel);
+      }
+    });
+  }
   const skuCnt  = (window._dbSkuItems||[]).length;
   const gearCnt = (window._dbGearItems||[]).length;
 
@@ -1522,17 +1539,6 @@ function _renderDbCardList(items){
     panel.appendChild(picSection);
     card.appendChild(panel);
     content.appendChild(card);
-
-    // 카테고리 select addEventListener (렌더 후 연결 — 이스케이프 문제 없음)
-    var _catSel = content.querySelector('#'+mId+'-cat');
-    if(_catSel){
-      (function(mid){ _catSel.addEventListener('change', function(){ onDbCardCatChange(mid, this.value); }); })(mId);
-    }
-    // 부속품 select addEventListener
-    var _accSel = content.querySelector('#'+mId+'-acc-sel');
-    if(_accSel){
-      (function(mid){ _accSel.addEventListener('change', function(){ if(this.value) addDbCardAcc(mid, this); }); })(mId);
-    }
   });
 
   // 실측 입력 초기화 — select 실제값 기준
