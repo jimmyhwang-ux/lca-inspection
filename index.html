@@ -423,6 +423,7 @@ input[type=file]{display:none}
           <button class="cat-btn" onclick="setCat('의류',this)">의류</button>
           <button class="cat-btn" onclick="setCat('신발',this)">신발</button>
           <button class="cat-btn" onclick="setCat('시계',this)">시계</button>
+          <button class="cat-btn" onclick="setCat('벨트',this)">벨트</button>
         </div>
         <div class="acc-bottom-row">
           <select class="acc-input" id="acc-select" onchange="addAccessory()">
@@ -525,6 +526,7 @@ input[type=file]{display:none}
           <button class="cat-btn" onclick="setSkuAccCat('의류',this)">의류</button>
           <button class="cat-btn" onclick="setSkuAccCat('신발',this)">신발</button>
           <button class="cat-btn" onclick="setSkuAccCat('시계',this)">시계</button>
+          <button class="cat-btn" onclick="setSkuAccCat('벨트',this)">벨트</button>
         </div>
         <div class="acc-bottom-row">
           <select class="acc-input" id="sku-acc-select" onchange="addSkuAccFromDrop()">
@@ -790,8 +792,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779343952';
-console.error('APP VERSION: 1779343952');
+window._appVer='1779403718';
+console.error('APP VERSION: 1779403718');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -817,6 +819,12 @@ var ACC_MAP = window.ACC_MAP = {
   '시계': [
     '메탈 스트랩/브레이슬릿','레더 스트랩/브레이슬릿','러버 스트랩/브레이슬릿',
     '세라믹 스트랩/브레이슬릿','커렉터 조정 핀','크라운','여분링크'
+  ],
+  '벨트': [
+    '버클','여분 핀','보관 백','더스트백'
+  ],
+  '기타': [
+    '더스트백','쇼핑백','리본','보증서'
   ]
 };
 
@@ -1315,7 +1323,7 @@ function _switchDbTab(tab){
 function _renderDbCardList(items){
   const content = document.getElementById('dbtab-content');
   if(!content) return;
-  const catList = ['가방','지갑','주얼리','의류','신발','시계','기타'];
+  const catList = ['가방','지갑','주얼리','의류','신발','시계','벨트','기타'];
   const allMatches = window._cardMatches || [];
 
   if(!items.length){
