@@ -388,7 +388,7 @@ input[type=file]{display:none}
         </div>
       </div>
       <div id="ref-panel" style="display:none;padding:0 10px 10px">
-        <div id="ref-db-list" style="display:none"></div>
+        <div id="ref-db-list" style="margin-bottom:8px"></div>
         <div id="ref-gear-list"></div>
       </div>
     </div>
@@ -1412,11 +1412,11 @@ function initDbCardActualInputs(mId, cat, curVal){
     wrap.innerHTML=`<input id="${mId}-sw" type="number" value="${nums[0]||''}" placeholder="폭" style="${iStyle};width:40px">
       <span style="${sepStyle}">mm</span>`;
   } else {
-    wrap.innerHTML=`<input id="${mId}-sw" type="number" value="${nums[0]||''}" placeholder="가" style="${iStyle};width:34px">
+    wrap.innerHTML=`<input id="${mId}-sw" type="number" value="${nums[0]||''}" placeholder="가" style="${iStyle};width:46px">
       <span style="${sepStyle}">×</span>
-      <input id="${mId}-sh" type="number" value="${nums[1]||''}" placeholder="세" style="${iStyle};width:34px">
+      <input id="${mId}-sh" type="number" value="${nums[1]||''}" placeholder="세" style="${iStyle};width:46px">
       <span style="${sepStyle}">×</span>
-      <input id="${mId}-sd" type="number" value="${nums[2]||''}" placeholder="높" style="${iStyle};width:34px">
+      <input id="${mId}-sd" type="number" value="${nums[2]||''}" placeholder="높" style="${iStyle};width:46px">
       <span style="${sepStyle}">cm</span>`;
   }
 }
@@ -1779,16 +1779,15 @@ function searchRefData(q){
   // 배지 업데이트
   const dbCnt = document.getElementById('ref-db-cnt');
   const gearCnt = document.getElementById('ref-gear-cnt');
-  if(dbCnt){ dbCnt.style.display='none'; }
+  if(dbCnt){ dbCnt.textContent='DB '+dbItems.length; dbCnt.style.display=dbItems.length?'inline':'none'; }
   if(gearCnt){ gearCnt.textContent='검기어 '+gearItems.length; gearCnt.style.display=gearItems.length?'inline':'none'; }
 
-  // 섹션 표시 여부 — 검기어 데이터 있을 때만 노출
+  // 섹션 표시 여부
   const refSection = document.getElementById('ref-section');
-  const gearAll = _refDataAll.filter(s=>s._refType==='gear');
-  if(refSection) refSection.style.display = gearAll.length ? 'block' : 'none';
+  if(refSection) refSection.style.display = _refDataAll.length ? 'block' : 'none';
 
   // 패널 내용 렌더
-  renderRefList('ref-db-list', [], 'db');
+  renderRefList('ref-db-list', dbItems, 'db');
   renderRefList('ref-gear-list', gearItems, 'gear');
 }
 
