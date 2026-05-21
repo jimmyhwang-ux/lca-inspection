@@ -1545,13 +1545,18 @@ function _renderDbCardList(items){
   });
 
   // 실측 입력 초기화 — select 실제값 기준
+  // 상단 실측값 (r-size) 가져오기
+  var topSizeVal = (document.getElementById('r-size')?.textContent||'').replace('—','').trim();
+
   items.forEach(function(m){
     const i = (window._cardMatches||[]).indexOf(m);
     if(i < 0) return;
     const mId2 = 'dbc-'+i;
     const catEl = document.getElementById(mId2+'-cat');
     const cat = catEl ? catEl.value : (m.category||'가방');
-    initDbCardActualInputs(mId2, cat, m.size_actual||'');
+    // m.size_actual 없으면 상단 실측값 사용
+    const sizeVal = m.size_actual || topSizeVal || '';
+    initDbCardActualInputs(mId2, cat, sizeVal);
   });
 }
 
@@ -1559,23 +1564,48 @@ function _renderDbCardList(items){
 
 // ── DB 카드 실측 입력 초기화 ────────────────────────────────
 function initDbCardActualInputs(mId, cat, curVal){
-  const wrap = document.getElementById(mId+'-actual-inputs');
+  var wrap = document.getElementById(mId+'-actual-inputs');
   if(!wrap) return;
-  const nums = (curVal||'').match(/\d+(\.\d+)?/g)||[];
-  const iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#aaa;font-size:11px;outline:none';
-  const sep = 'color:#444;font-size:10px;flex-shrink:0';
-  if(cat==='시계'){
-    wrap.innerHTML = '<input id="'+mId+'-sw" type="number" value="'+(nums[0]||'')+'" placeholder="0" style="'+iStyle+';width:46px"><span style="'+sep+'">mm</span>';
-  } else if(cat==='주얼리'){
-    wrap.innerHTML = '<input id="'+mId+'-sw" type="number" value="'+(nums[0]||'')+'" placeholder="폭" style="'+iStyle+';width:46px"><span style="'+sep+'">mm</span>';
-  } else {
-    wrap.innerHTML = '<input id="'+mId+'-sw" type="number" value="'+(nums[0]||'')+'" placeholder="가" style="'+iStyle+';width:46px">'
-      +'<span style="'+sep+'">×</span>'
-      +'<input id="'+mId+'-sh" type="number" value="'+(nums[1]||'')+'" placeholder="세" style="'+iStyle+';width:46px">'
-      +'<span style="'+sep+'">×</span>'
-      +'<input id="'+mId+'-sd" type="number" value="'+(nums[2]||'')+'" placeholder="높" style="'+iStyle+';width:46px">'
-      +'<span style="'+sep+'">cm</span>';
-  }
+  var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+  // 상단 실측값 파싱 — "가로 25cm × 세로 20cm" 형태에서 숫자만 추출
+  var src = curVal||'';
+  var nums = [];
+  cfg.forEach(function(f, idx){
+    // "라벨 숫자단위" 패턴에서 이 필드의 값 찾기
+    var re = new RegExp(f.label+'\\s*([\\d\\.]+)');
+    var m = src.match(re);
+    if(m){ nums[idx] = m[1]; }
+    else {
+      // 순서대로 숫자 추출 (fallback)
+      var allNums = src.match(/[\d.]+/g)||[];
+      nums[idx] = allNums[idx]||'';
+    }
+  });
+  var iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#aaa;font-size:11px;outline:none;width:44px';
+  var sepStyle = 'color:#444;font-size:9px;flex-shrink:0';
+  wrap.innerHTML = cfg.map(function(f, idx){
+    var val = nums[idx]||'';
+    var isText = !!f.text;
+    var inp = isText
+      ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+';width:60px">'
+      : '<input id="'+mId+'-sf-'+idx+'" type="number" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+'">';
+    var lbl = '<span style="font-size:8px;color:#555;display:block;text-align:center">'+f.label+(f.unit?'('+f.unit+')':'')+'</span>';
+    var sep = idx<cfg.length-1 ? '<span style="'+sepStyle+'">×</span>' : '';
+    return '<span style="display:inline-flex;flex-direction:column;align-items:center">'+lbl+inp+'</span>'+sep;
+  }).join('');
+}
+
+function getDbCardActualFromCfg(mId, cat){
+  var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+  var parts = [];
+  cfg.forEach(function(f, idx){
+    var el = document.getElementById(mId+'-sf-'+idx);
+    var v = (el&&el.value||'').trim();
+    if(!v) return;
+    if(f.text){ parts.push(f.label+': '+v); }
+    else { parts.push(f.label+' '+v+(f.unit||'')); }
+  });
+  return parts.join(' × ');
 }
 
 // 카테고리 변경 → 실측 + 부속품 드롭다운 동시 갱신
@@ -1604,16 +1634,7 @@ function removeDbCardAcc(mId, name, el){ el.remove(); }
 
 // 실측값 수집
 function getDbCardActual(mId, cat){
-  const sw = document.getElementById(mId+'-sw')||{value:''};
-  const sh = document.getElementById(mId+'-sh')||{value:''};
-  const sd = document.getElementById(mId+'-sd')||{value:''};
-  if(cat==='시계') return sw.value?sw.value+'mm':'';
-  if(cat==='주얼리') return sw.value?'폭 '+sw.value+'mm':'';
-  const parts=[];
-  if(sw.value) parts.push('가로 '+sw.value+'cm');
-  if(sh.value) parts.push('세로 '+sh.value+'cm');
-  if(sd.value) parts.push('높이 '+sd.value+'cm');
-  return parts.join(' × ');
+  return getDbCardActualFromCfg(mId, cat);
 }
 
 function toggleDbCardEdit(mId){
