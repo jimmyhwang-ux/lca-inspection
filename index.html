@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779325721 -->
+  <!-- v1779326416 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -801,8 +801,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779325721';
-console.error('APP VERSION: 1779325721');
+window._appVer='1779326416';
+console.error('APP VERSION: 1779326416');
 
 const ACC_MAP = {
   '가방': [
@@ -1295,15 +1295,23 @@ function renderDbCard(idx){
       : `<span style="font-size:14px;opacity:.3">📷</span>`;
     const mCat = m.category||'가방';
     const catOpts = catList.map(c=>`<option value="${c}" ${mCat===c?'selected':''}>${c}</option>`).join('');
-    const picThumbs = allImgs.map(url=>`
+    const picThumbs = allImgs.map((url,pi)=>`
       <div style="position:relative;flex-shrink:0">
-        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;border:0.5px solid #2a2a2a">
+        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;border:0.5px solid #2a2a2a;cursor:zoom-in"
+          onclick="event.stopPropagation();openLightbox('${url}',[${allImgs.map(u=>"'"+u.replace(/'/g,"\'")+"'").join(',')}])">
           <img src="${url}" style="width:100%;height:100%;object-fit:cover">
         </div>
+        <div onclick="event.stopPropagation();deleteDbPic('${m.id}',${pi},'${mId}')"
+          style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;z-index:5">✕</div>
       </div>`).join('');
-    const addPicBtn = `<div style="width:64px;height:64px;border-radius:8px;border:1.5px dashed rgba(34,197,94,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#0a1a0a">
+    const addPicBtn = `<div
+      onclick="event.stopPropagation();dbUploadPic('${m.id}','${mId}')"
+      ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='#22c55e';this.style.background='#0d2a0d'"
+      ondragleave="this.style.borderColor='rgba(34,197,94,.4)';this.style.background='#0a1a0a'"
+      ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='rgba(34,197,94,.4)';this.style.background='#0a1a0a';dropResultPhotoToSku('${m.id}','${mId}')"
+      style="width:64px;height:64px;border-radius:8px;border:1.5px dashed rgba(34,197,94,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#0a1a0a;transition:all .15s">
       <span style="color:rgba(34,197,94,.6);font-size:20px;line-height:1">+</span>
-      <span style="font-size:9px;color:#555;margin-top:2px">드래그</span>
+      <span style="font-size:9px;color:#555;margin-top:2px">드래그/추가</span>
     </div>`;
 
     return `<div id="db-card-${i}" style="${i>0?'border-top:0.5px solid #1e1e1e':''}${isApplied?';background:rgba(34,197,94,.03)':''}">
@@ -1428,7 +1436,11 @@ async function renderResult(){
   badge.className='conf-badge'+(analysis.verdict==='review'?' warn':analysis.verdict==='fail'?' fail':'');
   if(photos.main){
     const resThumb = document.getElementById('res-thumb');
-    resThumb.innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px">`;
+    resThumb.innerHTML=`<img src="${photos.main.dataUrl}"
+      draggable="true"
+      ondragstart="event.dataTransfer.setData('text/plain','result-main');window._dragResultPhotoUrl=photos.main.dataUrl;"
+      style="width:100%;height:auto;display:block;object-fit:cover;cursor:grab;border-radius:12px"
+      title="SKU 매칭 카드로 드래그하여 사진 추가">`;
     resThumb.style.cursor='pointer';
     resThumb.onclick = openResultPhotos;
   }
@@ -1666,28 +1678,26 @@ function searchRefData(q){
     || (s.model_name_ko||s.model_name||'').toLowerCase().includes(query)
     || (s.sku_code||'').toLowerCase().includes(query)  // 스타일번호 검색
     || (s.notes||'').toLowerCase().includes(query);
-  const dbItems   = _refDataAll.filter(s=>s._refType==='db').filter(matchItem);
+  // 참고자료: 검기어만 표시 (SKU 매칭 카드에 이미 표시되므로 DB 제외)
   const gearItems = _refDataAll.filter(s=>s._refType==='gear').filter(matchItem);
 
-  // 배지 업데이트
+  // 배지 업데이트 (검기어만)
   const dbCnt = document.getElementById('ref-db-cnt');
   const gearCnt = document.getElementById('ref-gear-cnt');
-  if(dbCnt){ dbCnt.textContent='SKU '+dbItems.length; dbCnt.style.display=dbItems.length?'inline':'none'; }
+  if(dbCnt) dbCnt.style.display='none';
   if(gearCnt){ gearCnt.textContent='검기어 '+gearItems.length; gearCnt.style.display=gearItems.length?'inline':'none'; }
 
-  // 섹션 표시 여부
+  // 섹션 표시 여부 (검기어가 있을 때만)
   const refSection = document.getElementById('ref-section');
-  if(refSection) refSection.style.display = _refDataAll.length ? 'block' : 'none';
+  if(refSection) refSection.style.display = gearItems.length ? 'block' : 'none';
 
-  // 패널 내용 렌더
   // 정보 많은 항목 상단 정렬
   const scoreItem = s => (s.size_actual?2:0) + (s.color?1:0) + (s.size_label?1:0)
-    + ((s.accessories||[]).length>0?2:0) + (s.notes?1:0)
-    + ((s.extra_images||[]).length>0?2:0) + (s.ref_image_url?1:0)
+    + ((Array.isArray(s.accessories)?s.accessories:[]).length>0?2:0) + (s.notes?1:0)
+    + ((Array.isArray(s.extra_images)?s.extra_images:[]).length>0?2:0) + (s.ref_image_url?1:0)
     + (s.site_url?1:0);
-  dbItems.sort((a,b)=>scoreItem(b)-scoreItem(a));
   gearItems.sort((a,b)=>scoreItem(b)-scoreItem(a));
-  renderRefList('ref-db-list', dbItems, 'db');
+  renderRefList('ref-db-list', [], 'db');
   renderRefList('ref-gear-list', gearItems, 'gear');
 }
 
@@ -1776,6 +1786,86 @@ function renderRefList(wrapId, items, type){
         </div>
       </div>`;
     }).join('')}`;
+}
+
+async function dropResultPhotoToSku(itemId, mId){
+  const url = window._dragResultPhotoUrl;
+  if(!url){ toast('드래그할 사진이 없습니다'); return; }
+  // base64 → upload
+  const b64 = url.split(',')[1];
+  if(!b64){ toast('사진 형식 오류'); return; }
+  try{
+    const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
+    const j = await res.json();
+    if(j.success){
+      toast('✅ 검수 사진이 SKU에 추가됐습니다');
+      // 카드 데이터 업데이트
+      const matches = window._cardMatches||[];
+      const idx = matches.findIndex(m=>String(m.id)===String(itemId));
+      if(idx>=0){
+        const existing = matches[idx];
+        const extras = Array.isArray(existing.extra_images) ? existing.extra_images : [];
+        if(!existing.ref_image_url){
+          existing.ref_image_url = url;
+        } else {
+          existing.extra_images = [...extras, url];
+        }
+        renderDbCard(0);
+      }
+      window._dragResultPhotoUrl = null;
+    } else { toast('❌ 사진 추가 실패: '+(j.error||'')); }
+  }catch(e){ toast('❌ 오류: '+e.message); }
+}
+
+async function dbUploadPic(itemId, mId){
+  const input = document.createElement('input');
+  input.type='file'; input.accept='image/*';
+  input.onchange = async(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=async(ev)=>{
+      const b64=ev.target.result.split(',')[1];
+      try{
+        const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
+        const j=await res.json();
+        if(j.success){
+          toast('✅ 사진 추가됨');
+          // 카드 새로고침
+          const matches=window._cardMatches||[];
+          const idx=matches.findIndex(m=>String(m.id)===String(itemId));
+          if(idx>=0&&j.data?.[0]){
+            matches[idx]={...matches[idx],...j.data[0]};
+            renderDbCard(0);
+          }
+        } else toast('❌ 사진 업로드 실패');
+      }catch(e){ toast('❌ 오류: '+e.message); }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+async function deleteDbPic(itemId, picIdx, mId){
+  if(!confirm('사진을 삭제하시겠습니까?')) return;
+  const matches=window._cardMatches||[];
+  const m=matches.find(item=>String(item.id)===String(itemId));
+  if(!m) return;
+  const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean);
+  allImgs.splice(picIdx,1);
+  const newRef=allImgs[0]||null;
+  const newExtras=allImgs.slice(1);
+  try{
+    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:newRef,extra_images:newExtras}})});
+    const j=await res.json();
+    if(j.success){
+      toast('✅ 사진 삭제됨');
+      m.ref_image_url=newRef; m.extra_images=newExtras;
+      renderDbCard(0);
+    } else toast('❌ 삭제 실패');
+  }catch(e){ toast('❌ 오류: '+e.message); }
 }
 
 function toggleRefPic(id){
