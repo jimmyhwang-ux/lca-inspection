@@ -2156,18 +2156,20 @@ function saveSizeField(id){
   el.className='info-cell-val'+(val==='—'?' muted':'');
 }
 function saveField(id,input){
-  const _wasEditing=window._userEditingField;
   window._userEditingField=false;
   const val=input.value.trim()||'—';
+  const prev=document.getElementById(id).textContent;
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
-  // 모델명 변경 시 Google Images 재검색 (사용자가 직접 수정한 경우만)
-  if((id==='r-model-ko'||id==='r-model')&&_wasEditing&&val!=='—'){
+  // 모델명 변경 시 — 값이 실제로 바뀌었을 때만 재검색
+  if((id==='r-model-ko'||id==='r-model')&&val!=='—'&&val!==prev){
     const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
+    // SKU 재매칭 즉시 (Lens와 독립)
+    _rematchSkuByModel(brand, val);
+    // Google Lens 재검색
     reSearchByModel(brand, val);
   }
   if(id==='r-sku'&&val==='—'){
-    // 스타일번호 삭제 시 AI 원본값으로 복원
     resetToAi();
   }
 }
@@ -2178,13 +2180,6 @@ async function reSearchByModel(brand, modelName){
   clearTimeout(_reSearchTimer);
   _reSearchTimer=setTimeout(async()=>{
     const lensEl=document.getElementById('lens-results');
-
-    // ── DB 재매칭: Lens와 독립적으로 즉시 실행 ──────────────
-    if(!window._skipDbRematch){
-      _rematchSkuByModel(brand, modelName);
-    }
-
-    // ── Google Lens 재검색 ───────────────────────────────────
     window._dbEnriched=[];
     lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">검색 중...</div>';
     try{
