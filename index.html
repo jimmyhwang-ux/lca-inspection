@@ -25,33 +25,80 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 /* ── PC 전체화면 (960px+) ─────────────────────── */
 @media(min-width:960px){
   body{padding-bottom:0}
-  .app-wrap{max-width:100%;border:none;padding:0}
-  /* 결과 화면: 좌(결과카드) + 우(SKU+신규등록) */
-  #screen-result{display:grid;grid-template-columns:360px 1fr;gap:0;align-items:start}
-  #screen-result .result-card{grid-column:1;grid-row:1 / 3;margin:16px 0 0 16px;position:sticky;top:16px;width:auto}
-  #db-match-wrap{grid-column:2;padding:12px 16px 0 0}
+  /* app-wrap: 전체 너비, 테두리 제거 */
+  .app-wrap{max-width:100% !important;border:none !important;padding:0}
+
+  /* 로그인/촬영/로딩 화면: 중앙 정렬 유지 */
+  #screen-login,#screen-shoot,#screen-loading{
+    max-width:600px;
+    margin:0 auto;
+  }
+
+  /* 결과 화면만 2컬럼 */
+  #screen-result{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:0;
+    align-items:start;
+    max-width:100%;
+  }
+  #screen-result .result-card{
+    grid-column:1;
+    grid-row:1;
+    margin:16px 0 0 16px;
+    position:sticky;
+    top:16px;
+  }
+  #db-match-wrap{
+    grid-column:2;
+    padding:12px 16px 0 0;
+  }
   #db-match-wrap > div{margin:0 0 4px !important}
-  #ref-section{grid-column:2;margin:0 16px 4px 0 !important}
-  #screen-result > div[style*="신규 등록"],
-  #result-body{grid-column:2;margin-right:16px}
-  #screen-result > div[style*="margin:4px 16px;display:flex;align-items:center;gap:8px"]{grid-column:2;margin-right:16px}
-  .bottom-bar{grid-column:1 / -1;position:sticky;bottom:0}
-  #screen-result > div:last-of-type{grid-column:1 / -1}
-  /* SKU 관리: 넓게 */
-  #screen-sku{max-width:1400px;margin:0 auto;padding:0 32px}
+  #ref-section{
+    grid-column:2;
+    margin:0 16px 4px 0 !important;
+  }
+  #result-body{
+    grid-column:2;
+    margin:0 16px 8px 0;
+  }
+  /* 신규등록 구분선 */
+  #screen-result > div[style*="1e1e1e"]{
+    grid-column:2;
+    margin-right:16px;
+  }
+  /* Google Lens */
+  #screen-result > div[style*="padding:0 16px"]{
+    grid-column:1 / -1;
+  }
+  /* 하단 버튼바 */
+  #screen-result .bottom-bar{
+    grid-column:1 / -1;
+    position:sticky;
+    bottom:0;
+  }
+
+  /* SKU 관리 화면: 넓게 */
+  #screen-sku{
+    max-width:1400px;
+    margin:0 auto;
+    padding:0 32px;
+  }
   #sku-list-wrap,#gear-list-wrap{
-    display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
   }
   #sku-list-wrap .sku-list-item,
   #gear-list-wrap .sku-list-item{margin-bottom:0}
-  /* 슬롯 */
-  .slot-big{min-height:90px}
+
+  /* 슬롯 그리드 */
   .slot-big.filled{aspect-ratio:unset;height:280px}
   .slot-grid{grid-template-columns:repeat(6,1fr)}
   .slot-sm{aspect-ratio:1}
+
   /* DB 카드 행 잘림 방지 */
-  #db-match-wrap input,
-  #db-match-wrap select{min-width:0}
+  #db-match-wrap input,#db-match-wrap select{min-width:0}
 }
 .header{text-align:center;padding:16px 20px 12px}
 .header h1{font-size:19px;font-weight:800;margin-bottom:4px}
@@ -812,8 +859,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779329496';
-console.error('APP VERSION: 1779329496');
+window._appVer='1779329597';
+console.error('APP VERSION: 1779329597');
 
 const ACC_MAP = {
   '가방': [
