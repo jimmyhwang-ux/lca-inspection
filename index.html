@@ -750,7 +750,7 @@ function safeAccArr(accs){
 const photos={main:null,label1:null,label2:null,label3:null,logo:null,origin:null,back:null,add1:null,add2:null,add3:null,add4:null,add5:null,add6:null};
 let resultData={}, accessories=[], skuListAll=[];
 const _skuCache={model:[],db:[],gear:[]};
-const _sliders={};
+var _sliders={};
 // ── 로그인 ──────────────────────────────────────────────────
 const _TOKEN_KEY = 'lca_access_token';
 
@@ -2000,7 +2000,7 @@ function editField(id){
 
 let _sizeVal='';
 // 카테고리별 사이즈 입력 설정
-const SIZE_CONFIG = {
+var SIZE_CONFIG = window.SIZE_CONFIG = {
   '가방':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
   '지갑':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'}],
   '가방':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
