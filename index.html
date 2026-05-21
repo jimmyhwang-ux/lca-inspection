@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779327025 -->
+  <!-- v1779327183 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -801,8 +801,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779327025';
-console.error('APP VERSION: 1779327025');
+window._appVer='1779327183';
+console.error('APP VERSION: 1779327183');
 
 const ACC_MAP = {
   '가방': [
@@ -1157,7 +1157,7 @@ function resetToAi(){
   accessories=[];
   renderAcc();
   // 카드 하이라이트 전부 해제
-  document.querySelectorAll('#db-match-wrap .db-match-card').forEach(c=>{
+  document.querySelectorAll('#db-match-wrap [id^="db-card-"]').forEach(c=>{
     c.style.border='1px solid rgba(34,197,94,.15)';
     c.style.background='rgba(34,197,94,.02)';
     c.style.opacity='1';
@@ -1239,7 +1239,7 @@ function applyDbMatch(item, cardId){
   renderAcc();
 
   // ── 6. 카드 하이라이트 ──────────────────────────────────────
-  document.querySelectorAll('#db-match-wrap .db-match-card').forEach(card => {
+  document.querySelectorAll('#db-match-wrap [id^="db-card-"]').forEach(card => {
     const isSel = card.id === cardId;
     card.style.border     = isSel ? '2px solid #22c55e' : '1px solid rgba(34,197,94,.15)';
     card.style.background = isSel ? 'rgba(34,197,94,.12)' : 'rgba(34,197,94,.02)';
@@ -1410,7 +1410,7 @@ function renderDbMatchCards(matches){
   // 카드 ID가 동일하면 innerHTML 스킵 (깜빡임 방지)
   const _newIds=matches.map(m=>String(m.id)).join(',');
   const _oldIds=(window._cardMatches||[]).map(m=>String(m.id)).join(',');
-  const _doRender=_newIds!==_oldIds||!dbWrap.querySelector('.db-match-card');
+  const _doRender=_newIds!==_oldIds||!dbWrap.querySelector('#db-card-0');
   window._cardMatches=matches;
 
   // 슬라이더 데이터 세팅
