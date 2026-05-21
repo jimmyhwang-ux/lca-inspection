@@ -180,6 +180,20 @@ input[type=file]{display:none}
 .edit-field-label{font-size:11px;color:#bbb;margin-bottom:5px}
 .edit-field-input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 13px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
 .edit-field-input:focus{border-color:#ff6b2b}
+
+@media(min-width:960px){
+  #db-match-wrap > div > div {
+    max-width:100%;
+  }
+  #db-match-wrap {
+    margin: 0 16px 4px !important;
+  }
+  /* DB카드 내 그리드 컬럼 더 넓게 */
+  #db-match-wrap [style*="grid-template-columns:auto auto auto 1fr"] {
+    grid-template-columns: 90px 100px 140px 1fr !important;
+    gap: 10px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -789,8 +803,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779341660';
-console.error('APP VERSION: 1779341660');
+window._appVer='1779341912';
+console.error('APP VERSION: 1779341912');
 
 const ACC_MAP = {
   '가방': [
@@ -1182,6 +1196,9 @@ function applyDbMatch(item, cardId){
     reSearchByModel(_applyBrand, _applyModel);
   }
 
+  // _appliedCardId 업데이트 후 renderDbCard 재호출 (체크박스 갱신)
+  window._appliedCardId = cardId;
+  renderDbCard(0);
   toast('✅ 적용됨: ' + _applyModel);
 }
 
