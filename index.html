@@ -803,8 +803,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779342235';
-console.error('APP VERSION: 1779342235');
+window._appVer='1779342591';
+console.error('APP VERSION: 1779342591');
 
 const ACC_MAP = {
   '가방': [
@@ -1199,7 +1199,23 @@ function applyDbMatch(item, cardId){
 
   // _appliedCardId 업데이트 후 renderDbCard 재호출 (체크박스 갱신)
   window._appliedCardId = cardId;
-  renderDbCard(0);
+  // DOM 직접 업데이트 (renderDbCard 재호출 없이 - 무한루프 방지)
+  document.querySelectorAll('#db-match-wrap [data-chk]').forEach((chk, i) => {
+    const isSel = `db-card-${i}` === cardId;
+    chk.style.background = isSel ? '#22c55e' : '#111';
+    chk.style.border = isSel ? '2px solid #22c55e' : '2px solid #555';
+    chk.innerHTML = isSel ? '<span style="font-size:14px;color:#000;font-weight:900;line-height:1">✓</span>' : '';
+    chk.style.boxShadow = isSel ? '0 0 8px rgba(34,197,94,.5)' : 'none';
+    const applyBtn = document.getElementById(`apply-btn-${i}`);
+    if(applyBtn){
+      applyBtn.textContent = isSel ? '✓ 적용됨' : '적용';
+      applyBtn.style.background = isSel ? '#22c55e' : '#1a3a1a';
+      applyBtn.style.color = isSel ? '#000' : '#22c55e';
+      applyBtn.style.borderColor = isSel ? '#22c55e' : 'rgba(34,197,94,.5)';
+    }
+    const card = document.getElementById(`db-card-${i}`);
+    if(card) card.style.background = isSel ? 'rgba(34,197,94,.04)' : '';
+  });
   toast('✅ 적용됨: ' + _applyModel);
 }
 
@@ -1446,40 +1462,30 @@ function renderDbMatchCards(matches){
   if(!matches.length) return;
   const dbWrap=document.getElementById('db-match-wrap');
   if(!dbWrap) return;
-  // 카드 데이터를 전역에 저장 (버튼 클릭 시 참조)
-  // 카드 ID가 동일하면 innerHTML 스킵 (깜빡임 방지)
-  const _newIds=matches.map(m=>String(m.id)).join(',');
-  const _oldIds=(window._cardMatches||[]).map(m=>String(m.id)).join(',');
-  const _doRender=_newIds!==_oldIds||!dbWrap.querySelector('.db-match-card');
-  window._cardMatches=matches;
 
-  // 슬라이더 데이터 세팅
+  window._cardMatches=matches;
+  window._dbMatchIdx=0;
+
+  // 슬라이더 데이터
   matches.forEach((m,idx)=>{
     const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     _sliders[`dbsl-${idx}`]={urls:allImgs,cur:0};
   });
 
-  if(_doRender){
-    window._dbMatchIdx=0;
-    dbWrap.innerHTML=`<div class="db-match-card" id="db-card-0"></div>`;
-    renderDbCard(0);
-  }
+  // renderDbCard가 dbWrap.innerHTML 전체를 교체함
+  renderDbCard(0);
 
-  // 첫 번째 카드 자동 적용 — 수동 해제 후엔 스킵
+  // 첫 번째 카드 자동 적용
   if(!window._userResetDb){
-    try {
-      applyDbMatch(matches[0],'db-card-0');
-    } catch(e) {
-      console.error('[renderDbMatchCards] applyDbMatch 에러:', e);
-    }
+    try{ applyDbMatch(matches[0],'db-card-0'); }
+    catch(e){ console.error('[renderDbMatchCards]',e); }
   }
 
-  // 참고자료 자동 로드 — 매칭된 모델명으로
-  const _refModelName = matches[0]?.model_name_ko || matches[0]?.model_name || '';
-  if(_refModelName){
-    loadRefData(_refModelName);
-  }
+  // 참고자료 로드
+  const _refModelName=matches[0]?.model_name_ko||matches[0]?.model_name||'';
+  if(_refModelName) loadRefData(_refModelName);
 }
+
 
 async function renderResult(){
   // 새 검수 시작 시 이전 카드 데이터 완전 초기화
