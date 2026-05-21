@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v1779322429 -->
+  <!-- v1779323577 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,6 +15,11 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:15px;min-height:100vh;padding-bottom:100px}
 .app-wrap{max-width:480px;margin:0 auto}
+@media(min-width:900px){
+  .app-wrap{max-width:960px}
+  /* PC: DB 매칭 카드 가로스크롤 불필요하게 넓어지지 않도록 */
+  .db-match-card{font-size:13px}
+}
 @media(min-width:600px){
   .app-wrap{border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;min-height:100vh}
   .slot-big{min-height:90px}
@@ -781,8 +786,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779322429';
-console.error('APP VERSION: 1779322429');
+window._appVer='1779323577';
+console.error('APP VERSION: 1779323577');
 
 const ACC_MAP = {
   '가방': [
@@ -1217,8 +1222,11 @@ function renderDbCard(idx){
 
     return `<div id="db-card-${i}" style="${i>0?'border-top:0.5px solid #1e1e1e':''}">
       <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px">
-        <!-- 번호 + 썸네일 -->
+        <!-- 체크박스 + 번호 + 썸네일 -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
+          <div onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" style="width:16px;height:16px;border-radius:4px;background:${isApplied?'#22c55e':'transparent'};border:1.5px solid ${isApplied?'#22c55e':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+            ${isApplied?'<span style="font-size:10px;color:#000;font-weight:900">✓</span>':''}
+          </div>
           <span style="font-size:10px;color:#555">${i+1}.</span>
           <div onclick="toggleDbPic('${mId}-pics')" style="width:40px;height:40px;border-radius:6px;background:${allImgs.length?'#1a3a1a':'#1a1a1a'};border:0.5px solid ${allImgs.length?'rgba(34,197,94,.4)':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0">${imgThumb}</div>
         </div>
@@ -1226,33 +1234,32 @@ function renderDbCard(idx){
           <!-- 1행: 모델명+SKU 고정 (말줄임) -->
           <div style="display:flex;align-items:center;gap:4px">
             <div style="flex:1;overflow:hidden;display:flex;align-items:center;gap:4px">
-              <span style="font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.model_name_ko||m.model_name||'—'}</span>
+              <input id="${mId}-model-ko" value="${(m.model_name_ko||m.model_name||'').replace(/"/g,'&quot;')}" placeholder="모델명" style="flex:1;min-width:100px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:5px;padding:3px 6px;color:#fff;font-size:12px;font-weight:700">
               <span style="color:#2a2a2a;font-size:10px;flex-shrink:0">|</span>
-              <span style="font-size:11px;color:#22c55e;font-weight:700;flex-shrink:0;white-space:nowrap">${m.sku_code||'—'}</span>
+              <input id="${mId}-sku" value="${(m.sku_code||'').replace(/"/g,'&quot;')}" placeholder="SKU" style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:5px;padding:3px 6px;color:#22c55e;font-size:11px;font-weight:700;flex-shrink:0">
             </div>
             <button onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" id="apply-btn-${i}"
-              style="background:${isApplied?'#22c55e':'#1a3a1a'};border:none;color:${isApplied?'#000':'#22c55e'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+              style="background:${isApplied?'#22c55e':'#1a3a1a'};border:none;color:${isApplied?'#000':'#22c55e'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;flex-shrink:0;display:none">
               ${isApplied?'✓적용됨':'적용'}
             </button>
           </div>
           <!-- 2행: 카테고리|사이즈|컬러|실측|부속품|메모|URL 항상 가로스크롤 -->
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
             <div style="display:flex;align-items:center;gap:5px;min-width:max-content;padding-bottom:2px">
-              <span style="font-size:11px;color:#888;white-space:nowrap">${m.category||'—'}</span>
+              <input value="${(m.category||'—').replace(/"/g,'&quot;')}" style="width:56px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;min-width:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#888;white-space:nowrap">${m.size_label||'—'}</span>
+              <input value="${(m.size_label||'').replace(/"/g,'&quot;')}" placeholder="사이즈" style="width:44px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;min-width:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#888;white-space:nowrap">${m.color||'—'}</span>
+              <input value="${(m.color||'').replace(/"/g,'&quot;')}" placeholder="컬러" style="width:52px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;min-width:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#555;white-space:nowrap">실측 ${m.size_actual||'—'}</span>
+              <input value="${(m.size_actual||'').replace(/"/g,'&quot;')}" placeholder="실측" style="width:72px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;min-width:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#555;white-space:nowrap">부속품 ${accList||'—'}</span>
+              <input value="${accList.replace(/"/g,'&quot;')}" placeholder="부속품" style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;min-width:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#555;white-space:nowrap">메모 ${m.notes||'—'}</span>
+              <input value="${(m.notes||'').replace(/"/g,'&quot;')}" placeholder="메모" style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;min-width:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              ${m.site_url
-                ? `<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#007aff;white-space:nowrap">URL 🔗</a>`
-                : `<span style="font-size:11px;color:#555;white-space:nowrap">URL —</span>`}
+              <input value="${(m.site_url||'').replace(/"/g,'&quot;')}" placeholder="URL" style="width:100px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#007aff;font-size:11px;min-width:0">
+              <button onclick="saveDbCardEditById('${m.id}','${mId}')" style="background:#22c55e;border:none;color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;cursor:pointer;flex-shrink:0;white-space:nowrap">💾</button>
             </div>
           </div>
         </div>
@@ -1285,8 +1292,8 @@ function renderDbCard(idx){
   dbWrap.innerHTML = `<div style="margin:0 16px 4px">
     <div style="background:#111;border-radius:10px;border:0.5px solid rgba(34,197,94,.25);overflow:hidden">
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid #1e1e1e">
-        <span style="font-size:11px;color:#ccc;font-weight:600">✅ DB 매칭 — 기존 수정</span>
-        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(34,197,94,.3)">DB ${matches.length}</span>
+        <span style="font-size:11px;color:#ccc;font-weight:600">✅ SKU 매칭 — 기존 수정</span>
+        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(34,197,94,.3)">SKU ${matches.length}</span>
       </div>
       ${itemsHtml}
     </div>
