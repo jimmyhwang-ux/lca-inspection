@@ -781,8 +781,8 @@ window.fetch = function(url, opts={}){
 sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
-window._appVer='1779328233';
-console.error('APP VERSION: 1779328233');
+window._appVer='1779328518';
+console.error('APP VERSION: 1779328518');
 
 const ACC_MAP = {
   '가방': [
@@ -1193,94 +1193,101 @@ function renderDbCard(idx){
 
   const itemsHtml = matches.map((m, i) => {
     const mId = `dbc-${i}`;
-    const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(m.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
+    const allImgs = [...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
     const isApplied = window._appliedCardId === `db-card-${i}`;
-    const accList = safeAccArr(m.accessories).map(a=>a.name||a).join(', ');
+    const accArr = safeAccArr(m.accessories);
+    const accList = accArr.map(a=>a.name||a).join(', ');
     const imgThumb = allImgs[0]
       ? `<img src="${allImgs[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`
       : `<span style="font-size:14px;opacity:.3">📷</span>`;
     const mCat = m.category||'가방';
     const catOpts = catList.map(c=>`<option value="${c}" ${mCat===c?'selected':''}>${c}</option>`).join('');
 
-    // 사진 썸네일들
-    const picThumbs = allImgs.map(url=>`
+    const picThumbs = allImgs.map((url,pi)=>`
       <div style="position:relative;flex-shrink:0">
-        <div style="width:72px;height:72px;border-radius:8px;overflow:hidden;border:0.5px solid #2a2a2a">
+        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;border:0.5px solid #2a2a2a;cursor:zoom-in"
+          onclick="event.stopPropagation();openLightboxSlider('dbsl-${i}',${pi})">
           <img src="${url}" style="width:100%;height:100%;object-fit:cover">
         </div>
-        <div onclick="deleteDbCardPhoto('${m.id}','${url}',${i})" style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff">✕</div>
+        <div onclick="event.stopPropagation();deleteDbPic('${m.id}',${pi},'${mId}')"
+          style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;z-index:5">✕</div>
       </div>`).join('');
-    const addPicBtn = `<div onclick="document.getElementById('dbc-file-${i}').click()"
-      ondragover="event.preventDefault()"
-      ondrop="event.preventDefault();dbcDropPhoto(event,'${m.id}',${i})"
-      style="width:72px;height:72px;border-radius:8px;border:1.5px dashed rgba(34,197,94,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#0a1a0a">
-      <span style="color:rgba(34,197,94,.6);font-size:22px;line-height:1">+</span>
-      <span style="font-size:9px;color:#555;margin-top:2px">드래그</span>
-      <input type="file" id="dbc-file-${i}" accept="image/*" multiple style="display:none" onchange="dbcFilePhoto(this,'${m.id}',${i})">
+
+    const addPicBtn = `<div
+      onclick="event.stopPropagation();dbUploadPic('${m.id}','${mId}')"
+      ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='#22c55e'"
+      ondragleave="this.style.borderColor='rgba(34,197,94,.4)'"
+      ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='rgba(34,197,94,.4)';dropResultPhotoToSku('${m.id}','${mId}')"
+      style="width:64px;height:64px;border-radius:8px;border:1.5px dashed rgba(34,197,94,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:#0a1a0a;transition:all .15s">
+      <span style="color:rgba(34,197,94,.6);font-size:20px;line-height:1">+</span>
+      <span style="font-size:9px;color:#555;margin-top:2px">드래그/추가</span>
     </div>`;
 
-    return `<div id="db-card-${i}" style="${i>0?'border-top:0.5px solid #1e1e1e':''}">
+    return `<div id="db-card-${i}"
+      ondragover="event.preventDefault();this.style.outline='2px solid rgba(34,197,94,.6)'"
+      ondragleave="this.style.outline=''"
+      ondrop="event.preventDefault();this.style.outline='';if(window._dragResultPhotoUrl)dropResultPhotoToSku('${m.id}','${mId}')"
+      style="${i>0?'border-top:0.5px solid #1e1e1e':''}${isApplied?';background:rgba(34,197,94,.03)':''}">
       <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px">
-        <!-- 번호 + 썸네일 -->
+        <!-- 체크박스 + 번호 + 썸네일 -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
+          <div data-chk onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')"
+            style="width:16px;height:16px;border-radius:4px;background:${isApplied?'#22c55e':'transparent'};border:1.5px solid ${isApplied?'#22c55e':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+            ${isApplied?'<span style="font-size:10px;color:#000;font-weight:900">✓</span>':''}
+          </div>
           <span style="font-size:10px;color:#555">${i+1}.</span>
-          <div onclick="toggleDbPic('${mId}-pics')" style="width:40px;height:40px;border-radius:6px;background:${allImgs.length?'#1a3a1a':'#1a1a1a'};border:0.5px solid ${allImgs.length?'rgba(34,197,94,.4)':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0">${imgThumb}</div>
+          <div onclick="toggleDbPic('${mId}-pics')"
+            style="width:40px;height:40px;border-radius:6px;background:${allImgs.length?'#1a3a1a':'#1a1a1a'};border:0.5px solid ${allImgs.length?'rgba(34,197,94,.4)':'#2a2a2a'};display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0">
+            ${imgThumb}
+          </div>
         </div>
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
-          <!-- 1행: 모델명+SKU 고정 (말줄임) -->
-          <div style="display:flex;align-items:center;gap:4px">
-            <div style="flex:1;overflow:hidden;display:flex;align-items:center;gap:4px">
-              <span style="font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.model_name_ko||m.model_name||'—'}</span>
-              <span style="color:#2a2a2a;font-size:10px;flex-shrink:0">|</span>
-              <span style="font-size:11px;color:#22c55e;font-weight:700;flex-shrink:0;white-space:nowrap">${m.sku_code||'—'}</span>
-            </div>
-            <button onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')" id="apply-btn-${i}"
+        <!-- 1행 + 2행 -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+          <!-- 1행: 모델명 | SKU (인라인 편집) -->
+          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+            <input id="${mId}-model-ko" value="${(m.model_name_ko||m.model_name||'').replace(/"/g,'&quot;')}" placeholder="모델명"
+              style="flex:1;min-width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:5px;padding:3px 7px;color:#fff;font-size:12px;font-weight:700;outline:none">
+            <span style="color:#2a2a2a;font-size:10px;flex-shrink:0">|</span>
+            <input id="${mId}-sku" value="${(m.sku_code||'').replace(/"/g,'&quot;')}" placeholder="SKU"
+              style="width:90px;flex-shrink:0;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:5px;padding:3px 7px;color:#22c55e;font-size:11px;font-weight:700;outline:none">
+            <button id="apply-btn-${i}" onclick="event.stopPropagation();applyCardMatch(${i},'db-card-${i}')"
               style="background:${isApplied?'#22c55e':'#1a3a1a'};border:none;color:${isApplied?'#000':'#22c55e'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;flex-shrink:0">
               ${isApplied?'✓적용됨':'적용'}
             </button>
           </div>
-          <!-- 2행: 카테고리|사이즈|컬러|실측|부속품|메모|URL 항상 가로스크롤 -->
+          <!-- 2행: 카테고리|사이즈|컬러|실측|부속품|메모|URL 가로스크롤 -->
           <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-            <div style="display:flex;align-items:center;gap:5px;min-width:max-content;padding-bottom:2px">
-              <span style="font-size:11px;color:#888;white-space:nowrap">${m.category||'—'}</span>
+            <div style="display:flex;align-items:center;gap:4px;min-width:max-content;padding-bottom:2px">
+              <select id="${mId}-cat" style="width:58px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 4px;color:#888;font-size:11px;outline:none;flex-shrink:0">${catOpts}</select>
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#888;white-space:nowrap">${m.size_label||'—'}</span>
+              <input id="${mId}-size" value="${(m.size_label||'').replace(/"/g,'&quot;')}" placeholder="사이즈"
+                style="width:44px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;outline:none;flex-shrink:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#888;white-space:nowrap">${m.color||'—'}</span>
+              <input id="${mId}-color" value="${(m.color||'').replace(/"/g,'&quot;')}" placeholder="컬러"
+                style="width:54px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#888;font-size:11px;outline:none;flex-shrink:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#555;white-space:nowrap">실측 ${m.size_actual||'—'}</span>
+              <input id="${mId}-actual" value="${(m.size_actual||'').replace(/"/g,'&quot;')}" placeholder="실측"
+                style="width:74px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#555;white-space:nowrap">부속품 ${accList||'—'}</span>
+              <input id="${mId}-acc" value="${accList.replace(/"/g,'&quot;')}" placeholder="부속품"
+                style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              <span style="font-size:11px;color:#555;white-space:nowrap">메모 ${m.notes||'—'}</span>
+              <input id="${mId}-notes" value="${(m.notes||'').replace(/"/g,'&quot;')}" placeholder="메모"
+                style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#555;font-size:11px;outline:none;flex-shrink:0">
               <span style="color:#2a2a2a;font-size:10px">|</span>
-              ${m.site_url
-                ? `<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#007aff;white-space:nowrap">URL 🔗</a>`
-                : `<span style="font-size:11px;color:#555;white-space:nowrap">URL —</span>`}
+              <input id="${mId}-url" value="${(m.site_url||'').replace(/"/g,'&quot;')}" placeholder="URL"
+                style="width:100px;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:2px 5px;color:#007aff;font-size:11px;outline:none;flex-shrink:0">
+              <button onclick="saveDbCardEditById('${m.id}','${mId}')"
+                style="background:#22c55e;border:none;color:#000;font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;cursor:pointer;flex-shrink:0;white-space:nowrap">💾</button>
             </div>
           </div>
         </div>
       </div>
-      <!-- 📷 탭 → 사진 + 수정 input 가로스크롤 -->
+      <!-- 📷 탭 → 사진 + 수정 input -->
       <div id="${mId}-pics" style="display:none;padding:0 12px 10px 60px">
-        <!-- 사진 (드래그앤드롭) -->
-        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+        <div style="display:flex;gap:6px;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
           ${picThumbs}
           ${addPicBtn}
-        </div>
-        <!-- 수정 input 가로스크롤 (1행+2행 전체) -->
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-          <div style="display:flex;align-items:center;gap:5px;min-width:max-content;padding-bottom:4px">
-            <input id="${mId}-model-ko" value="${(m.model_name_ko||'').replace(/"/g,'&quot;')}" placeholder="모델명" style="width:130px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">
-            <input id="${mId}-sku" value="${(m.sku_code||'').replace(/"/g,'&quot;')}" placeholder="SKU" style="width:70px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#22c55e;font-size:11px;font-weight:700;flex-shrink:0">
-            <select id="${mId}-cat" style="width:66px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 5px;color:#fff;font-size:11px;flex-shrink:0">${catOpts}</select>
-            <input id="${mId}-size" value="${(m.size_label||'').replace(/"/g,'&quot;')}" placeholder="사이즈" style="width:44px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
-            <input id="${mId}-color" value="${(m.color||'').replace(/"/g,'&quot;')}" placeholder="컬러" style="width:56px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
-            <input id="${mId}-actual" value="${(m.size_actual||'').replace(/"/g,'&quot;')}" placeholder="실측" style="width:72px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
-            <input id="${mId}-notes" value="${(m.notes||'').replace(/"/g,'&quot;')}" placeholder="메모" style="width:80px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
-            <input id="${mId}-url" value="${(m.site_url||'').replace(/"/g,'&quot;')}" placeholder="URL" style="width:90px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 7px;color:#fff;font-size:11px;flex-shrink:0">
-            <button onclick="saveDbCardEditById('${m.id}','${mId}')" style="background:#22c55e;border:none;color:#000;font-size:12px;font-weight:800;padding:5px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;white-space:nowrap">💾</button>
-          </div>
         </div>
       </div>
     </div>`;
@@ -1289,144 +1296,18 @@ function renderDbCard(idx){
   dbWrap.innerHTML = `<div style="margin:0 16px 4px">
     <div style="background:#111;border-radius:10px;border:0.5px solid rgba(34,197,94,.25);overflow:hidden">
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:0.5px solid #1e1e1e">
-        <span style="font-size:11px;color:#ccc;font-weight:600">✅ DB 매칭 — 기존 수정</span>
-        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(34,197,94,.3)">DB ${matches.length}</span>
+        <span style="font-size:11px;color:#ccc;font-weight:600">✅ SKU 매칭 — 기존 수정</span>
+        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(34,197,94,.3)">SKU ${matches.length}</span>
         <div style="flex:1"></div>
         <div style="position:relative;display:flex;align-items:center">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:7px;pointer-events:none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input type="text" placeholder="모델명·SKU 검색..." oninput="searchInDbCards(this.value)"
-            style="background:#0d1f0d;border:0.5px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 8px 4px 24px;color:#fff;font-size:11px;width:120px;outline:none">
+            style="background:#0d1f0d;border:0.5px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 8px 4px 24px;color:#fff;font-size:11px;width:130px;outline:none">
         </div>
       </div>
       ${itemsHtml}
     </div>
   </div>`;
-}
-
-
-// DB 카드 사진 드롭
-async function dbcDropPhoto(event, itemId, idx){
-  const files=[...event.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
-  if(!files.length) return;
-  await dbcUploadPhotos(files, itemId, idx);
-}
-// DB 카드 파일 선택
-async function dbcFilePhoto(input, itemId, idx){
-  const files=[...input.files];
-  if(!files.length) return;
-  await dbcUploadPhotos(files, itemId, idx);
-  input.value='';
-}
-// DB 카드 사진 업로드
-async function dbcUploadPhotos(files, itemId, idx){
-  for(const file of files){
-    const b64=await new Promise(resolve=>{
-      const r=new FileReader();
-      r.onload=e=>{
-        const img=new Image(); img.onload=()=>{
-          const MAX=1200;let w=img.width,h=img.height;
-          if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-          const c=document.createElement('canvas');c.width=w;c.height=h;
-          c.getContext('2d').drawImage(img,0,0,w,h);
-          resolve(c.toDataURL('image/jpeg',0.85).split(',')[1]);
-        };img.src=e.target.result;};r.readAsDataURL(file);
-    });
-    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'upload_image',imageBase64:b64})});
-    const j=await res.json();
-    if(j.url){
-      const card=(window._cardMatches||[])[idx];
-      if(card){
-        if(!card.ref_image_url) card.ref_image_url=j.url;
-        else card.extra_images=[...(card.extra_images||[]),j.url];
-        await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:card.ref_image_url,extra_images:card.extra_images||[]}})});
-      }
-      toast('✅ 사진 추가됨!');
-      renderDbCard(idx);
-    }
-  }
-}
-// DB 카드 사진 삭제
-async function deleteDbCardPhoto(itemId, url, idx){
-  const card=(window._cardMatches||[])[idx];
-  if(!card) return;
-  const allImgs=[...(card.ref_image_url?[card.ref_image_url]:[]),...(card.extra_images||[])].filter(u=>u!==url);
-  card.ref_image_url=allImgs[0]||null;
-  card.extra_images=allImgs.slice(1);
-  await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:card.ref_image_url,extra_images:card.extra_images}})});
-  toast('🗑 사진 삭제됨');
-  renderDbCard(idx);
-}
-// DB 카드 내 검색
-function searchInDbCards(val){
-  const v=(val||'').toLowerCase().trim();
-  const cards=document.querySelectorAll('[id^="db-card-"]');
-  const matches=window._cardMatches||[];
-  cards.forEach((card,i)=>{
-    const m=matches[i];
-    if(!m){card.style.display='';return;}
-    if(!v){card.style.display='';return;}
-    const haystack=[(m.model_name_ko||''),(m.model_name||''),(m.sku_code||''),(m.brand||'')].join(' ').toLowerCase();
-    card.style.display=haystack.includes(v)?'':'none';
-  });
-}
-
-
-async function deleteDbPic(itemId, picIdx, mId){
-  const matches=window._cardMatches||[];
-  const m=matches.find(item=>String(item.id)===String(itemId));
-  if(!m) return;
-  const allImgs=[...(m.ref_image_url?[m.ref_image_url]:[]),...(Array.isArray(m.extra_images)?m.extra_images:[])].filter(Boolean);
-  allImgs.splice(picIdx,1);
-  const newRef=allImgs[0]||null;
-  const newExtras=allImgs.slice(1);
-  try{
-    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'update_sku',skuData:{id:itemId,ref_image_url:newRef,extra_images:newExtras}})});
-    const j=await res.json();
-    if(j.success){
-      toast('✅ 사진 삭제됨');
-      m.ref_image_url=newRef; m.extra_images=newExtras;
-      renderDbCard(0);
-    } else toast('❌ 삭제 실패');
-  }catch(e){ toast('❌ 오류: '+e.message); }
-}
-
-async function dbUploadPic(itemId, mId){
-  const input=document.createElement('input');
-  input.type='file'; input.accept='image/*'; input.multiple=true;
-  input.onchange=async(e)=>{
-    const files=[...e.target.files]; if(!files.length) return;
-    for(const file of files){
-      const reader=new FileReader();
-      reader.onload=async(ev)=>{
-        const img=new Image(); img.onload=async()=>{
-          const MAX=1200;let w=img.width,h=img.height;
-          if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-          const c=document.createElement('canvas');c.width=w;c.height=h;
-          c.getContext('2d').drawImage(img,0,0,w,h);
-          const b64=c.toDataURL('image/jpeg',0.85).split(',')[1];
-          const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({action:'update_sku',skuData:{id:itemId,newImageBase64:b64}})});
-          const j=await res.json();
-          if(j.success){
-            toast('✅ 사진 추가됨');
-            const matches=window._cardMatches||[];
-            const m=matches.find(item=>String(item.id)===String(itemId));
-            if(m&&j.data?.[0]){ Object.assign(m,j.data[0]); renderDbCard(0); }
-          } else toast('❌ 사진 업로드 실패');
-        };img.src=ev.target.result;};reader.readAsDataURL(file);
-    }
-  };
-  input.click();
-}
-
-function toggleDbPic(id){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.style.display=el.style.display==='none'||!el.style.display?'block':'none';
 }
 
 function renderDbMatchCards(matches){
