@@ -1246,6 +1246,7 @@ function _buildDbTabUI(){
       var sel = e.target;
       if(!sel || sel.tagName !== 'SELECT') return;
       var id = sel.id||'';
+      console.log('[DELEGATE] change fired id='+id+' val='+sel.value);
       if(/^dbc-\d+-cat$/.test(id)){
         onDbCardCatChange(id.replace(/-cat$/,''), sel.value);
       }
@@ -1577,7 +1578,12 @@ function initDbCardActualInputs(mId, cat, curVal){
 
 // 카테고리 변경 → 실측 + 부속품 드롭다운 동시 갱신
 function onDbCardCatChange(mId, cat){
+  console.log('[CAT_CHANGE] mId='+mId+' cat='+cat);
+  var wrap = document.getElementById(mId+'-actual-inputs');
+  console.log('[CAT_CHANGE] wrap found:', !!wrap);
   initDbCardActualInputs(mId, cat, '');
+  var wrap2 = document.getElementById(mId+'-actual-inputs');
+  console.log('[CAT_CHANGE] after init, inputs:', wrap2 ? wrap2.querySelectorAll('input').length : 'null');
   const sel = document.getElementById(mId+'-acc-sel');
   if(sel){
     sel.innerHTML = '<option value="">-- 선택 --</option>'
