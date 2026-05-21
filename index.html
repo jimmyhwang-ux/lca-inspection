@@ -367,32 +367,7 @@ input[type=file]{display:none}
   <!-- ① DB 매칭 영역 (초록 테두리) -->
   <div id="db-match-wrap"></div>
 
-  <!-- ② 참고자료 아코디언 -->
-  <div id="ref-section" style="display:none;margin:0 16px 4px">
-    <div style="background:#111;border-radius:10px;border:0.5px solid #2a2a2a;overflow:hidden">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;gap:8px;cursor:pointer" onclick="toggleRefPanel()">
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          <span style="font-size:11px;color:#ccc;font-weight:600">참고자료</span>
-          <span id="ref-db-cnt" style="background:#0a1a2a;color:#007aff;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(0,122,255,.3);display:none">DB 0</span>
-          <span id="ref-gear-cnt" style="background:#1a1200;color:#BA7517;font-size:10px;padding:2px 6px;border-radius:4px;border:0.5px solid rgba(186,117,23,.3);display:none">검기어 0</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="position:relative;display:flex;align-items:center" onclick="event.stopPropagation()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:7px;pointer-events:none">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input id="ref-search-input" type="text" placeholder="모델명 검색..." oninput="searchRefData(this.value)"
-              style="background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:7px;padding:5px 8px 5px 24px;color:#fff;font-size:11px;width:110px;outline:none">
-          </div>
-          <span id="ref-toggle-btn" style="color:#007aff;font-size:11px;font-weight:600">펼치기 ▾</span>
-        </div>
-      </div>
-      <div id="ref-panel" style="display:none;padding:0 10px 10px">
-        <div id="ref-db-list" style="margin-bottom:8px"></div>
-        <div id="ref-gear-list"></div>
-      </div>
-    </div>
-  </div>
+  <div id="ref-section" style="display:none"></div>
 
   <!-- ③ 구분선 신규 등록 -->
   <div style="margin:4px 16px;display:flex;align-items:center;gap:8px">
@@ -1622,9 +1597,7 @@ function renderDbMatchCards(matches){
     catch(e){ console.error('[renderDbMatchCards]',e); }
   }
 
-  // 참고자료 로드
-  const _refModelName=matches[0]?.model_name_ko||matches[0]?.model_name||'';
-  if(_refModelName) loadRefData(_refModelName);
+  // 참고자료 비활성화
 }
 
 
@@ -1730,11 +1703,6 @@ async function renderResult(){
   const _lensSources=(resultData.lensSizeSources||[]).slice(0,3);
   const _lensSku=resultData.lensSku||''
 
-  // 참고자료 로드 (미등록 SKU인 경우)
-  setTimeout(()=>{
-    const modelName=document.getElementById('r-model-ko')?.textContent?.trim();
-    if(modelName&&modelName!=='—'&&!_refDataAll.length) loadRefData(modelName);
-  }, 1200);
   // 사이즈: AI 이미지 분석값만 (SKU DB 매칭은 renderDbMatchCards에서 처리)
   const _finalSize=_aiSize||'';
   const _finalSizeName=_aiSizeName||_lensSizeName||'';
@@ -2128,6 +2096,49 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
+
+      // 모델명 변경 시 SKU DB 재매칭 (searchDbFromField와 동일한 로직)
+      if(!window._skipDbRematch){
+        try{
+          const listRes = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({action:'list_sku'})});
+          const listJ = await listRes.json();
+          if(listJ.success && listJ.data){
+            const list = listJ.data;
+            const v = modelName.toLowerCase();
+            const normBrand = brand.toLowerCase().replace(/\s+/g,'');
+            const brandOk = function(item){
+              if(!brand) return true;
+              const db = (item.brand||'').toLowerCase().replace(/\s+/g,'');
+              return db.includes(normBrand) || normBrand.includes(db);
+            };
+            const brandList = brand ? list.filter(brandOk) : list;
+            // 1차: 완전일치
+            let found = brandList.filter(function(i){
+              return (i.model_name||'').toLowerCase()===v || (i.model_name_ko||'').toLowerCase()===v;
+            });
+            // 2차: 부분일치
+            if(!found.length){
+              const partial = brandList.filter(function(i){
+                return (i.model_name_ko||'').toLowerCase().includes(v) || v.includes((i.model_name_ko||'').toLowerCase()) ||
+                       (i.model_name||'').toLowerCase().includes(v)    || v.includes((i.model_name||'').toLowerCase());
+              });
+              const vToks = v.split(/\s+/).filter(function(w){ return w.length>=2; });
+              const tokenMatched = vToks.length ? brandList.filter(function(i){
+                const ko=(i.model_name_ko||'').toLowerCase(), en=(i.model_name||'').toLowerCase();
+                return vToks.some(function(t){ return ko.includes(t)||en.includes(t); });
+              }) : [];
+              found = [...partial, ...tokenMatched.filter(function(t){ return !partial.some(function(p){ return p.id===t.id; }); })];
+            }
+            if(found.length){
+              window._userResetDb = false;
+              window._appliedCardId = null;
+              renderDbMatchCards(found);
+              toast('✅ SKU 재매칭: '+found.length+'건');
+            }
+          }
+        }catch(e){ console.warn('SKU 재매칭 실패',e); }
+      }
       window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
