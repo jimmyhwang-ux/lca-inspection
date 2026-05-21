@@ -1238,23 +1238,7 @@ function _buildDbTabUI(){
   const dbWrap = document.getElementById('db-match-wrap');
   if(!dbWrap) return;
 
-  // ── 이벤트 위임: document에 딱 한 번만 등록 ────────────────
-  // document는 절대 교체되지 않으므로 renderDbMatchCards 후에도 유지
-  if(!window._dbCardDelegateReady){
-    window._dbCardDelegateReady = true;
-    document.addEventListener('change', function(e){
-      var sel = e.target;
-      if(!sel || sel.tagName !== 'SELECT') return;
-      var id = sel.id||'';
-      console.log('[DELEGATE] change fired id='+id+' val='+sel.value);
-      if(/^dbc-\d+-cat$/.test(id)){
-        onDbCardCatChange(id.replace(/-cat$/,''), sel.value);
-      }
-      if(/^dbc-\d+-acc-sel$/.test(id) && sel.value){
-        addDbCardAcc(id.replace(/-acc-sel$/,''), sel);
-      }
-    });
-  }
+
   const skuCnt  = (window._dbSkuItems||[]).length;
   const gearCnt = (window._dbGearItems||[]).length;
 
@@ -1424,12 +1408,23 @@ function _renderDbCardList(items){
     const metaRow = document.createElement('div');
     metaRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap';
 
-    // 카테고리 — data-mid 속성으로 식별, addEventListener는 렌더 후 연결
-    const catOpts = catList.map(function(c){ return '<option value="'+c+'"'+(c===mCat?' selected':'')+'>'+c+'</option>'; }).join('');
+    // 카테고리 — createElement + select.onchange 직접 할당 (패널 append 직후)
     const catWrap = document.createElement('div');
     catWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    catWrap.innerHTML = '<span style="font-size:9px;color:#555">카테고리</span>'
-      +'<select id="'+mId+'-cat" data-mid="'+mId+'" style="background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none">'+catOpts+'</select>';
+    const catLabelEl = document.createElement('span');
+    catLabelEl.style.cssText = 'font-size:9px;color:#555';
+    catLabelEl.textContent = '카테고리';
+    const catSelEl = document.createElement('select');
+    catSelEl.id = mId+'-cat';
+    catSelEl.style.cssText = 'background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none';
+    catList.forEach(function(c){
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      if(c === mCat) o.selected = true;
+      catSelEl.appendChild(o);
+    });
+    catWrap.appendChild(catLabelEl);
+    catWrap.appendChild(catSelEl);
     metaRow.appendChild(catWrap);
 
     // 사이즈명칭
@@ -1540,6 +1535,14 @@ function _renderDbCardList(items){
     panel.appendChild(picSection);
     card.appendChild(panel);
     content.appendChild(card);
+
+    // DOM에 들어간 직후 onchange 연결 — 클로저로 mId 캡처
+    (function(mid){
+      var cs = document.getElementById(mid+'-cat');
+      if(cs) cs.onchange = function(){ onDbCardCatChange(mid, this.value); };
+      var as = document.getElementById(mid+'-acc-sel');
+      if(as) as.onchange = function(){ if(this.value) addDbCardAcc(mid, this); };
+    })(mId);
   });
 
   // 실측 입력 초기화 — select 실제값 기준
@@ -1578,12 +1581,7 @@ function initDbCardActualInputs(mId, cat, curVal){
 
 // 카테고리 변경 → 실측 + 부속품 드롭다운 동시 갱신
 function onDbCardCatChange(mId, cat){
-  console.log('[CAT_CHANGE] mId='+mId+' cat='+cat);
-  var wrap = document.getElementById(mId+'-actual-inputs');
-  console.log('[CAT_CHANGE] wrap found:', !!wrap);
   initDbCardActualInputs(mId, cat, '');
-  var wrap2 = document.getElementById(mId+'-actual-inputs');
-  console.log('[CAT_CHANGE] after init, inputs:', wrap2 ? wrap2.querySelectorAll('input').length : 'null');
   const sel = document.getElementById(mId+'-acc-sel');
   if(sel){
     sel.innerHTML = '<option value="">-- 선택 --</option>'
