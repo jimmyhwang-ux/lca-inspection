@@ -1512,14 +1512,12 @@ function onDbCardCatChange(mId, cat){
   }
 }
 
-// 부속품 추가 (중복 방지)
+// 부속품 추가 (중복 허용)
 function addDbCardAcc(mId, sel){
   const name = sel.value; if(!name) return;
   sel.value = '';
   const tags = document.getElementById(mId+'-acc-tags');
   if(!tags) return;
-  const existing = Array.from(tags.querySelectorAll('span')).map(function(s){ return s.textContent.replace(' ✕','').trim(); });
-  if(existing.includes(name)) return;
   const span = document.createElement('span');
   span.style.cssText = 'font-size:10px;background:#0a2a0a;border:0.5px solid rgba(34,197,94,.3);border-radius:100px;padding:2px 7px;color:#22c55e;white-space:nowrap;cursor:pointer';
   span.textContent = name + ' ✕';
@@ -1545,7 +1543,13 @@ function getDbCardActual(mId, cat){
 function toggleDbCardEdit(mId){
   const panel = document.getElementById(mId+'-edit');
   if(!panel) return;
-  panel.style.display = panel.style.display==='block' ? 'none' : 'block';
+  const isOpen = panel.style.display==='block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  // 패널 열릴 때 카테고리 현재값 기준으로 실측 재초기화
+  if(!isOpen){
+    const catSel = document.getElementById(mId+'-cat');
+    if(catSel) initDbCardActualInputs(mId, catSel.value, '');
+  }
 }
 
 // ── 검색탭 함수 ──────────────────────────────────────────────
@@ -2099,7 +2103,13 @@ async function reSearchByModel(brand, modelName){
   clearTimeout(_reSearchTimer);
   _reSearchTimer=setTimeout(async()=>{
     const lensEl=document.getElementById('lens-results');
-    // DB 카드는 재매칭 완료 후 자동 교체됨 (초기화 불필요 — 깜빡임 방지)
+
+    // ── DB 재매칭: Lens와 독립적으로 즉시 실행 ──────────────
+    if(!window._skipDbRematch){
+      _rematchSkuByModel(brand, modelName);
+    }
+
+    // ── Google Lens 재검색 ───────────────────────────────────
     window._dbEnriched=[];
     lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">검색 중...</div>';
     try{
@@ -2127,8 +2137,6 @@ async function reSearchByModel(brand, modelName){
         lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">검색 결과 없음</div>';
       }
 
-
-
       // 사이즈도 같이 왔으면 반영 (비어있을 때만)
       if(j.lensSize){
         const sEl=document.getElementById('r-size');
@@ -2149,54 +2157,53 @@ async function reSearchByModel(brand, modelName){
         }
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
-
-      // 모델명 변경 시 SKU DB 재매칭 (searchDbFromField와 동일한 로직)
-      if(!window._skipDbRematch){
-        try{
-          const listRes = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({action:'list_sku'})});
-          const listJ = await listRes.json();
-          if(listJ.success && listJ.data){
-            const list = listJ.data;
-            const v = modelName.toLowerCase();
-            const normBrand = brand.toLowerCase().replace(/\s+/g,'');
-            const brandOk = function(item){
-              if(!brand) return true;
-              const db = (item.brand||'').toLowerCase().replace(/\s+/g,'');
-              return db.includes(normBrand) || normBrand.includes(db);
-            };
-            const brandList = brand ? list.filter(brandOk) : list;
-            // 1차: 완전일치
-            let found = brandList.filter(function(i){
-              return (i.model_name||'').toLowerCase()===v || (i.model_name_ko||'').toLowerCase()===v;
-            });
-            // 2차: 부분일치
-            if(!found.length){
-              const partial = brandList.filter(function(i){
-                return (i.model_name_ko||'').toLowerCase().includes(v) || v.includes((i.model_name_ko||'').toLowerCase()) ||
-                       (i.model_name||'').toLowerCase().includes(v)    || v.includes((i.model_name||'').toLowerCase());
-              });
-              const vToks = v.split(/\s+/).filter(function(w){ return w.length>=2; });
-              const tokenMatched = vToks.length ? brandList.filter(function(i){
-                const ko=(i.model_name_ko||'').toLowerCase(), en=(i.model_name||'').toLowerCase();
-                return vToks.some(function(t){ return ko.includes(t)||en.includes(t); });
-              }) : [];
-              found = [...partial, ...tokenMatched.filter(function(t){ return !partial.some(function(p){ return p.id===t.id; }); })];
-            }
-            if(found.length){
-              window._userResetDb = false;
-              window._appliedCardId = null;
-              renderDbMatchCards(found);
-              toast('✅ SKU 재매칭: '+found.length+'건');
-            }
-          }
-        }catch(e){ console.warn('SKU 재매칭 실패',e); }
-      }
-      window._skipDbRematch=false;
     }catch(e){
       lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
     }
-  }, 800); // 800ms 디바운스 — 연속 수정 시 마지막 것만 검색
+    window._skipDbRematch=false;
+  }, 800);
+}
+
+// DB SKU 재매칭 (모델명 기반) — Lens와 독립 실행
+async function _rematchSkuByModel(brand, modelName){
+  try{
+    const listRes = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list_sku'})});
+    const listJ = await listRes.json();
+    if(!listJ.success || !listJ.data) return;
+    const list = listJ.data;
+    const v = modelName.toLowerCase();
+    const normBrand = (brand||'').toLowerCase().replace(/\s+/g,'');
+    const brandOk = function(item){
+      if(!normBrand) return true;
+      const db = (item.brand||'').toLowerCase().replace(/\s+/g,'');
+      return db.includes(normBrand) || normBrand.includes(db);
+    };
+    const brandList = normBrand ? list.filter(brandOk) : list;
+    // 1차: 완전일치
+    let found = brandList.filter(function(i){
+      return (i.model_name||'').toLowerCase()===v || (i.model_name_ko||'').toLowerCase()===v;
+    });
+    // 2차: 부분일치 + 토큰
+    if(!found.length){
+      const partial = brandList.filter(function(i){
+        const ko=(i.model_name_ko||'').toLowerCase(), en=(i.model_name||'').toLowerCase();
+        return ko.includes(v)||en.includes(v)||v.includes(ko)||v.includes(en);
+      });
+      const vToks = v.split(/\s+/).filter(function(w){ return w.length>=2; });
+      const tokenMatched = vToks.length ? brandList.filter(function(i){
+        const ko=(i.model_name_ko||'').toLowerCase(), en=(i.model_name||'').toLowerCase();
+        return vToks.some(function(t){ return ko.includes(t)||en.includes(t); });
+      }) : [];
+      found = [...partial, ...tokenMatched.filter(function(t){ return !partial.some(function(p){ return p.id===t.id; }); })];
+    }
+    if(found.length){
+      window._userResetDb = false;
+      window._appliedCardId = null;
+      renderDbMatchCards(found);
+      toast('✅ SKU 재매칭: '+found.length+'건');
+    }
+  }catch(e){ console.warn('SKU 재매칭 실패',e); }
 }
 
 // 범용 한→영 번역 함수 (targetEnId: 영문 input id)
