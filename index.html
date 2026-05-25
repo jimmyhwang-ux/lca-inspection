@@ -2711,6 +2711,8 @@ async function saveDbCardEditById(itemId, mId){
       }})
     });
     const j = await res.json();
+    console.log('[update_sku 응답]', j);
+    console.log('[update_sku 전송]', {id:itemId, size_actual:sizeActual, accessories_len:accessories.length, cat, brand});
     if(j.success){
       toast('✅ DB 저장 완료');
       const mIdxStr = mId.replace('dbc-','');
