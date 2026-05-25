@@ -2906,22 +2906,10 @@ function goToSku(){
   renderSkuAccList();
   switchSkuTab('save');
   showScreen('sku');
-  setTimeout(()=>{
-    editSkuSize();
-    setTimeout(()=>{
-      const hidden=document.getElementById('sku-size-hidden');
-      const sizeWrap=document.getElementById('sku-size-wrap');
-      if(hidden&&hidden.value&&sizeWrap&&sizeWrap.querySelector('input')){
-        const cat=(document.getElementById('sku-cat')?.value||'').trim();
-        const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-        const nums=hidden.value.match(/\d+(\.\d+)?/g)||[];
-        cfg.forEach((f,i)=>{
-          const inp=document.getElementById('ssku-'+f.id);
-          if(inp&&nums[i]) inp.value=nums[i];
-        });
-      }
-    },50);
-  }, 100);
+  // sku-size-wrap 강제 초기화 후 즉시 editSkuSize 호출
+  const _sizeWrap = document.getElementById('sku-size-wrap');
+  if(_sizeWrap) _sizeWrap.dataset.cat = ''; // 강제 재렌더 트리거
+  editSkuSize();
   } catch(e){ console.error('[goToSku 에러]', e); toast('❌ 결과이동 오류: '+e.message); }
 }
 
