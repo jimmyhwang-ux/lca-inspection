@@ -2906,10 +2906,38 @@ function goToSku(){
   renderSkuAccList();
   switchSkuTab('save');
   showScreen('sku');
-  // sku-size-wrap 강제 초기화 후 즉시 editSkuSize 호출
-  const _sizeWrap = document.getElementById('sku-size-wrap');
-  if(_sizeWrap) _sizeWrap.dataset.cat = ''; // 강제 재렌더 트리거
-  editSkuSize();
+
+  // 실측 필드 직접 주입 — editSkuSize 타이밍 이슈 없이 즉시 적용
+  const _fillSize = function(){
+    const cat = (document.getElementById('sku-cat')?.value||'').trim();
+    const cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+    const sizeText = rSizeText;
+    if(!sizeText) return;
+
+    // sku-size-wrap 강제 초기화 후 editSkuSize 렌더
+    const _sw = document.getElementById('sku-size-wrap');
+    if(_sw) _sw.dataset.cat = '';
+    editSkuSize();
+
+    // editSkuSize가 렌더한 input에 값 주입 — 라벨 기반 파싱
+    cfg.forEach(function(f, i){
+      const inp = document.getElementById('ssku-'+f.id);
+      if(!inp) return;
+      // "라벨 숫자단위" 패턴으로 이 필드 값 찾기
+      const re = new RegExp(f.label+'\\s*([\\d\\.]+)');
+      const m = sizeText.match(re);
+      if(m){ inp.value = m[1]; }
+      else {
+        // fallback: 순서대로
+        const allNums = sizeText.match(/[\d.]+/g)||[];
+        if(allNums[i]) inp.value = allNums[i];
+      }
+    });
+    // hidden도 업데이트
+    const hidden = document.getElementById('sku-size-hidden');
+    if(hidden) hidden.value = sizeText;
+  };
+  _fillSize();
   } catch(e){ console.error('[goToSku 에러]', e); toast('❌ 결과이동 오류: '+e.message); }
 }
 
