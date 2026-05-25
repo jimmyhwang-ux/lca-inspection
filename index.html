@@ -2668,42 +2668,54 @@ if(matches.length>=1){
 
 
 async function saveDbCardEditById(itemId, mId){
-  const brand   = document.getElementById(mId+'-brand')?.value.trim()||'';
-  const modelKo = document.getElementById(mId+'-model-ko')?.value.trim()||'';
-  const color   = document.getElementById(mId+'-color')?.value.trim()||'';
-  const skuCode = document.getElementById(mId+'-sku')?.value.trim()||'';
-  const cat     = document.getElementById(mId+'-cat')?.value||'';
+  const brand    = document.getElementById(mId+'-brand')?.value?.trim()||'';
+  const modelKo  = document.getElementById(mId+'-model-ko')?.value?.trim()||'';
+  const color    = document.getElementById(mId+'-color')?.value?.trim()||'';
+  const skuCode  = document.getElementById(mId+'-sku')?.value?.trim()||'';
+  const cat      = document.getElementById(mId+'-cat')?.value||'';
+  const sizeLabel= document.getElementById(mId+'-size')?.value?.trim()||'';
+  const notes    = document.getElementById(mId+'-notes')?.value?.trim()||'';
+  const siteUrl  = document.getElementById(mId+'-url')?.value?.trim()||'';
+  const sizeActual = getDbCardActual(mId, cat||'가방');
+  const accTags  = document.getElementById(mId+'-acc-tags');
+  const accessories = accTags
+    ? Array.from(accTags.querySelectorAll('span')).map(function(s){ return {name:s.textContent.replace(' ✕','').trim()}; }).filter(function(a){ return a.name; })
+    : [];
+
   if(!itemId||itemId==='undefined'){ toast('저장할 항목 ID가 없습니다'); return; }
   try{
     const res = await fetch('/api/inspect',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'update_sku', skuData:{
-        id:itemId, brand, model_name_ko:modelKo, color, sku_code:skuCode, category:cat
+        id:itemId, brand, model_name_ko:modelKo, color, sku_code:skuCode,
+        category:cat, size_label:sizeLabel, size_actual:sizeActual,
+        notes, site_url:siteUrl, accessories
       }})
     });
     const j = await res.json();
     if(j.success){
       toast('✅ DB 저장 완료');
-      // 현재 적용된 카드인 경우 상단 결과 영역도 업데이트
       const mIdxStr = mId.replace('dbc-','');
       const isApplied = window._appliedCardId === 'db-card-'+mIdxStr;
       if(isApplied){
-        if(brand) document.getElementById('r-brand').textContent = brand;
+        if(brand)   document.getElementById('r-brand').textContent = brand;
         if(modelKo) document.getElementById('r-model-ko').textContent = modelKo;
         if(skuCode) document.getElementById('r-sku').textContent = skuCode;
       }
-      // _cardMatches 캐시도 업데이트
+      // _cardMatches 캐시 업데이트
       const mIdx = parseInt(mIdxStr);
       const cached = (window._cardMatches||[])[mIdx];
       if(cached){
-        if(brand) cached.brand = brand;
-        if(modelKo) cached.model_name_ko = modelKo;
-        if(skuCode) cached.sku_code = skuCode;
-        if(cat) cached.category = cat;
-        const actualVal = getDbCardActual(mId, cat||cached.category||'가방');
-        if(actualVal) cached.size_actual = actualVal;
-        const accTags = document.getElementById(mId+'-acc-tags');
-        if(accTags) cached.accessories = Array.from(accTags.querySelectorAll('span')).map(function(s){ return {name:s.textContent.replace(' ✕','').trim()}; });
+        if(brand)       cached.brand = brand;
+        if(modelKo)     cached.model_name_ko = modelKo;
+        if(skuCode)     cached.sku_code = skuCode;
+        if(cat)         cached.category = cat;
+        if(sizeLabel)   cached.size_label = sizeLabel;
+        if(sizeActual)  cached.size_actual = sizeActual;
+        if(notes)       cached.notes = notes;
+        if(siteUrl)     cached.site_url = siteUrl;
+        cached.accessories = accessories;
+        cached.color = color;
       }
     } else { toast('❌ 저장 실패: '+(j.error||'')); }
   }catch(e){ toast('❌ 오류: '+e.message); }
