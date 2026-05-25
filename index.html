@@ -1373,7 +1373,11 @@ function _renderDbCardList(items){
     // 텍스트
     const info = document.createElement('div');
     info.style.cssText = 'flex:1;min-width:0';
-    info.innerHTML = '<div style="font-size:14px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.model_name_ko||m.model_name||'—')+'</div><div style="font-size:11px;color:#666;margin-top:2px">'+(m.brand||'')+(m.sku_code?' · '+m.sku_code:'')+'</div>';
+    const googleBtn = m.sku_code
+      ? '<button onclick="event.stopPropagation();window.open(\'https://www.google.com/search?q=\'+encodeURIComponent(\''+(m.brand||'').replace(/'/g,"\\'").replace(/"/g,'\\"')+' '+(m.sku_code||'').replace(/'/g,"\\'").replace(/"/g,'\\"')+'\'),\'_blank\')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px 0 4px;vertical-align:middle;opacity:.6;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>'
+      : '';
+    info.innerHTML = '<div style="font-size:14px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.model_name_ko||m.model_name||'—')+'</div>'
+      +'<div style="font-size:11px;color:#666;margin-top:2px;display:flex;align-items:center">'+(m.brand||'')+(m.sku_code?' · '+m.sku_code:'')+googleBtn+'</div>';
     mainRow.appendChild(info);
 
     // 체크
@@ -2711,25 +2715,26 @@ async function saveDbCardEditById(itemId, mId){
       toast('✅ DB 저장 완료');
       const mIdxStr = mId.replace('dbc-','');
       const isApplied = window._appliedCardId === 'db-card-'+mIdxStr;
+      // 적용된 카드면 상단 결과 영역도 업데이트
       if(isApplied){
         if(brand)   document.getElementById('r-brand').textContent = brand;
         if(modelKo) document.getElementById('r-model-ko').textContent = modelKo;
         if(skuCode) document.getElementById('r-sku').textContent = skuCode;
       }
-      // _cardMatches 캐시 업데이트
+      // _cardMatches 캐시 업데이트 (항상)
       const mIdx = parseInt(mIdxStr);
       const cached = (window._cardMatches||[])[mIdx];
       if(cached){
-        if(brand)       cached.brand = brand;
-        if(modelKo)     cached.model_name_ko = modelKo;
-        if(skuCode)     cached.sku_code = skuCode;
-        if(cat)         cached.category = cat;
-        if(sizeLabel)   cached.size_label = sizeLabel;
-        if(sizeActual)  cached.size_actual = sizeActual;
-        if(notes)       cached.notes = notes;
-        if(siteUrl)     cached.site_url = siteUrl;
+        cached.brand       = brand || cached.brand;
+        cached.model_name_ko = modelKo || cached.model_name_ko;
+        cached.sku_code    = skuCode || cached.sku_code;
+        cached.category    = cat    || cached.category;
+        cached.size_label  = sizeLabel !== undefined ? sizeLabel : cached.size_label;
+        cached.size_actual = sizeActual || cached.size_actual;
+        cached.notes       = notes !== undefined ? notes : cached.notes;
+        cached.site_url    = siteUrl !== undefined ? siteUrl : cached.site_url;
         cached.accessories = accessories;
-        cached.color = color;
+        cached.color       = color !== undefined ? color : cached.color;
       }
     } else { toast('❌ 저장 실패: '+(j.error||'')); }
   }catch(e){ toast('❌ 오류: '+e.message); }
@@ -2825,23 +2830,50 @@ function openSkuOnly(){
 function goToSku(){
   _skuPrevScreen='result';
   const a=resultData.analysis||{};
-  document.getElementById('sku-brand').value=document.getElementById('r-brand').textContent.replace('—','');
-  document.getElementById('sku-model-ko').value=document.getElementById('r-model-ko').textContent.replace('—','');
-  document.getElementById('sku-model').value=document.getElementById('r-model').textContent.replace('—','');
-  // 카테고리: 부속품 탭 active 버튼 우선, 없으면 AI 분석값
+
+  // 적용된 SKU 카드 데이터 (수정된 값 반영)
+  const appliedIdx = window._appliedCardId
+    ? parseInt((window._appliedCardId||'').replace('db-card-',''))
+    : -1;
+  const appliedCard = appliedIdx >= 0 ? (window._cardMatches||[])[appliedIdx] : null;
+
+  // 브랜드/모델명/SKU: 카드 수정값 우선, 없으면 상단 DOM
+  const _brand   = appliedCard?.brand    || document.getElementById('r-brand')?.textContent?.replace('—','') || '';
+  const _modelKo = appliedCard?.model_name_ko || document.getElementById('r-model-ko')?.textContent?.replace('—','') || '';
+  const _modelEn = appliedCard?.model_name || document.getElementById('r-model')?.textContent?.replace('—','') || '';
+  const _sku     = appliedCard?.sku_code  || document.getElementById('r-sku')?.textContent?.replace('—','') || '';
+  const _cat     = appliedCard?.category  || a.category || '';
+  const _color   = appliedCard?.color     || a.color || '';
+  const _sizeLabel = appliedCard?.size_label || document.getElementById('r-size-name')?.textContent?.replace('—','') || '';
+  const _sizeActual = appliedCard?.size_actual || '';
+  const _notes   = appliedCard?.notes     || '';
+  const _siteUrl = appliedCard?.site_url  || (window._dbEnriched&&window._dbEnriched[0]?.site_url) || '';
+
+  document.getElementById('sku-brand').value   = _brand;
+  document.getElementById('sku-model-ko').value = _modelKo;
+  document.getElementById('sku-model').value   = _modelEn;
+  document.getElementById('sku-sku').value     = _sku;
+  document.getElementById('sku-color').value   = _color;
+  document.getElementById('sku-size-name').value = _sizeLabel;
+  document.getElementById('sku-url').value     = _siteUrl;
+  if(document.getElementById('sku-notes')) document.getElementById('sku-notes').value = _notes;
+
+  // 카테고리 설정
   const _activeCatBtn=document.querySelector('#cat-tabs .cat-btn.active');
-  const _catMap={'가방':'가방','지갑':'지갑','주얼리':'주얼리','의류':'의류','신발':'신발','시계':'시계'};
-  const _catFromTab=_activeCatBtn?(_catMap[_activeCatBtn.textContent.trim()]||_activeCatBtn.textContent.trim()):'';
-  document.getElementById('sku-cat').value=_catFromTab||a.category||'';
-  document.getElementById('sku-color').value=a.color||'';
+  const _catFromTab=_activeCatBtn?_activeCatBtn.textContent.trim():'';
+  document.getElementById('sku-cat').value = _cat || _catFromTab || a.category || '';
+
+  // 실측값 hidden에 세팅
   const rSizeEl=document.getElementById('r-size');
-  const rSizeText=_sizeVal||((rSizeEl.textContent||rSizeEl.innerText||'').replace('—','').trim());
+  const rSizeText = _sizeActual || _sizeVal || ((rSizeEl?.textContent||rSizeEl?.innerText||'').replace('—','').trim());
   const _skuSizeHidden=document.getElementById('sku-size-hidden');
-  if(_skuSizeHidden) _skuSizeHidden.value=rSizeText;
-  document.getElementById('sku-size-name').value=document.getElementById('r-size-name').textContent.replace('—','');
-  document.getElementById('sku-sku').value=document.getElementById('r-sku').textContent.replace('—','');
-  const _dbFirst=(window._dbEnriched&&window._dbEnriched[0])||{};
-  document.getElementById('sku-url').value=_dbFirst.site_url||'';
+  if(_skuSizeHidden) _skuSizeHidden.value = rSizeText;
+
+  // 부속품: 카드에서 수정된 부속품 반영
+  if(appliedCard?.accessories?.length){
+    window._skuAccList = appliedCard.accessories.map(function(a){ return {name:a.name||a}; });
+  }
+
   const photoWrap=document.getElementById('sku-photo-wrap');
   photoWrap.innerHTML=['main','label1','label2','label3','logo','origin','back']
     .filter(k=>photos[k])
@@ -2850,11 +2882,8 @@ function goToSku(){
   renderSkuAccList();
   switchSkuTab('save');
   showScreen('sku');
-  // 카테고리에 맞는 사이즈 필드 자동 표시
-  // hidden에 값을 먼저 넣은 뒤 editSkuSize가 파싱하도록 순서 보장
   setTimeout(()=>{
     editSkuSize();
-    // editSkuSize 렌더 후에도 hidden 값 유지 보장
     setTimeout(()=>{
       const hidden=document.getElementById('sku-size-hidden');
       const sizeWrap=document.getElementById('sku-size-wrap');
@@ -3166,7 +3195,7 @@ function renderSkuPage(wrapId){
         <div style="flex:1;min-width:0">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
             <div>
-              <div class="sku-list-brand">${item.brand||'—'}</div>
+              <div class="sku-list-brand">${item.brand||'—'}${item.sku_code?`<button onclick="event.stopPropagation();window.open('https://www.google.com/search?q='+encodeURIComponent('${(item.brand||'').replace(/'/g,"\\'")} ${(item.sku_code||'').replace(/'/g,"\\'")}'),'_blank')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px;vertical-align:middle;opacity:.6;line-height:1;margin-left:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>`:''}</div>
               <div class="sku-list-model">${item.model_name_ko||item.model_name||'—'}</div>
               <div class="sku-list-model-en">${item.model_name||''}</div>
             </div>
