@@ -2871,11 +2871,8 @@ function goToSku(){
   if(_skuSizeHidden) _skuSizeHidden.value = rSizeText;
 
   // 부속품: 카드에서 수정된 부속품을 전역 accessories 변수에 반영
-  if(appliedCard?.accessories?.length){
-    accessories = appliedCard.accessories.map(function(a){ return {name:a.name||a}; });
-  } else {
-    accessories = [];
-  }
+  const _appliedAccArr = safeAccArr(appliedCard?.accessories);
+  accessories = _appliedAccArr.length ? _appliedAccArr.map(function(a){ return {name:a.name||a}; }) : [];
 
   const photoWrap=document.getElementById('sku-photo-wrap');
   photoWrap.innerHTML=['main','label1','label2','label3','logo','origin','back']
