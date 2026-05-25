@@ -2828,6 +2828,7 @@ function openSkuOnly(){
   // 뒤로가기는 _skuPrevScreen으로 처리됨
 }
 function goToSku(){
+  try {
   _skuPrevScreen='result';
   const a=resultData.analysis||{};
 
@@ -2869,9 +2870,11 @@ function goToSku(){
   const _skuSizeHidden=document.getElementById('sku-size-hidden');
   if(_skuSizeHidden) _skuSizeHidden.value = rSizeText;
 
-  // 부속품: 카드에서 수정된 부속품 반영
+  // 부속품: 카드에서 수정된 부속품을 전역 accessories 변수에 반영
   if(appliedCard?.accessories?.length){
-    window._skuAccList = appliedCard.accessories.map(function(a){ return {name:a.name||a}; });
+    accessories = appliedCard.accessories.map(function(a){ return {name:a.name||a}; });
+  } else {
+    accessories = [];
   }
 
   const photoWrap=document.getElementById('sku-photo-wrap');
@@ -2898,6 +2901,7 @@ function goToSku(){
       }
     },50);
   }, 100);
+  } catch(e){ console.error('[goToSku 에러]', e); toast('❌ 결과이동 오류: '+e.message); }
 }
 
 function renderSkuAccList(){
