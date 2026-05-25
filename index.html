@@ -2832,47 +2832,69 @@ function goToSku(){
   _skuPrevScreen='result';
   const a=resultData.analysis||{};
 
-  // 적용된 SKU 카드 데이터 (수정된 값 반영)
+  // 적용된 SKU 카드 인덱스
   const appliedIdx = window._appliedCardId
     ? parseInt((window._appliedCardId||'').replace('db-card-',''))
     : -1;
   const appliedCard = appliedIdx >= 0 ? (window._cardMatches||[])[appliedIdx] : null;
+  const mId = appliedIdx >= 0 ? 'dbc-'+appliedIdx : null;
 
-  // 브랜드/모델명/SKU: 카드 수정값 우선, 없으면 상단 DOM
-  const _brand   = appliedCard?.brand    || document.getElementById('r-brand')?.textContent?.replace('—','') || '';
-  const _modelKo = appliedCard?.model_name_ko || document.getElementById('r-model-ko')?.textContent?.replace('—','') || '';
-  const _modelEn = appliedCard?.model_name || document.getElementById('r-model')?.textContent?.replace('—','') || '';
-  const _sku     = appliedCard?.sku_code  || document.getElementById('r-sku')?.textContent?.replace('—','') || '';
-  const _cat     = appliedCard?.category  || a.category || '';
-  const _color   = appliedCard?.color     || a.color || '';
-  const _sizeLabel = appliedCard?.size_label || document.getElementById('r-size-name')?.textContent?.replace('—','') || '';
-  const _sizeActual = appliedCard?.size_actual || '';
-  const _notes   = appliedCard?.notes     || '';
-  const _siteUrl = appliedCard?.site_url  || (window._dbEnriched&&window._dbEnriched[0]?.site_url) || '';
+  // 편집 패널 DOM에서 실시간 값 읽기 (저장 여부 무관)
+  const _brand   = (mId && document.getElementById(mId+'-brand')?.value?.trim())
+                || appliedCard?.brand || document.getElementById('r-brand')?.textContent?.replace('—','').trim() || '';
+  const _modelKo = (mId && document.getElementById(mId+'-model-ko')?.value?.trim())
+                || appliedCard?.model_name_ko || document.getElementById('r-model-ko')?.textContent?.replace('—','').trim() || '';
+  const _modelEn = appliedCard?.model_name || document.getElementById('r-model')?.textContent?.replace('—','').trim() || '';
+  const _sku     = (mId && document.getElementById(mId+'-sku')?.value?.trim())
+                || appliedCard?.sku_code || document.getElementById('r-sku')?.textContent?.replace('—','').trim() || '';
+  const _cat     = (mId && document.getElementById(mId+'-cat')?.value)
+                || appliedCard?.category || a.category || '';
+  const _color   = (mId && document.getElementById(mId+'-color')?.value?.trim())
+                || appliedCard?.color || a.color || '';
+  const _sizeLabel = (mId && document.getElementById(mId+'-size')?.value?.trim())
+                  || appliedCard?.size_label || document.getElementById('r-size-name')?.textContent?.replace('—','').trim() || '';
+  const _notes   = (mId && document.getElementById(mId+'-notes')?.value?.trim())
+                || appliedCard?.notes || '';
+  const _siteUrl = (mId && document.getElementById(mId+'-url')?.value?.trim())
+                || appliedCard?.site_url || (window._dbEnriched&&window._dbEnriched[0]?.site_url) || '';
 
-  document.getElementById('sku-brand').value   = _brand;
+  // 실측: 편집 패널 sf 필드에서 직접 읽기
+  let _sizeActual = '';
+  if(mId) _sizeActual = getDbCardActual(mId, _cat||'가방');
+  if(!_sizeActual) _sizeActual = appliedCard?.size_actual || '';
+
+  // 부속품: 편집 패널 acc-tags에서 직접 읽기 → 없으면 캐시 fallback
+  const _accTagsEl = mId ? document.getElementById(mId+'-acc-tags') : null;
+  let _accArr = [];
+  if(_accTagsEl && _accTagsEl.querySelectorAll('span').length > 0) {
+    _accArr = Array.from(_accTagsEl.querySelectorAll('span'))
+      .map(function(s){ return {name:s.textContent.replace(' ✕','').trim()}; })
+      .filter(function(a){ return a.name; });
+  }
+  // fallback: 캐시값
+  if(!_accArr.length) {
+    _accArr = safeAccArr(appliedCard?.accessories).map(function(a){ return {name:a.name||a}; });
+  }
+  accessories = _accArr;
+
+  document.getElementById('sku-brand').value    = _brand;
   document.getElementById('sku-model-ko').value = _modelKo;
-  document.getElementById('sku-model').value   = _modelEn;
-  document.getElementById('sku-sku').value     = _sku;
-  document.getElementById('sku-color').value   = _color;
-  document.getElementById('sku-size-name').value = _sizeLabel;
-  document.getElementById('sku-url').value     = _siteUrl;
+  document.getElementById('sku-model').value    = _modelEn;
+  document.getElementById('sku-sku').value      = _sku;
+  document.getElementById('sku-color').value    = _color;
+  document.getElementById('sku-size-name').value= _sizeLabel;
+  document.getElementById('sku-url').value      = _siteUrl;
   if(document.getElementById('sku-notes')) document.getElementById('sku-notes').value = _notes;
 
-  // 카테고리 설정
+  // 카테고리
   const _activeCatBtn=document.querySelector('#cat-tabs .cat-btn.active');
-  const _catFromTab=_activeCatBtn?_activeCatBtn.textContent.trim():'';
-  document.getElementById('sku-cat').value = _cat || _catFromTab || a.category || '';
+  document.getElementById('sku-cat').value = _cat || (_activeCatBtn&&_activeCatBtn.textContent.trim()) || a.category || '';
 
-  // 실측값 hidden에 세팅
+  // 실측 hidden
   const rSizeEl=document.getElementById('r-size');
   const rSizeText = _sizeActual || _sizeVal || ((rSizeEl?.textContent||rSizeEl?.innerText||'').replace('—','').trim());
   const _skuSizeHidden=document.getElementById('sku-size-hidden');
   if(_skuSizeHidden) _skuSizeHidden.value = rSizeText;
-
-  // 부속품: 카드에서 수정된 부속품을 전역 accessories 변수에 반영
-  const _appliedAccArr = safeAccArr(appliedCard?.accessories);
-  accessories = _appliedAccArr.length ? _appliedAccArr.map(function(a){ return {name:a.name||a}; }) : [];
 
   const photoWrap=document.getElementById('sku-photo-wrap');
   photoWrap.innerHTML=['main','label1','label2','label3','logo','origin','back']
