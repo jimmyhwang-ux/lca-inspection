@@ -1394,13 +1394,17 @@ function _renderDbCardList(items){
     panel.id = mId+'-edit';
     panel.style.cssText = 'display:none;padding:0 14px 12px;border-top:0.5px solid rgba(255,255,255,.06)';
 
-    // 모델명+SKU 편집
+    // 모델명+SKU+브랜드 편집
     const editRow = document.createElement('div');
-    editRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;margin-top:10px';
+    editRow.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;margin-top:10px;flex-wrap:wrap';
+    const inpBrand = document.createElement('input');
+    inpBrand.id = mId+'-brand'; inpBrand.placeholder = '브랜드';
+    inpBrand.value = (m.brand||'').replace(/"/g,'"');
+    inpBrand.style.cssText = 'width:90px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 8px;color:#aaa;font-size:12px;outline:none';
     const inpModel = document.createElement('input');
     inpModel.id = mId+'-model-ko'; inpModel.placeholder = '모델명';
     inpModel.value = (m.model_name_ko||m.model_name||'').replace(/"/g,'"');
-    inpModel.style.cssText = 'flex:1;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 10px;color:#fff;font-size:13px;font-weight:600;outline:none';
+    inpModel.style.cssText = 'flex:1;min-width:120px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 10px;color:#fff;font-size:13px;font-weight:600;outline:none';
     const inpSku = document.createElement('input');
     inpSku.id = mId+'-sku'; inpSku.placeholder = 'SKU';
     inpSku.value = (m.sku_code||'').replace(/"/g,'"');
@@ -1409,7 +1413,7 @@ function _renderDbCardList(items){
     saveBtn.textContent = '💾 저장';
     saveBtn.style.cssText = 'background:#22c55e;border:none;color:#000;font-size:12px;font-weight:800;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap';
     (function(iid,mid){ saveBtn.onclick = function(e){ e.stopPropagation(); saveDbCardEditById(iid,mid); }; })(m.id, mId);
-    editRow.appendChild(inpModel); editRow.appendChild(inpSku); editRow.appendChild(saveBtn);
+    editRow.appendChild(inpBrand); editRow.appendChild(inpModel); editRow.appendChild(inpSku); editRow.appendChild(saveBtn);
     panel.appendChild(editRow);
 
     // 카테고리+사이즈명칭+컬러+실측 — createElement로 이벤트 확실히
@@ -1650,10 +1654,20 @@ function toggleDbCardEdit(mId){
   if(!panel) return;
   const isOpen = panel.style.display==='block';
   panel.style.display = isOpen ? 'none' : 'block';
-  // 패널 열릴 때 카테고리 현재값 기준으로 실측 재초기화
+  // 패널 열릴 때 — 이미 값이 있으면 유지, 없으면 카드 데이터로 초기화
   if(!isOpen){
     const catSel = document.getElementById(mId+'-cat');
-    if(catSel) initDbCardActualInputs(mId, catSel.value, '');
+    if(catSel){
+      const cat = catSel.value;
+      // 첫 번째 sf 필드가 이미 있으면 재초기화 스킵
+      const sf0 = document.getElementById(mId+'-sf-0');
+      if(!sf0){
+        // 카드 인덱스에서 m.size_actual 찾기
+        const idx = parseInt(mId.replace('dbc-',''));
+        const m = (window._cardMatches||[])[idx];
+        initDbCardActualInputs(mId, cat, m?.size_actual||'');
+      }
+    }
   }
 }
 
