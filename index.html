@@ -1767,6 +1767,8 @@ function renderDbMatchCards(matches){
   const dbWrap=document.getElementById('db-match-wrap');
   if(!dbWrap) return;
 
+  // 정보량 많은 카드 상단 노출 (동일 모델이라도 사진/실측/부속품 많은 것 우선)
+  matches = _sortByRichness(matches);
   window._cardMatches=matches;
   window._dbMatchIdx=0;
 
@@ -3150,6 +3152,8 @@ async function loadSkuList(tab){
       return;
     }
     skuListAll=j.data||[];
+    // 정보량 많은 항목 상단 노출
+    skuListAll = _sortByRichness(skuListAll);
     const _ck=activeTab==='gear'?'gear':'model';
     _skuCache[_ck]=skuListAll;
     if(activeTab==='gear'){
@@ -3183,6 +3187,37 @@ function updateCountBar(list, wrapId){
     .join('<span style="color:#333;margin:0 2px">|</span>');
   bar.innerHTML=`<span style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap">전체 <span style="color:#ff6b2b">${total}</span>건</span>`
     +(catItems?`<span style="color:#333;margin:0 4px">·</span>${catItems}`:'');
+}
+
+// 정보량 점수 계산 — 많을수록 상단 노출
+function _richnessScore(item){
+  var s = 0;
+  if(item.ref_image_url) s += 10;
+  var extras = Array.isArray(item.extra_images) ? item.extra_images : [];
+  if(typeof extras==='string'){ try{ extras=JSON.parse(extras); }catch(_){ extras=[]; } }
+  s += Math.min((extras.length||0) * 3, 10); // 사진 최대 10점
+  if(item.size_actual && item.size_actual.trim()) s += 35; // 실측 최고 비중
+  if(item.size_label  && item.size_label.trim())  s += 10;
+  if(item.color       && item.color.trim())       s += 8;
+  var accs = Array.isArray(item.accessories) ? item.accessories : [];
+  if(typeof accs==='string'){ try{ accs=JSON.parse(accs); }catch(_){ accs=[]; } }
+  s += Math.min((accs.length||0) * 10, 30); // 부속품 개당 10점 최대 30
+  if(item.notes    && item.notes.trim())    s += 20; // 메모 높은 비중
+  if(item.site_url && item.site_url.trim()) s += 15; // URL
+  if(item.model_name_ko && item.model_name_ko.trim()) s += 5;
+  if(item.model_name    && item.model_name.trim())    s += 3;
+  return s;
+}
+
+function _sortByRichness(list){
+  if(!list||!list.length) return list;
+  return list.slice().sort(function(a, b){
+    // 1차: 정보량 점수 내림차순
+    var diff = _richnessScore(b) - _richnessScore(a);
+    if(diff !== 0) return diff;
+    // 2차: 최신 등록순
+    return new Date(b.created_at||0) - new Date(a.created_at||0);
+  });
 }
 
 function renderSkuList(list, wrapId){
