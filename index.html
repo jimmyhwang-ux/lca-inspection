@@ -3200,9 +3200,13 @@ async function loadSkuList(tab){
       return;
     }
     skuListAll=j.data||[];
-    // 기본 정렬: 브랜드 가나다순 (한글 우선)
+    // 기본 정렬: 브랜드 가나다순, 브랜드 없는 항목은 맨 뒤
     skuListAll = skuListAll.slice().sort(function(a,b){
-      var ba=(a.brand||'').trim(), bb=(b.brand||'').trim();
+      var ba=(a.brand||'').replace('—','').trim();
+      var bb=(b.brand||'').replace('—','').trim();
+      if(!ba && !bb) return 0;
+      if(!ba) return 1;
+      if(!bb) return -1;
       return ba.localeCompare(bb,'ko');
     });
     const _ck=activeTab==='gear'?'gear':'model';
