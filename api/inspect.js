@@ -317,7 +317,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     try {
       if (imageUrl) {
         const lensController = new AbortController();
-        const lensTimeout = setTimeout(() => lensController.abort(), 5000);
+        const lensTimeout = setTimeout(() => lensController.abort(), 15000);
         const s = await fetch(
           `https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`,
           { signal: lensController.signal }
@@ -326,7 +326,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const j = await s.json();
         visualMatches = j.visual_matches || [];
       }
-    } catch (e) { console.warn('Lens skip:', e.message); }
+    } catch (e) { console.warn('Lens skip:', e.message, 'imageUrl:', imageUrl?.slice(0,80)); }
 
     dbMatches = dbMatches.map(m => ({
       ...m,
