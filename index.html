@@ -3162,7 +3162,6 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
         (s.brand||'')+' '+(s.model_name||'')+' '+(s.model_name_ko||'')+' '+
         (s.notes||'')+' '+(s.color||'')+' '+(s.sku_code||'')
       ).toLowerCase();
-      // 각 토큰이 hay에 포함되거나, 부분 한→영 매핑값이 포함되면 매칭
       return tokens.every(t=>{
         if(hay.includes(t)) return true;
         if(typeof resolveTokenToEnglish!=='undefined'){
@@ -3172,6 +3171,8 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
         return false;
       });
     });
+    // 검색 결과 내에서는 정보량 많은 순으로 정렬
+    filtered = _sortByRichness(filtered);
   }
   if(!filtered.length){ wrap.innerHTML='<div class="sku-empty">검색 결과 없음</div>'; return; }
   renderSkuList(filtered, wrapId);
@@ -3199,8 +3200,11 @@ async function loadSkuList(tab){
       return;
     }
     skuListAll=j.data||[];
-    // 정보량 많은 항목 상단 노출
-    skuListAll = _sortByRichness(skuListAll);
+    // 기본 정렬: 브랜드 가나다순 (한글 우선)
+    skuListAll = skuListAll.slice().sort(function(a,b){
+      var ba=(a.brand||'').trim(), bb=(b.brand||'').trim();
+      return ba.localeCompare(bb,'ko');
+    });
     const _ck=activeTab==='gear'?'gear':'model';
     _skuCache[_ck]=skuListAll;
     if(activeTab==='gear'){
