@@ -2285,6 +2285,54 @@ async function reSearchByModel(brand, modelName){
 }
 
 // DB SKU 재매칭 (모델명 기반) — Lens와 독립 실행
+
+// ── 브랜드 정규화 + 매칭 ─────────────────────────────────────
+var _BRAND_ALIAS = {
+  'vancleefarpels':'반클리프아펠','vancleefarpe':'반클리프아펠',
+  'louisvuitton':'루이비통','lv':'루이비통',
+  'gucci':'구찌','chanel':'샤넬','dior':'디올','prada':'프라다',
+  'hermes':'에르메스','celine':'셀린느','loewe':'로에베',
+  'balenciaga':'발렌시아가','saintlaurent':'생로랑','ysl':'생로랑',
+  'bottegaveneta':'보테가베네타','fendi':'펜디','valentino':'발렌티노',
+  'givenchy':'지방시','burberry':'버버리','moncler':'몽클레어',
+  'thombrowne':'톰브라운','miumiu':'미우미우',
+  'maisonmargiela':'메종마르지엘라','goyard':'고야드','delvaux':'델보',
+  'cartier':'까르띠에','rolex':'롤렉스','omega':'오메가',
+  'tagheuer':'태그호이어','patekphilippe':'파텍필립',
+  'audemarspiguet':'오데마피게','iwc':'아이더블유씨',
+  'breitling':'브라이틀링','bulgari':'불가리','bvlgari':'불가리',
+  'tiffany':'티파니','tiffanyco':'티파니앤코',
+  'chaumet':'쇼메','fred':'프레드',
+  'ferragamo':'페라가모','mulberry':'멀버리','coach':'코치',
+  'hamilton':'해밀턴','tissot':'티쏘','longines':'론진',
+  '루이비통':'louisvuitton','구찌':'gucci','샤넬':'chanel',
+  '디올':'dior','프라다':'prada','에르메스':'hermes',
+  '셀린느':'celine','로에베':'loewe','발렌시아가':'balenciaga',
+  '생로랑':'saintlaurent','보테가베네타':'bottegaveneta',
+  '펜디':'fendi','발렌티노':'valentino','지방시':'givenchy',
+  '버버리':'burberry','몽클레어':'moncler','톰브라운':'thombrowne',
+  '미우미우':'miumiu','고야드':'goyard','델보':'delvaux',
+  '까르띠에':'cartier','롤렉스':'rolex','오메가':'omega',
+  '태그호이어':'tagheuer','불가리':'bulgari','티파니':'tiffany',
+  '반클리프아펠':'vancleefarpels','반클리프':'vancleefarpe',
+  '쇼메':'chaumet','프레드':'fred','페라가모':'ferragamo',
+  '해밀턴':'hamilton','티쏘':'tissot','론진':'longines',
+};
+function _normBrand(b){
+  return (b||'').toLowerCase().replace(/[\s\-&·'']/g,'');
+}
+function _brandMatch(a, b){
+  if(!a||!b) return false;
+  var na=_normBrand(a), nb=_normBrand(b);
+  if(na===nb||na.includes(nb)||nb.includes(na)) return true;
+  var aliasA=_BRAND_ALIAS[na]||'', aliasB=_BRAND_ALIAS[nb]||'';
+  var naa=_normBrand(aliasA), nab=_normBrand(aliasB);
+  if(naa&&(naa===nb||naa.includes(nb)||nb.includes(naa))) return true;
+  if(nab&&(nab===na||nab.includes(na)||na.includes(nab))) return true;
+  if(naa&&nab&&(naa===nab)) return true;
+  return false;
+}
+
 async function _rematchSkuByModel(brand, modelName){
   try{
     const listRes = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -2294,15 +2342,14 @@ async function _rematchSkuByModel(brand, modelName){
     const list = listJ.data;
     const v = modelName.trim().toLowerCase();
     if(!v) return;
-    const normBrand = (brand||'').toLowerCase().replace(/\s+/g,'');
+    const normBrand = (brand||'').trim();
 
-    // 브랜드 필터 — 반드시 적용 (브랜드 없으면 매칭 안 함)
+    // 브랜드 필터 — _brandMatch로 한글↔영문 양방향 매칭
     if(!normBrand){ console.warn('SKU재매칭: 브랜드 없어 스킵'); return; }
     const brandList = list.filter(function(item){
-      const db = (item.brand||'').toLowerCase().replace(/\s+/g,'');
-      return db.includes(normBrand) || normBrand.includes(db);
+      return _brandMatch(normBrand, item.brand||'');
     });
-    if(!brandList.length) return;
+    if(!brandList.length){ console.warn('SKU재매칭: 브랜드 매칭 없음', normBrand); return; }
 
     // 1차: 완전일치
     let found = brandList.filter(function(i){
