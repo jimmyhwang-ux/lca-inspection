@@ -24,11 +24,11 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 }
 .header{text-align:center;padding:16px 20px 12px}
 .header h1{font-size:19px;font-weight:800;margin-bottom:4px}
-.header p{font-size:12px;color:#ccc;line-height:1.4}
+.header p{font-size:12px;color:#ddd;line-height:1.4}
 .photo-wrap{padding:0 16px;margin-bottom:6px}
 .slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:120px}
 .slot-big:hover{border-color:#ff6b2b}
-.slot-big.filled{border-style:solid;border-color:#bbb;min-height:0;aspect-ratio:3/2}
+.slot-big.filled{border-style:solid;border-color:#ddd;min-height:0;aspect-ratio:3/2}
 .slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 16px;width:100%}
 .slot-big.filled .slot-inner{display:none}
 .slot-big img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;border-radius:12px;z-index:1;background:#1a1a1a}
@@ -42,29 +42,29 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 .slot-sm .slot-inner{display:flex;flex-direction:column;align-items:center;gap:4px}
 .slot-sm.filled .slot-inner{display:none}
 .slot-icon{font-size:20px;opacity:.5}
-.slot-label{font-size:10px;font-weight:600;color:#ccc;text-align:center;line-height:1.3}
-.slot-sub{font-size:9px;color:#bbb;text-align:center}
+.slot-label{font-size:10px;font-weight:600;color:#ddd;text-align:center;line-height:1.3}
+.slot-sub{font-size:9px;color:#ddd;text-align:center}
 .rm-btn{position:absolute;top:5px;right:5px;width:20px;height:20px;background:rgba(0,0,0,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;z-index:2;color:#fff;border:none}
 input[type=file]{display:none}
-.hint{font-size:11px;color:#bbb;padding:6px 16px 10px;line-height:1.5}
+.hint{font-size:11px;color:#ddd;padding:6px 16px 10px;line-height:1.5}
 .cta-wrap{padding:0 16px;margin-bottom:16px}
 .btn-main{width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s}
 .btn-main:hover{background:#ff8c55}
 .btn-main:active{transform:scale(.98)}
-.btn-main:disabled{background:#1a1a1a;color:#bbb;cursor:not-allowed;transform:none}
+.btn-main:disabled{background:#1a1a1a;color:#ddd;cursor:not-allowed;transform:none}
 #screen-loading{padding:0 20px}
 .loading-center{display:flex;flex-direction:column;align-items:center;padding:52px 0 40px;gap:14px}
 .spinner{width:44px;height:44px;border:3px solid #222;border-top-color:#ff6b2b;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-title{font-size:17px;font-weight:700}
-.loading-sub{font-size:13px;color:#555}
+.loading-sub{font-size:13px;color:#fff}
 .steps{display:flex;flex-direction:column;gap:4px}
 .step{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:border-color .3s,background .3s}
 .step.active{border-color:rgba(255,107,43,.4);background:rgba(255,107,43,.08)}
 .step.done{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
 .step-ic{font-size:18px;width:26px;text-align:center}
 .step-name{font-size:13px;font-weight:600}
-.step-desc{font-size:11px;color:#bbb;margin-top:1px}
+.step-desc{font-size:11px;color:#ddd;margin-top:1px}
 .step-st{font-size:15px;margin-left:auto}
 .sp{display:inline-block;animation:spin 1s linear infinite}
 #screen-result{padding:0}
@@ -77,18 +77,18 @@ input[type=file]{display:none}
 .conf-badge.warn{background:#3a2a00;color:#f59e0b}
 .conf-badge.fail{background:#3a0000;color:#ef4444}
 .result-brand{font-size:12px;color:#ff6b2b;font-weight:600;margin-bottom:3px}
-.result-reason{font-size:12px;color:#ccc;margin-bottom:8px}
+.result-reason{font-size:12px;color:#ddd;margin-bottom:8px}
 .result-cats{display:flex;gap:6px;flex-wrap:wrap}
-.cat-tag{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;padding:3px 10px;font-size:11px;color:#888}
+.cat-tag{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;padding:3px 10px;font-size:11px;color:#fff}
 .info-row-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a1a1a;border-radius:12px;overflow:visible}
 .info-cell{background:#111;padding:12px 10px}
-.info-cell-label{font-size:10px;color:#bbb;margin-bottom:4px}
+.info-cell-label{font-size:10px;color:#ddd;margin-bottom:4px}
 .info-cell-val{font-size:13px;font-weight:700;color:#fff;cursor:pointer}
-.info-cell-val.muted{color:#bbb;font-weight:400}
+.info-cell-val.muted{color:#ddd;font-weight:400}
 .info-cell-val:hover{color:#ff6b2b}
 .ai-badge{cursor:default;vertical-align:middle}
-.info-cell-val[title]:hover::after{content:attr(title);position:absolute;background:#1c1c1c;color:#ccc;font-size:10px;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;margin-top:18px;margin-left:-20px}
-.section-hd{padding:16px 0 8px;font-size:11px;font-weight:700;color:#bbb;letter-spacing:.08em;text-transform:uppercase}
+.info-cell-val[title]:hover::after{content:attr(title);position:absolute;background:#1c1c1c;color:#ddd;font-size:10px;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;margin-top:18px;margin-left:-20px}
+.section-hd{padding:16px 0 8px;font-size:11px;font-weight:700;color:#ddd;letter-spacing:.08em;text-transform:uppercase}
 .lens-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 0 4px;scrollbar-width:none}
 .lens-scroll::-webkit-scrollbar{display:none}
 .lens-card{flex-shrink:0;width:120px;background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
@@ -97,7 +97,7 @@ input[type=file]{display:none}
 .lens-info{padding:7px 9px}
 .lens-title{font-size:11px;font-weight:600;color:#f0f0f0;line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lens-price{font-size:12px;font-weight:800;color:#ff6b2b}
-.lens-src{font-size:10px;color:#bbb;margin-top:2px}
+.lens-src{font-size:10px;color:#ddd;margin-top:2px}
 .acc-wrap{background:#111;border-radius:14px;overflow:hidden}
 .acc-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
 .acc-item:last-child{border-bottom:none}
@@ -106,11 +106,11 @@ input[type=file]{display:none}
 .acc-select.status-y{border-color:rgba(34,197,94,.4);color:#22c55e;background-color:#0a2a0a}
 .acc-select.status-n{border-color:rgba(239,68,68,.4);color:#ef4444;background-color:#2a0a0a}
 .acc-select.status-u{border-color:rgba(245,158,11,.4);color:#f59e0b;background-color:#2a1a00}
-.acc-del{background:none;border:none;color:#bbb;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
+.acc-del{background:none;border:none;color:#ddd;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
 .acc-del:hover{color:#ef4444}
 .acc-add-row{padding:12px 14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid #1a1a1a}
 .cat-tabs{display:flex;gap:6px;flex-wrap:wrap}
-.cat-btn{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:#ccc;cursor:pointer;transition:all .15s;white-space:nowrap}
+.cat-btn{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:#ddd;cursor:pointer;transition:all .15s;white-space:nowrap}
 .cat-btn.active{background:#ff6b2b;border-color:#ff6b2b;color:#fff}
 .acc-bottom-row{display:flex;gap:8px}
 .acc-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
@@ -119,12 +119,12 @@ input[type=file]{display:none}
 .db-match-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)}
 .db-match-badge{background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px}
 .db-match-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
-.db-match-info{flex:1;font-size:12px;color:#ccc;line-height:1.7}
+.db-match-info{flex:1;font-size:12px;color:#ddd;line-height:1.7}
 .db-match-info strong{color:#f0f0f0;font-size:13px}
 .db-new-badge{border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px}
 .bottom-bar{position:sticky;bottom:0;background:linear-gradient(to top,#000 60%,transparent);padding:14px 16px 20px}
 .btn-row{display:flex;gap:6px}
-.btn-sec{flex:1;background:#111;color:#bbb;border:1px solid #1e1e1e;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-sec{flex:1;background:#111;color:#ddd;border:1px solid #1e1e1e;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer}
 .btn-copy{flex:1;background:#1a1a1a;color:#ff6b2b;border:1px solid rgba(255,107,43,.3);border-radius:12px;padding:13px;font-size:12px;font-weight:700;cursor:pointer}
 .btn-move{flex:2;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;cursor:pointer}
 .btn-move:hover{background:#ff8c55}
@@ -136,12 +136,12 @@ input[type=file]{display:none}
 .sku-back{background:none;border:none;color:#ff6b2b;font-size:22px;cursor:pointer;padding:0 4px;line-height:1}
 .sku-title{font-size:16px;font-weight:800;color:#f0f0f0}
 .sku-tabs{display:flex;gap:6px;margin-bottom:14px}
-.sku-tab{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;border:1px solid #2a2a2a;background:#111;color:#ccc;transition:all .15s}
+.sku-tab{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;border:1px solid #2a2a2a;background:#111;color:#ddd;transition:all .15s}
 .sku-tab.active{background:#ff6b2b;color:#fff;border-color:#ff6b2b}
 .sku-card{background:#111;border-radius:14px;overflow:hidden;margin-bottom:10px}
 .sku-row{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
 .sku-row:last-child{border-bottom:none}
-.sku-key{font-size:11px;color:#bbb;width:90px;flex-shrink:0}
+.sku-key{font-size:11px;color:#ddd;width:90px;flex-shrink:0}
 .sku-input{flex:1;background:transparent;border:none;font-size:13px;font-weight:600;color:#f0f0f0;outline:none;font-family:inherit}
 .sku-input::placeholder{color:#333}
 .sku-photos{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
@@ -152,12 +152,12 @@ input[type=file]{display:none}
 .sku-list-item{background:#111;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid #1e1e1e}
 .sku-list-brand{font-size:11px;color:#ff6b2b;font-weight:600;margin-bottom:2px}
 .sku-list-model{font-size:14px;font-weight:700;color:#f0f0f0;margin-bottom:2px}
-.sku-list-model-en{font-size:11px;color:#ccc;margin-bottom:6px}
+.sku-list-model-en{font-size:11px;color:#ddd;margin-bottom:6px}
 .sku-list-meta{display:flex;gap:8px;flex-wrap:wrap}
-.sku-meta-tag{font-size:10px;color:#ccc;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:2px 8px}
-.sku-list-del{float:right;background:none;border:none;color:#bbb;font-size:14px;cursor:pointer;margin-top:-2px}
+.sku-meta-tag{font-size:10px;color:#ddd;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:2px 8px}
+.sku-list-del{float:right;background:none;border:none;color:#ddd;font-size:14px;cursor:pointer;margin-top:-2px}
 .sku-list-del:hover{color:#ef4444}
-.sku-empty{text-align:center;padding:40px 20px;color:#bbb;font-size:14px}
+.sku-empty{text-align:center;padding:40px 20px;color:#ddd;font-size:14px}
 .sl-box{position:relative;width:100%;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-bottom:8px;cursor:pointer}
 .sl-box img{width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a}
 .sl-box .sl-arrow{position:absolute;top:0;bottom:0;width:36px;background:rgba(0,0,0,.45);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:3;opacity:0;transition:opacity .15s}
@@ -177,7 +177,7 @@ input[type=file]{display:none}
 .edit-modal.open .edit-sheet{transform:translateY(0)}
 .edit-sheet-handle{width:36px;height:4px;background:#2a2a2a;border-radius:2px;margin:0 auto 16px}
 .edit-field-row{margin-bottom:12px;overflow:visible}
-.edit-field-label{font-size:11px;color:#bbb;margin-bottom:5px}
+.edit-field-label{font-size:11px;color:#ddd;margin-bottom:5px}
 .edit-field-input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 13px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit}
 .edit-field-input:focus{border-color:#ff6b2b}
 
@@ -218,7 +218,7 @@ input[type=file]{display:none}
       <div style="text-align:center;margin-bottom:40px">
         <div style="font-size:40px;margin-bottom:12px">🔍</div>
         <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:6px">번개케어 검수</div>
-        <div style="font-size:13px;color:#ccc">접근 비밀번호를 입력하세요</div>
+        <div style="font-size:13px;color:#ddd">접근 비밀번호를 입력하세요</div>
       </div>
       <div style="background:#111;border-radius:16px;padding:24px;border:1px solid #1a1a1a">
         <input id="login-pw" type="password" placeholder="비밀번호"
@@ -358,7 +358,7 @@ input[type=file]{display:none}
       <div class="conf-badge" id="conf-badge">신뢰도 —%</div>
       <div class="result-brand" id="r-brand">—</div>
       <div id="r-model-ko" onclick="editField('r-model-ko')" style="font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3">—</div>
-      <div id="r-model" onclick="editField('r-model')" style="font-size:12px;color:#ccc;margin-bottom:5px;cursor:pointer">—</div>
+      <div id="r-model" onclick="editField('r-model')" style="font-size:12px;color:#ddd;margin-bottom:5px;cursor:pointer">—</div>
       <div class="result-reason" id="r-reason"></div>
       <div class="result-cats" id="r-cats"></div>
     </div>
@@ -372,7 +372,7 @@ input[type=file]{display:none}
   <!-- ③ 구분선 신규 등록 -->
   <div style="margin:4px 16px;display:flex;align-items:center;gap:8px">
     <div style="flex:1;height:1px;background:#1e1e1e"></div>
-    <span style="font-size:10px;color:#555;white-space:nowrap">신규 등록</span>
+    <span style="font-size:10px;color:#fff;white-space:nowrap">신규 등록</span>
     <div style="flex:1;height:1px;background:#1e1e1e"></div>
   </div>
 
@@ -386,7 +386,7 @@ input[type=file]{display:none}
 
   <!-- 실측사이즈 -->
   <div style="border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
-    <div style="font-size:9px;color:#ccc;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
+    <div style="font-size:9px;color:#ddd;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
     <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center;justify-content:center">—</div>
   </div>
 
@@ -399,7 +399,7 @@ input[type=file]{display:none}
     <div class="info-cell">
       <div class="info-cell-label" style="display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:visible">
         <span style="white-space:nowrap">스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></span>
-        <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#bbb;display:flex;align-items:center;flex-shrink:0" id="sku-search-btn">
+        <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#ddd;display:flex;align-items:center;flex-shrink:0" id="sku-search-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -412,7 +412,7 @@ input[type=file]{display:none}
 
   <!-- 부속품 체크 -->
   <div style="padding:10px 14px">
-    <div style="font-size:10px;color:#ccc;font-weight:600;margin-bottom:8px">🔧 부속품 체크</div>
+    <div style="font-size:10px;color:#ddd;font-weight:600;margin-bottom:8px">🔧 부속품 체크</div>
     <div class="acc-wrap" style="background:transparent;border:none;padding:0">
       <div id="acc-list"></div>
       <div class="acc-add-row">
@@ -451,12 +451,12 @@ input[type=file]{display:none}
   <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px">
     <span>🔍 Google Lens 유사 상품</span>
     <div style="display:flex;gap:6px">
-      <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#bbb;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
-      <button onclick="slideLens(1)"  style="background:#1a1a1a;border:1px solid #2a2a2a;color:#bbb;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+      <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#ddd;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <button onclick="slideLens(1)"  style="background:#1a1a1a;border:1px solid #2a2a2a;color:#ddd;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
     </div>
   </div>
   <div class="lens-scroll" id="lens-results" style="scroll-behavior:smooth">
-    <div style="font-size:12px;color:#bbb;padding:8px">검색 결과 없음</div>
+    <div style="font-size:12px;color:#ddd;padding:8px">검색 결과 없음</div>
   </div>
   </div><!-- end lens wrapper -->
 
@@ -475,7 +475,7 @@ input[type=file]{display:none}
   <div class="sku-topbar">
     <button class="sku-back" onclick="showScreen(_skuPrevScreen||'shoot')">←</button>
     <div class="sku-title">모델 SKU 관리</div>
-    <button onclick="showScreen('shoot')" style="margin-left:auto;background:none;border:none;color:#bbb;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
+    <button onclick="showScreen('shoot')" style="margin-left:auto;background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   </div>
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
@@ -489,7 +489,7 @@ input[type=file]{display:none}
     <div style="margin-bottom:10px">
       <div id="sku-new-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
       <input type="file" id="sku-new-photo" accept="image/*" multiple style="display:none" onchange="previewSkuPhotos(this)">
-      <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#bbb;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">📷</span><span>사진 추가 <span style="font-size:11px;color:#ccc">· 탭하거나 붙여넣기</span></span></button>
+      <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#ddd;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">📷</span><span>사진 추가 <span style="font-size:11px;color:#ddd">· 탭하거나 붙여넣기</span></span></button>
     </div>
     <div class="sku-card">
       <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—" list="brand-list" autocomplete="off"></div>
@@ -509,13 +509,13 @@ input[type=file]{display:none}
         <option value="벨트">벨트</option>
       </select></div>
       <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="sku-color" type="text" placeholder="—" list="color-list" autocomplete="off"></div>
-      <div class="sku-row"><div class="sku-key">실측 사이즈</div><div class="sku-input" id="sku-size-wrap" onclick="editSkuSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="sku-size-display" style="color:#ccc;font-size:12px">탭하여 입력</span></div></div>
+      <div class="sku-row"><div class="sku-key">실측 사이즈</div><div class="sku-input" id="sku-size-wrap" onclick="editSkuSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="sku-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span></div></div>
       <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="sku-size-name" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="sku-sku" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">사이트 URL</div><input class="sku-input" id="sku-url" type="url" placeholder="https://..."></div>
       <div class="sku-row" style="align-items:flex-start"><div class="sku-key" style="padding-top:2px">특이사항</div><textarea class="sku-input" id="sku-notes" rows="2" style="resize:vertical;line-height:1.5;padding:2px 0" placeholder="메모..."></textarea></div>
     </div>
-    <div style="font-size:11px;color:#bbb;margin-bottom:8px;padding:0 2px">부속품 체크</div>
+    <div style="font-size:11px;color:#ddd;margin-bottom:8px;padding:0 2px">부속품 체크</div>
     <div class="acc-wrap" style="margin:0 0 14px">
       <div id="sku-acc-list"></div>
       <div class="acc-add-row">
@@ -549,7 +549,7 @@ input[type=file]{display:none}
       <button onclick="saveToSupabase('model',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ff6b2b;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 SKU</button>
       <button onclick="saveToSupabase('gear',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
     </div>
-    <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #2a2a2a;color:#bbb;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
+    <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #2a2a2a;color:#ddd;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
   </div>
 
   <div id="sku-list-panel" style="display:none">
@@ -605,13 +605,13 @@ input[type=file]{display:none}
   <div class="edit-sheet">
     <div class="edit-sheet-handle"></div>
     <div style="display:flex;align-items:center;margin-bottom:16px">
-      <button onclick="closeEditModal()" style="background:none;border:none;color:#ccc;font-size:22px;cursor:pointer;padding:0 10px 0 0;line-height:1">←</button>
+      <button onclick="closeEditModal()" style="background:none;border:none;color:#ddd;font-size:22px;cursor:pointer;padding:0 10px 0 0;line-height:1">←</button>
       <span style="font-size:15px;font-weight:800">SKU 수정</span>
     </div>
     <div class="edit-field-row">
       <div class="edit-field-label">사진</div>
       <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:16px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
-      <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#ccc;width:fit-content">
+      <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#ddd;width:fit-content">
         + 사진 추가
         <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none" onchange="previewEditPhotos(this)">
       </label>
@@ -634,7 +634,7 @@ input[type=file]{display:none}
       <option value="벨트">벨트</option>
     </select></div>
     <div class="edit-field-row"><div class="edit-field-label">컬러</div><input class="edit-field-input" id="ef-color" type="text" list="color-list" autocomplete="off"></div>
-    <div class="edit-field-row"><div class="edit-field-label">실측 사이즈</div><div class="edit-field-input" id="ef-size-wrap" onclick="editEfSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="ef-size-display" style="color:#ccc;font-size:12px">탭하여 입력</span></div></div>
+    <div class="edit-field-row"><div class="edit-field-label">실측 사이즈</div><div class="edit-field-input" id="ef-size-wrap" onclick="editEfSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center"><span id="ef-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span></div></div>
     <div class="edit-field-row"><div class="edit-field-label">사이즈 명칭</div><input class="edit-field-input" id="ef-size-name" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">스타일 번호</div><input class="edit-field-input" id="ef-sku" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">사이트 URL</div><input class="edit-field-input" id="ef-url" type="url" placeholder="https://..."></div>
@@ -1255,18 +1255,18 @@ function _buildDbTabUI(){
 
       <!-- 헤더: 탭 버튼들 -->
       <div style="display:flex;align-items:center;gap:0;padding:8px 10px 0;border-bottom:0.5px solid rgba(255,255,255,.06)">
-        <span style="font-size:11px;color:#555;font-weight:600;margin-right:8px;flex-shrink:0">SKU 매칭</span>
+        <span style="font-size:11px;color:#fff;font-weight:600;margin-right:8px;flex-shrink:0">SKU 매칭</span>
         <div style="display:flex;gap:4px;flex:1">
           <button id="dbtab-sku" onclick="_switchDbTab('sku')"
             style="background:rgba(34,197,94,.15);border:0.5px solid rgba(34,197,94,.4);color:#22c55e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s">
             SKU ${skuCnt}
           </button>
           ${gearCnt ? `<button id="dbtab-gear" onclick="_switchDbTab('gear')"
-            style="background:transparent;border:0.5px solid transparent;border-bottom:none;color:#666;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s">
+            style="background:transparent;border:0.5px solid transparent;border-bottom:none;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s">
             검기어 ${gearCnt}
           </button>` : ''}
           <button id="dbtab-search" onclick="_switchDbTab('search')"
-            style="background:transparent;border:0.5px solid transparent;border-bottom:none;color:#666;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;margin-left:auto">
+            style="background:transparent;border:0.5px solid transparent;border-bottom:none;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;margin-left:auto">
             🔍
           </button>
         </div>
@@ -1304,7 +1304,7 @@ function _switchDbTab(tab){
       }
     } else {
       const ml = t==='search' ? 'margin-left:auto;' : '';
-      btn.style.cssText=`background:transparent;border:0.5px solid transparent;border-bottom:none;color:#555;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;${ml}`;
+      btn.style.cssText=`background:transparent;border:0.5px solid transparent;border-bottom:none;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;${ml}`;
     }
   });
   // 검색바 토글
@@ -1327,7 +1327,7 @@ function _renderDbCardList(items){
   const allMatches = window._cardMatches || [];
 
   if(!items.length){
-    content.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#555">해당 항목 없음</div>';
+    content.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#fff">해당 항목 없음</div>';
     return;
   }
 
@@ -1377,7 +1377,7 @@ function _renderDbCardList(items){
       ? '<button onclick="event.stopPropagation();window.open(\'https://www.google.com/search?q=\'+encodeURIComponent(\''+(m.brand||'').replace(/'/g,"\\'").replace(/"/g,'\\"')+' '+(m.sku_code||'').replace(/'/g,"\\'").replace(/"/g,'\\"')+'\'),\'_blank\')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px 0 4px;vertical-align:middle;opacity:.6;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>'
       : '';
     info.innerHTML = '<div style="font-size:14px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.model_name_ko||m.model_name||'—')+'</div>'
-      +'<div style="font-size:11px;color:#666;margin-top:2px;display:flex;align-items:center">'+(m.brand||'')+(m.sku_code?' · '+m.sku_code:'')+googleBtn+'</div>';
+      +'<div style="font-size:11px;color:#fff;margin-top:2px;display:flex;align-items:center">'+(m.brand||'')+(m.sku_code?' · '+m.sku_code:'')+googleBtn+'</div>';
     mainRow.appendChild(info);
 
     // 체크
@@ -1404,7 +1404,7 @@ function _renderDbCardList(items){
     const inpBrand = document.createElement('input');
     inpBrand.id = mId+'-brand'; inpBrand.placeholder = '브랜드';
     inpBrand.value = (m.brand||'').replace(/"/g,'"');
-    inpBrand.style.cssText = 'width:90px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 8px;color:#aaa;font-size:12px;outline:none';
+    inpBrand.style.cssText = 'width:90px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 8px;color:#eee;font-size:12px;outline:none';
     const inpModel = document.createElement('input');
     inpModel.id = mId+'-model-ko'; inpModel.placeholder = '모델명';
     inpModel.value = (m.model_name_ko||m.model_name||'').replace(/"/g,'"');
@@ -1428,11 +1428,11 @@ function _renderDbCardList(items){
     const catWrap = document.createElement('div');
     catWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
     const catLabelEl = document.createElement('span');
-    catLabelEl.style.cssText = 'font-size:9px;color:#555';
+    catLabelEl.style.cssText = 'font-size:9px;color:#fff';
     catLabelEl.textContent = '카테고리';
     const catSelEl = document.createElement('select');
     catSelEl.id = mId+'-cat';
-    catSelEl.style.cssText = 'background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none';
+    catSelEl.style.cssText = 'background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ddd;font-size:11px;outline:none';
     catList.forEach(function(c){
       const o = document.createElement('option');
       o.value = c; o.textContent = c;
@@ -1448,25 +1448,25 @@ function _renderDbCardList(items){
     // 사이즈명칭
     const sizeWrap = document.createElement('div');
     sizeWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    const sizeLabel = document.createElement('span'); sizeLabel.style.cssText='font-size:9px;color:#555'; sizeLabel.textContent='사이즈명칭';
+    const sizeLabel = document.createElement('span'); sizeLabel.style.cssText='font-size:9px;color:#fff'; sizeLabel.textContent='사이즈명칭';
     const sizeInp = document.createElement('input');
     sizeInp.id=mId+'-size'; sizeInp.placeholder='미니/BB/PM'; sizeInp.value=(m.size_label||'').replace(/"/g,'"');
-    sizeInp.style.cssText='width:70px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none';
+    sizeInp.style.cssText='width:70px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ddd;font-size:11px;outline:none';
     sizeWrap.appendChild(sizeLabel); sizeWrap.appendChild(sizeInp); metaRow.appendChild(sizeWrap);
 
     // 컬러
     const colorWrap = document.createElement('div');
     colorWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    const colorLabel = document.createElement('span'); colorLabel.style.cssText='font-size:9px;color:#555'; colorLabel.textContent='컬러';
+    const colorLabel = document.createElement('span'); colorLabel.style.cssText='font-size:9px;color:#fff'; colorLabel.textContent='컬러';
     const colorInp = document.createElement('input');
     colorInp.id=mId+'-color'; colorInp.placeholder='색상'; colorInp.value=(m.color||'').replace(/"/g,'"');
-    colorInp.style.cssText='width:90px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none';
+    colorInp.style.cssText='width:90px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ddd;font-size:11px;outline:none';
     colorWrap.appendChild(colorLabel); colorWrap.appendChild(colorInp); metaRow.appendChild(colorWrap);
 
     // 실측
     const actualWrap = document.createElement('div');
     actualWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    const actualLabel = document.createElement('span'); actualLabel.style.cssText='font-size:9px;color:#555'; actualLabel.textContent='실측';
+    const actualLabel = document.createElement('span'); actualLabel.style.cssText='font-size:9px;color:#fff'; actualLabel.textContent='실측';
     const actualInputs = document.createElement('div');
     actualInputs.id = mId+'-actual-inputs';
     actualInputs.style.cssText = 'display:flex;align-items:center;gap:2px';
@@ -1479,8 +1479,8 @@ function _renderDbCardList(items){
 
     const accSelWrap = document.createElement('div');
     accSelWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px';
-    accSelWrap.innerHTML = '<span style="font-size:9px;color:#555">부속품 추가</span>'
-      +'<select id="'+mId+'-acc-sel" data-mid="'+mId+'" style="width:110px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ccc;font-size:11px;outline:none">'
+    accSelWrap.innerHTML = '<span style="font-size:9px;color:#fff">부속품 추가</span>'
+      +'<select id="'+mId+'-acc-sel" data-mid="'+mId+'" style="width:110px;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 6px;color:#ddd;font-size:11px;outline:none">'
       +'<option value="">-- 선택 --</option>'
       +(ACC_MAP[mCat]||ACC_MAP['가방']).map(function(a){ return '<option value="'+a+'">'+a+'</option>'; }).join('')
       +'</select>';
@@ -1489,7 +1489,7 @@ function _renderDbCardList(items){
     const accTagsWrap = document.createElement('div');
     accTagsWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex:1';
     const accTagsLabel = document.createElement('span');
-    accTagsLabel.style.cssText = 'font-size:9px;color:#555';
+    accTagsLabel.style.cssText = 'font-size:9px;color:#fff';
     accTagsLabel.textContent = '추가된 부속품';
     const accTags = document.createElement('div');
     accTags.id = mId+'-acc-tags';
@@ -1511,14 +1511,14 @@ function _renderDbCardList(items){
     // 메모+URL
     const memoRow = document.createElement('div');
     memoRow.style.cssText = 'display:flex;gap:6px;margin-bottom:10px';
-    memoRow.innerHTML = '<input id="'+mId+'-notes" value="'+(m.notes||'').replace(/"/g,'"')+'" placeholder="특이사항 메모" style="flex:1;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 8px;color:#ccc;font-size:11px;outline:none">'
+    memoRow.innerHTML = '<input id="'+mId+'-notes" value="'+(m.notes||'').replace(/"/g,'"')+'" placeholder="특이사항 메모" style="flex:1;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 8px;color:#ddd;font-size:11px;outline:none">'
       +'<input id="'+mId+'-url" value="'+(m.site_url||'').replace(/"/g,'"')+'" placeholder="https://..." style="flex:1;background:#111;border:0.5px solid #2a2a2a;border-radius:5px;padding:4px 8px;color:#007aff;font-size:11px;outline:none">';
     panel.appendChild(memoRow);
 
     // 사진
     const picSection = document.createElement('div');
     picSection.style.cssText = 'display:flex;flex-direction:column;gap:6px';
-    picSection.innerHTML = '<span style="font-size:9px;color:#555">사진 (클릭 확대 | ✕ 삭제)</span>';
+    picSection.innerHTML = '<span style="font-size:9px;color:#fff">사진 (클릭 확대 | ✕ 삭제)</span>';
     const picWrap = document.createElement('div');
     picWrap.setAttribute('data-pic-section','');
     picWrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;padding-top:8px';
@@ -1539,7 +1539,7 @@ function _renderDbCardList(items){
     // 추가 버튼
     const addBtn = document.createElement('div');
     addBtn.style.cssText = 'width:60px;height:60px;border-radius:6px;border:1.5px dashed rgba(34,197,94,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#0a1a0a;flex-shrink:0';
-    addBtn.innerHTML = '<span style="color:rgba(34,197,94,.6);font-size:18px;line-height:1">+</span><span style="font-size:8px;color:#555;margin-top:2px">추가</span>';
+    addBtn.innerHTML = '<span style="color:rgba(34,197,94,.6);font-size:18px;line-height:1">+</span><span style="font-size:8px;color:#fff;margin-top:2px">추가</span>';
     addBtn.ondragover = function(e){ e.preventDefault(); this.style.borderColor='#22c55e'; };
     addBtn.ondragleave = function(){ this.style.borderColor='rgba(34,197,94,.3)'; };
     (function(iid,idx2){ addBtn.onclick = function(e){ e.stopPropagation(); document.getElementById('dbc-file-'+idx2).click(); };
@@ -1597,7 +1597,7 @@ function initDbCardActualInputs(mId, cat, curVal){
       nums[idx] = allNums[idx]||'';
     }
   });
-  var iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#aaa;font-size:11px;outline:none;width:44px';
+  var iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#eee;font-size:11px;outline:none;width:44px';
   var sepStyle = 'color:#444;font-size:9px;flex-shrink:0';
   wrap.innerHTML = cfg.map(function(f, idx){
     var val = nums[idx]||'';
@@ -1605,7 +1605,7 @@ function initDbCardActualInputs(mId, cat, curVal){
     var inp = isText
       ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+';width:60px">'
       : '<input id="'+mId+'-sf-'+idx+'" type="number" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+'">';
-    var lbl = '<span style="font-size:8px;color:#555;display:block;text-align:center">'+f.label+(f.unit?'('+f.unit+')':'')+'</span>';
+    var lbl = '<span style="font-size:8px;color:#fff;display:block;text-align:center">'+f.label+(f.unit?'('+f.unit+')':'')+'</span>';
     var sep = idx<cfg.length-1 ? '<span style="'+sepStyle+'">×</span>' : '';
     return '<span style="display:inline-flex;flex-direction:column;align-items:center">'+lbl+inp+'</span>'+sep;
   }).join('');
@@ -1730,7 +1730,7 @@ async function _searchDbExtra(q, alreadyShown){
       er.appendChild(et);
       const ei = document.createElement('div');
       ei.style.cssText = 'flex:1;min-width:0';
-      ei.innerHTML = '<div style="font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(item.model_name_ko||item.model_name||'—')+'</div><div style="font-size:10px;color:#555;margin-top:1px">'+(item.brand||'')+(item.sku_code?' · '+item.sku_code:'')+'</div>';
+      ei.innerHTML = '<div style="font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(item.model_name_ko||item.model_name||'—')+'</div><div style="font-size:10px;color:#fff;margin-top:1px">'+(item.brand||'')+(item.sku_code?' · '+item.sku_code:'')+'</div>';
       er.appendChild(ei);
       const ea = document.createElement('div');
       ea.style.cssText = 'font-size:10px;color:#007aff;font-weight:700;flex-shrink:0';
@@ -1841,7 +1841,7 @@ async function renderResult(){
 
   if(dbMatches.length){
     const dbWrapRef=document.getElementById('db-match-wrap');
-    dbWrapRef.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#bbb">DB 데이터 로딩 중...</div>';
+    dbWrapRef.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:#ddd">DB 데이터 로딩 중...</div>';
     (async()=>{
       let freshList=[];
       try{
@@ -2107,7 +2107,7 @@ function renderRefList(wrapId, items, type){
         <div style="flex:1;min-width:0">
           <div style="color:#fff;font-size:12px;font-weight:600">${item.model_name_ko||item.model_name||'—'}</div>
           <div style="color:${color};font-size:10px">${[item.brand,item.sku_code,item.size_actual].filter(Boolean).join(' · ')}</div>
-          ${item.notes?`<div style="color:#ccc;font-size:10px;margin-top:2px">${item.notes}</div>`:''}
+          ${item.notes?`<div style="color:#ddd;font-size:10px;margin-top:2px">${item.notes}</div>`:''}
         </div>
       </div>`;
     }).join('')}`;
@@ -2125,7 +2125,7 @@ function showCatPicker(tagEl){
   cats.forEach(cat=>{
     const btn=document.createElement('button');
     btn.textContent=cat;
-    btn.style.cssText='background:none;border:none;color:#ccc;font-size:13px;padding:6px 12px;border-radius:8px;cursor:pointer;text-align:left';
+    btn.style.cssText='background:none;border:none;color:#ddd;font-size:13px;padding:6px 12px;border-radius:8px;cursor:pointer;text-align:left';
     btn.onmouseenter=()=>btn.style.background='#2a2a2a';
     btn.onmouseleave=()=>btn.style.background='none';
     btn.onclick=()=>{
@@ -2177,15 +2177,15 @@ function getSizeConfig(){
 function buildSizeInput(cfg, nums){
   return cfg.map((f,i)=>{
     const isText=!!f.text;
-    const sep=i<cfg.length-1?`<span style="color:#bbb;font-size:10px;margin:0 3px">×</span>`:'';
+    const sep=i<cfg.length-1?`<span style="color:#ddd;font-size:10px;margin:0 3px">×</span>`:'';
     if(isText){
       return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
-        <span style="font-size:8px;color:#ccc">${f.label}</span>
+        <span style="font-size:8px;color:#ddd">${f.label}</span>
         <input id="${f.id}" onclick="event.stopPropagation()" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
       </span>${sep}`;
     }
     return `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">
-      <span style="font-size:8px;color:#ccc">${f.label}(${f.unit})</span>
+      <span style="font-size:8px;color:#ddd">${f.label}(${f.unit})</span>
       <input id="${f.id}" onclick="event.stopPropagation()" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
     </span>${sep}`;
   }).join('');
@@ -2231,7 +2231,7 @@ async function reSearchByModel(brand, modelName){
   _reSearchTimer=setTimeout(async()=>{
     const lensEl=document.getElementById('lens-results');
     window._dbEnriched=[];
-    lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">검색 중...</div>';
+    lensEl.innerHTML='<div style="font-size:12px;color:#ddd;padding:8px">검색 중...</div>';
     try{
       const res=await fetch('/api/inspect',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -2254,7 +2254,7 @@ async function reSearchByModel(brand, modelName){
             </div></div>`;
         }).join('');
       } else {
-        lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">검색 결과 없음</div>';
+        lensEl.innerHTML='<div style="font-size:12px;color:#ddd;padding:8px">검색 결과 없음</div>';
       }
 
       // 사이즈도 같이 왔으면 반영 (비어있을 때만)
@@ -2278,7 +2278,7 @@ async function reSearchByModel(brand, modelName){
       }
       toast('🔍 '+matches.length+'개 이미지 재검색 완료');
     }catch(e){
-      lensEl.innerHTML='<div style="font-size:12px;color:#bbb;padding:8px">재검색 실패: '+e.message+'</div>';
+      lensEl.innerHTML='<div style="font-size:12px;color:#ddd;padding:8px">재검색 실패: '+e.message+'</div>';
     }
     window._skipDbRematch=false;
   }, 800);
@@ -2563,7 +2563,7 @@ function saveEfSize(cfg){
   const wrap=document.getElementById('ef-size-wrap');
   if(wrap) wrap.innerHTML=val
     ?`<span style="font-size:13px;font-weight:700;color:#fff">${val}</span>`
-    :`<span id="ef-size-display" style="color:#ccc;font-size:12px">탭하여 입력</span>`;
+    :`<span id="ef-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span>`;
 }
 
 let _skuCatTimer=null;
@@ -2609,15 +2609,15 @@ function editSkuSize(){
 function buildSkuSizeInput(cfg, nums){
   return cfg.map((f,i)=>{
     const isText=!!f.text;
-    const sep=i<cfg.length-1?`<span style="color:#bbb;font-size:10px;margin:0 3px">×</span>`:'';
+    const sep=i<cfg.length-1?`<span style="color:#ddd;font-size:10px;margin:0 3px">×</span>`:'';
     if(isText){
       return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
-        <span style="font-size:8px;color:#ccc">${f.label}</span>
+        <span style="font-size:8px;color:#ddd">${f.label}</span>
         <input id="ssku-${f.id}" onclick="event.stopPropagation()" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="M, 95...">
       </span>${sep}`;
     }
     return `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">
-      <span style="font-size:8px;color:#ccc">${f.label}(${f.unit})</span>
+      <span style="font-size:8px;color:#ddd">${f.label}(${f.unit})</span>
       <input id="ssku-${f.id}" onclick="event.stopPropagation()" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 1px" type="number" inputmode="decimal" value="${nums[i]||''}" placeholder="0">
     </span>${sep}`;
   }).join('');
@@ -2645,7 +2645,7 @@ function saveSkuSize(cfg){
   if(wrap){
     wrap.innerHTML=val
       ?`<span style="font-size:13px;font-weight:700;color:#fff">${val}</span>`
-      :`<span id="sku-size-display" style="color:#ccc;font-size:12px">탭하여 입력</span>`;
+      :`<span id="sku-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span>`;
   }
 }
 
@@ -2843,7 +2843,7 @@ function applyDbMatchMulti(items){
       <div id="${dbId}" style="display:${idx===0?'block':'none'}">
         <div class="db-match-body">
           ${slHtml}
-          <div class="db-match-info" style="font-size:12px;color:#ccc;line-height:1.7">
+          <div class="db-match-info" style="font-size:12px;color:#ddd;line-height:1.7">
             <strong style="color:#f0f0f0;font-size:13px">${m.model_name_ko||m.model_name||'—'}</strong><br>
             SKU: ${m.sku_code||'—'}<br>
             ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
@@ -3000,7 +3000,7 @@ function renderSkuAccList(){
         <button onclick="delSkuAcc(${i})" style="background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;padding:0 4px">✕</button>
       </div>`).join('');
   } else {
-    accList.innerHTML='<div style="padding:14px 16px;font-size:12px;color:#bbb">부속품 없음</div>';
+    accList.innerHTML='<div style="padding:14px 16px;font-size:12px;color:#ddd">부속품 없음</div>';
   }
   let addRow=document.getElementById('sku-acc-add-row');
   if(!addRow){
@@ -3243,7 +3243,7 @@ function updateCountBar(list, wrapId){
   });
   const catItems = cats
     .filter(c=>catCounts[c])
-    .map(c=>`<span style="font-size:11px;color:#ccc;white-space:nowrap"><span style="color:#ff6b2b;font-weight:700">${catCounts[c]}</span> ${c}</span>`)
+    .map(c=>`<span style="font-size:11px;color:#ddd;white-space:nowrap"><span style="color:#ff6b2b;font-weight:700">${catCounts[c]}</span> ${c}</span>`)
     .join('<span style="color:#333;margin:0 2px">|</span>');
   bar.innerHTML=`<span style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap">전체 <span style="color:#ff6b2b">${total}</span>건</span>`
     +(catItems?`<span style="color:#333;margin:0 4px">·</span>${catItems}`:'');
@@ -3307,7 +3307,7 @@ function renderSkuPage(wrapId){
   const pagerHtml = totalPages>1 ? `
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0;flex-wrap:wrap">
       <button onclick="skuGoPage('${wrapId}',${page-1})" ${page<=1?'disabled':''} style="background:#1a1a1a;border:1px solid #2a2a2a;color:${page<=1?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">‹ 이전</button>
-      <span style="font-size:12px;color:#bbb">${page} / ${totalPages}페이지 <span style="color:#555">(${list.length}건)</span></span>
+      <span style="font-size:12px;color:#ddd">${page} / ${totalPages}페이지 <span style="color:#fff">(${list.length}건)</span></span>
       <button onclick="skuGoPage('${wrapId}',${page+1})" ${page>=totalPages?'disabled':''} style="background:#1a1a1a;border:1px solid #2a2a2a;color:${page>=totalPages?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">다음 ›</button>
     </div>` : '';
   wrap.innerHTML = pageList.map((item,i)=>{
@@ -3348,7 +3348,7 @@ function renderSkuPage(wrapId){
             ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
           </div>
           ${(()=>{const _a=safeAccArr(item.accessories);return _a.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${_a.map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:'';})()}
-          ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#bbb;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
+          ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#ddd;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
           <div id="sku-detail-${item.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
             ${(()=>{
               const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
@@ -3382,7 +3382,7 @@ function renderSkuPage(wrapId){
                 </div>`;
               })():'';
             })()}
-            <div style="font-size:12px;color:#ccc;line-height:1.8">
+            <div style="font-size:12px;color:#ddd;line-height:1.8">
               ${item.size_label?`사이즈명칭: <span style="color:#f0f0f0">${item.size_label}</span><br>`:''}
               ${item.size_actual?`실측사이즈: <span style="color:#f0f0f0">${item.size_actual}</span><br>`:''}
               ${item.sku_code?`스타일번호: <span style="color:#f0f0f0">${item.sku_code}</span><br>`:''}
@@ -4164,7 +4164,10 @@ async function saveEditSku(){
         return j.url||'';
       }));
       uploadedUrls=uploadedUrls.filter(Boolean);
-    }catch(e){toast('❌ 사진 업로드 실패: '+e.message);return;}
+    }catch(e){
+      toast('⚠️ 사진 업로드 실패 — 나머지 정보는 저장합니다');
+      // 사진 업로드 실패해도 계속 진행 (return 제거)
+    }
   }
 
   const allImages=[...existingImages,...uploadedUrls];
@@ -4466,7 +4469,7 @@ function clearSkuForm(){
   // 적재탭 추가 사진 초기화
   // 사이즈 필드 초기화
   const skuSizeWrap=document.getElementById('sku-size-wrap');
-  if(skuSizeWrap){ skuSizeWrap.innerHTML='<span id="sku-size-display" style="color:#ccc;font-size:12px">탭하여 입력</span>'; skuSizeWrap.dataset.cat=''; }
+  if(skuSizeWrap){ skuSizeWrap.innerHTML='<span id="sku-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span>'; skuSizeWrap.dataset.cat=''; }
   const skuSizeHidden=document.getElementById('sku-size-hidden');
   if(skuSizeHidden) skuSizeHidden.value='';
   const skuPhotoInp=document.getElementById('sku-new-photo');
@@ -4617,7 +4620,7 @@ function _refreshDbCardPics(idx, itemId){
   // 추가 버튼 — dbc-file-{idx} input 클릭 (이미 패널 안에 있음)
   var addDiv = document.createElement('div');
   addDiv.style.cssText = "width:60px;height:60px;border-radius:6px;border:1.5px dashed rgba(34,197,94,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#0a1a0a;flex-shrink:0";
-  addDiv.innerHTML = "<span style=\"color:rgba(34,197,94,.6);font-size:18px;line-height:1\">+</span><span style=\"font-size:8px;color:#555;margin-top:2px\">추가</span>";
+  addDiv.innerHTML = "<span style=\"color:rgba(34,197,94,.6);font-size:18px;line-height:1\">+</span><span style=\"font-size:8px;color:#fff;margin-top:2px\">추가</span>";
   (function(i2){ addDiv.onclick = function(e){ e.stopPropagation(); var fi=document.getElementById('dbc-file-'+i2); if(fi) fi.click(); }; })(idx);
   ps.appendChild(addDiv);
 }
