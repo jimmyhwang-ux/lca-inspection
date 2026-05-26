@@ -4399,7 +4399,9 @@ function filterSkuList(){
     });
     return catOk&&textOk;
   });
-  renderSkuList(filtered);
+  // 검색 결과는 정보량 많은 순으로 정렬
+  const sortedFiltered = q ? _sortByRichness(filtered) : filtered;
+  renderSkuList(sortedFiltered);
 }
 
 async function deleteSku(id){
