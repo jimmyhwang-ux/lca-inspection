@@ -3200,13 +3200,18 @@ async function loadSkuList(tab){
       return;
     }
     skuListAll=j.data||[];
-    // 기본 정렬: 브랜드 가나다순, 브랜드 없는 항목은 맨 뒤
+    // 기본 정렬: 브랜드 가나다순
+    // - 브랜드 없음(빈값/—) → 맨 뒤
+    // - 특수문자·괄호로 시작하는 이상한 데이터 → 맨 뒤
     skuListAll = skuListAll.slice().sort(function(a,b){
-      var ba=(a.brand||'').replace('—','').trim();
-      var bb=(b.brand||'').replace('—','').trim();
-      if(!ba && !bb) return 0;
-      if(!ba) return 1;
-      if(!bb) return -1;
+      var ba=(a.brand||'').replace(/—/g,'').trim();
+      var bb=(b.brand||'').replace(/—/g,'').trim();
+      // 브랜드 유효성: 한글·영문·숫자로 시작해야 정상
+      var validA = ba && /^[가-힣a-zA-Z0-9]/.test(ba);
+      var validB = bb && /^[가-힣a-zA-Z0-9]/.test(bb);
+      if(!validA && !validB) return 0;
+      if(!validA) return 1;  // a를 뒤로
+      if(!validB) return -1; // b를 뒤로
       return ba.localeCompare(bb,'ko');
     });
     const _ck=activeTab==='gear'?'gear':'model';
@@ -4274,11 +4279,98 @@ const BRAND_KO_MAP={
 };
 
 // 부분 한글 입력(예: "까")으로 BRAND_KO_MAP의 영문값 목록 반환
+// 패션 용어 한↔영 검색 매핑
+var _TERM_MAP = {
+  // 주얼리 아이템
+  '목걸이':['necklace','necris','neckris','네크리스','네클리스'],
+  '네크리스':['necklace','목걸이'],
+  '네클리스':['necklace','목걸이'],
+  'necklace':['목걸이','네크리스'],
+  '팔찌':['bracelet','브레이슬릿','브레이슬렛'],
+  '브레이슬릿':['bracelet','팔찌'],
+  'bracelet':['팔찌','브레이슬릿'],
+  '반지':['ring','링'],
+  '링':['ring','반지'],
+  'ring':['반지','링'],
+  '귀걸이':['earring','이어링'],
+  '이어링':['earring','귀걸이'],
+  'earring':['귀걸이','이어링'],
+  '펜던트':['pendant','팬던트'],
+  '팬던트':['pendant','펜던트'],
+  'pendant':['펜던트','팬던트'],
+  '브로치':['brooch'],
+  'brooch':['브로치'],
+  // 가방 아이템
+  '핸드백':['handbag','hand bag'],
+  '숄더백':['shoulder bag','shoulderbag'],
+  '크로스백':['crossbody','cross body','크로스바디'],
+  '크로스바디':['crossbody','크로스백'],
+  '토트백':['tote','tote bag'],
+  '토트':['tote'],
+  'tote':['토트','토트백'],
+  '클러치':['clutch'],
+  'clutch':['클러치'],
+  '백팩':['backpack'],
+  'backpack':['백팩'],
+  '파우치':['pouch'],
+  'pouch':['파우치'],
+  '미니백':['mini bag','mini'],
+  // 사이즈
+  '미니':['mini'],
+  'mini':['미니'],
+  '스몰':['small'],
+  'small':['스몰'],
+  '미디엄':['medium'],
+  'medium':['미디엄'],
+  '라지':['large'],
+  'large':['라지'],
+  // 소재
+  '가죽':['leather'],
+  'leather':['가죽'],
+  '캔버스':['canvas'],
+  'canvas':['캔버스'],
+  '골드':['gold'],
+  'gold':['골드'],
+  '실버':['silver'],
+  'silver':['실버'],
+  '로즈골드':['rose gold'],
+  '화이트골드':['white gold'],
+  // 색상
+  '블랙':['black'],
+  'black':['블랙'],
+  '화이트':['white'],
+  'white':['화이트'],
+  '베이지':['beige'],
+  'beige':['베이지'],
+  '브라운':['brown'],
+  'brown':['브라운'],
+  '네이비':['navy'],
+  'navy':['네이비'],
+  '레드':['red'],
+  'red':['레드'],
+  '핑크':['pink'],
+  'pink':['핑크'],
+  // 시계 관련
+  '시계':['watch'],
+  'watch':['시계'],
+  '워치':['watch'],
+};
+
 function resolveTokenToEnglish(t){
-  if(BRAND_KO_MAP[t]) return [BRAND_KO_MAP[t]];
   const results=[];
+  // 브랜드 매핑
+  if(BRAND_KO_MAP[t]) results.push(BRAND_KO_MAP[t]);
   for(const [ko,en] of Object.entries(BRAND_KO_MAP)){
     if(ko.startsWith(t)||ko.includes(t)) results.push(en);
+  }
+  // 패션 용어 매핑 (한↔영 양방향)
+  const termHits = _TERM_MAP[t]||[];
+  termHits.forEach(function(h){ results.push(h); });
+  // 부분 매칭 — 입력어가 키에 포함되면
+  for(const [k,v] of Object.entries(_TERM_MAP)){
+    if(k!==t && k.includes(t)){
+      (Array.isArray(v)?v:[v]).forEach(function(h){ results.push(h); });
+    }
   }
   return results;
 }
