@@ -90,6 +90,7 @@ export default async function handler(req, res) {
     try {
       const { id, newImageBase64, ...fields } = skuData;
       if (!id) return res.status(400).json({ success: false, error: 'id 없음' });
+      console.log('[update_sku] id:', id, 'extra_images:', JSON.stringify(fields.extra_images)?.slice(0,200), 'ref_image_url:', fields.ref_image_url?.slice(0,80));
       if (newImageBase64) {
         const url = await uploadImage(newImageBase64);
         fields.extra_images = [...(fields.extra_images || []), url];
