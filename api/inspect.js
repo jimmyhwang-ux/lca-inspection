@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     const buffer = Buffer.from(b64, 'base64');
     const fileName = `sku-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
     const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/sku-images/${fileName}`,
+      `${SUPABASE_URL}/storage/v1/object/sku_image/${fileName}`,
       {
         method: 'POST',
         headers: {
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       const err = await uploadRes.text();
       throw new Error('Storage 업로드 실패: ' + err);
     }
-    return `${SUPABASE_URL}/storage/v1/object/public/sku-images/${fileName}`;
+    return `${SUPABASE_URL}/storage/v1/object/public/sku_image/${fileName}`;
   };
 
   if (action === 'check_password') {
