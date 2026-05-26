@@ -4199,25 +4199,28 @@ async function saveEditSku(){
     if(j.success){
       toast('✅ 수정되었습니다');
       closeEditModal();
-      // 현재 탭/카테고리 유지하며 새로고침
-      const _curTab=_activeSkuTab||'list';
-      const _curCat=_skuCatFilter||'전체';
-      loadSkuList(_curTab).then(()=>{
-        if(_curCat&&_curCat!=='전체'){
-          // 카테고리 필터 복원
-          const _tabs=document.querySelectorAll('#sku-cat-tabs .cat-btn, #gear-cat-tabs .cat-btn');
-          _tabs.forEach(b=>{
-            if(b.textContent.trim()===_curCat){
-              b.classList.add('active');
-            } else {
-              b.classList.remove('active');
-            }
-          });
-          _skuCatFilter=_curCat;
-          const _wrapId=_curTab==='gear'?'gear-list-wrap':'sku-list-wrap';
-          filterSkuListByCat(skuListAll,_wrapId,_curCat,'');
-        }
-      });
+
+      // 검색어/탭/카테고리 유지하면서 해당 카드만 즉시 업데이트
+      const _curSearch = (document.getElementById('sku-search')?.value||'').trim();
+      const _curTab = _activeSkuTab||'list';
+      const _curCat = _skuCatFilter||'전체';
+
+      // skuListAll 캐시에서 해당 항목 즉시 업데이트
+      const _idx = skuListAll.findIndex(s=>s.id===id);
+      if(_idx>=0){
+        skuListAll[_idx] = {...skuListAll[_idx], ...data,
+          extra_images: allImages,
+          ref_image_url: newRef || skuListAll[_idx].ref_image_url
+        };
+      }
+
+      // 현재 화면 그대로 재렌더 (검색어/카테고리 유지)
+      if(_curSearch){
+        filterSkuList(); // 검색어 있으면 검색 결과 유지
+      } else {
+        const _wrapId = _curTab==='gear'?'gear-list-wrap':'sku-list-wrap';
+        filterSkuListByCat(skuListAll, _wrapId, _curCat, '');
+      }
     }
     else throw new Error(j.error);
   }catch(e){toast('❌ 수정 실패: '+e.message);}
