@@ -5,7 +5,6 @@ export default async function handler(req, res) {
 
   const { imageBase64, imageMime, extras = {}, action, skuData } = req.body;
 
-  const IMGBB_KEY    = process.env.IMGBB_KEY;
   const SERP_KEY     = process.env.SERP_KEY;
   const CLAUDE_KEY   = process.env.CLAUDE_KEY;
   const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -30,14 +29,28 @@ export default async function handler(req, res) {
     }
   });
 
-  const uploadImgbb = async (b64) => {
-    const form = new URLSearchParams();
-    form.append('key', IMGBB_KEY);
-    form.append('image', b64);
-    const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
-    const j = await r.json();
-    if (!j.success) throw new Error('imgbb 실패');
-    return j.data.url;
+  // ── Supabase Storage 업로드 (imgbb 대체) ─────────────────────
+  const uploadImage = async (b64) => {
+    const buffer = Buffer.from(b64, 'base64');
+    const fileName = `sku-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const uploadRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/sku-images/${fileName}`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'image/jpeg',
+          'x-upsert': 'true',
+        },
+        body: buffer,
+      }
+    );
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      throw new Error('Storage 업로드 실패: ' + err);
+    }
+    return `${SUPABASE_URL}/storage/v1/object/public/sku-images/${fileName}`;
   };
 
   if (action === 'check_password') {
@@ -50,7 +63,7 @@ export default async function handler(req, res) {
     try {
       let extra_images = skuData.extra_images || [];
       if (skuData.newImageBase64) {
-        const url = await uploadImgbb(skuData.newImageBase64);
+        const url = await uploadImage(skuData.newImageBase64);
         extra_images = [...extra_images, url];
       }
       const srcVal = req.body.source || 'model';
@@ -67,7 +80,6 @@ export default async function handler(req, res) {
       const srcParam = req.body.source;
       let query = 'sku_items?select=*&order=created_at.desc&limit=10000';
       if (srcParam === 'gear') query += '&source=eq.gear';
-      // gear 외엔 source 필터 없이 전체 조회 (다른 사람 데이터 포함)
       const r = await sb(query);
       const d = await r.json();
       return res.status(200).json({ success: true, data: d });
@@ -79,7 +91,7 @@ export default async function handler(req, res) {
       const { id, newImageBase64, ...fields } = skuData;
       if (!id) return res.status(400).json({ success: false, error: 'id 없음' });
       if (newImageBase64) {
-        const url = await uploadImgbb(newImageBase64);
+        const url = await uploadImage(newImageBase64);
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
@@ -105,7 +117,7 @@ export default async function handler(req, res) {
 
   if (action === 'upload_image') {
     try {
-      const url = await uploadImgbb(req.body.imageBase64);
+      const url = await uploadImage(req.body.imageBase64);
       return res.status(200).json({ url });
     } catch (e) { return res.status(500).json({ url: '', error: e.message }); }
   }
@@ -151,7 +163,6 @@ export default async function handler(req, res) {
       { type: 'image', source: { type: 'base64', media_type: imageMime||'image/jpeg', data: imageBase64 } },
       { type: 'text', text: '본품 전체샷' }
     ];
-    // 추가 이미지 최대 3장만 전송 (과부하 방지)
     let extraCount = 0;
     for (const [key, b64] of Object.entries(extras)) {
       if (b64 && extraCount < 3) {
@@ -173,9 +184,11 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       })
     }).then(r => r.json());
 
-    const imgbbPromise = uploadImgbb(imageBase64).catch(e => {
-      console.warn('[imgbb 실패]', e.message); return ''; // 실패해도 계속 진행
+    // Supabase Storage 업로드 (검수 이미지)
+    const imageUrlPromise = uploadImage(imageBase64).catch(e => {
+      console.warn('[Storage 업로드 실패]', e.message); return '';
     });
+
     const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
       .then(async r => {
         const data = await r.json();
@@ -184,15 +197,14 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       })
       .catch(e => { console.error('[DB fetch error]', e.message); return []; });
 
-    const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imgbbPromise, dbPromise]);
+    const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imageUrlPromise, dbPromise]);
 
     if (claudeRes.error) throw new Error('Claude 오류: ' + (claudeRes.error.message||''));
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-  // ── 한글↔영문 브랜드 매핑 ────────────────────────────────────
   const BRAND_MAP = {
-    'gucci':'구찌','louisvuitton':'루이비통','louisvuitton':'루이비통',
+    'gucci':'구찌','louisvuitton':'루이비통',
     'hermes':'에르메스','chanel':'샤넬','dior':'디올','prada':'프라다',
     'balenciaga':'발렌시아가','saintlaurent':'생로랑','ysl':'생로랑',
     'bottegaveneta':'보테가베네타','celine':'셀린느','loewe':'로에베',
@@ -207,8 +219,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     'vancleefarpe':'반클리프','chaumet':'쇼메','fred':'프레드',
     'ferragamo':'페라가모','mulberry':'멀버리','coach':'코치',
     'hamilton':'해밀턴','tissot':'티쏘','longines':'론진',
-    'frederiqueconstant':'프레드릭 콘스탄트',
-    'tiffanyco':'티파니앤코','tiffany&co':'티파니앤코',
+    'vancleefarpels':'반클리프아펠',
   };
 
   function normBrand(b) {
@@ -220,17 +231,14 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const ai = normBrand(aiBrand);
     const db = normBrand(dbBrand);
     if (db.includes(ai) || ai.includes(db)) return true;
-    // 한글 → 영문 변환 후 비교
     const aiEn = BRAND_MAP[ai] ? normBrand(BRAND_MAP[ai]) : ai;
     const dbEn = BRAND_MAP[db] ? normBrand(BRAND_MAP[db]) : db;
     if (aiEn && dbEn && (aiEn.includes(dbEn) || dbEn.includes(aiEn))) return true;
-    // 반대 방향도
     const aiFromDb = Object.entries(BRAND_MAP).find(([k,v]) => normBrand(v) === db)?.[0];
     if (aiFromDb && (ai.includes(aiFromDb) || aiFromDb.includes(ai))) return true;
     return false;
   }
 
-    // ── DB 매칭 (브랜드 필수 일치 + 높은 점수 기준 강화) ─────────
     let dbMatches = [];
     try {
       if (Array.isArray(dbData) && dbData.length > 0) {
@@ -246,13 +254,10 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
 
-          // ── 브랜드 필수 일치 (한글↔영문 변환 포함) ──────────────
           if (!aiBrand || !dbBrand) continue;
-          // Unknown 브랜드면 브랜드 필터 건너뜀 (모델명으로만 매칭)
           const isUnknownBrand = ['unknown','기타','알수없음','unidentified'].includes(aiBrand.toLowerCase());
           if (!isUnknownBrand && !brandMatches(aiBrand, dbBrand)) continue;
 
-          // ── SKU 완전 일치: 최고 점수 ─────────────────────────────
           if (aiSku && dbSku && aiSku === dbSku) {
             candidates.push({ item, score: 200 });
             continue;
@@ -260,14 +265,12 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
 
           let score = 0;
 
-          // ── 영문 모델명 매칭 ──────────────────────────────────────
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
             else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
             else {
               const w1 = aiModel.split(' ').filter(w => w.length >= 2);
               const w2 = dbModel.split(' ').filter(w => w.length >= 2);
-              // 단어 1개라도 완전 포함이면 매칭 허용
               if (w1.length >= 1) {
                 const hits = w1.filter(w => w2.includes(w)).length;
                 const ratio = hits / w1.length;
@@ -277,14 +280,12 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             }
           }
 
-          // ── 한글 모델명 매칭 (토큰 단위) ─────────────────────────
           if (aiModelKo && dbModelKo) {
             if (aiModelKo === dbModelKo) {
               score = Math.max(score, 95);
             } else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) {
               score = Math.max(score, 70);
             } else {
-              // 토큰 단위 매칭: "포셋 악세수아" → ['포셋','악세수아'] 중 하나라도 포함되면 매칭
               const koToks = aiModelKo.split(/\s+/).filter(w => w.length >= 2);
               if (koToks.length > 0) {
                 const hits = koToks.filter(t => dbModelKo.includes(t)).length;
@@ -295,17 +296,13 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
             }
           }
 
-          // 최소 점수 60 이상만 매칭
           if (score >= 60) candidates.push({ item, score });
         }
 
         if (candidates.length > 0) {
-          // 점수 내림차순 정렬
           candidates.sort((a, b) => b.score - a.score);
           const maxScore = candidates[0].score;
-          // 최고점 ±10점 이내만 표시 (너무 낮은 것 제외)
           const topCandidates = candidates.filter(c => c.score >= maxScore - 10);
-          // 특이사항 있는 것 우선, 최대 5개
           topCandidates.sort((a, b) => {
             const aN = a.item.notes ? 1 : 0;
             const bN = b.item.notes ? 1 : 0;
@@ -316,21 +313,21 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       }
     } catch (e) { console.warn('DB skip:', e.message); }
 
-    // Google Lens
     let visualMatches = [];
     try {
-      const lensController = new AbortController();
-      const lensTimeout = setTimeout(() => lensController.abort(), 5000);
-      const s = await fetch(
-        `https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`,
-        { signal: lensController.signal }
-      );
-      clearTimeout(lensTimeout);
-      const j = await s.json();
-      visualMatches = j.visual_matches || [];
+      if (imageUrl) {
+        const lensController = new AbortController();
+        const lensTimeout = setTimeout(() => lensController.abort(), 5000);
+        const s = await fetch(
+          `https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`,
+          { signal: lensController.signal }
+        );
+        clearTimeout(lensTimeout);
+        const j = await s.json();
+        visualMatches = j.visual_matches || [];
+      }
     } catch (e) { console.warn('Lens skip:', e.message); }
 
-    // dbMatches 후처리
     dbMatches = dbMatches.map(m => ({
       ...m,
       extra_images: Array.isArray(m.extra_images) ? m.extra_images : [],
