@@ -4196,18 +4196,25 @@ async function saveEditSku(){
       const _curTab = _activeSkuTab||'list';
       const _curCat = _skuCatFilter||'전체';
 
-      // skuListAll 캐시에서 해당 항목 즉시 업데이트
-      const _idx = skuListAll.findIndex(s=>s.id===id);
-      if(_idx>=0){
-        skuListAll[_idx] = {...skuListAll[_idx], ...data,
-          extra_images: allImages,
-          ref_image_url: newRef || skuListAll[_idx].ref_image_url
-        };
-      }
+      // 저장 성공 후 DB에서 최신 데이터 다시 가져와서 캐시 업데이트
+      try {
+        const freshRes = await fetch('/api/inspect', {
+          method:'POST', headers:{'Content-Type':'application/json','x-access-token':localStorage.getItem('lca_token')||''},
+          body: JSON.stringify({action:'list_sku'})
+        });
+        const freshJ = await freshRes.json();
+        if(freshJ.success && freshJ.data) {
+          const freshItem = freshJ.data.find(s=>s.id===id);
+          if(freshItem) {
+            const _idx = skuListAll.findIndex(s=>s.id===id);
+            if(_idx>=0) skuListAll[_idx] = freshItem;
+          }
+        }
+      } catch(_){}
 
       // 현재 화면 그대로 재렌더 (검색어/카테고리 유지)
       if(_curSearch){
-        filterSkuList(); // 검색어 있으면 검색 결과 유지
+        filterSkuList();
       } else {
         const _wrapId = _curTab==='gear'?'gear-list-wrap':'sku-list-wrap';
         filterSkuListByCat(skuListAll, _wrapId, _curCat, '');
