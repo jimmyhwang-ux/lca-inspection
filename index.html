@@ -4137,6 +4137,9 @@ async function saveEditSku(){
   let allStored=[];
   try{ allStored=JSON.parse(_efRaw); }catch(_){ allStored=[]; }
   if(!Array.isArray(allStored)) allStored=[];
+  
+  console.error('[saveEditSku] ef-extra-images 전체:', JSON.stringify(allStored));
+  console.error('[saveEditSku] 총 사진수:', allStored.length, '/ base64:', allStored.filter(u=>u?.startsWith('data:')).length, '/ url:', allStored.filter(u=>u?.startsWith('http')).length);
 
   // base64(새 사진)와 URL(기존 사진) 분리
   const base64Items = allStored.filter(u=>u&&u.startsWith('data:'));
@@ -4196,23 +4199,28 @@ async function saveEditSku(){
       const _curTab = _activeSkuTab||'list';
       const _curCat = _skuCatFilter||'전체';
 
-      // 저장 성공 후 DB에서 최신 데이터 다시 가져와서 캐시 업데이트
-      try {
-        const freshRes = await fetch('/api/inspect', {
-          method:'POST', headers:{'Content-Type':'application/json','x-access-token':localStorage.getItem('lca_token')||''},
-          body: JSON.stringify({action:'list_sku'})
-        });
-        const freshJ = await freshRes.json();
-        if(freshJ.success && freshJ.data) {
-          const freshItem = freshJ.data.find(s=>s.id===id);
-          if(freshItem) {
-            const _idx = skuListAll.findIndex(s=>s.id===id);
-            if(_idx>=0) skuListAll[_idx] = freshItem;
-          }
-        }
-      } catch(_){}
+      // 캐시에서 해당 항목 즉시 업데이트 (업로드된 실제 URL로)
+      const _idx = skuListAll.findIndex(s=>String(s.id)===String(id));
+      if(_idx>=0){
+        skuListAll[_idx] = {
+          ...skuListAll[_idx],
+          brand: data.brand,
+          model_name_ko: data.model_name_ko,
+          model_name: data.model_name,
+          category: data.category,
+          color: data.color,
+          size_actual: data.size_actual,
+          size_label: data.size_label,
+          sku_code: data.sku_code,
+          site_url: data.site_url,
+          notes: data.notes,
+          accessories: data.accessories,
+          extra_images: allImages, // 업로드된 URL + 기존 URL
+          ref_image_url: newRef || skuListAll[_idx].ref_image_url
+        };
+      }
 
-      // 현재 화면 그대로 재렌더 (검색어/카테고리 유지)
+      // 현재 화면 그대로 재렌더
       if(_curSearch){
         filterSkuList();
       } else {
