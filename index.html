@@ -3987,8 +3987,9 @@ function openEditModal(i){
   const unique=[...new Set(imgs)].filter(u=>typeof u==='string'&&u.startsWith('http'));
   document.getElementById('ef-extra-images').value=JSON.stringify(unique);
   renderEditPhotos(unique);
-  document.getElementById('ef-new-photo').value='';
-  document.getElementById('ef-new-photo').removeAttribute('_dataUrls');
+  const efPhotoInp = document.getElementById('ef-new-photo');
+  efPhotoInp.value='';
+  efPhotoInp._dataUrls=[]; // JS 프로퍼티 완전 초기화
   document.getElementById('ef-new-photo-preview').innerHTML='';
   const efAccs=safeAccArr(item.accessories).map(a=>({name:a.name}));
   document.getElementById('ef-accessories').value=JSON.stringify(efAccs);
@@ -4050,6 +4051,20 @@ function efDrop(e, toIdx){
 
 function deleteEditPhoto(idx){
   const stored=JSON.parse(document.getElementById('ef-extra-images').value||'[]');
+  // 삭제할 URL이 새로 추가한 preview(_dataUrls)인지 확인
+  const efInp=document.getElementById('ef-new-photo');
+  const dataUrls=efInp._dataUrls||[];
+  const deletedUrl=stored[idx]||'';
+  // _dataUrls에서도 제거 (base64 preview URL인 경우)
+  if(deletedUrl && deletedUrl.startsWith('data:')){
+    efInp._dataUrls=dataUrls.filter(u=>u!==deletedUrl);
+    // preview DOM에서도 제거
+    const preview=document.getElementById('ef-new-photo-preview');
+    if(preview){
+      const imgs=[...preview.querySelectorAll('img')];
+      imgs.forEach(img=>{ if(img.src===deletedUrl) img.parentNode?.remove(); });
+    }
+  }
   stored.splice(idx,1);
   document.getElementById('ef-extra-images').value=JSON.stringify(stored);
   renderEditPhotos(stored);
@@ -4082,28 +4097,13 @@ async function previewEditPhotos(input){
 
   input._dataUrls=[...(input._dataUrls||[]),...newDataUrls];
 
-  const wrap=document.getElementById('ef-new-photo-preview');
-  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:6px';
-  newDataUrls.forEach(dataUrl=>{
-    const tw=document.createElement('div');
-    tw.style.cssText='position:relative;flex-shrink:0';
-    const thumb=document.createElement('img');
-    thumb.src=dataUrl;
-    thumb.style.cssText='width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;cursor:zoom-in;display:block';
-    thumb.onclick=()=>openLightbox(dataUrl);
-    const db=document.createElement('button');
-    db.textContent='×';
-    db.style.cssText='position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ff3b30;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:2';
-    db.onclick=()=>{
-      input._dataUrls=(input._dataUrls||[]).filter(u=>u!==dataUrl);
-      tw.remove();
-      toast('🗑 사진 삭제됨');
-    };
-    tw.appendChild(thumb);
-    tw.appendChild(db);
-    wrap.appendChild(tw);
-  });
-  toast(`📷 ${newDataUrls.length}장 추가 (총 ${input._dataUrls.length}장)`);
+  // ef-extra-images에도 즉시 추가 → renderEditPhotos로 통합 표시
+  const existing2=JSON.parse(document.getElementById('ef-extra-images').value||'[]');
+  const merged=[...existing2,...newDataUrls];
+  document.getElementById('ef-extra-images').value=JSON.stringify(merged);
+  renderEditPhotos(merged);
+
+  toast(`📷 ${newDataUrls.length}장 추가 (총 ${merged.length}장)`);
 }
 function renderEditAccList(accs){
   const wrap=document.getElementById('ef-acc-list');
@@ -4143,18 +4143,20 @@ async function saveEditSku(){
   const id=document.getElementById('ef-id').value;
   if(!id){toast('❌ ID 없음 — 다시 수정 버튼을 눌러주세요');return;}
   console.error('[saveEditSku] id='+id);
-  const photoInput=document.getElementById('ef-new-photo');
-  const newDataUrls=photoInput._dataUrls||[];
   const _efRaw=document.getElementById('ef-extra-images').value||'[]';
-  let existingImages=[];
-  try{ existingImages=JSON.parse(_efRaw); }catch(_){ existingImages=[]; }
-  if(!Array.isArray(existingImages)) existingImages=[];
+  let allStored=[];
+  try{ allStored=JSON.parse(_efRaw); }catch(_){ allStored=[]; }
+  if(!Array.isArray(allStored)) allStored=[];
+
+  // base64(새 사진)와 URL(기존 사진) 분리
+  const base64Items = allStored.filter(u=>u&&u.startsWith('data:'));
+  const urlItems    = allStored.filter(u=>u&&u.startsWith('http'));
 
   let uploadedUrls=[];
-  if(newDataUrls.length>0){
+  if(base64Items.length>0){
     toast('⏳ 사진 업로드 중...');
     try{
-      uploadedUrls=await Promise.all(newDataUrls.map(async dataUrl=>{
+      uploadedUrls=await Promise.all(base64Items.map(async dataUrl=>{
         const b64=dataUrl.split(',')[1];
         const res=await fetch('/api/inspect',{
           method:'POST',headers:{'Content-Type':'application/json'},
@@ -4166,11 +4168,10 @@ async function saveEditSku(){
       uploadedUrls=uploadedUrls.filter(Boolean);
     }catch(e){
       toast('⚠️ 사진 업로드 실패 — 나머지 정보는 저장합니다');
-      // 사진 업로드 실패해도 계속 진행 (return 제거)
     }
   }
 
-  const allImages=[...existingImages,...uploadedUrls];
+  const allImages=[...urlItems,...uploadedUrls];
   const newRef=allImages[0]||'';
 
   const efAccs=JSON.parse(document.getElementById('ef-accessories')?.value||'[]').map(a=>typeof a==='string'?{name:a,status:''}:{name:a.name||a,status:a.status||''});
