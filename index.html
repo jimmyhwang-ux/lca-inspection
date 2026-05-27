@@ -2237,29 +2237,37 @@ async function reSearchByModel(brand, modelName){
         body:JSON.stringify({action:'search_by_model',brand,modelName})
       });
       const j=await res.json();
-      if(!j.success) throw new Error(j.error);
-
-      // 렌즈 결과 업데이트
-      const matches=j.visualMatches||[];
+      // j.success 체크 완화 — visualMatches가 있으면 성공으로 처리
+      const matches=j.visualMatches||j.visual_matches||j.lens_results||[];
       if(matches.length){
         lensEl.innerHTML=matches.map(m=>{
           const price=m.price?(typeof m.price==='object'?m.price.extracted_price||m.price.raw||'':m.price):'';
-          return`<div class="lens-card" onclick="window.open('${m.link}','_blank')">
-            <img src="${m.thumbnail||''}" alt="" onerror="this.style.display='none'">
+          const thumb=m.thumbnail||m.image||m.img||'';
+          const link=m.link||m.url||'#';
+          return`<div class="lens-card" onclick="window.open('${link}','_blank')">
+            <img src="${thumb}" alt="" onerror="this.style.display='none'">
             <div class="lens-info">
-              <div class="lens-title">${m.title||'—'}</div>
+              <div class="lens-title">${m.title||m.name||'—'}</div>
               ${price?`<div class="lens-price">${price}</div>`:''}
-              <div class="lens-src">${m.source||''}</div>
+              <div class="lens-src">${m.source||m.site||''}</div>
             </div></div>`;
         }).join('');
+        toast('🔍 '+matches.length+'개 이미지 재검색 완료');
       } else {
-        lensEl.innerHTML='<div style="font-size:12px;color:#ddd;padding:8px">검색 결과 없음</div>';
+        // API 오류이거나 결과 없음
+        const errMsg = j.error||j.message||'';
+        if(!j.success && errMsg){
+          lensEl.innerHTML=`<div style="font-size:12px;color:#f59e0b;padding:8px">⚠️ 렌즈 검색 실패: ${errMsg}</div>`;
+        } else {
+          lensEl.innerHTML='<div style="font-size:12px;color:#888;padding:8px">유사 상품을 찾지 못했어요</div>';
+        }
+        toast('🔍 유사 상품 없음');
       }
 
       // 사이즈도 같이 왔으면 반영 (비어있을 때만)
       if(j.lensSize){
         const sEl=document.getElementById('r-size');
-        if(sEl.textContent==='—'||sEl.textContent===''){
+        if(sEl&&(sEl.textContent==='—'||sEl.textContent==='')){
           sEl.textContent=j.lensSize; sEl.className='info-cell-val';
           const lbl=sEl.closest('.info-cell')?.querySelector('.info-cell-label');
           if(lbl&&!lbl.querySelector('.ai-badge'))
@@ -2268,16 +2276,16 @@ async function reSearchByModel(brand, modelName){
       }
       if(j.lensSizeName){
         const snEl=document.getElementById('r-size-name');
-        if(snEl.textContent==='—'||snEl.textContent===''){
+        if(snEl&&(snEl.textContent==='—'||snEl.textContent==='')){
           snEl.textContent=j.lensSizeName; snEl.className='info-cell-val';
           const lbl2=snEl.closest('.info-cell')?.querySelector('.info-cell-label');
           if(lbl2&&!lbl2.querySelector('.ai-badge'))
             lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
         }
       }
-      toast('🔍 '+matches.length+'개 이미지 재검색 완료');
     }catch(e){
-      lensEl.innerHTML='<div style="font-size:12px;color:#ddd;padding:8px">재검색 실패: '+e.message+'</div>';
+      console.error('[reSearchByModel] 오류:', e);
+      if(lensEl) lensEl.innerHTML=`<div style="font-size:12px;color:#888;padding:8px">재검색 실패 — 네트워크 오류</div>`;
     }
     window._skipDbRematch=false;
   }, 800);
@@ -3160,7 +3168,7 @@ function switchSkuTab(tab, autoCat){
 
 let _dbCatFilter='전체', _gearCatFilter='전체';
 // 페이지네이션
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 10;
 let _skuPage = 1, _gearPage = 1;
 let _skuFilteredList = [], _gearFilteredList = [];
 function setDbCatFilter(cat,btn){
