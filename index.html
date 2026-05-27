@@ -5324,14 +5324,12 @@ async function callGeminiSizeSpec(apiKey, brand, modelKo, modelEn, cat, styleNo)
 
   // 후보 모델 (우선순위 순)
   var allCandidates = [
-    {model:'gemini-2.5-flash-preview-05-20', timeout:30000},
     {model:'gemini-2.5-flash',               timeout:30000},
     {model:'gemini-2.0-flash',               timeout:25000},
-    {model:'gemini-2.0-flash-lite',          timeout:20000},
-    {model:'gemini-1.5-flash-latest',        timeout:20000},
-    {model:'gemini-1.5-flash-8b-latest',     timeout:20000},
-    {model:'gemini-1.5-flash-8b',            timeout:20000},
-    {model:'gemini-1.5-pro-latest',          timeout:30000}
+    {model:'gemini-2.0-flash-001',           timeout:25000},
+    {model:'gemini-2.0-flash-lite-001',      timeout:20000},
+    {model:'gemini-2.5-flash-preview-05-20', timeout:30000},
+    {model:'gemini-2.5-pro',                 timeout:40000}
   ];
 
   // 실제 사용 가능한 모델로 필터링
@@ -5370,6 +5368,10 @@ async function callGeminiSizeSpec(apiKey, brand, modelKo, modelEn, cat, styleNo)
         var et = await res.text();
         lastErr = model + ': HTTP ' + res.status + ' — ' + et.substring(0,300);
         console.warn('[Gemini]', lastErr);
+        if(res.status === 429){
+          console.log('[Gemini] 429 감지 — 3초 대기 후 다음 모델 시도');
+          await new Promise(function(r){ setTimeout(r, 3000); });
+        }
         continue;
       }
 
@@ -5581,9 +5583,11 @@ async function callGeminiPlatformSearch(apiKey, brand, modelKo, modelEn, styleNo
   }
 
   var candidates = [
-    {model:'gemini-2.5-flash-preview-05-20', timeout:30000},
+    {model:'gemini-2.5-flash',               timeout:30000},
     {model:'gemini-2.0-flash',               timeout:25000},
-    {model:'gemini-1.5-flash-latest',        timeout:20000}
+    {model:'gemini-2.0-flash-001',           timeout:25000},
+    {model:'gemini-2.0-flash-lite-001',      timeout:20000},
+    {model:'gemini-2.5-flash-preview-05-20', timeout:30000}
   ];
   var lastErr = '';
 
