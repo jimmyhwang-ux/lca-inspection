@@ -1570,29 +1570,35 @@ function initDbCardActualInputs(mId, cat, curVal){
   var wrap = document.getElementById(mId+'-actual-inputs');
   if(!wrap) return;
   var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-  // 상단 실측값 파싱 — "가로 25cm × 세로 20cm" 형태에서 숫자만 추출
   var src = curVal||'';
   var nums = [];
   cfg.forEach(function(f, idx){
-    // "라벨 숫자단위" 패턴에서 이 필드의 값 찾기
-    var re = new RegExp(f.label+'\\s*([\\d\\.]+)');
-    var m = src.match(re);
-    if(m){ nums[idx] = m[1]; }
-    else {
-      // 순서대로 숫자 추출 (fallback)
-      var allNums = src.match(/[\d.]+/g)||[];
-      nums[idx] = allNums[idx]||'';
+    if(f.memo){
+      // 메모: [상단 지퍼] 패턴 추출
+      var memoMatch = src.match(/\[([^\]]*)\]/);
+      nums[idx] = memoMatch ? memoMatch[1] : '';
+    } else {
+      var re = new RegExp(f.label+'\\s*([\\d\\.]+)');
+      var m = src.match(re);
+      if(m){ nums[idx] = m[1]; }
+      else {
+        var allNums = src.match(/[\d.]+/g)||[];
+        nums[idx] = allNums[idx]||'';
+      }
     }
   });
   var iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#eee;font-size:11px;outline:none;width:44px';
   var sepStyle = 'color:#444;font-size:9px;flex-shrink:0';
   wrap.innerHTML = cfg.map(function(f, idx){
     var val = nums[idx]||'';
+    var isMemo = !!f.memo;
     var isText = !!f.text;
-    var inp = isText
-      ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+';width:60px">'
-      : '<input id="'+mId+'-sf-'+idx+'" type="number" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+'">';
-    var lbl = '<span style="font-size:8px;color:#fff;display:block;text-align:center">'+f.label+(f.unit?'('+f.unit+')':'')+'</span>';
+    var inp = isMemo
+      ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="상단/하단..." style="background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#aaa;font-size:10px;outline:none;width:72px">'
+      : isText
+        ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+';width:60px">'
+        : '<input id="'+mId+'-sf-'+idx+'" type="number" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+'">';
+    var lbl = '<span style="font-size:8px;color:#fff;display:block;text-align:center">'+(isMemo?'메모':f.label+(f.unit?'('+f.unit+')':''))+'</span>';
     var sep = idx<cfg.length-1 ? '<span style="'+sepStyle+'">×</span>' : '';
     return '<span style="display:inline-flex;flex-direction:column;align-items:center">'+lbl+inp+'</span>'+sep;
   }).join('');
@@ -1605,7 +1611,8 @@ function getDbCardActualFromCfg(mId, cat){
     var el = document.getElementById(mId+'-sf-'+idx);
     var v = (el&&el.value||'').trim();
     if(!v) return;
-    if(f.text){ parts.push(f.label+': '+v); }
+    if(f.memo){ parts.push('['+v+']'); }
+    else if(f.text){ parts.push(f.label+': '+v); }
     else { parts.push(f.label+' '+v+(f.unit||'')); }
   });
   return parts.join(' × ');
@@ -2022,10 +2029,8 @@ function editField(id){
 let _sizeVal='';
 // 카테고리별 사이즈 입력 설정
 var SIZE_CONFIG = window.SIZE_CONFIG = {
-  '가방':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
-  '지갑':    [{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'}],
-  '가방':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
-  '지갑':[{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'높이',unit:'cm',opt:true}],
+  '가방':    [{id:'sz-memo',label:'메모',unit:'',text:true,memo:true},{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'너비',unit:'cm',opt:true}],
+  '지갑':    [{id:'sz-memo',label:'메모',unit:'',text:true,memo:true},{id:'sz-w',label:'가로',unit:'cm'},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'너비',unit:'cm',opt:true}],
   '의류':    [{id:'sz-w',label:'사이즈',unit:'',text:true,wide:true}],
   '신발':    [{id:'sz-w',label:'사이즈',unit:'',text:true,wide:true}],
   '시계':    [{id:'sz-w',label:'가로',unit:'mm'},{id:'sz-h',label:'세로',unit:'mm',opt:true}],
@@ -2178,7 +2183,14 @@ function getSizeConfig(){
 function buildSizeInput(cfg, nums){
   return cfg.map((f,i)=>{
     const isText=!!f.text;
+    const isMemo=!!f.memo;
     const sep=i<cfg.length-1?`<span style="color:#ddd;font-size:10px;margin:0 3px">×</span>`:'';
+    if(isMemo){
+      return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
+        <span style="font-size:8px;color:#ddd">메모</span>
+        <input id="${f.id}" onclick="event.stopPropagation()" style="width:90px;background:transparent;border:none;border-bottom:1.5px solid #555;color:#aaa;font-size:11px;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="상단/하단/지퍼...">
+      </span>${sep}`;
+    }
     if(isText){
       return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
         <span style="font-size:8px;color:#ddd">${f.label}</span>
@@ -2197,6 +2209,7 @@ function saveSizeField(id){
   const parts=cfg.map((f,i)=>{
     const v=(document.getElementById(f.id)?.value||'').trim();
     if(!v) return null;
+    if(f.memo) return `[${v}]`;          // 메모: [상단 지퍼]
     if(f.text) return `${f.label}: ${v}`; // 의류/신발: "사이즈: M"
     return `${f.label} ${v}${f.unit}`;    // 기타: "가로 25cm"
   }).filter(Boolean);
@@ -2556,6 +2569,7 @@ function saveEfSize(cfg){
   const parts=cfg.map(f=>{
     const v=(document.getElementById('sef-'+f.id)?.value||'').trim();
     if(!v) return null;
+    if(f.memo) return `[${v}]`;
     if(f.text) return `${f.label}: ${v}`;
     return `${f.label} ${v}${f.unit}`;
   }).filter(Boolean);
@@ -2616,7 +2630,14 @@ function editSkuSize(){
 function buildSkuSizeInput(cfg, nums){
   return cfg.map((f,i)=>{
     const isText=!!f.text;
+    const isMemo=!!f.memo;
     const sep=i<cfg.length-1?`<span style="color:#ddd;font-size:10px;margin:0 3px">×</span>`:'';
+    if(isMemo){
+      return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
+        <span style="font-size:8px;color:#ddd">메모</span>
+        <input id="ssku-${f.id}" onclick="event.stopPropagation()" style="width:90px;background:transparent;border:none;border-bottom:1.5px solid #555;color:#aaa;font-size:11px;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="상단/하단/지퍼...">
+      </span>${sep}`;
+    }
     if(isText){
       return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
         <span style="font-size:8px;color:#ddd">${f.label}</span>
@@ -2634,6 +2655,7 @@ function saveSkuSize(cfg){
   const parts=cfg.map(f=>{
     const v=(document.getElementById('ssku-'+f.id)?.value||'').trim();
     if(!v) return null;
+    if(f.memo) return `[${v}]`;
     if(f.text) return `${f.label}: ${v}`;
     return `${f.label} ${v}${f.unit}`;
   }).filter(Boolean);
@@ -4624,12 +4646,19 @@ function editUnregSize(){
   const hidden=document.getElementById('unreg-size-hidden');
   const cur=hidden?.value||'';
   const nums=cur.match(/[\d.]+/g)||[];
-  wrap.innerHTML=cfg.map((f,i)=>`
+  const memoMatch=cur.match(/\[([^\]]*)\]/);
+  wrap.innerHTML=cfg.map((f,i)=>{
+    if(f.memo){
+      return `<input id="unreg-sf-${i}" type="text" value="${memoMatch?memoMatch[1]:''}" placeholder="상단/하단/지퍼..." style="width:88px;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:4px 6px;color:#aaa;font-size:11px;outline:none;margin-right:6px" oninput="_updateUnregSizeHidden()">
+      ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}`;
+    }
+    return `
     <span style="font-size:10px;color:#ddd;margin-right:2px">${f.label}</span>
-    <input id="unreg-sf-${i}" type="number" value="${nums[i]||''}" placeholder="0" style="width:52px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#fff;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
+    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" style="width:52px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#fff;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
     <span style="font-size:10px;color:#ddd;margin-right:6px">${f.unit||''}</span>
     ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}
-  `).join('');
+  `;
+  }).join('');
   document.getElementById('unreg-sf-0')?.focus();
 }
 
@@ -4638,7 +4667,9 @@ function _updateUnregSizeHidden(){
   const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
   const parts=cfg.map((f,i)=>{
     const v=document.getElementById('unreg-sf-'+i)?.value?.trim();
-    return v?`${f.label} ${v}${f.unit||''}`:null;
+    if(!v) return null;
+    if(f.memo) return `[${v}]`;
+    return `${f.label} ${v}${f.unit||''}`;
   }).filter(Boolean);
   const result=parts.join(' × ');
   const hidden=document.getElementById('unreg-size-hidden');
