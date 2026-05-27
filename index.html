@@ -4580,12 +4580,14 @@ function onUnregCatChange(sel){
   const cat=sel.value;
   // 부속품 탭 업데이트
   const activeBtn=document.querySelector('#unreg-acc-cat-tabs .cat-btn.active')||document.querySelector('#unreg-acc-cat-tabs .cat-btn');
-  if(activeBtn) setUnregAccCat(cat, activeBtn);
-  // 실측 필드 카테고리에 맞게 재렌더
-  const wrap=document.getElementById('unreg-size-wrap');
-  if(wrap && wrap.querySelector('input')){
-    editUnregSize(); // 이미 열려있으면 재렌더
+  if(activeBtn){
+    document.querySelectorAll('#unreg-acc-cat-tabs .cat-btn').forEach(b=>b.classList.remove('active'));
+    activeBtn.classList.add('active');
+    setUnregAccCat(cat, activeBtn);
   }
+  // 실측 필드가 이미 열려있으면 카테고리에 맞게 즉시 재렌더
+  const wrap=document.getElementById('unreg-size-wrap');
+  if(wrap) editUnregSize();
 }
 
 function editUnregSize(){
@@ -4705,7 +4707,7 @@ async function saveUnregSku(btn){
     } else {
       toast('❌ 저장 실패: '+(j.error||''));
     }
-  }catch(e){ toast('❌ 오류: '+e.message); }
+  }catch(e){ console.error('[saveUnregSku]', e); toast('❌ 오류: '+e.message); }
   finally{ btn.textContent=origText; btn.disabled=false; }
 }
 
