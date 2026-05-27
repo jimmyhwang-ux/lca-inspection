@@ -1976,6 +1976,9 @@ async function renderResult(){
   // 카테고리 탭 자동 동기화
   if(analysis.category) syncCatTab(analysis.category);
   showScreen('result');
+  // 구글 검색 버튼 노출
+  var _sgw = document.getElementById('spec-google-wrap');
+  if(_sgw) _sgw.style.display = 'block';
 }
 
 function renderAcc(){
@@ -4982,12 +4985,7 @@ function openSpecGoogleSearch(){
 }
 
 // ── 결과 화면 진입 시 구글 검색 버튼 노출 ───────────────────
-var _origShowScreen2 = showScreen;
-showScreen = function(id){
-  _origShowScreen2(id);
-  var wrap = document.getElementById('spec-google-wrap');
-  if(wrap) wrap.style.display = (id === 'result') ? 'block' : 'none';
-};
+// showScreen 훅 제거 - 대신 showScreen('result') 호출 직후에 버튼 노출
 
 </script>
 
