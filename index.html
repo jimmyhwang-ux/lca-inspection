@@ -321,7 +321,12 @@ input[type=file]{display:none}
     <div class="result-meta">
       <div class="conf-badge" id="conf-badge">신뢰도 —%</div>
       <div class="result-brand" id="r-brand">—</div>
-      <div id="r-model-ko" onclick="editField('r-model-ko')" style="font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3">—</div>
+      <div style="display:flex;align-items:flex-start;gap:6px">
+        <div id="r-model-ko" onclick="editField('r-model-ko')" style="font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;cursor:pointer;line-height:1.3;flex:1">—</div>
+        <button id="r-model-search-btn" onclick="event.stopPropagation();(function(){var el=document.getElementById('r-model-ko');var inp=el.querySelector('input');if(!inp){editField('r-model-ko');setTimeout(function(){var i=document.getElementById('r-model-ko-inp');if(i)onResultFieldInput(i,'r-model-ko',true);},100);}else{onResultFieldInput(inp,'r-model-ko',true);}})();" title="DB 검색" style="background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);border-radius:6px;padding:4px 7px;cursor:pointer;flex-shrink:0;line-height:1;margin-top:2px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+      </div>
       <div id="r-model" onclick="editField('r-model')" style="font-size:12px;color:#ddd;margin-bottom:5px;cursor:pointer">—</div>
       <div class="result-reason" id="r-reason"></div>
       <div class="result-cats" id="r-cats"></div>
@@ -1952,14 +1957,8 @@ function editField(id){
   }
 
   const isSearch=(id==='r-model'||id==='r-model-ko'||id==='r-sku');
-  const trigger=isSearch?'onkeydown="if(event.key===\'Enter\'){onResultFieldInput(this,\''+id+'\');}"':'';
   if(isSearch){
-    el.innerHTML=`<div style="display:flex;align-items:center;gap:4px;width:100%">
-      <input id="${id}-inp" class="editing-input" style="flex:1" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();onResultFieldInput(this,'${id}',true);}">
-      <button onmousedown="event.preventDefault();" onclick="event.stopPropagation();var inp=document.getElementById('${id}-inp');if(inp)onResultFieldInput(inp,'${id}',true);" style="background:#22c55e;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;line-height:1" title="검색">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      </button>
-    </div>`;
+    el.innerHTML=`<input id="${id}-inp" class="editing-input" style="width:100%;box-sizing:border-box" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();onResultFieldInput(this,'${id}',true);}">`;
   } else {
     el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()">`;
   }
@@ -2683,14 +2682,12 @@ matches=[...partial,...tokenMatched.filter(t=>!partial.some(p=>p.id===t.id))];
 }
 if(matches.length>=1){
   clearTimeout(_dbSearchTimer);
-  // SKU 매칭 탭 업데이트
+  // SKU 매칭 탭 데이터 업데이트
   window._dbSkuItems = matches;
   window._dbGearItems = [];
   _buildDbTabUI();
-  // 검색 탭으로 자동 전환 후 결과 표시
-  _switchDbTab('search');
-  const searchInput = document.getElementById('db-card-search-input');
-  if(searchInput) searchInput.value = val;
+  // SKU 탭에서 결과 표시 (검색탭 전환 안 함)
+  _switchDbTab('sku');
   renderDbMatchCards(matches);
 }
 }catch(e){console.warn('자동조회 실패',e);} finally{_searchDbRunning=false;}
