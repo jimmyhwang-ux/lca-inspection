@@ -1216,15 +1216,6 @@ function _buildDbTabUI(){
         </div>
       </div>
 
-      <!-- 검색창 (search 탭일 때만 표시) -->
-      <div id="dbtab-search-bar" style="display:none;padding:8px 10px 6px;border-bottom:0.5px solid rgba(255,255,255,.06)">
-        <div style="position:relative;display:flex;align-items:center">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:8px;pointer-events:none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="db-card-search-input" type="text" placeholder="모델명 · SKU 검색..." oninput="searchInDbCards(this.value)" oncompositionend="searchInDbCards(this.value)"
-            style="width:100%;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:7px;padding:6px 10px 6px 26px;color:#fff;font-size:12px;outline:none">
-        </div>
-      </div>
-
       <!-- 카드 리스트 영역 -->
       <div id="dbtab-content" style="padding:6px"></div>
 
@@ -1251,15 +1242,28 @@ function _switchDbTab(tab){
       btn.style.cssText=`background:transparent;border:0.5px solid transparent;border-bottom:none;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;${ml}`;
     }
   });
-  // 검색바 토글
-  const bar = document.getElementById('dbtab-search-bar');
-  if(bar) bar.style.display = tab==='search' ? 'block' : 'none';
+  // 검색바 토글 — search 탭일 때만 content 상단에 검색창 삽입
+  const content = document.getElementById('dbtab-content');
   if(tab==='search'){
+    // 검색창이 없으면 삽입
+    if(content && !document.getElementById('dbtab-search-bar')){
+      const bar = document.createElement('div');
+      bar.id = 'dbtab-search-bar';
+      bar.style.cssText = 'padding:8px 4px 6px;border-bottom:0.5px solid rgba(255,255,255,.06);margin-bottom:4px';
+      bar.innerHTML = `<div style="position:relative;display:flex;align-items:center">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:8px;pointer-events:none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="db-card-search-input" type="text" placeholder="모델명 · SKU 검색..." oninput="searchInDbCards(this.value)" oncompositionend="searchInDbCards(this.value)"
+          style="width:100%;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:7px;padding:6px 10px 6px 26px;color:#fff;font-size:12px;outline:none">
+      </div>`;
+      content.insertBefore(bar, content.firstChild);
+    }
     setTimeout(()=>{ const inp=document.getElementById('db-card-search-input'); if(inp) inp.focus(); },80);
-    // 검색 탭 열릴 때 빈 상태면 전체 보여주기
     if(!document.getElementById('db-card-search-input')?.value) searchInDbCards('');
     return;
   }
+  // SKU/gear 탭으로 전환 시 검색창 제거
+  const existBar = document.getElementById('dbtab-search-bar');
+  if(existBar) existBar.remove();
   const items = tab==='gear' ? (window._dbGearItems||[]) : (window._dbSkuItems||[]);
   _renderDbCardList(items);
 }
@@ -2159,14 +2163,7 @@ function saveField(id,input){
   const prev=document.getElementById(id).textContent;
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
-  // 모델명 변경 시 — 값이 실제로 바뀌었을 때만 재검색
-  if((id==='r-model-ko'||id==='r-model')&&val!=='—'&&val!==prev){
-    const brand=document.getElementById('r-brand').textContent.replace('—','').trim();
-    // SKU 재매칭 즉시 (Lens와 독립)
-    _rematchSkuByModel(brand, val);
-    // Google Lens 재검색
-    reSearchByModel(brand, val);
-  }
+  // 모델명 변경 시 자동 재검색 제거 — 엔터/돋보기 버튼으로만 검색
   if(id==='r-sku'&&val==='—'){
     resetToAi();
   }
@@ -2617,7 +2614,16 @@ function onResultFieldInput(input,id,forceSearch){
   if(forceSearch || (event && event.key==='Enter')){
     clearTimeout(_dbSearchTimer);
     const val=input.value.trim();
-    if(val&&val.length>=2) searchDbFromField(id,val);
+    if(!val||val.length<2) return;
+    // 값을 화면에 저장
+    const el=document.getElementById(id);
+    if(el) el.textContent=val;
+    // DB 재매칭 + Lens 재검색
+    const brand=document.getElementById('r-brand')?.textContent?.replace('—','').trim()||'';
+    searchDbFromField(id,val);
+    if(id==='r-model-ko'||id==='r-model'){
+      reSearchByModel(brand, val);
+    }
   }
 }
 
