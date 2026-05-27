@@ -4126,7 +4126,8 @@ async function saveEditSku(){
   }
 
   const allImages=[...urlItems,...uploadedUrls];
-  const newRef=allImages[0]||'';
+  // 사진이 없으면 ref_image_url도 명시적으로 null
+  const newRef = allImages.length > 0 ? allImages[0] : null;
 
   const efAccs=JSON.parse(document.getElementById('ef-accessories')?.value||'[]').map(a=>typeof a==='string'?{name:a,status:''}:{name:a.name||a,status:a.status||''});
   const data={
@@ -4142,7 +4143,7 @@ async function saveEditSku(){
     notes:document.getElementById('ef-notes').value,
     accessories:efAccs,
     extra_images:allImages,
-    ...(newRef?{ref_image_url:newRef}:{})
+    ref_image_url: newRef  // null이면 명시적으로 null 전송해서 DB에서도 지워짐
   };
   try{
     const res=await fetch('/api/inspect',{
@@ -4176,8 +4177,8 @@ async function saveEditSku(){
           site_url: data.site_url,
           notes: data.notes,
           accessories: data.accessories,
-          extra_images: allImages, // 업로드된 URL + 기존 URL
-          ref_image_url: newRef || skuListAll[_idx].ref_image_url
+          extra_images: allImages,
+          ref_image_url: newRef  // null이면 기존값 제거
         };
       }
 
