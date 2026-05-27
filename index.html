@@ -1951,8 +1951,8 @@ function editField(id){
   const trigger=isSearch?'onkeydown="if(event.key===\'Enter\'){onResultFieldInput(this,\''+id+'\');}"':'';
   if(isSearch){
     el.innerHTML=`<div style="display:flex;align-items:center;gap:4px;width:100%">
-      <input class="editing-input" style="flex:1" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" ${trigger}>
-      <button onclick="event.stopPropagation();var inp=document.querySelector('#${id} input');if(inp)onResultFieldInput(inp,'${id}',true);" style="background:#22c55e;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;line-height:1" title="검색">
+      <input id="${id}-inp" class="editing-input" style="flex:1" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();onResultFieldInput(this,'${id}',true);}">
+      <button onmousedown="event.preventDefault();" onclick="event.stopPropagation();var inp=document.getElementById('${id}-inp');if(inp)onResultFieldInput(inp,'${id}',true);" style="background:#22c55e;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;line-height:1" title="검색">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       </button>
     </div>`;
@@ -2676,7 +2676,15 @@ matches=[...partial,...tokenMatched.filter(t=>!partial.some(p=>p.id===t.id))];
 }
 }
 if(matches.length>=1){
-  clearTimeout(_dbSearchTimer); // 혹시 남은 타이머 제거
+  clearTimeout(_dbSearchTimer);
+  // SKU 매칭 탭 업데이트
+  window._dbSkuItems = matches;
+  window._dbGearItems = [];
+  _buildDbTabUI();
+  // 검색 탭으로 자동 전환 후 결과 표시
+  _switchDbTab('search');
+  const searchInput = document.getElementById('db-card-search-input');
+  if(searchInput) searchInput.value = val;
   renderDbMatchCards(matches);
 }
 }catch(e){console.warn('자동조회 실패',e);} finally{_searchDbRunning=false;}
