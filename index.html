@@ -2629,7 +2629,7 @@ function onResultFieldInput(input,id,forceSearch){
 
 let _searchDbRunning=false;
 async function searchDbFromField(fieldId,val){
-if(_searchDbRunning) return; // 중복 실행 방지
+if(_searchDbRunning) return;
 _searchDbRunning=true;
 try{
 const res=await fetch('/api/inspect',{
@@ -2639,41 +2639,41 @@ body:JSON.stringify({action:'list_sku'})
 const j=await res.json();
 if(!j.success||!j.data)return;
 const list=j.data;
-const v=val.toLowerCase();
-// 현재 화면의 브랜드 가져오기 (브랜드 필터 적용)
-const curBrand=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim().toLowerCase();
-let matches=[];
-if(fieldId==='r-sku'){
-  matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v||
-    (i.sku_code||'').toLowerCase().includes(v));
-}
-if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
-  // 브랜드 필터
-  const normCur=curBrand.replace(/\s+/g,'');
-  const brandOk=(i)=>{
-    if(!curBrand) return true;
-    return _brandMatch(curBrand, i.brand||'');
-  };
-  const brandList=curBrand?list.filter(brandOk):list;
+const v=val.toLowerCase().trim();
+const curBrand=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim();
 
-  // 입력값 토큰 (2글자 이상)
+// 브랜드 필터 — _brandMatch로 한영 양방향
+const brandOk=(i)=>{
+  if(!curBrand) return true;
+  return _brandMatch(curBrand, i.brand||'');
+};
+const brandList=curBrand ? list.filter(brandOk) : list;
+
+let matches=[];
+
+// 1. SKU 번호 직접 검색
+if(fieldId==='r-sku'){
+  const vClean=v.replace(/[\s\-]/g,'');
+  matches=brandList.filter(i=>{
+    const sku=(i.sku_code||'').toLowerCase().replace(/[\s\-]/g,'');
+    return sku.includes(vClean)||vClean.includes(sku);
+  });
+}
+
+// 2. 모델명 검색
+if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
   const vToks=v.split(/\s+/).filter(w=>w.length>=2);
-  // 띄어쓰기 제거 버전
   const vNoSpace=v.replace(/\s+/g,'');
 
-  // 점수 기반 매칭
   const scored=brandList.map(i=>{
     const ko=(i.model_name_ko||'').toLowerCase();
     const en=(i.model_name||'').toLowerCase();
     const koNoSpace=ko.replace(/\s+/g,'');
     const enNoSpace=en.replace(/\s+/g,'');
     let score=0;
-    // 완전 일치
     if(ko===v||en===v) score=100;
-    // 포함 (입력값이 모델명에 포함)
     else if(ko.includes(v)||en.includes(v)) score=80;
     else if(koNoSpace.includes(vNoSpace)||enNoSpace.includes(vNoSpace)) score=75;
-    // 토큰 매칭 — 모든 토큰이 포함
     else if(vToks.length>0){
       const hits=vToks.filter(t=>ko.includes(t)||en.includes(t)||
         koNoSpace.includes(t.replace(/\s+/g,''))).length;
@@ -2682,35 +2682,32 @@ if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
     }
     return {item:i,score};
   }).filter(x=>x.score>=60);
-
   scored.sort((a,b)=>b.score-a.score);
   matches=scored.slice(0,10).map(x=>x.item);
+
+  // 3. 모델명 결과 없으면 SKU 번호 fallback (브랜드 필터 적용)
+  if(!matches.length){
+    const vClean=v.replace(/[\s\-]/g,'');
+    const skuMatches=brandList.filter(i=>{
+      const sku=(i.sku_code||'').toLowerCase().replace(/[\s\-]/g,'');
+      return sku.includes(vClean)||vClean.includes(sku);
+    });
+    if(skuMatches.length) {
+      matches=skuMatches;
+      toast('🔍 SKU 번호로 '+skuMatches.length+'개 매칭');
+    }
+  }
 }
+
 if(matches.length>=1){
   clearTimeout(_dbSearchTimer);
-  // SKU 매칭 탭 데이터 업데이트
   window._dbSkuItems = matches;
   window._dbGearItems = [];
   _buildDbTabUI();
-  // SKU 탭에서 결과 표시 (검색탭 전환 안 함)
   _switchDbTab('sku');
   renderDbMatchCards(matches);
 } else {
-  // 모델명 검색 결과 없으면 SKU 번호로 재시도
-  const skuMatches = list.filter(i=>{
-    const sku=(i.sku_code||'').toLowerCase().replace(/[\s\-]/g,'');
-    const vClean=v.replace(/[\s\-]/g,'');
-    return sku.includes(vClean)||vClean.includes(sku);
-  });
-  if(skuMatches.length>=1){
-    clearTimeout(_dbSearchTimer);
-    window._dbSkuItems = skuMatches;
-    window._dbGearItems = [];
-    _buildDbTabUI();
-    _switchDbTab('sku');
-    renderDbMatchCards(skuMatches);
-    toast('🔍 SKU 번호로 '+skuMatches.length+'개 매칭');
-  }
+  toast('🔍 검색 결과 없음');
 }
 }catch(e){console.warn('자동조회 실패',e);} finally{_searchDbRunning=false;}
 }
