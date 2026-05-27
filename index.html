@@ -2212,7 +2212,12 @@ function saveField(id,input){
   const prev=document.getElementById(id).textContent;
   document.getElementById(id).textContent=val;
   if(id==='r-model-ko'&&val!=='—') autoTranslateModelName(val);
-  // 모델명 변경 시 자동 재검색 제거 — 엔터/돋보기 버튼으로만 검색
+  // 모델명 변경 시 렌즈 재검색 (blur로 확정 시에도 동작)
+  if((id==='r-model-ko'||id==='r-model')&&val!=='—'&&val!==prev){
+    const brand=document.getElementById('r-brand')?.textContent?.replace('—','').trim()||'';
+    // 엔터키 검색과 타이머 충돌 방지 — 약간 늦게 시작 (reSearchByModel 내부 clearTimeout으로 중복 제거됨)
+    setTimeout(()=>reSearchByModel(brand, val), 100);
+  }
   if(id==='r-sku'&&val==='—'){
     resetToAi();
   }
