@@ -417,6 +417,9 @@ input[type=file]{display:none}
         <button class="spec-run-btn" id="spec-run-btn" onclick="runGeminiSpecSearch()" disabled>
           📐 브랜드 공식 사이즈 스펙 조회
         </button>
+        <button class="spec-run-btn" id="spec-google-btn" onclick="openGoogleAISearch('spec')" style="margin-top:6px;background:rgba(66,133,244,.12);color:#4285f4;border-color:rgba(66,133,244,.35)">
+          🔍 Google AI 검색으로 보기
+        </button>
       </div>
       <div id="spec-result-area"></div>
     </div>
@@ -425,7 +428,10 @@ input[type=file]{display:none}
     <div class="info-tab-content" id="tabcontent-platform">
       <div style="padding:10px 14px 4px">
         <button class="platform-run-btn" id="platform-run-btn" onclick="runPlatformSearch()" disabled>
-          🛒 크림 · 구구스 · 트렌비 정보 조회
+          🛒 크림 · 구구스 · 트렌비 스펙 조회
+        </button>
+        <button class="platform-run-btn" onclick="openGoogleAISearch('platform')" style="margin-top:6px;background:rgba(66,133,244,.12);color:#4285f4;border-color:rgba(66,133,244,.35)">
+          🔍 Google AI 검색으로 보기
         </button>
       </div>
       <div id="platform-result-area" style="padding-bottom:8px"></div>
@@ -5190,6 +5196,12 @@ function initSpecSection(){
     if(runBtn) runBtn.disabled = false;
     if(platformBtn) platformBtn.disabled = false;
   } else {
+    // Google AI 검색 버튼은 키 없어도 항상 활성화
+    var gBtns = document.querySelectorAll('[onclick*="openGoogleAISearch"]');
+    gBtns.forEach(function(b){ b.disabled = false; });
+  }
+  if(key){
+  } else {
     if(keyBar) keyBar.style.display = 'flex';
     if(runBtn) runBtn.disabled = true;
     if(platformBtn) platformBtn.disabled = true;
@@ -5705,6 +5717,38 @@ function renderPlatformResult(data){
     + sourcesHtml
     + queryHtml
     + '</div>';
+}
+
+
+
+// ── Google AI 검색 열기 ──────────────────────────────────────
+function openGoogleAISearch(type){
+  var brand   = (document.getElementById('r-brand')||{}).textContent||'';
+  var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
+  var modelEn = (document.getElementById('r-model')||{}).textContent||'';
+  var styleNo = (document.getElementById('r-sku')||{}).textContent||'';
+
+  var keyword = '';
+  if(styleNo && styleNo !== '—' && styleNo.trim()){
+    // 스타일번호 있으면 우선 사용
+    keyword = brand + ' ' + styleNo;
+  } else {
+    keyword = brand + ' ' + (modelKo || modelEn);
+  }
+
+  // 탭별 검색어 보완
+  if(type === 'spec'){
+    keyword += ' 사이즈 스펙 소재';
+  } else {
+    keyword += ' 크림 구구스 트렌비 스펙';
+  }
+
+  // Google AI 검색 URL (udm=50 = AI mode)
+  var url = 'https://www.google.com/search?q='
+    + encodeURIComponent(keyword)
+    + '&udm=50';
+
+  window.open(url, '_blank');
 }
 
 
