@@ -399,8 +399,8 @@ input[type=file]{display:none}
       <div style="flex:1;height:1px;background:#1e1e1e"></div>
     </div>
 
-    <!-- Gemini 키 입력 (공용) -->
-    <div class="gemini-key-bar" id="gemini-key-bar">
+    <!-- Gemini 키 입력 (숨김 - 필요시 사용) -->
+    <div class="gemini-key-bar" id="gemini-key-bar" style="display:none">
       <input type="password" id="gemini-api-key" placeholder="Gemini API 키 (AIza...)" autocomplete="off">
       <button onclick="saveGeminiKey()">저장</button>
     </div>
@@ -413,25 +413,25 @@ input[type=file]{display:none}
 
     <!-- 탭 1: 공식 스펙 -->
     <div class="info-tab-content active" id="tabcontent-spec">
-      <div style="padding:10px 14px 4px">
-        <button class="spec-run-btn" id="spec-run-btn" onclick="runGeminiSpecSearch()" disabled>
-          📐 브랜드 공식 사이즈 스펙 조회
+      <div style="padding:10px 14px 6px;display:flex;flex-direction:column;gap:6px">
+        <button class="spec-run-btn" onclick="openGoogleAISearch('spec')" style="background:rgba(66,133,244,.12);color:#4285f4;border-color:rgba(66,133,244,.35)">
+          🔍 공식 스펙 Google 검색
         </button>
-        <button class="spec-run-btn" id="spec-google-btn" onclick="openGoogleAISearch('spec')" style="margin-top:6px;background:rgba(66,133,244,.12);color:#4285f4;border-color:rgba(66,133,244,.35)">
-          🔍 Google AI 검색으로 보기
+        <button class="spec-run-btn" onclick="loadSpecFromDb()" style="background:rgba(34,197,94,.08);color:#22c55e;border-color:rgba(34,197,94,.3)">
+          📋 DB 스펙 불러오기
         </button>
       </div>
       <div id="spec-result-area"></div>
     </div>
 
-    <!-- 탭 2: 플랫폼 시세/정보 -->
+    <!-- 탭 2: 플랫폼 정보 -->
     <div class="info-tab-content" id="tabcontent-platform">
-      <div style="padding:10px 14px 4px">
-        <button class="platform-run-btn" id="platform-run-btn" onclick="runPlatformSearch()" disabled>
-          🛒 크림 · 구구스 · 트렌비 스펙 조회
+      <div style="padding:10px 14px 6px;display:flex;flex-direction:column;gap:6px">
+        <button class="platform-run-btn" onclick="openGoogleAISearch('platform')" style="background:rgba(66,133,244,.12);color:#4285f4;border-color:rgba(66,133,244,.35)">
+          🔍 플랫폼 Google 검색 (크림·구구스·트렌비)
         </button>
-        <button class="platform-run-btn" onclick="openGoogleAISearch('platform')" style="margin-top:6px;background:rgba(66,133,244,.12);color:#4285f4;border-color:rgba(66,133,244,.35)">
-          🔍 Google AI 검색으로 보기
+        <button class="platform-run-btn" onclick="openGoogleAISearch('kream')" style="background:rgba(255,107,43,.08);color:#ff6b2b;border-color:rgba(255,107,43,.3)">
+          🛒 크림 직접 검색
         </button>
       </div>
       <div id="platform-result-area" style="padding-bottom:8px"></div>
@@ -5721,34 +5721,109 @@ function renderPlatformResult(data){
 
 
 
-// ── Google AI 검색 열기 ──────────────────────────────────────
+// ── Google 검색 열기 ─────────────────────────────────────────
 function openGoogleAISearch(type){
   var brand   = (document.getElementById('r-brand')||{}).textContent||'';
   var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
   var modelEn = (document.getElementById('r-model')||{}).textContent||'';
   var styleNo = (document.getElementById('r-sku')||{}).textContent||'';
+  var styleNoClean = (styleNo||'').replace('—','').trim();
+
+  // 검색 키워드: 스타일번호 우선
+  var base = styleNoClean
+    ? (brand + ' ' + styleNoClean)
+    : (brand + ' ' + (modelKo || modelEn));
 
   var keyword = '';
-  if(styleNo && styleNo !== '—' && styleNo.trim()){
-    // 스타일번호 있으면 우선 사용
-    keyword = brand + ' ' + styleNo;
-  } else {
-    keyword = brand + ' ' + (modelKo || modelEn);
-  }
+  var url = '';
 
-  // 탭별 검색어 보완
   if(type === 'spec'){
-    keyword += ' 사이즈 스펙 소재';
-  } else {
-    keyword += ' 크림 구구스 트렌비 스펙';
+    keyword = base + ' 사이즈 스펙 소재 공식';
+    url = 'https://www.google.com/search?q=' + encodeURIComponent(keyword) + '&udm=50';
+  } else if(type === 'platform'){
+    keyword = base + ' 크림 구구스 트렌비 스펙 사이즈';
+    url = 'https://www.google.com/search?q=' + encodeURIComponent(keyword) + '&udm=50';
+  } else if(type === 'kream'){
+    keyword = base;
+    url = 'https://kream.co.kr/search?keyword=' + encodeURIComponent(keyword);
   }
-
-  // Google AI 검색 URL (udm=50 = AI mode)
-  var url = 'https://www.google.com/search?q='
-    + encodeURIComponent(keyword)
-    + '&udm=50';
 
   window.open(url, '_blank');
+}
+
+// ── Supabase DB에서 스펙 불러오기 ───────────────────────────
+async function loadSpecFromDb(){
+  var brand   = (document.getElementById('r-brand')||{}).textContent||'';
+  var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
+  var modelEn = (document.getElementById('r-model')||{}).textContent||'';
+  var area    = document.getElementById('spec-result-area');
+
+  if(!brand || brand==='—'){ toast('⚠ 브랜드를 먼저 확인해 주세요'); return; }
+
+  area.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:#888">DB에서 스펙 확인 중...</div>';
+
+  var cached = await fetchSpecFromSupabase(brand, modelKo, modelEn);
+  if(cached){
+    renderSpecResult(cached, true);
+    toast('✅ DB에서 스펙 로드됨');
+  } else {
+    area.innerHTML =
+      '<div style="padding:12px 14px;text-align:center">'
+      + '<div style="font-size:12px;color:#888;margin-bottom:10px">DB에 저장된 스펙이 없어요</div>'
+      + '<div style="font-size:11px;color:#555">Google 검색으로 스펙 확인 후<br>아래에서 직접 입력해주세요</div>'
+      + '<div style="margin-top:10px;display:flex;gap:6px;flex-direction:column">'
+      + '<input id="spec-input-style" placeholder="스타일번호 (예: M41534)" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:7px 10px;font-size:12px;color:#f0f0f0;width:100%">'
+      + '<input id="spec-input-size" placeholder="사이즈 (예: W30 x H22 x D16 cm)" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:7px 10px;font-size:12px;color:#f0f0f0;width:100%">'
+      + '<input id="spec-input-material" placeholder="소재 (예: 토고 레더)" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:7px 10px;font-size:12px;color:#f0f0f0;width:100%">'
+      + '<input id="spec-input-made" placeholder="제조국 (예: 프랑스)" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:7px 10px;font-size:12px;color:#f0f0f0;width:100%">'
+      + '<button onclick="saveManualSpec()" style="background:#ff6b2b;color:#fff;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">💾 DB에 저장</button>'
+      + '</div>'
+      + '</div>';
+  }
+}
+
+// ── 직접 입력한 스펙 DB 저장 ────────────────────────────────
+async function saveManualSpec(){
+  var brand   = (document.getElementById('r-brand')||{}).textContent||'';
+  var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
+  var modelEn = (document.getElementById('r-model')||{}).textContent||'';
+  var styleNo = (document.getElementById('spec-input-style')||{}).value||'';
+  var sizeStr = (document.getElementById('spec-input-size')||{}).value||'';
+  var material= (document.getElementById('spec-input-material')||{}).value||'';
+  var madeIn  = (document.getElementById('spec-input-made')||{}).value||'';
+
+  if(!styleNo && !sizeStr){ toast('⚠ 스타일번호 또는 사이즈를 입력해주세요'); return; }
+
+  // 사이즈 파싱 (W30 x H22 x D16 형태)
+  var specs = [];
+  var sizeMatch = sizeStr.match(/W[\s]*([\d.]+)/i);
+  if(sizeMatch) specs.push({label:'가로 (W)', value:sizeMatch[1], unit:'cm'});
+  sizeMatch = sizeStr.match(/H[\s]*([\d.]+)/i);
+  if(sizeMatch) specs.push({label:'세로 (H)', value:sizeMatch[1], unit:'cm'});
+  sizeMatch = sizeStr.match(/D[\s]*([\d.]+)/i);
+  if(sizeMatch) specs.push({label:'폭 (D)', value:sizeMatch[1], unit:'cm'});
+  if(!specs.length && sizeStr) specs.push({label:'사이즈', value:sizeStr, unit:''});
+
+  var specData = {
+    brand: brand,
+    model: modelKo || modelEn,
+    style_number: styleNo,
+    specs: specs,
+    material: material,
+    made_in: madeIn,
+    source_name: '직접 입력',
+    source_url: ''
+  };
+
+  await saveSpecToSupabase(brand, modelKo, modelEn, specData);
+  renderSpecResult(specData, false);
+
+  // r-sku 자동 반영
+  if(styleNo){
+    var skuEl = document.getElementById('r-sku');
+    if(skuEl && (skuEl.textContent==='—'||!skuEl.textContent.trim())) skuEl.textContent = styleNo;
+  }
+  toast('✅ 스펙 DB 저장 완료');
 }
 
 
