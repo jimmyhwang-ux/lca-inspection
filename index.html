@@ -3849,6 +3849,9 @@ document.addEventListener('keydown',e=>{
     if(modal?.classList.contains('open')){ closeEditModal(); return; }
   }
   if(document.getElementById('lightbox')?.classList.contains('open')) return;
+  // input/textarea에 포커스 중이면 방향키 가로채지 않음
+  const tag=document.activeElement?.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
   if(_focusThumbId&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
     e.preventDefault();
     thumbNav(_focusThumbId,e.key==='ArrowRight'?1:-1);
