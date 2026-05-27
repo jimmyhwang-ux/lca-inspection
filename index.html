@@ -5084,10 +5084,8 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
   }
 
   var candidates = [
-    {model:'gemini-2.5-flash', timeout:30000},
-    {model:'gemini-2.0-flash', timeout:25000},
-    {model:'gemini-2.0-flash-lite-001', timeout:20000},
-    {model:'gemini-2.0-flash-001', timeout:20000}
+    {model:'gemini-2.5-flash', timeout:50000},
+    {model:'gemini-2.5-pro',   timeout:60000}
   ];
 
   var lastErr = '';
