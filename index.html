@@ -338,6 +338,13 @@ input[type=file]{display:none}
 
   <div id="ref-section" style="display:none"></div>
 
+  <!-- 숨겨진 데이터 필드 (기존 로직 호환) -->
+  <div style="display:none">
+    <div id="r-size">—</div>
+    <div id="r-size-name">—</div>
+    <div id="r-sku">—</div>
+  </div>
+
   <!-- ③ 구분선 신규 등록 -->
   <div style="margin:4px 16px;display:flex;align-items:center;gap:8px">
     <div style="flex:1;height:1px;background:#1e1e1e"></div>
@@ -817,12 +824,14 @@ var ACC_MAP = window.ACC_MAP = {
 };
 
 function setCat(cat, btn) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const sel = document.getElementById('acc-select');
-  const items = ACC_MAP[cat] || [];
-  sel.innerHTML = '<option value="">-- 부속품 선택 --</option>' +
-    items.map(i => `<option>${i}</option>`).join('');
+  document.querySelectorAll('#cat-tabs .cat-btn, #unreg-acc-cat-tabs .cat-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const sel = document.getElementById('acc-select')||document.getElementById('unreg-acc-select');
+  if(sel){
+    const items = ACC_MAP[cat] || [];
+    sel.innerHTML = '<option value="">-- 부속품 선택 --</option>' +
+      items.map(i => `<option>${i}</option>`).join('');
+  }
   // 카테고리 변경 시 실측사이즈 초기화
   const sizeEl=document.getElementById('r-size');
   if(sizeEl){
