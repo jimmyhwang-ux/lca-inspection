@@ -451,7 +451,7 @@ input[type=file]{display:none}
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">적재</div>
     <div class="sku-tab" id="tab-list" onclick="switchSkuTab('list')">모델SKU</div>
-    <div class="sku-tab" id="tab-gear" onclick="switchSkuTab('gear')">검기어</div>
+    <div class="sku-tab" id="tab-gear" onclick="switchSkuTab('gear')" style="display:none">검기어</div>
   </div>
 
   <div id="sku-save-panel">
@@ -518,7 +518,7 @@ input[type=file]{display:none}
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="saveToSupabase('model',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ff6b2b;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 SKU</button>
-      <button onclick="saveToSupabase('gear',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
+      <button onclick="saveToSupabase('gear',this)" style="display:none;flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
     </div>
     <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #2a2a2a;color:#ddd;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
   </div>
