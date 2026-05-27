@@ -1735,11 +1735,12 @@ function renderDbMatchCards(matches){
   // renderDbCard가 dbWrap.innerHTML 전체를 교체함
   renderDbCard(0);
 
-  // 첫 번째 카드 자동 적용
-  if(!window._userResetDb){
+  // 첫 번째 카드 자동 적용 — 사용자가 직접 검색한 경우엔 스킵
+  if(!window._userResetDb && !window._userSearched){
     try{ applyDbMatch(matches[0],'db-card-0'); }
     catch(e){ console.error('[renderDbMatchCards]',e); }
   }
+  window._userSearched=false; // 플래그 초기화
 
   // 참고자료 비활성화
 }
@@ -2701,6 +2702,7 @@ if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
 
 if(matches.length>=1){
   clearTimeout(_dbSearchTimer);
+  window._userSearched = true; // 자동 적용 방지
   window._dbSkuItems = matches;
   window._dbGearItems = [];
   _buildDbTabUI();
