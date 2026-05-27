@@ -614,7 +614,7 @@ input[type=file]{display:none}
       <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:16px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
       <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#ddd;width:fit-content">
         + 사진 추가
-        <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none">
+        <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none" onchange="previewEditPhotos(this)">
       </label>
       <div id="ef-new-photo-preview" style="margin-top:6px"></div>
     </div>
@@ -4075,17 +4075,7 @@ function openEditModal(i){
   renderEditAccList(efAccs);
   document.getElementById('edit-modal').classList.add('open');
 
-  // ef-new-photo change 이벤트 — 모달 열릴 때마다 새로 연결
-  const efPhotoBtn = document.getElementById('ef-new-photo');
-  if(efPhotoBtn){
-    const newHandler = function(){ previewEditPhotos(efPhotoBtn); };
-    efPhotoBtn._changeHandler && efPhotoBtn.removeEventListener('change', efPhotoBtn._changeHandler);
-    efPhotoBtn._changeHandler = newHandler;
-    efPhotoBtn.addEventListener('change', newHandler);
-    console.error('[openEditModal] ef-new-photo change 핸들러 연결됨');
-  } else {
-    console.error('[openEditModal] ef-new-photo 요소를 찾을 수 없음!');
-  }
+  // ef-new-photo onchange는 HTML에 직접 연결됨 (previewEditPhotos)
   // 수정 모달 열릴 때 사이즈 값 표시
   setTimeout(()=>{
     const hidden=document.getElementById('ef-size-hidden');
