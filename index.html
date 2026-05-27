@@ -1948,18 +1948,22 @@ function editField(id){
   }
 
   const isSearch=(id==='r-model'||id==='r-model-ko'||id==='r-sku');
-  const trigger=isSearch?'oninput="onResultFieldInput(this,\''+id+'\')"':'';
-  el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" ${trigger}>`;
+  const trigger=isSearch?'onkeydown="if(event.key===\'Enter\'){onResultFieldInput(this,\''+id+'\');}"':'';
+  if(isSearch){
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:4px;width:100%">
+      <input class="editing-input" style="flex:1" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()" ${trigger}>
+      <button onclick="event.stopPropagation();var inp=document.querySelector('#${id} input');if(inp)onResultFieldInput(inp,'${id}',true);" style="background:#22c55e;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;flex-shrink:0;line-height:1" title="검색">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+    </div>`;
+  } else {
+    el.innerHTML=`<input class="editing-input" value="${cur==='—'?'':cur}" onblur="saveField('${id}',this)" onclick="event.stopPropagation()" ondblclick="this.select()">`;
+  }
   const inp=el.querySelector('input');
   // 사용자 직접 편집 플래그 ON
   window._userEditingField=true;
   inp.focus();
   inp.select();
-  // 기존 값이 있으면 탭하자마자 자동 검색 (변경 없이 탭만 해도 검색됨)
-  if(isSearch && cur && cur!=='—' && cur.trim().length>=2){
-    clearTimeout(_dbSearchTimer);
-    _dbSearchTimer=setTimeout(()=>searchDbFromField(id,cur.trim()),800);
-  }
 }
 
 let _sizeVal='';
@@ -2609,11 +2613,12 @@ function onEfModelKoInput(input){
   _efTransTimer=setTimeout(()=>translateToEn(val,'ef-model'),800);
 }
 
-function onResultFieldInput(input,id){
-  clearTimeout(_dbSearchTimer);
-  const val=input.value.trim();
-  if(!val||val.length<2)return;
-  _dbSearchTimer=setTimeout(()=>searchDbFromField(id,val),600);
+function onResultFieldInput(input,id,forceSearch){
+  if(forceSearch || (event && event.key==='Enter')){
+    clearTimeout(_dbSearchTimer);
+    const val=input.value.trim();
+    if(val&&val.length>=2) searchDbFromField(id,val);
+  }
 }
 
 let _searchDbRunning=false;
