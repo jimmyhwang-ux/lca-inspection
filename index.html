@@ -1214,10 +1214,6 @@ function _buildDbTabUI(){
             style="background:transparent;border:0.5px solid transparent;border-bottom:none;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s">
             검기어 ${gearCnt}
           </button>` : ''}
-          <button id="dbtab-search" onclick="_switchDbTab('search')"
-            style="background:transparent;border:0.5px solid transparent;border-bottom:none;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px 6px 0 0;cursor:pointer;transition:all .15s;margin-left:auto">
-            🔍
-          </button>
         </div>
       </div>
 
@@ -2643,42 +2639,47 @@ const v=val.toLowerCase();
 const curBrand=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim().toLowerCase();
 let matches=[];
 if(fieldId==='r-sku'){
-matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v);
+  matches=list.filter(i=>(i.sku_code||'').toLowerCase()===v||
+    (i.sku_code||'').toLowerCase().includes(v));
 }
 if(!matches.length&&(fieldId==='r-model'||fieldId==='r-model-ko')){
-// 1차: 완전 일치
-matches=list.filter(i=>(i.model_name||'').toLowerCase()===v||(i.model_name_ko||'').toLowerCase()===v);
-// 2차: 부분일치 + 토큰 매칭 — 브랜드 필터 먼저 적용
-if(!matches.length){
-// 브랜드 필터 함수
-const normCur=curBrand.replace(/\s+/g,'');
-const curKo=curBrand?(BRAND_KO_MAP[normCur]||BRAND_KO_MAP[curBrand]||'').toLowerCase():'';
-const brandOk=(i)=>{
-  if(!curBrand) return true;
-  const db=(i.brand||'').toLowerCase().replace(/\s+/g,'');
-  if(db.includes(normCur)||normCur.includes(db)) return true;
-  if(curKo&&db.includes(curKo.replace(/\s+/g,''))) return true;
-  const dbEn=Object.entries(BRAND_KO_MAP).find(([,val])=>db.includes(val.toLowerCase().replace(/\s+/g,'')))?.[0]||'';
-  if(dbEn&&(dbEn.includes(normCur)||normCur.includes(dbEn))) return true;
-  return false;
-};
-// 브랜드 필터 적용된 목록만 대상
-const brandList=curBrand?list.filter(brandOk):list;
-// includes 매칭
-const partial=brandList.filter(i=>
-  (i.model_name||'').toLowerCase().includes(v)||v.includes((i.model_name||'').toLowerCase())||
-  (i.model_name_ko||'').toLowerCase().includes(v)||v.includes((i.model_name_ko||'').toLowerCase())
-);
-// 토큰 매칭 — 단어 하나만 맞아도
-const vToks=v.split(/\s+/).filter(w=>w.length>=2);
-const tokenMatched=vToks.length>0?brandList.filter(i=>{
-  const ko=(i.model_name_ko||'').toLowerCase();
-  const en=(i.model_name||'').toLowerCase();
-  return vToks.some(t=>ko.includes(t)||en.includes(t));
-}):[];
-// 합치기 (중복 제거)
-matches=[...partial,...tokenMatched.filter(t=>!partial.some(p=>p.id===t.id))];
-}
+  // 브랜드 필터
+  const normCur=curBrand.replace(/\s+/g,'');
+  const brandOk=(i)=>{
+    if(!curBrand) return true;
+    return _brandMatch(curBrand, i.brand||'');
+  };
+  const brandList=curBrand?list.filter(brandOk):list;
+
+  // 입력값 토큰 (2글자 이상)
+  const vToks=v.split(/\s+/).filter(w=>w.length>=2);
+  // 띄어쓰기 제거 버전
+  const vNoSpace=v.replace(/\s+/g,'');
+
+  // 점수 기반 매칭
+  const scored=brandList.map(i=>{
+    const ko=(i.model_name_ko||'').toLowerCase();
+    const en=(i.model_name||'').toLowerCase();
+    const koNoSpace=ko.replace(/\s+/g,'');
+    const enNoSpace=en.replace(/\s+/g,'');
+    let score=0;
+    // 완전 일치
+    if(ko===v||en===v) score=100;
+    // 포함 (입력값이 모델명에 포함)
+    else if(ko.includes(v)||en.includes(v)) score=80;
+    else if(koNoSpace.includes(vNoSpace)||enNoSpace.includes(vNoSpace)) score=75;
+    // 토큰 매칭 — 모든 토큰이 포함
+    else if(vToks.length>0){
+      const hits=vToks.filter(t=>ko.includes(t)||en.includes(t)||
+        koNoSpace.includes(t.replace(/\s+/g,''))).length;
+      if(hits===vToks.length) score=60+(hits*5);
+      else if(hits>0&&vToks.length<=2) score=40+(hits*5);
+    }
+    return {item:i,score};
+  }).filter(x=>x.score>=60);
+
+  scored.sort((a,b)=>b.score-a.score);
+  matches=scored.slice(0,10).map(x=>x.item);
 }
 if(matches.length>=1){
   clearTimeout(_dbSearchTimer);
