@@ -129,6 +129,32 @@ input[type=file]{display:none}
 .btn-move{flex:2;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;cursor:pointer}
 .btn-move:hover{background:#ff8c55}
 .editing-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;padding:2px 0;font-size:13px;font-weight:700;color:#fff;outline:none;font-family:inherit}
+/* ── Gemini 공식 사이즈 스펙 ── */
+.spec-section{margin:0 16px 10px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,107,43,.3);background:#0d0d0d}
+.spec-section-head{padding:10px 14px;border-bottom:1px solid rgba(255,107,43,.15);display:flex;align-items:center;gap:8px}
+.spec-section-head .sp-badge{background:rgba(255,107,43,.15);color:#ff6b2b;font-size:9px;font-weight:800;padding:2px 7px;border-radius:100px}
+.spec-section-head .sp-title{font-size:12px;font-weight:700;color:#f0f0f0;flex:1}
+.spec-section-head .sp-src{font-size:10px;color:#555}
+.spec-tiles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a1a1a}
+.spec-tile{background:#111;padding:10px 6px;text-align:center}
+.spec-tile-lbl{font-size:9px;color:#888;margin-bottom:3px}
+.spec-tile-val{font-size:14px;font-weight:800;color:#ff6b2b}
+.spec-tile-unit{font-size:9px;color:#666;margin-left:1px}
+.spec-extra-text{padding:9px 14px;font-size:11px;color:#888;line-height:1.6;border-top:1px solid #1a1a1a}
+.spec-extra-text span{color:#ddd}
+.spec-src-row{padding:7px 14px;border-top:1px solid #1a1a1a;font-size:10px;color:#555;display:flex;align-items:center;gap:4px}
+.spec-src-row a{color:#ff6b2b;text-decoration:none}
+.spec-query-chips{display:flex;flex-wrap:wrap;gap:4px;padding:8px 14px;border-top:1px solid #1a1a1a}
+.spec-query-chip{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:20px;font-size:9px;color:#666;padding:2px 8px}
+.gemini-key-bar{margin:8px 16px;background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center}
+.gemini-key-bar input{flex:1;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:7px;padding:7px 10px;font-size:12px;color:#f0f0f0;outline:none;font-family:monospace}
+.gemini-key-bar button{background:#ff6b2b;color:#fff;border:none;border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.local-db-badge{display:inline-block;background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px}
+.spec-btn-wrap{padding:0 16px 10px}
+.spec-run-btn{width:100%;background:rgba(255,107,43,.12);color:#ff6b2b;border:1px solid rgba(255,107,43,.35);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.spec-run-btn:hover{background:rgba(255,107,43,.2)}
+.spec-run-btn:disabled{background:#1a1a1a;color:#555;border-color:#2a2a2a;cursor:not-allowed}
+.spec-spinner{width:14px;height:14px;border:2px solid #333;border-top-color:#ff6b2b;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
 .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#1c1c1c;border:1px solid #333;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#f0f0f0;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #screen-sku{padding:0 16px}
@@ -337,6 +363,25 @@ input[type=file]{display:none}
   <div id="db-match-wrap"></div>
 
   <div id="ref-section" style="display:none"></div>
+
+  <!-- ② 공식 사이즈 스펙 조회 (Gemini) -->
+  <div id="spec-gemini-wrap" style="display:none">
+    <div style="margin:8px 16px 4px;display:flex;align-items:center;gap:8px">
+      <div style="flex:1;height:1px;background:#1e1e1e"></div>
+      <span style="font-size:10px;color:#888;white-space:nowrap">공식 스펙 조회</span>
+      <div style="flex:1;height:1px;background:#1e1e1e"></div>
+    </div>
+    <div class="gemini-key-bar" id="gemini-key-bar">
+      <input type="password" id="gemini-api-key" placeholder="Gemini API 키 (AIza...)" autocomplete="off">
+      <button onclick="saveGeminiKey()">저장</button>
+    </div>
+    <div class="spec-btn-wrap">
+      <button class="spec-run-btn" id="spec-run-btn" onclick="runGeminiSpecSearch()" disabled>
+        📐 브랜드 공식 사이즈 스펙 조회
+      </button>
+    </div>
+    <div id="spec-result-area"></div>
+  </div>
 
   <!-- 숨겨진 데이터 필드 (기존 로직 호환) -->
   <div style="display:none">
@@ -614,7 +659,7 @@ input[type=file]{display:none}
       <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:16px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
       <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#ddd;width:fit-content">
         + 사진 추가
-        <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none" onchange="previewEditPhotos(this)">
+        <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none">
       </label>
       <div id="ef-new-photo-preview" style="margin-top:6px"></div>
     </div>
@@ -4075,7 +4120,17 @@ function openEditModal(i){
   renderEditAccList(efAccs);
   document.getElementById('edit-modal').classList.add('open');
 
-  // ef-new-photo onchange는 HTML에 직접 연결됨 (previewEditPhotos)
+  // ef-new-photo change 이벤트 — 모달 열릴 때마다 새로 연결
+  const efPhotoBtn = document.getElementById('ef-new-photo');
+  if(efPhotoBtn){
+    const newHandler = function(){ previewEditPhotos(efPhotoBtn); };
+    efPhotoBtn._changeHandler && efPhotoBtn.removeEventListener('change', efPhotoBtn._changeHandler);
+    efPhotoBtn._changeHandler = newHandler;
+    efPhotoBtn.addEventListener('change', newHandler);
+    console.error('[openEditModal] ef-new-photo change 핸들러 연결됨');
+  } else {
+    console.error('[openEditModal] ef-new-photo 요소를 찾을 수 없음!');
+  }
   // 수정 모달 열릴 때 사이즈 값 표시
   setTimeout(()=>{
     const hidden=document.getElementById('ef-size-hidden');
@@ -4947,6 +5002,332 @@ function _refreshDbCardPics(idx, itemId){
   (function(i2){ addDiv.onclick = function(e){ e.stopPropagation(); var fi=document.getElementById('dbc-file-'+i2); if(fi) fi.click(); }; })(idx);
   ps.appendChild(addDiv);
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// GEMINI 공식 사이즈 스펙 + SUPABASE 연동
+// ══════════════════════════════════════════════════════════════
+
+var _SB_URL  = 'https://rpenhtoazbdjonezxxwn.supabase.co';
+var _SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZW5odG9hemJkam9uZXp4eHduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTE5NjQsImV4cCI6MjA5NDA4Nzk2NH0.ZjIiZdRo0Zgtto5EStPDAbXZ8JzX2eNjqUN7za0RfAs';
+var _SB_TABLE = 'sku_items';
+
+// ── Supabase 헬퍼 ────────────────────────────────────────────
+function sbHeaders(){
+  return {
+    'Content-Type': 'application/json',
+    'apikey': _SB_KEY,
+    'Authorization': 'Bearer ' + _SB_KEY,
+    'Prefer': 'return=representation'
+  };
+}
+
+// official_specs 컬럼이 있는 행 조회 (brand + model_name_ko 매칭)
+async function fetchSpecFromSupabase(brand, modelKo, modelEn){
+  try{
+    var q = _SB_URL + '/rest/v1/' + _SB_TABLE
+      + '?select=id,brand,model_name,model_name_ko,official_specs'
+      + '&official_specs=not.is.null'
+      + '&limit=5';
+
+    // 브랜드 필터
+    if(brand && brand !== '—'){
+      q += '&brand=eq.' + encodeURIComponent(brand);
+    }
+
+    var res = await fetch(q, { headers: sbHeaders() });
+    if(!res.ok) return null;
+    var rows = await res.json();
+    if(!rows || !rows.length) return null;
+
+    // 모델명 클라이언트 필터
+    var model = (modelKo || modelEn || '').toLowerCase();
+    var matched = rows.find(function(r){
+      var rko = (r.model_name_ko || '').toLowerCase();
+      var ren = (r.model_name || '').toLowerCase();
+      return rko.includes(model) || model.includes(rko) || ren.includes(model) || model.includes(ren);
+    });
+    return matched ? matched.official_specs : null;
+  } catch(e){
+    console.warn('[SB fetchSpec]', e);
+    return null;
+  }
+}
+
+// official_specs를 Supabase SKU 행에 저장 (PATCH)
+async function saveSpecToSupabase(brand, modelKo, modelEn, specs){
+  try{
+    // 저장 대상 행 찾기
+    var q = _SB_URL + '/rest/v1/' + _SB_TABLE
+      + '?select=id&limit=10';
+    if(brand && brand !== '—') q += '&brand=eq.' + encodeURIComponent(brand);
+
+    var res = await fetch(q, { headers: sbHeaders() });
+    if(!res.ok) return;
+    var rows = await res.json();
+    if(!rows || !rows.length){ console.warn('[SB saveSpec] 행 없음'); return; }
+
+    var model = (modelKo || modelEn || '').toLowerCase();
+    // 먼저 DB 매칭 카드 ID 사용 (가장 정확)
+    var appliedId = null;
+    if(window._appliedCardId){
+      var idx = parseInt((window._appliedCardId||'').replace('db-card-',''));
+      var appliedItem = (window._cardMatches||[])[idx];
+      if(appliedItem) appliedId = appliedItem.id;
+    }
+
+    // 타겟 ID 결정
+    var targetId = appliedId || (rows.length === 1 ? rows[0].id : null);
+    if(!targetId){
+      // 모델명으로 클라이언트 필터
+      var mr = rows.find(function(r){ return r.id; });
+      if(mr) targetId = mr.id;
+    }
+    if(!targetId){ console.warn('[SB saveSpec] 저장 대상 ID 없음'); return; }
+
+    var patchRes = await fetch(
+      _SB_URL + '/rest/v1/' + _SB_TABLE + '?id=eq.' + targetId,
+      {
+        method: 'PATCH',
+        headers: sbHeaders(),
+        body: JSON.stringify({ official_specs: specs })
+      }
+    );
+    if(patchRes.ok){
+      console.log('[SB saveSpec] 저장 완료 id=' + targetId);
+      toast('💾 공식 스펙 DB 저장 완료');
+    } else {
+      var et = await patchRes.text();
+      // official_specs 컬럼이 없으면 안내
+      if(et.includes('column') || et.includes('schema')){
+        toast('⚠ Supabase에 official_specs 컬럼을 추가해 주세요 (JSONB)');
+        console.warn('[SB saveSpec] 컬럼 없음 — Supabase에서 ALTER TABLE sku_items ADD COLUMN official_specs JSONB; 실행 필요');
+      }
+    }
+  } catch(e){ console.warn('[SB saveSpec]', e); }
+}
+
+// ── Gemini API 키 관리 ───────────────────────────────────────
+function getGeminiKey(){
+  return sessionStorage.getItem('bungae_gemini_key') || localStorage.getItem('bungae_gemini_key') || '';
+}
+function saveGeminiKey(){
+  var inp = document.getElementById('gemini-api-key');
+  var key = (inp && inp.value.trim()) || '';
+  if(!key.startsWith('AIza')){ toast('⚠ Gemini API 키 형식이 아닙니다 (AIza...)'); return; }
+  sessionStorage.setItem('bungae_gemini_key', key);
+  localStorage.setItem('bungae_gemini_key', key);
+  inp.value = key.substring(0,8) + '••••••••••••••••••••••••••••';
+  document.getElementById('gemini-key-bar').style.display = 'none';
+  document.getElementById('spec-run-btn').disabled = false;
+  toast('✅ Gemini 키 저장됨');
+}
+
+// ── 결과 화면 진입 시 Gemini 섹션 초기화 ────────────────────
+function initSpecSection(){
+  var wrap = document.getElementById('spec-gemini-wrap');
+  if(!wrap) return;
+  wrap.style.display = 'block';
+
+  var key = getGeminiKey();
+  var keyBar = document.getElementById('gemini-key-bar');
+  var runBtn = document.getElementById('spec-run-btn');
+
+  if(key){
+    if(keyBar) keyBar.style.display = 'none';
+    if(runBtn) runBtn.disabled = false;
+  } else {
+    if(keyBar) keyBar.style.display = 'flex';
+    if(runBtn) runBtn.disabled = true;
+  }
+
+  // Supabase에서 먼저 캐시된 스펙 로드 시도
+  var brand   = (document.getElementById('r-brand')||{}).textContent||'';
+  var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
+  var modelEn = (document.getElementById('r-model')||{}).textContent||'';
+
+  document.getElementById('spec-result-area').innerHTML =
+    '<div style="padding:10px 14px;font-size:11px;color:#555">Supabase에서 스펙 확인 중...</div>';
+
+  fetchSpecFromSupabase(brand, modelKo, modelEn).then(function(cached){
+    if(cached){
+      renderSpecResult(cached, true);
+      if(runBtn) runBtn.textContent = '📐 공식 스펙 재조회';
+    } else {
+      document.getElementById('spec-result-area').innerHTML = '';
+      if(runBtn) runBtn.textContent = '📐 브랜드 공식 사이즈 스펙 조회';
+    }
+  });
+}
+
+// ── Gemini 공식 사이즈 스펙 조회 메인 함수 ──────────────────
+async function runGeminiSpecSearch(){
+  var key = getGeminiKey();
+  if(!key){ toast('⚠ Gemini API 키를 먼저 입력하세요'); document.getElementById('gemini-key-bar').style.display='flex'; return; }
+
+  var brand   = (document.getElementById('r-brand')||{}).textContent||'';
+  var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
+  var modelEn = (document.getElementById('r-model')||{}).textContent||'';
+  var cat = '';
+  var catTag = document.getElementById('r-cat-tag');
+  if(catTag) cat = catTag.textContent.replace('✎','').trim();
+
+  if(!brand || brand==='—'){ toast('⚠ 브랜드를 먼저 확인해 주세요'); return; }
+
+  var runBtn = document.getElementById('spec-run-btn');
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<span class="spec-spinner"></span> 공식 사이트 검색 중...';
+  document.getElementById('spec-result-area').innerHTML =
+    '<div style="padding:16px;text-align:center;font-size:12px;color:#888">브랜드 공식 사이트에서<br>사이즈 스펙을 검색 중입니다...</div>';
+
+  try{
+    var result = await callGeminiSizeSpec(key, brand, modelKo, modelEn, cat);
+    renderSpecResult(result, false);
+    // Supabase에 저장 (비동기, 실패해도 UI 영향 없음)
+    saveSpecToSupabase(brand, modelKo, modelEn, result);
+    runBtn.textContent = '📐 공식 스펙 재조회';
+  } catch(err){
+    document.getElementById('spec-result-area').innerHTML =
+      '<div style="padding:12px 16px;font-size:12px;color:#ef4444">❌ ' + err.message + '</div>';
+    runBtn.textContent = '📐 다시 시도';
+  }
+  runBtn.disabled = false;
+}
+
+// ── Gemini API 호출 ──────────────────────────────────────────
+async function callGeminiSizeSpec(apiKey, brand, modelKo, modelEn, cat){
+  var prompt = '당신은 명품 전문 감정사입니다. 반드시 구글 검색을 통해 브랜드 공식 사이트 정보를 조회하세요.\n\n'
+    + '[조회 대상]\n'
+    + '- 브랜드: ' + brand + '\n'
+    + '- 모델명: ' + (modelKo || modelEn) + '\n'
+    + '- 카테고리: ' + (cat || '명품') + '\n\n'
+    + '[검색 대상 사이트] 에르메스→hermes.com, 샤넬→chanel.com, 루이비통→louisvuitton.com, '
+    + '롤렉스→rolex.com, 구찌→gucci.com, 디올→dior.com, 프라다→prada.com, '
+    + '발렌시아가→balenciaga.com, 보테가베네타→bottegaveneta.com, 셀린느→celine.com\n\n'
+    + '[출력 형식] 아래 JSON만 출력. 서론/마크다운 없이.\n'
+    + '{\n'
+    + '  "brand": "브랜드명",\n'
+    + '  "model": "정확한 모델명",\n'
+    + '  "style_number": "스타일번호/레퍼런스번호",\n'
+    + '  "category": "카테고리",\n'
+    + '  "specs": [\n'
+    + '    {"label": "가로 (W)", "value": "30", "unit": "cm"},\n'
+    + '    {"label": "세로 (H)", "value": "22", "unit": "cm"},\n'
+    + '    {"label": "폭 (D)", "value": "16", "unit": "cm"}\n'
+    + '  ],\n'
+    + '  "material": "소재",\n'
+    + '  "color_options": "컬러 라인업 (공식 제공 시)",\n'
+    + '  "made_in": "제조국",\n'
+    + '  "extra_info": "추가 특이사항 (하드웨어, 클로저 방식 등)",\n'
+    + '  "source_url": "공식 사이트 URL",\n'
+    + '  "source_name": "참고 사이트명",\n'
+    + '  "search_queries": ["검색한 쿼리1", "검색한 쿼리2"]\n'
+    + '}';
+
+  var modelCandidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  var lastErr = '';
+  for(var i = 0; i < modelCandidates.length; i++){
+    var model = modelCandidates[i];
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+    var tools = model.startsWith('gemini-1.5') ? [{google_search_retrieval:{}}] : [{google_search:{}}];
+    try{
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          contents: [{parts: [{text: prompt}]}],
+          tools: tools,
+          generationConfig: {temperature: 0.1, maxOutputTokens: 2000}
+        })
+      });
+      if(!res.ok){ var et = await res.text(); lastErr = model + ': ' + res.status + ' ' + et.substring(0,200); continue; }
+      var data = await res.json();
+      var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
+      if(!rawText) throw new Error('응답이 비어있습니다');
+      var jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if(!jsonMatch) throw new Error('JSON 파싱 실패');
+      var parsed = JSON.parse(jsonMatch[0]);
+      var gm = (data.candidates||[])[0]?.groundingMetadata || {};
+      if(gm.webSearchQueries && !parsed.search_queries) parsed.search_queries = gm.webSearchQueries;
+      if(gm.groundingChunks) parsed._sources = gm.groundingChunks.map(function(c){ return c.web; }).filter(Boolean);
+      return parsed;
+    } catch(e){ lastErr = model + ': ' + e.message; }
+  }
+  throw new Error('Gemini 연결 실패: ' + lastErr);
+}
+
+// ── 스펙 결과 렌더링 ─────────────────────────────────────────
+function renderSpecResult(data, fromCache){
+  var area = document.getElementById('spec-result-area');
+  if(!area || !data) return;
+
+  var tilesHtml = '';
+  if(data.style_number && data.style_number !== '—' && data.style_number !== 'N/A'){
+    tilesHtml += '<div class="spec-tile"><div class="spec-tile-lbl">스타일 번호</div>'
+      + '<div class="spec-tile-val" style="font-size:11px">' + data.style_number + '</div></div>';
+  }
+  if(Array.isArray(data.specs)){
+    data.specs.forEach(function(s){
+      if(!s.value || s.value === '—' || s.value === 'N/A') return;
+      tilesHtml += '<div class="spec-tile"><div class="spec-tile-lbl">' + s.label + '</div>'
+        + '<div class="spec-tile-val">' + s.value + '<span class="spec-tile-unit">' + s.unit + '</span></div></div>';
+    });
+  }
+
+  var extraParts = [];
+  if(data.material   && data.material   !== '—') extraParts.push('<span>소재</span> '  + data.material);
+  if(data.made_in    && data.made_in    !== '—') extraParts.push('<span>제조국</span> ' + data.made_in);
+  if(data.color_options && data.color_options !== '—') extraParts.push('<span>컬러</span> ' + data.color_options);
+  if(data.extra_info && data.extra_info !== '—') extraParts.push(data.extra_info);
+
+  var queryHtml = '';
+  if(data.search_queries && data.search_queries.length){
+    queryHtml = '<div class="spec-query-chips">'
+      + data.search_queries.map(function(q){ return '<span class="spec-query-chip">🔍 ' + q + '</span>'; }).join('')
+      + '</div>';
+  }
+
+  var srcHtml = '';
+  if(data.source_url){
+    srcHtml = '<div class="spec-src-row">출처: <a href="' + data.source_url + '" target="_blank">' + (data.source_name||data.source_url) + '</a></div>';
+  } else if(data._sources && data._sources.length){
+    var s0 = data._sources[0];
+    srcHtml = '<div class="spec-src-row">출처: <a href="' + (s0.uri||'#') + '" target="_blank">' + (s0.title||s0.uri||'공식 사이트') + '</a></div>';
+  }
+
+  var cacheLabel = fromCache
+    ? '<span class="local-db-badge">Supabase DB</span>'
+    : '<span style="font-size:9px;color:#22c55e;margin-left:4px">● LIVE</span>';
+
+  area.innerHTML =
+    '<div class="spec-section">'
+    + '<div class="spec-section-head">'
+    + '<span class="sp-badge">공식 자료</span>'
+    + '<span class="sp-title">' + (data.brand||'') + ' ' + (data.model||'') + cacheLabel + '</span>'
+    + '</div>'
+    + (tilesHtml ? '<div class="spec-tiles-grid">' + tilesHtml + '</div>' : '')
+    + (extraParts.length ? '<div class="spec-extra-text">' + extraParts.join(' &nbsp;·&nbsp; ') + '</div>' : '')
+    + srcHtml
+    + queryHtml
+    + '</div>';
+
+  // 스타일번호 자동 반영 (r-sku 비어있을 때만)
+  var skuEl = document.getElementById('r-sku');
+  if(skuEl && data.style_number && (skuEl.textContent === '—' || !skuEl.textContent.trim())){
+    skuEl.textContent = data.style_number;
+    skuEl.className = 'info-cell-val';
+  }
+}
+
+// ── showScreen 훅: result 화면 진입 시 initSpecSection 자동 실행 ──
+var _origShowScreen = showScreen;
+showScreen = function(id){
+  _origShowScreen(id);
+  if(id === 'result') setTimeout(initSpecSection, 200);
+};
+
+
+
 
 </script>
 
