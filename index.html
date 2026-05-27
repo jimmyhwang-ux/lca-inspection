@@ -493,6 +493,12 @@ input[type=file]{display:none}
   </div>
 
   <div id="sku-save-panel">
+    <!-- ✨ AI 스펙 자동완성 버튼 -->
+    <button id="ai-autofill-btn" onclick="aiAutoFillSpec()" style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;color:#ff6b2b;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px">
+      ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
+    </button>
+    <div id="ai-autofill-status" style="display:none;font-size:11px;color:#888;text-align:center;margin:-6px 0 10px;padding:6px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a"></div>
+
     <div class="sku-photos" id="sku-photo-wrap"></div>
     <!-- 적재탭 사진 추가 -->
     <div style="margin-bottom:10px">
@@ -4986,6 +4992,209 @@ function openSpecGoogleSearch(){
 
 // ── 결과 화면 진입 시 구글 검색 버튼 노출 ───────────────────
 // showScreen 훅 제거 - 대신 showScreen('result') 호출 직후에 버튼 노출
+
+
+// ══════════════════════════════════════════════════════════════
+// ✨ AI 스펙 자동완성 — Gemini google_search 기반
+// ══════════════════════════════════════════════════════════════
+
+var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
+
+function _getGeminiKey(){
+  return sessionStorage.getItem(_GEMINI_KEY_STORAGE)
+      || localStorage.getItem(_GEMINI_KEY_STORAGE) || '';
+}
+
+function _promptGeminiKey(){
+  var key = prompt('Gemini API 키를 입력해주세요 (AIza...)\n\naistudio.google.com 에서 무료 발급 가능합니다.');
+  if(!key || !key.startsWith('AIza')){ toast('⚠ 올바른 Gemini API 키가 아닙니다'); return ''; }
+  sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
+  localStorage.setItem(_GEMINI_KEY_STORAGE, key);
+  toast('✅ Gemini 키 저장됨');
+  return key;
+}
+
+async function aiAutoFillSpec(){
+  // 브랜드·모델 읽기
+  var brand   = (document.getElementById('sku-brand')||{}).value||'';
+  var modelKo = (document.getElementById('sku-model-ko')||{}).value||'';
+  var modelEn = (document.getElementById('sku-model')||{}).value||'';
+  var cat     = (document.getElementById('sku-cat')||{}).value||'가방';
+
+  if(!brand && !modelKo){ toast('⚠ 브랜드와 모델명을 먼저 입력해주세요'); return; }
+
+  var key = _getGeminiKey() || _promptGeminiKey();
+  if(!key) return;
+
+  var btn    = document.getElementById('ai-autofill-btn');
+  var status = document.getElementById('ai-autofill-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,107,43,.3);border-top-color:#ff6b2b;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span>AI가 공식 사이즈 검색 중...';
+  status.style.display = 'block';
+  status.textContent = (brand + ' ' + (modelKo||modelEn)) + ' 공식 스펙 검색 중...';
+
+  try{
+    var result = await _callGeminiAutoFill(key, brand, modelKo, modelEn, cat);
+    _applySpecToForm(result, cat);
+    status.style.display = 'none';
+    btn.innerHTML = '✅ 자동완성 완료 — 내용 확인 후 저장하세요';
+    btn.style.background = 'linear-gradient(135deg,rgba(34,197,94,.15),rgba(34,197,94,.08))';
+    btn.style.borderColor = 'rgba(34,197,94,.4)';
+    btn.style.color = '#22c55e';
+    toast('✨ AI 스펙 자동완성 완료!');
+  } catch(err){
+    console.error('[AI AutoFill]', err);
+    status.style.display = 'block';
+    status.style.color = '#ef4444';
+    status.textContent = '❌ ' + (err.message||'조회 실패') + ' — 잠시 후 다시 시도해주세요';
+    btn.disabled = false;
+    btn.innerHTML = '✨ AI 스펙 자동완성 다시 시도';
+  }
+  btn.disabled = false;
+}
+
+async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
+  var modelName = modelKo || modelEn || '';
+  var prompt = '당신은 명품 전문 감정사입니다. 구글 검색으로 브랜드 공식 사이트에서 아래 상품의 스펙을 찾아주세요.\n\n'
+    + '[조회 상품]\n'
+    + '- 브랜드: ' + brand + '\n'
+    + '- 모델명: ' + modelName + '\n'
+    + '- 카테고리: ' + cat + '\n\n'
+    + '[검색 우선 사이트] 에르메스→hermes.com, 샤넬→chanel.com, 루이비통→louisvuitton.com, '
+    + '롤렉스→rolex.com, 구찌→gucci.com, 디올→dior.com, 프라다→prada.com, '
+    + '발렌시아가→balenciaga.com, 보테가베네타→bottegaveneta.com, 셀린느→celine.com\n\n'
+    + '[출력] 아래 JSON만. 다른 텍스트 없이.\n'
+    + '{\n'
+    + '  "style_number": "스타일번호 (예: M41534)",\n'
+    + '  "size_w": "가로 수치만 (예: 30)",\n'
+    + '  "size_h": "세로 수치만 (예: 22)",\n'
+    + '  "size_d": "폭/깊이 수치만 (예: 16)",\n'
+    + '  "size_unit": "cm 또는 mm",\n'
+    + '  "size_label": "사이즈 명칭 (예: MM, GM, 30)",\n'
+    + '  "material": "소재 (예: 모노그램 캔버스)",\n'
+    + '  "made_in": "제조국 (예: 프랑스)",\n'
+    + '  "official_url": "공식 페이지 URL",\n'
+    + '  "notes": "소재·하드웨어·클로저 등 검수 참고 정보 1~2줄"\n'
+    + '}';
+
+  function fetchWithTimeout(url, opts, ms){
+    var ctrl = new AbortController();
+    var tid = setTimeout(function(){ ctrl.abort(); }, ms);
+    return fetch(url, Object.assign({}, opts, {signal: ctrl.signal})).finally(function(){ clearTimeout(tid); });
+  }
+
+  var candidates = [
+    {model:'gemini-2.5-flash', timeout:30000},
+    {model:'gemini-2.0-flash', timeout:25000},
+    {model:'gemini-2.0-flash-lite-001', timeout:20000},
+    {model:'gemini-2.0-flash-001', timeout:20000}
+  ];
+
+  var lastErr = '';
+  for(var i=0; i<candidates.length; i++){
+    var mc = candidates[i];
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + mc.model + ':generateContent?key=' + apiKey;
+    try{
+      console.log('[AI AutoFill] 시도:', mc.model);
+      var res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          contents: [{parts: [{text: prompt}]}],
+          tools: [{google_search: {}}],
+          generationConfig: {temperature: 0.1, maxOutputTokens: 1000}
+        })
+      }, mc.timeout);
+
+      if(!res.ok){
+        var et = await res.text();
+        lastErr = mc.model + ': HTTP ' + res.status;
+        if(res.status === 429){
+          console.log('[AI AutoFill] 429 — 3초 대기 후 다음 모델');
+          await new Promise(function(r){ setTimeout(r, 3000); });
+        }
+        continue;
+      }
+
+      var data = await res.json();
+      var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
+      if(!rawText){ lastErr = mc.model + ': 빈 응답'; continue; }
+
+      var jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*?\})/);
+      if(!jsonMatch){ lastErr = mc.model + ': JSON 없음'; continue; }
+
+      var parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      console.log('[AI AutoFill] 성공:', mc.model, parsed);
+      return parsed;
+
+    } catch(e){
+      lastErr = mc.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
+      console.warn('[AI AutoFill]', lastErr);
+    }
+  }
+  throw new Error(lastErr || '모든 모델 실패');
+}
+
+function _applySpecToForm(data, cat){
+  if(!data) return;
+
+  // 스타일번호
+  if(data.style_number && data.style_number !== '—' && data.style_number !== 'N/A'){
+    var skuEl = document.getElementById('sku-sku');
+    if(skuEl && !skuEl.value) skuEl.value = data.style_number;
+  }
+
+  // 사이트 URL
+  if(data.official_url && data.official_url !== '—'){
+    var urlEl = document.getElementById('sku-url');
+    if(urlEl && !urlEl.value) urlEl.value = data.official_url;
+  }
+
+  // 사이즈 명칭
+  if(data.size_label && data.size_label !== '—'){
+    var snEl = document.getElementById('sku-size-name');
+    if(snEl && !snEl.value) snEl.value = data.size_label;
+  }
+
+  // 실측 사이즈 — hidden input에 값 세팅 후 wrap 업데이트
+  var w = data.size_w; var h = data.size_h; var d = data.size_d;
+  var unit = data.size_unit || 'cm';
+  if(w || h){
+    var parts = [];
+    if(w) parts.push('가로 ' + w + unit);
+    if(h) parts.push('세로 ' + h + unit);
+    if(d) parts.push('너비 ' + d + unit);
+    var sizeStr = parts.join(' × ');
+
+    // hidden input 세팅
+    var hidden = document.getElementById('sku-size-hidden');
+    if(!hidden){
+      hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.id = 'sku-size-hidden';
+      var sizeWrap = document.getElementById('sku-size-wrap');
+      if(sizeWrap) sizeWrap.parentNode.appendChild(hidden);
+    }
+    hidden.value = sizeStr;
+
+    // 표시 업데이트
+    var wrap = document.getElementById('sku-size-wrap');
+    if(wrap){
+      wrap.innerHTML = '<span style="font-size:13px;font-weight:700;color:#fff">' + sizeStr + '</span>';
+    }
+  }
+
+  // 특이사항 (소재·제조국·노트 합치기)
+  var noteParts = [];
+  if(data.material && data.material !== '—') noteParts.push('소재: ' + data.material);
+  if(data.made_in  && data.made_in  !== '—') noteParts.push('제조국: ' + data.made_in);
+  if(data.notes    && data.notes    !== '—') noteParts.push(data.notes);
+  if(noteParts.length){
+    var notesEl = document.getElementById('sku-notes');
+    if(notesEl && !notesEl.value) notesEl.value = noteParts.join(' | ');
+  }
+}
+
 
 </script>
 
