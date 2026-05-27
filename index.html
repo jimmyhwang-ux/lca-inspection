@@ -466,7 +466,7 @@ input[type=file]{display:none}
   <div class="bottom-bar">
     <div class="btn-row">
       <button class="btn-sec" onclick="resetAll()">↩ 다시</button>
-      <button class="btn-copy" onclick="copyResult()" style="opacity:0.3;pointer-events:none">📋 복사</button>
+      <button class="btn-copy" onclick="goToSku()" style="opacity:1;pointer-events:auto">🗂 SKU 관리</button>
     </div>
   </div>
 </div>
@@ -1933,17 +1933,30 @@ async function renderResult(){
   }
 
   const lensEl=document.getElementById('lens-results');
-  if(visualMatches.length){
-    lensEl.innerHTML=visualMatches.slice(0,10).map(m=>{
+  // visualMatches 디버깅
+  console.error('[LENS] visualMatches:', JSON.stringify({
+    count: visualMatches.length,
+    keys: visualMatches.length ? Object.keys(visualMatches[0]) : [],
+    resultDataKeys: Object.keys(resultData)
+  }));
+  // resultData에서 다양한 키로 렌즈 결과 추출 (백엔드 응답 키명 차이 대응)
+  const _lensResults = visualMatches.length ? visualMatches
+    : (resultData.visual_matches||resultData.lens_results||resultData.images_results||[]);
+  if(_lensResults.length){
+    lensEl.innerHTML=_lensResults.slice(0,15).map(m=>{
       const price=m.price?(typeof m.price==='object'?m.price.extracted_price||m.price.raw||'':m.price):'';
-      return`<div class="lens-card" onclick="window.open('${m.link}','_blank')">
-        <img src="${m.thumbnail||''}" alt="" onerror="this.style.display='none'">
+      const thumb=m.thumbnail||m.image||m.img||'';
+      const link=m.link||m.url||'#';
+      return`<div class="lens-card" onclick="window.open('${link}','_blank')">
+        <img src="${thumb}" alt="" onerror="this.style.display='none'">
         <div class="lens-info">
-          <div class="lens-title">${m.title||'—'}</div>
+          <div class="lens-title">${m.title||m.name||'—'}</div>
           ${price?`<div class="lens-price">${price}</div>`:''}
-          <div class="lens-src">${m.source||''}</div>
+          <div class="lens-src">${m.source||m.site||''}</div>
         </div></div>`;
     }).join('');
+  } else {
+    lensEl.innerHTML='<div style="font-size:12px;color:#888;padding:8px">유사 상품을 찾지 못했어요 — 모델명 입력 후 🔍 버튼으로 재검색 가능합니다</div>';
   }
   // 카테고리 탭 자동 동기화
   if(analysis.category) syncCatTab(analysis.category);
@@ -4667,17 +4680,15 @@ async function saveUnregSku(btn){
     let uploadedUrls=[];
     if(_unregPhotos.length){
       toast('⏳ 사진 업로드 중...');
-      const token=localStorage.getItem('lca_token')||'';
       uploadedUrls=await Promise.all(_unregPhotos.map(async dataUrl=>{
         const b64=dataUrl.split(',')[1];
-        const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json','x-access-token':token},body:JSON.stringify({action:'upload_image',imageBase64:b64})});
+        const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'upload_image',imageBase64:b64})});
         const j=await res.json();
         return j.url||'';
       }));
       uploadedUrls=uploadedUrls.filter(Boolean);
     }
 
-    const token=localStorage.getItem('lca_token')||'';
     const skuData={
       brand, model_name_ko:modelKo, model_name:modelEn,
       category:cat, color, size_actual:sizeHidden,
@@ -4688,7 +4699,7 @@ async function saveUnregSku(btn){
       ref_image_url:uploadedUrls[0]||null,
       source:'model'
     };
-    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json','x-access-token':token},body:JSON.stringify({action:'save_sku',skuData})});
+    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save_sku',skuData})});
     const j=await res.json();
     if(j.success){
       toast('✅ DB 저장 완료!');
@@ -4698,7 +4709,6 @@ async function saveUnregSku(btn){
         if(el) el.value='';
       });
       document.getElementById('unreg-size-hidden').value='';
-      document.getElementById('unreg-size-display').textContent='탭하여 입력';
       document.getElementById('unreg-size-wrap').innerHTML='<span id="unreg-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span>';
       _unregPhotos=[]; _renderUnregPhotos();
       _unregAccList=[]; _renderUnregAccList();
