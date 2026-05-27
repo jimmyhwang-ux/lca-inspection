@@ -3409,9 +3409,9 @@ function renderSkuPage(wrapId){
                   'gear':[{src:'model',label:'모델SKU로 이동',bg:'#1a1200',border:'rgba(34,197,94,.4)',color:'#22c55e'}],
                 };
                 const targets=moveTargets[itemSource]||moveTargets['model'];
-                const moveBtns=targets.map(t=>'<button onclick="event.stopPropagation();copySkuTo(\'' + item.id + '\',\'' + t.src + '\')" style="flex:1;background:' + t.bg + ';border:1px solid ' + t.border + ';color:' + t.color + ';font-size:12px;font-weight:700;padding:7px;border-radius:8px;cursor:pointer">' + t.label + '</button>').join('');
+                const moveBtns=''; // 이동 버튼 비활성화
                 const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+item.id+'\','+ pi +')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+item.id+'\','+ pi +')"><div id="pchk-'+item.id+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
-                const photoGrid='<div style="display:flex;gap:6px;margin-bottom:6px">' + moveBtns + '</div>'
+                const photoGrid='<div style="display:none;gap:6px;margin-bottom:6px">' + moveBtns + '</div>'
                   + (thumbChecks ? '<div id="tgrid-'+item.id+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' + thumbChecks + '</div>' : '<div id="tgrid-'+item.id+'"></div>');
                 return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
                   <img id="${slId}-img" src="${allImgs[0]}"
