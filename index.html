@@ -370,9 +370,15 @@ input[type=file]{display:none}
   <div style="margin-bottom:10px">
     <div id="unreg-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
     <input type="file" id="unreg-new-photo" accept="image/*" multiple style="display:none" onchange="previewUnregPhotos(this)">
-    <button onclick="document.getElementById('unreg-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#ddd;border-radius:10px;padding:10px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-      <span style="font-size:16px">📷</span><span>사진 추가 · 탭하거나 붙여넣기</span>
-    </button>
+    <div id="unreg-drop-zone"
+      onclick="document.getElementById('unreg-new-photo').click()"
+      ondragover="event.preventDefault();this.style.borderColor='#ff6b2b'"
+      ondragleave="this.style.borderColor='#333'"
+      ondrop="event.preventDefault();this.style.borderColor='#333';handleUnregDrop(event)"
+      style="width:100%;background:#1a1a1a;border:1.5px dashed #333;color:#ddd;border-radius:10px;padding:14px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;transition:border-color .2s">
+      <span style="font-size:18px">📷</span>
+      <span>사진 추가 · 탭하거나 드래그앤드롭 · 붙여넣기</span>
+    </div>
   </div>
 
   <!-- 폼 필드 -->
@@ -460,7 +466,7 @@ input[type=file]{display:none}
   <div class="bottom-bar">
     <div class="btn-row">
       <button class="btn-sec" onclick="resetAll()">↩ 다시</button>
-      <button class="btn-copy" onclick="copyResult()">📋 복사</button>
+      <button class="btn-copy" onclick="copyResult()" style="opacity:0.3;pointer-events:none">📋 복사</button>
     </div>
   </div>
 </div>
@@ -1945,7 +1951,9 @@ async function renderResult(){
 }
 
 function renderAcc(){
-  document.getElementById('acc-list').innerHTML=accessories.map((a,i)=>`
+  const el=document.getElementById('acc-list');
+  if(!el) return;
+  el.innerHTML=accessories.map((a,i)=>`
     <div class="acc-item">
       <div class="acc-name" style="font-size:13px;font-weight:600;color:#f0f0f0;flex:1">${a.name}</div>
       <button class="acc-del" onclick="delAcc(${i})" style="color:#ef4444;font-size:18px;background:none;border:none;cursor:pointer;padding:0 4px">✕</button>
@@ -4498,6 +4506,19 @@ function toggleUnregisteredSection(){
 var _unregAccList = [];
 var _unregPhotos = []; // {dataUrl}
 
+function handleUnregDrop(e){
+  const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'));
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      _unregPhotos.push(ev.target.result);
+      _renderUnregPhotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  if(files.length) toast('📷 '+files.length+'장 추가됨');
+}
+
 function previewUnregPhotos(input){
   if(!input.files.length) return;
   const files=[...input.files];
@@ -4556,8 +4577,15 @@ function _renderUnregAccList(){
 }
 
 function onUnregCatChange(sel){
-  // 카테고리 변경 시 부속품 탭 업데이트
-  setUnregAccCat(sel.value, document.querySelector('#unreg-acc-cat-tabs .cat-btn.active')||document.querySelector('#unreg-acc-cat-tabs .cat-btn'));
+  const cat=sel.value;
+  // 부속품 탭 업데이트
+  const activeBtn=document.querySelector('#unreg-acc-cat-tabs .cat-btn.active')||document.querySelector('#unreg-acc-cat-tabs .cat-btn');
+  if(activeBtn) setUnregAccCat(cat, activeBtn);
+  // 실측 필드 카테고리에 맞게 재렌더
+  const wrap=document.getElementById('unreg-size-wrap');
+  if(wrap && wrap.querySelector('input')){
+    editUnregSize(); // 이미 열려있으면 재렌더
+  }
 }
 
 function editUnregSize(){
