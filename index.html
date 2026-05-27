@@ -374,12 +374,17 @@ input[type=file]{display:none}
     <div class="info-cell">
       <div class="info-cell-label" style="display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:visible">
         <span style="white-space:nowrap">스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></span>
-        <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#ddd;display:flex;align-items:center;flex-shrink:0" id="sku-search-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-        </button>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button onclick="(function(){var v=(document.getElementById('r-sku').textContent||'').replace('—','').trim();if(v)onResultFieldInput({value:v},'r-sku',true);})()" title="DB SKU 검색" style="background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);border-radius:5px;padding:2px 5px;cursor:pointer;display:flex;align-items:center;flex-shrink:0">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </button>
+          <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#ddd;display:flex;align-items:center;flex-shrink:0" id="sku-search-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="info-cell-val muted" id="r-sku" onclick="editField('r-sku')">—</div>
     </div>
@@ -2690,6 +2695,22 @@ if(matches.length>=1){
   // SKU 탭에서 결과 표시 (검색탭 전환 안 함)
   _switchDbTab('sku');
   renderDbMatchCards(matches);
+} else {
+  // 모델명 검색 결과 없으면 SKU 번호로 재시도
+  const skuMatches = list.filter(i=>{
+    const sku=(i.sku_code||'').toLowerCase().replace(/[\s\-]/g,'');
+    const vClean=v.replace(/[\s\-]/g,'');
+    return sku.includes(vClean)||vClean.includes(sku);
+  });
+  if(skuMatches.length>=1){
+    clearTimeout(_dbSearchTimer);
+    window._dbSkuItems = skuMatches;
+    window._dbGearItems = [];
+    _buildDbTabUI();
+    _switchDbTab('sku');
+    renderDbMatchCards(skuMatches);
+    toast('🔍 SKU 번호로 '+skuMatches.length+'개 매칭');
+  }
 }
 }catch(e){console.warn('자동조회 실패',e);} finally{_searchDbRunning=false;}
 }
