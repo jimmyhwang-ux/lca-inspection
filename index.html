@@ -5235,7 +5235,8 @@ async function runGeminiSpecSearch(){
     '<div style="padding:16px;text-align:center;font-size:12px;color:#888">브랜드 공식 사이트에서<br>사이즈 스펙을 검색 중입니다...</div>';
 
   try{
-    var result = await callGeminiSizeSpec(key, brand, modelKo, modelEn, cat);
+    var styleNo = (document.getElementById('r-sku')||{}).textContent||'';
+    var result = await callGeminiSizeSpec(key, brand, modelKo, modelEn, cat, styleNo);
     renderSpecResult(result, false);
     // Supabase에 저장 (비동기, 실패해도 UI 영향 없음)
     saveSpecToSupabase(brand, modelKo, modelEn, result);
@@ -5255,13 +5256,26 @@ async function runGeminiSpecSearch(){
 }
 
 // ── Gemini API 호출 ──────────────────────────────────────────
-async function callGeminiSizeSpec(apiKey, brand, modelKo, modelEn, cat){
+async function callGeminiSizeSpec(apiKey, brand, modelKo, modelEn, cat, styleNo){
+  // 검색 키워드: 스타일번호 있으면 우선 사용, 없으면 모델명
+  var hasStyleNo = styleNo && styleNo !== '—' && styleNo !== 'N/A' && styleNo.trim();
+  var searchKeyword = hasStyleNo
+    ? (brand + ' ' + styleNo)
+    : (brand + ' ' + (modelKo || modelEn));
+
   var prompt = '당신은 명품 전문 감정사입니다. 반드시 구글 검색을 통해 브랜드 공식 사이트 정보를 조회하세요.\n\n'
     + '[조회 대상]\n'
     + '- 브랜드: ' + brand + '\n'
     + '- 모델명: ' + (modelKo || modelEn) + '\n'
+    + (hasStyleNo ? '- 스타일번호: ' + styleNo + ' ← 이 번호로 우선 검색하세요\n' : '')
     + '- 카테고리: ' + (cat || '명품') + '\n\n'
-    + '[검색 대상 사이트] 에르메스→hermes.com, 샤넬→chanel.com, 루이비통→louisvuitton.com, '
+    + '[검색 전략]\n'
+    + (hasStyleNo
+      ? '1순위: 스타일번호 "' + styleNo + '"로 공식 사이트 직접 검색 (가장 정확)\n'
+        + '2순위: 모델명 "' + (modelKo||modelEn) + '"으로 검색\n'
+      : '1순위: 모델명 "' + (modelKo||modelEn) + '"으로 공식 사이트 검색\n'
+        + '2순위: 브랜드 + 모델명 영문으로 검색\n')
+    + '\n[검색 대상 사이트] 에르메스→hermes.com, 샤넬→chanel.com, 루이비통→louisvuitton.com, '
     + '롤렉스→rolex.com, 구찌→gucci.com, 디올→dior.com, 프라다→prada.com, '
     + '발렌시아가→balenciaga.com, 보테가베네타→bottegaveneta.com, 셀린느→celine.com\n\n'
     + '[출력 형식] 아래 JSON만 출력. 서론/마크다운 없이.\n'
@@ -5528,11 +5542,14 @@ async function callGeminiPlatformSearch(apiKey, brand, modelKo, modelEn, styleNo
     + '[조회 상품]\n'
     + '- 브랜드: ' + brand + '\n'
     + '- 모델명: ' + modelName + '\n'
-    + (styleNo && styleNo !== '—' ? '- 스타일번호: ' + styleNo + '\n' : '')
+    + (styleNo && styleNo !== '—' ? '- 스타일번호: ' + styleNo + ' ← 스타일번호가 있으면 이것으로 우선 검색\n' : '')
     + '\n[검색 방법]\n'
-    + '1. kream.co.kr 에서 "' + brand + ' ' + modelName + ' 스펙" 검색 → 상품 상세 페이지의 사이즈/소재 정보 추출\n'
-    + '2. gugus.com 에서 "' + brand + ' ' + modelName + '" 검색 → 상품 상세 페이지의 스펙 정보 추출\n'
-    + '3. trenbe.com 에서 "' + brand + ' ' + modelName + '" 검색 → 상품 상세 페이지의 스펙 정보 추출\n\n'
+    + (styleNo && styleNo !== '—'
+      ? '0순위: 스타일번호 "' + styleNo + '"로 각 플랫폼에서 직접 검색 (가장 정확)\n'
+      : '')
+    + '1. kream.co.kr 에서 "' + (styleNo && styleNo !== '—' ? styleNo : brand + ' ' + modelName) + ' 스펙" 검색 → 상품 상세 페이지의 사이즈/소재 정보 추출\n'
+    + '2. gugus.com 에서 "' + (styleNo && styleNo !== '—' ? styleNo : brand + ' ' + modelName) + '" 검색 → 상품 상세 페이지의 스펙 정보 추출\n'
+    + '3. trenbe.com 에서 "' + (styleNo && styleNo !== '—' ? styleNo : brand + ' ' + modelName) + '" 검색 → 상품 상세 페이지의 스펙 정보 추출\n\n'
     + '[중요] 각 플랫폼에서 찾은 스펙 정보를 통합하여 가장 완전한 정보를 제공하세요.\n'
     + '공식 사이즈(가로×세로×폭)가 있으면 반드시 포함하세요.\n\n'
     + '[출력 형식] 아래 JSON만 출력. 서론/마크다운 없이.\n'
