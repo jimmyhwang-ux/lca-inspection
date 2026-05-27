@@ -96,6 +96,14 @@ export default async function handler(req, res) {
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
+      // 사진이 없으면 ref_image_url도 명시적으로 null 처리
+      if (Array.isArray(fields.extra_images) && fields.extra_images.length === 0) {
+        fields.ref_image_url = null;
+      }
+      // ref_image_url이 없으면 extra_images 첫 번째로 설정
+      if (!fields.ref_image_url && fields.extra_images?.length > 0) {
+        fields.ref_image_url = fields.extra_images[0];
+      }
       if (fields.accessories && !Array.isArray(fields.accessories)) fields.accessories = [];
       const r = await sb(`sku_items?id=eq.${id}`, {
         method: 'PATCH',
