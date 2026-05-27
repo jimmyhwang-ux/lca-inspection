@@ -4661,16 +4661,17 @@ function editUnregSize(){
   const memoMatch=cur.match(/\[([^\]]*)\]/);
   wrap.innerHTML=cfg.map((f,i)=>{
     if(f.memo){
-      return `<input id="unreg-sf-${i}" type="text" value="${memoMatch?memoMatch[1]:''}" placeholder="상단/하단/지퍼..." style="width:88px;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:4px 6px;color:#aaa;font-size:11px;outline:none;margin-right:6px" oninput="_updateUnregSizeHidden()">
+      return `<input id="unreg-sf-${i}" type="text" value="${memoMatch?memoMatch[1]:''}" placeholder="상단/하단/지퍼..." onclick="event.stopPropagation()" style="width:88px;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:4px 6px;color:#aaa;font-size:11px;outline:none;margin-right:6px" oninput="_updateUnregSizeHidden()">
       ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}`;
     }
     return `
     <span style="font-size:10px;color:#ddd;margin-right:2px">${f.label}</span>
-    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" style="width:52px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#fff;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
+    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" onclick="event.stopPropagation()" style="width:52px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#fff;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
     <span style="font-size:10px;color:#ddd;margin-right:6px">${f.unit||''}</span>
     ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}
   `;
   }).join('');
+  wrap.style.cursor='default'; // 입력 필드 렌더 후 커서 변경
   document.getElementById('unreg-sf-0')?.focus();
 }
 
