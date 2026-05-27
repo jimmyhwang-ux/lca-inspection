@@ -384,7 +384,7 @@ input[type=file]{display:none}
   <!-- 폼 필드 -->
   <div class="sku-card" style="margin-bottom:10px">
     <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="unreg-brand" type="text" placeholder="—" list="brand-list" autocomplete="off"></div>
-    <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="unreg-model-ko" type="text" placeholder="—"></div>
+    <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="unreg-model-ko" type="text" placeholder="—" oninput="onUnregModelKoInput(this)"></div>
     <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="unreg-model" type="text" placeholder="—"></div>
     <div class="sku-row"><div class="sku-key">카테고리</div>
       <select class="sku-input" id="unreg-cat" onchange="onUnregCatChange(this)" style="background:#111;color:#f0f0f0;border:none;outline:none;font-family:inherit;font-size:14px;cursor:pointer">
@@ -2692,6 +2692,15 @@ function onEfModelKoInput(input){
   const val=input.value.trim();
   if(!val||val.length<2) return;
   _efTransTimer=setTimeout(()=>translateToEn(val,'ef-model'),800);
+}
+
+// 미등록 SKU 한글 모델명 입력 → 영문 자동 번역
+let _unregTransTimer=null;
+function onUnregModelKoInput(input){
+  clearTimeout(_unregTransTimer);
+  const val=input.value.trim();
+  if(!val||val.length<2) return;
+  _unregTransTimer=setTimeout(()=>translateToEn(val,'unreg-model'),800);
 }
 
 function onResultFieldInput(input,id,forceSearch){
