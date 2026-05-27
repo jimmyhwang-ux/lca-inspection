@@ -5621,8 +5621,7 @@ async function callGeminiPlatformSearch(apiKey, brand, modelKo, modelEn, styleNo
       console.warn('[Platform]', lastErr);
     }
   }
-  throw new Error('플랫폼 조회 실패
-' + lastErr);
+  throw new Error('플랫폼 조회 실패\n' + lastErr);
 }
 
 function renderPlatformResult(data){
