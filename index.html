@@ -155,6 +155,33 @@ input[type=file]{display:none}
 .spec-run-btn:hover{background:rgba(255,107,43,.2)}
 .spec-run-btn:disabled{background:#1a1a1a;color:#555;border-color:#2a2a2a;cursor:not-allowed}
 .spec-spinner{width:14px;height:14px;border:2px solid #333;border-top-color:#ff6b2b;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
+/* ── 정보 탭 ── */
+.info-tab-bar{display:flex;gap:0;margin:8px 16px 0;border-radius:10px 10px 0 0;overflow:hidden;border:1px solid #1e1e1e;border-bottom:none}
+.info-tab{flex:1;padding:9px 6px;text-align:center;font-size:11px;font-weight:700;color:#666;background:#0d0d0d;cursor:pointer;transition:all .15s;border-right:1px solid #1e1e1e}
+.info-tab:last-child{border-right:none}
+.info-tab.active{background:#111;color:#ff6b2b;border-bottom:2px solid #ff6b2b}
+.info-tab-content{display:none;border:1px solid #1e1e1e;border-top:none;border-radius:0 0 10px 10px;margin:0 16px 10px;background:#0d0d0d}
+.info-tab-content.active{display:block}
+.platform-run-btn{width:calc(100% - 28px);margin:10px 14px 4px;background:rgba(99,179,237,.1);color:#63b3ed;border:1px solid rgba(99,179,237,.3);border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.platform-run-btn:hover{background:rgba(99,179,237,.18)}
+.platform-run-btn:disabled{background:#1a1a1a;color:#555;border-color:#2a2a2a;cursor:not-allowed}
+.platform-card{margin:8px 14px;border-radius:8px;overflow:hidden;border:1px solid #1e1e1e;background:#111}
+.platform-card-head{padding:8px 12px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:6px}
+.platform-card-head .pl-name{font-size:11px;font-weight:700;color:#f0f0f0;flex:1}
+.platform-card-head .pl-badge{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700}
+.pl-badge-cream{background:rgba(255,107,43,.15);color:#ff6b2b}
+.pl-badge-kream{background:rgba(99,179,237,.15);color:#63b3ed}
+.pl-badge-trenbe{background:rgba(167,139,250,.15);color:#a78bfa}
+.platform-price-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #1a1a1a}
+.platform-price-row:last-child{border-bottom:none}
+.platform-price-lbl{font-size:10px;color:#888}
+.platform-price-val{font-size:14px;font-weight:800;color:#f0f0f0}
+.platform-price-val.highlight{color:#ff6b2b}
+.platform-info-row{padding:6px 12px;font-size:11px;color:#888;border-bottom:1px solid #1a1a1a;line-height:1.6}
+.platform-info-row:last-child{border-bottom:none}
+.platform-info-row span{color:#ddd}
+.platform-src{padding:6px 12px;font-size:10px;color:#555;display:flex;align-items:center;gap:4px;border-top:1px solid #1a1a1a}
+.platform-src a{color:#63b3ed;text-decoration:none}
 .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#1c1c1c;border:1px solid #333;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#f0f0f0;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #screen-sku{padding:0 16px}
@@ -364,23 +391,45 @@ input[type=file]{display:none}
 
   <div id="ref-section" style="display:none"></div>
 
-  <!-- ② 공식 사이즈 스펙 조회 (Gemini) -->
+  <!-- ② 공식 스펙 + 플랫폼 정보 탭 -->
   <div id="spec-gemini-wrap" style="display:none">
-    <div style="margin:8px 16px 4px;display:flex;align-items:center;gap:8px">
+    <div style="margin:12px 16px 0;display:flex;align-items:center;gap:8px">
       <div style="flex:1;height:1px;background:#1e1e1e"></div>
-      <span style="font-size:10px;color:#888;white-space:nowrap">공식 스펙 조회</span>
+      <span style="font-size:10px;color:#888;white-space:nowrap">AI 정보 조회</span>
       <div style="flex:1;height:1px;background:#1e1e1e"></div>
     </div>
+
+    <!-- Gemini 키 입력 (공용) -->
     <div class="gemini-key-bar" id="gemini-key-bar">
       <input type="password" id="gemini-api-key" placeholder="Gemini API 키 (AIza...)" autocomplete="off">
       <button onclick="saveGeminiKey()">저장</button>
     </div>
-    <div class="spec-btn-wrap">
-      <button class="spec-run-btn" id="spec-run-btn" onclick="runGeminiSpecSearch()" disabled>
-        📐 브랜드 공식 사이즈 스펙 조회
-      </button>
+
+    <!-- 탭 바 -->
+    <div class="info-tab-bar">
+      <div class="info-tab active" id="tab-spec" onclick="switchInfoTab('spec')">📐 공식 사이즈 스펙</div>
+      <div class="info-tab" id="tab-platform" onclick="switchInfoTab('platform')">🛒 플랫폼 시세/정보</div>
     </div>
-    <div id="spec-result-area"></div>
+
+    <!-- 탭 1: 공식 스펙 -->
+    <div class="info-tab-content active" id="tabcontent-spec">
+      <div style="padding:10px 14px 4px">
+        <button class="spec-run-btn" id="spec-run-btn" onclick="runGeminiSpecSearch()" disabled>
+          📐 브랜드 공식 사이즈 스펙 조회
+        </button>
+      </div>
+      <div id="spec-result-area"></div>
+    </div>
+
+    <!-- 탭 2: 플랫폼 시세/정보 -->
+    <div class="info-tab-content" id="tabcontent-platform">
+      <div style="padding:10px 14px 4px">
+        <button class="platform-run-btn" id="platform-run-btn" onclick="runPlatformSearch()" disabled>
+          🛒 크림 · 구구스 · 트렌비 정보 조회
+        </button>
+      </div>
+      <div id="platform-result-area" style="padding-bottom:8px"></div>
+    </div>
   </div>
 
   <!-- 숨겨진 데이터 필드 (기존 로직 호환) -->
@@ -5120,6 +5169,8 @@ function saveGeminiKey(){
   inp.value = key.substring(0,8) + '••••••••••••••••••••••••••••';
   document.getElementById('gemini-key-bar').style.display = 'none';
   document.getElementById('spec-run-btn').disabled = false;
+  var pb = document.getElementById('platform-run-btn');
+  if(pb) pb.disabled = false;
   toast('✅ Gemini 키 저장됨');
 }
 
@@ -5133,12 +5184,15 @@ function initSpecSection(){
   var keyBar = document.getElementById('gemini-key-bar');
   var runBtn = document.getElementById('spec-run-btn');
 
+  var platformBtn = document.getElementById('platform-run-btn');
   if(key){
     if(keyBar) keyBar.style.display = 'none';
     if(runBtn) runBtn.disabled = false;
+    if(platformBtn) platformBtn.disabled = false;
   } else {
     if(keyBar) keyBar.style.display = 'flex';
     if(runBtn) runBtn.disabled = true;
+    if(platformBtn) platformBtn.disabled = true;
   }
 
   // Supabase에서 먼저 캐시된 스펙 로드 시도
@@ -5418,6 +5472,220 @@ showScreen = function(id){
 };
 
 
+
+
+
+// ══════════════════════════════════════════════════════════════
+// 탭 전환 + 플랫폼 시세/정보 조회 (크림·구구스·트렌비)
+// ══════════════════════════════════════════════════════════════
+
+function switchInfoTab(tab){
+  ['spec','platform'].forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('tabcontent-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+async function runPlatformSearch(){
+  var key = getGeminiKey();
+  if(!key){ toast('⚠ Gemini API 키를 먼저 입력하세요'); document.getElementById('gemini-key-bar').style.display='flex'; return; }
+
+  var brand   = (document.getElementById('r-brand')||{}).textContent||'';
+  var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
+  var modelEn = (document.getElementById('r-model')||{}).textContent||'';
+  var styleNo = (document.getElementById('r-sku')||{}).textContent||'';
+
+  if(!brand || brand==='—'){ toast('⚠ 브랜드를 먼저 확인해 주세요'); return; }
+
+  var btn = document.getElementById('platform-run-btn');
+  var area = document.getElementById('platform-result-area');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spec-spinner"></span> 크림·구구스·트렌비 검색 중...';
+  area.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:#888">크림, 구구스, 트렌비에서<br>상품 정보를 검색 중입니다...</div>';
+
+  try{
+    var result = await callGeminiPlatformSearch(key, brand, modelKo, modelEn, styleNo);
+    renderPlatformResult(result);
+    btn.textContent = '🛒 플랫폼 정보 재조회';
+  } catch(err){
+    console.error('[Platform]', err);
+    area.innerHTML =
+      '<div style="padding:12px 16px;background:#1a0000;border-radius:8px;margin:0 14px 8px">'
+      + '<div style="font-size:12px;color:#ef4444;font-weight:700;margin-bottom:4px">❌ 조회 실패</div>'
+      + '<div style="font-size:11px;color:#888;white-space:pre-wrap">' + (err.message||'알 수 없는 오류') + '</div>'
+      + '</div>';
+    btn.textContent = '🛒 다시 시도';
+  }
+  btn.disabled = false;
+}
+
+async function callGeminiPlatformSearch(apiKey, brand, modelKo, modelEn, styleNo){
+  var modelName = modelKo || modelEn || '';
+  var prompt = '당신은 명품 전문 감정사입니다.'
+    + ' 반드시 구글 검색을 통해 크림(kream.co.kr), 구구스(gugus.com), 트렌비(trenbe.com) 상품 페이지에서'
+    + ' 아래 상품의 공식 스펙 정보(스타일번호, 실측사이즈, 소재, 색상 등)를 찾아주세요.\n'
+    + ' 시세/가격 정보는 필요 없습니다. 상품 스펙 정보에만 집중하세요.\n\n'
+    + '[조회 상품]\n'
+    + '- 브랜드: ' + brand + '\n'
+    + '- 모델명: ' + modelName + '\n'
+    + (styleNo && styleNo !== '—' ? '- 스타일번호: ' + styleNo + '\n' : '')
+    + '\n[검색 방법]\n'
+    + '1. kream.co.kr 에서 "' + brand + ' ' + modelName + ' 스펙" 검색 → 상품 상세 페이지의 사이즈/소재 정보 추출\n'
+    + '2. gugus.com 에서 "' + brand + ' ' + modelName + '" 검색 → 상품 상세 페이지의 스펙 정보 추출\n'
+    + '3. trenbe.com 에서 "' + brand + ' ' + modelName + '" 검색 → 상품 상세 페이지의 스펙 정보 추출\n\n'
+    + '[중요] 각 플랫폼에서 찾은 스펙 정보를 통합하여 가장 완전한 정보를 제공하세요.\n'
+    + '공식 사이즈(가로×세로×폭)가 있으면 반드시 포함하세요.\n\n'
+    + '[출력 형식] 아래 JSON만 출력. 서론/마크다운 없이.\n'
+    + '{\n'
+    + '  "brand": "브랜드명",\n'
+    + '  "model": "정확한 모델명",\n'
+    + '  "style_number": "스타일번호 (찾은 경우)",\n'
+    + '  "specs": [\n'
+    + '    {"label": "가로 (W)", "value": "30", "unit": "cm"},\n'
+    + '    {"label": "세로 (H)", "value": "22", "unit": "cm"},\n'
+    + '    {"label": "폭 (D)",   "value": "16", "unit": "cm"}\n'
+    + '  ],\n'
+    + '  "material": "소재",\n'
+    + '  "color_options": "확인된 컬러 옵션",\n'
+    + '  "made_in": "제조국 (확인된 경우)",\n'
+    + '  "extra_info": "기타 스펙 정보",\n'
+    + '  "sources": [\n'
+    + '    {"platform": "크림", "url": "상품 URL", "found": true},\n'
+    + '    {"platform": "구구스", "url": "상품 URL", "found": false},\n'
+    + '    {"platform": "트렌비", "url": "상품 URL", "found": true}\n'
+    + '  ],\n'
+    + '  "search_queries": ["검색 쿼리1", "검색 쿼리2"]\n'
+    + '}';
+
+  function fetchWithTimeout(url, opts, ms){
+    var ctrl = new AbortController();
+    var tid = setTimeout(function(){ ctrl.abort(); }, ms);
+    return fetch(url, Object.assign({}, opts, {signal: ctrl.signal})).finally(function(){ clearTimeout(tid); });
+  }
+
+  var candidates = [
+    {model:'gemini-2.5-flash-preview-05-20', timeout:30000},
+    {model:'gemini-2.0-flash',               timeout:25000},
+    {model:'gemini-1.5-flash-latest',        timeout:20000}
+  ];
+  var lastErr = '';
+
+  for(var i=0; i<candidates.length; i++){
+    var mc = candidates[i];
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + mc.model + ':generateContent?key=' + apiKey;
+    var tools = mc.model.startsWith('gemini-1.5') ? [{google_search_retrieval:{}}] : [{google_search:{}}];
+    try{
+      console.log('[Platform] 시도:', mc.model);
+      var res = await fetchWithTimeout(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          tools: tools,
+          generationConfig:{temperature:0.1, maxOutputTokens:2000}
+        })
+      }, mc.timeout);
+
+      if(!res.ok){ var et=await res.text(); lastErr=mc.model+': HTTP '+res.status+' — '+et.substring(0,300); continue; }
+      var data = await res.json();
+      var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){return p.text||'';}).join('');
+      if(!rawText){ lastErr=mc.model+': 빈 응답'; continue; }
+
+      var jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*\})/);
+      if(!jsonMatch){ lastErr=mc.model+': JSON 파싱 실패'; continue; }
+      var parsed = JSON.parse(jsonMatch[1]||jsonMatch[0]);
+
+      var gm = (data.candidates||[])[0]?.groundingMetadata || {};
+      if(gm.webSearchQueries && !parsed.search_queries) parsed.search_queries = gm.webSearchQueries;
+      console.log('[Platform] 성공:', mc.model);
+      return parsed;
+    } catch(e){
+      lastErr = mc.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
+      console.warn('[Platform]', lastErr);
+    }
+  }
+  throw new Error('플랫폼 조회 실패
+' + lastErr);
+}
+
+function renderPlatformResult(data){
+  var area = document.getElementById('platform-result-area');
+  if(!area || !data) return;
+
+  // ── 스펙 타일 (공식 스펙과 동일한 형태) ──
+  var tilesHtml = '';
+  if(data.style_number && data.style_number !== '—' && data.style_number !== 'N/A'){
+    tilesHtml += '<div class="spec-tile"><div class="spec-tile-lbl">스타일 번호</div>'
+      + '<div class="spec-tile-val" style="font-size:11px">' + data.style_number + '</div></div>';
+  }
+  if(Array.isArray(data.specs)){
+    data.specs.forEach(function(s){
+      if(!s.value || s.value === '—' || s.value === 'N/A') return;
+      tilesHtml += '<div class="spec-tile"><div class="spec-tile-lbl">' + s.label + '</div>'
+        + '<div class="spec-tile-val">' + s.value + '<span class="spec-tile-unit">' + (s.unit||'') + '</span></div></div>';
+    });
+  }
+
+  // ── 추가 정보 ──
+  var extraParts = [];
+  if(data.material      && data.material      !== '—' && data.material      !== 'N/A') extraParts.push('<span>소재</span> '  + data.material);
+  if(data.made_in       && data.made_in       !== '—' && data.made_in       !== 'N/A') extraParts.push('<span>제조국</span> ' + data.made_in);
+  if(data.color_options && data.color_options !== '—' && data.color_options !== 'N/A') extraParts.push('<span>컬러</span> '  + data.color_options);
+  if(data.extra_info    && data.extra_info    !== '—' && data.extra_info    !== 'N/A') extraParts.push(data.extra_info);
+
+  // ── 출처 플랫폼 뱃지 ──
+  var sourcesHtml = '';
+  var plColors = {'크림':'pl-badge-cream','구구스':'pl-badge-kream','트렌비':'pl-badge-trenbe'};
+  if(Array.isArray(data.sources)){
+    sourcesHtml = '<div style="padding:8px 14px;border-top:1px solid #1a1a1a;display:flex;flex-wrap:wrap;gap:6px">';
+    data.sources.forEach(function(s){
+      if(!s || !s.platform) return;
+      var badge = plColors[s.platform] || 'pl-badge-cream';
+      var found = s.found !== false;
+      if(found && s.url && s.url !== '—'){
+        sourcesHtml += '<a href="' + s.url + '" target="_blank" class="pl-badge ' + badge + '" style="text-decoration:none;padding:3px 8px">🔗 ' + s.platform + '</a>';
+      } else {
+        sourcesHtml += '<span class="pl-badge" style="background:#1a1a1a;color:#555;padding:3px 8px">' + s.platform + ' (미확인)</span>';
+      }
+    });
+    sourcesHtml += '</div>';
+  }
+
+  // ── 검색 쿼리 ──
+  var queryHtml = '';
+  if(data.search_queries && data.search_queries.length){
+    queryHtml = '<div class="spec-query-chips">'
+      + data.search_queries.map(function(q){ return '<span class="spec-query-chip">🔍 ' + q + '</span>'; }).join('')
+      + '</div>';
+  }
+
+  // 데이터 없을 때
+  if(!tilesHtml && !extraParts.length){
+    area.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:#555">'
+      + '플랫폼에서 스펙 정보를 찾지 못했습니다.<br>공식 사이즈 스펙 탭을 확인해 주세요.</div>';
+    return;
+  }
+
+  // 스타일번호 자동 반영 (r-sku 비어있을 때만)
+  var skuEl = document.getElementById('r-sku');
+  if(skuEl && data.style_number && data.style_number !== '—' && data.style_number !== 'N/A'
+     && (skuEl.textContent === '—' || !skuEl.textContent.trim())){
+    skuEl.textContent = data.style_number;
+  }
+
+  area.innerHTML =
+    '<div class="spec-section" style="margin:8px 14px">'
+    + '<div class="spec-section-head">'
+    + '<span class="sp-badge" style="background:rgba(99,179,237,.15);color:#63b3ed">플랫폼 수집</span>'
+    + '<span class="sp-title">' + (data.brand||'') + ' ' + (data.model||'')
+    + '<span style="font-size:9px;color:#22c55e;margin-left:4px">● LIVE</span></span>'
+    + '</div>'
+    + (tilesHtml ? '<div class="spec-tiles-grid">' + tilesHtml + '</div>' : '')
+    + (extraParts.length ? '<div class="spec-extra-text">' + extraParts.join(' &nbsp;·&nbsp; ') + '</div>' : '')
+    + sourcesHtml
+    + queryHtml
+    + '</div>';
+}
 
 
 </script>
