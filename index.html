@@ -379,10 +379,16 @@ input[type=file]{display:none}
   <!-- ④ 주황 테두리: 실측사이즈 + 부속품 -->
   <div style="margin:0 16px;border:1px solid rgba(255,107,43,.3);border-radius:14px;overflow:hidden;background:#111" id="result-body">
 
-  <!-- 미등록 SKU 헤더 (미등록일 때만 표시) -->
-  <div id="unregistered-header" style="display:block;padding:10px 14px;border-bottom:1px solid #1a1a1a">
-    <span style="color:#f59e0b;font-size:12px;font-weight:700">⚠️ 미등록 SKU — 신규 등록</span>
+  <!-- 미등록 SKU 헤더 — 토글 -->
+  <div id="unregistered-header" style="display:block;padding:10px 14px;border-bottom:1px solid #1a1a1a;cursor:pointer;user-select:none" onclick="toggleUnregisteredSection()">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="color:#f59e0b;font-size:12px;font-weight:700">⚠️ 미등록 SKU — 신규 등록</span>
+      <span id="unreg-toggle-icon" style="color:#f59e0b;font-size:16px;transition:transform .2s">▼</span>
+    </div>
   </div>
+
+  <!-- 토글 콘텐츠 (기본 접힘) -->
+  <div id="unreg-content" style="display:none">
 
   <!-- 실측사이즈 -->
   <div style="border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
@@ -445,6 +451,7 @@ input[type=file]{display:none}
     </div>
   </div>
 
+  </div><!-- end unreg-content -->
   </div><!-- end 주황 테두리 -->
 
   <div style="padding:0 16px">
@@ -3135,11 +3142,14 @@ function filterSkuListByCat(list,wrapId,catFilter,q){
         (s.brand||'')+' '+(s.model_name||'')+' '+(s.model_name_ko||'')+' '+
         (s.notes||'')+' '+(s.color||'')+' '+(s.sku_code||'')
       ).toLowerCase();
+      const hayNoSpace=hay.replace(/\s+/g,'');
       return tokens.every(t=>{
+        const tNoSpace=t.replace(/\s+/g,'');
         if(hay.includes(t)) return true;
+        if(hayNoSpace.includes(tNoSpace)) return true;
         if(typeof resolveTokenToEnglish!=='undefined'){
           const enList=resolveTokenToEnglish(t);
-          return enList.some(en=>hay.includes(en));
+          return enList.some(en=>hay.includes(en)||hayNoSpace.includes(en.replace(/\s+/g,'')));
         }
         return false;
       });
@@ -4391,10 +4401,13 @@ function filterSkuList(){
     const color=(i.color||'').toLowerCase();
     const notes=(i.notes||'').toLowerCase();
     const hay=brand+' '+modelEn+' '+modelKo+' '+sku+' '+color+' '+notes;
+    const hayNoSpace=hay.replace(/\s+/g,''); // 공백 제거 버전
     const textOk=tokens.every(t=>{
+      const tNoSpace=t.replace(/\s+/g,'');
       if(hay.includes(t)) return true;
+      if(hayNoSpace.includes(tNoSpace)) return true; // 띄어쓰기 무시 매칭
       const enList=resolveTokenToEnglish(t);
-      return enList.some(en=>hay.includes(en));
+      return enList.some(en=>hay.includes(en)||hayNoSpace.includes(en.replace(/\s+/g,'')));
     });
     return catOk&&textOk;
   });
@@ -4439,6 +4452,15 @@ function copyResult(){
     '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
     'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
+}
+
+function toggleUnregisteredSection(){
+  const content = document.getElementById('unreg-content');
+  const icon = document.getElementById('unreg-toggle-icon');
+  if(!content) return;
+  const isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+  if(icon) icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
 function searchSkuOnGoogle(){
