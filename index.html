@@ -357,73 +357,81 @@ input[type=file]{display:none}
   </div>
 
   <!-- 토글 콘텐츠 (기본 접힘) -->
-  <div id="unreg-content" style="display:none">
+  <div id="unreg-content" style="display:none;padding:12px 14px">
 
-  <!-- 실측사이즈 -->
-  <div style="border-bottom:1px solid #1a1a1a;padding:10px 14px;min-height:54px">
-    <div style="font-size:9px;color:#ddd;margin-bottom:6px">실측 사이즈 <span style="color:#2a2a2a;font-size:8px">(선택)</span></div>
-    <div class="info-cell-val muted" id="r-size" onclick="editField('r-size')" style="font-size:13px;font-weight:700;overflow-x:auto;white-space:nowrap;min-height:22px;display:flex;align-items:center;justify-content:center">—</div>
+  <!-- 사진 추가 -->
+  <div style="margin-bottom:10px">
+    <div id="unreg-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+    <input type="file" id="unreg-new-photo" accept="image/*" multiple style="display:none" onchange="previewUnregPhotos(this)">
+    <button onclick="document.getElementById('unreg-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#ddd;border-radius:10px;padding:10px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+      <span style="font-size:16px">📷</span><span>사진 추가 · 탭하거나 붙여넣기</span>
+    </button>
   </div>
 
-  <!-- 사이즈명칭 + 스타일번호 -->
-  <div class="info-row-grid" style="grid-template-columns:1fr 1fr;width:100%;border-bottom:1px solid #1a1a1a">
-    <div class="info-cell">
-      <div class="info-cell-label">사이즈 명칭 <span style="color:#2a2a2a;font-size:9px">(선택)</span></div>
-      <div class="info-cell-val muted" id="r-size-name" onclick="editField('r-size-name')">—</div>
+  <!-- 폼 필드 -->
+  <div class="sku-card" style="margin-bottom:10px">
+    <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="unreg-brand" type="text" placeholder="—" list="brand-list" autocomplete="off"></div>
+    <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="unreg-model-ko" type="text" placeholder="—"></div>
+    <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="unreg-model" type="text" placeholder="—"></div>
+    <div class="sku-row"><div class="sku-key">카테고리</div>
+      <select class="sku-input" id="unreg-cat" onchange="onUnregCatChange(this)" style="background:#111;color:#f0f0f0;border:none;outline:none;font-family:inherit;font-size:14px;cursor:pointer">
+        <option value="">—</option>
+        <option value="가방">가방</option><option value="지갑">지갑</option>
+        <option value="의류">의류</option><option value="시계">시계</option>
+        <option value="주얼리">주얼리</option><option value="신발">신발</option>
+        <option value="모자">모자</option><option value="스카프">스카프</option>
+        <option value="벨트">벨트</option>
+      </select>
     </div>
-    <div class="info-cell">
-      <div class="info-cell-label" style="display:flex;align-items:center;justify-content:space-between;gap:4px;overflow:visible">
-        <span style="white-space:nowrap">스타일 번호 <span style="color:#2a2a2a;font-size:9px">(선택)</span></span>
-        <div style="display:flex;gap:4px;align-items:center">
-          <button onclick="(function(){var v=(document.getElementById('r-sku').textContent||'').replace('—','').trim();if(v)onResultFieldInput({value:v},'r-sku',true);})()" title="DB SKU 검색" style="background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);border-radius:5px;padding:2px 5px;cursor:pointer;display:flex;align-items:center;flex-shrink:0">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </button>
-          <button onclick="searchSkuOnGoogle()" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0;color:#ddd;display:flex;align-items:center;flex-shrink:0" id="sku-search-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="info-cell-val muted" id="r-sku" onclick="editField('r-sku')">—</div>
-    </div>
-  </div>
-
-  <!-- 부속품 체크 -->
-  <div style="padding:10px 14px">
-    <div style="font-size:10px;color:#ddd;font-weight:600;margin-bottom:8px">🔧 부속품 체크</div>
-    <div class="acc-wrap" style="background:transparent;border:none;padding:0">
-      <div id="acc-list"></div>
-      <div class="acc-add-row">
-        <div class="cat-tabs" id="cat-tabs">
-          <button class="cat-btn active" onclick="setCat('가방',this)">가방</button>
-          <button class="cat-btn" onclick="setCat('지갑',this)">지갑</button>
-          <button class="cat-btn" onclick="setCat('주얼리',this)">주얼리</button>
-          <button class="cat-btn" onclick="setCat('의류',this)">의류</button>
-          <button class="cat-btn" onclick="setCat('신발',this)">신발</button>
-          <button class="cat-btn" onclick="setCat('시계',this)">시계</button>
-          <button class="cat-btn" onclick="setCat('벨트',this)">벨트</button>
-        </div>
-        <div class="acc-bottom-row">
-          <select class="acc-input" id="acc-select" onchange="addAccessory()">
-            <option value="">-- 부속품 선택 --</option>
-            <option>열쇠 1개</option><option>열쇠 2개</option>
-            <option>자물쇠</option><option>자물쇠 커버 (키벨)</option><option>네임택</option>
-            <option>연장 스트랩</option><option>핸들 스트랩</option>
-            <option>레더 스트랩</option><option>체인 스트랩</option><option>패브릭 스트랩</option><option>스트랩패드</option>
-            <option>키퍼(스트랩 후프) 1개</option><option>키퍼(스트랩 후프) 2개</option>
-            <option>키퍼(스트랩 후프) 3개</option><option>키퍼(스트랩 후프) 4개</option>
-            <option>이너파우치</option><option>참장식</option><option>핸들 홀더 (손잡이 고정)</option>
-            <option>거울</option><option>키드지갑</option><option>미니파우치</option>
-            <option>속지갑 1개</option><option>속지갑 2개</option><option>훅 클로저</option>
-            <option>밑판</option><option>탈착형 키링</option><option>리본</option>
-            <option>여분단추</option><option>여분링크</option><option>여분끈</option>
-          </select>
-        </div>
+    <div class="sku-row"><div class="sku-key">컬러</div><input class="sku-input" id="unreg-color" type="text" placeholder="—" list="color-list" autocomplete="off"></div>
+    <div class="sku-row"><div class="sku-key">실측 사이즈</div>
+      <div class="sku-input" id="unreg-size-wrap" onclick="editUnregSize()" style="cursor:pointer;min-height:32px;display:flex;align-items:center">
+        <span id="unreg-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span>
       </div>
     </div>
+    <div class="sku-row"><div class="sku-key">사이즈 명칭</div><input class="sku-input" id="unreg-size-name" type="text" placeholder="—"></div>
+    <div class="sku-row"><div class="sku-key">스타일 번호</div><input class="sku-input" id="unreg-sku" type="text" placeholder="—"></div>
+    <div class="sku-row"><div class="sku-key">사이트 URL</div><input class="sku-input" id="unreg-url" type="url" placeholder="https://..."></div>
+    <div class="sku-row" style="align-items:flex-start"><div class="sku-key" style="padding-top:2px">특이사항</div><textarea class="sku-input" id="unreg-notes" rows="2" style="resize:vertical;line-height:1.5;padding:2px 0" placeholder="메모..."></textarea></div>
   </div>
+
+  <!-- 부속품 -->
+  <div style="font-size:11px;color:#ddd;margin-bottom:8px">부속품 체크</div>
+  <div class="acc-wrap" style="margin:0 0 12px">
+    <div id="unreg-acc-list"></div>
+    <div class="acc-add-row">
+      <div class="cat-tabs" id="unreg-acc-cat-tabs">
+        <button class="cat-btn active" onclick="setUnregAccCat('가방',this)">가방</button>
+        <button class="cat-btn" onclick="setUnregAccCat('지갑',this)">지갑</button>
+        <button class="cat-btn" onclick="setUnregAccCat('주얼리',this)">주얼리</button>
+        <button class="cat-btn" onclick="setUnregAccCat('의류',this)">의류</button>
+        <button class="cat-btn" onclick="setUnregAccCat('신발',this)">신발</button>
+        <button class="cat-btn" onclick="setUnregAccCat('시계',this)">시계</button>
+        <button class="cat-btn" onclick="setUnregAccCat('벨트',this)">벨트</button>
+      </div>
+      <div class="acc-bottom-row">
+        <select class="acc-input" id="unreg-acc-select" onchange="addUnregAcc()">
+          <option value="">-- 부속품 선택 --</option>
+          <option>열쇠 1개</option><option>열쇠 2개</option><option>자물쇠</option>
+          <option>자물쇠 커버 (키벨)</option><option>네임택</option><option>연장 스트랩</option>
+          <option>핸들 스트랩</option><option>레더 스트랩</option><option>체인 스트랩</option>
+          <option>패브릭 스트랩</option><option>스트랩패드</option>
+          <option>키퍼(스트랩 후프) 1개</option><option>키퍼(스트랩 후프) 2개</option>
+          <option>이너파우치</option><option>참장식</option><option>거울</option>
+          <option>키드지갑</option><option>미니파우치</option><option>속지갑 1개</option>
+          <option>속지갑 2개</option><option>훅 클로저</option><option>밑판</option>
+          <option>탈착형 키링</option><option>리본</option><option>여분단추</option>
+          <option>여분링크</option><option>여분끈</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 저장 버튼 -->
+  <button onclick="saveUnregSku(this)" style="width:100%;padding:14px;border-radius:12px;border:none;background:#ff6b2b;color:#fff;font-size:14px;font-weight:700;cursor:pointer">💾 DB 저장</button>
+
+  <!-- 실측 hidden -->
+  <input type="hidden" id="unreg-size-hidden" value="">
 
   </div><!-- end unreg-content -->
   </div><!-- end 주황 테두리 -->
@@ -446,7 +454,6 @@ input[type=file]{display:none}
     <div class="btn-row">
       <button class="btn-sec" onclick="resetAll()">↩ 다시</button>
       <button class="btn-copy" onclick="copyResult()">📋 복사</button>
-      <button class="btn-move" onclick="goToSku()">📋 결과 이동 →</button>
     </div>
   </div>
 </div>
@@ -894,7 +901,18 @@ document.addEventListener('paste',e=>{
     return;
   }
 
-  // ── 수정 모달이 열려있으면 모달에 사진 추가 ──────────────────
+  // ── 미등록 SKU 섹션이 열려있으면 사진 추가 ──────────────────
+  const unregContent=document.getElementById('unreg-content');
+  if(unregContent&&unregContent.style.display!=='none'){
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      _unregPhotos.push(ev.target.result);
+      _renderUnregPhotos();
+      toast('📷 사진 추가됨 (붙여넣기)');
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
   const editModal=document.getElementById('edit-modal');
   if(editModal&&editModal.classList.contains('open')){
     const efInput=document.getElementById('ef-new-photo');
@@ -4463,6 +4481,195 @@ function toggleUnregisteredSection(){
   const isOpen = content.style.display !== 'none';
   content.style.display = isOpen ? 'none' : 'block';
   if(icon) icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  // 열릴 때 검수 데이터 자동 채우기
+  if(!isOpen) fillUnregForm();
+}
+
+// ── 미등록 SKU 폼 함수들 ──
+var _unregAccList = [];
+var _unregPhotos = []; // {dataUrl}
+
+function previewUnregPhotos(input){
+  if(!input.files.length) return;
+  const files=[...input.files];
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const dataUrl=e.target.result;
+      _unregPhotos.push(dataUrl);
+      _renderUnregPhotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function _renderUnregPhotos(){
+  const wrap=document.getElementById('unreg-photo-preview');
+  if(!wrap) return;
+  wrap.innerHTML=_unregPhotos.map((url,i)=>`
+    <div style="position:relative;flex-shrink:0">
+      <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1.5px solid #ff6b2b;cursor:zoom-in;display:block" onclick="openLightbox('${url}')">
+      <button onclick="_unregPhotos.splice(${i},1);_renderUnregPhotos();" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ff3b30;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;line-height:1;padding:0">×</button>
+    </div>`).join('');
+}
+
+function setUnregAccCat(cat, btn){
+  document.querySelectorAll('#unreg-acc-cat-tabs .cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const sel=document.getElementById('unreg-acc-select');
+  if(!sel) return;
+  const ACC_MAP_LOCAL=window.ACC_MAP||{};
+  const opts=ACC_MAP_LOCAL[cat]||[];
+  sel.innerHTML='<option value="">-- 부속품 선택 --</option>'+opts.map(o=>`<option>${o}</option>`).join('');
+}
+
+function addUnregAcc(){
+  const sel=document.getElementById('unreg-acc-select');
+  if(!sel||!sel.value) return;
+  _unregAccList.push({name:sel.value});
+  sel.value='';
+  _renderUnregAccList();
+}
+
+function _renderUnregAccList(){
+  const wrap=document.getElementById('unreg-acc-list');
+  if(!wrap) return;
+  if(!_unregAccList.length){
+    wrap.innerHTML='<div style="font-size:12px;color:#ddd;padding:8px 0">부속품 없음</div>';
+    return;
+  }
+  wrap.innerHTML=_unregAccList.map((a,i)=>`
+    <div class="sku-row" style="justify-content:space-between">
+      <div style="font-size:13px;font-weight:600;color:#f0f0f0;flex:1">${a.name}</div>
+      <button onclick="_unregAccList.splice(${i},1);_renderUnregAccList();" style="background:none;border:none;color:#ff3b30;font-size:18px;cursor:pointer;padding:0 4px">×</button>
+    </div>`).join('');
+}
+
+function onUnregCatChange(sel){
+  // 카테고리 변경 시 부속품 탭 업데이트
+  setUnregAccCat(sel.value, document.querySelector('#unreg-acc-cat-tabs .cat-btn.active')||document.querySelector('#unreg-acc-cat-tabs .cat-btn'));
+}
+
+function editUnregSize(){
+  const cat=(document.getElementById('unreg-cat')?.value||'가방').trim();
+  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+  const wrap=document.getElementById('unreg-size-wrap');
+  if(!wrap) return;
+  const hidden=document.getElementById('unreg-size-hidden');
+  const cur=hidden?.value||'';
+  const nums=cur.match(/[\d.]+/g)||[];
+  wrap.innerHTML=cfg.map((f,i)=>`
+    <span style="font-size:10px;color:#ddd;margin-right:2px">${f.label}</span>
+    <input id="unreg-sf-${i}" type="number" value="${nums[i]||''}" placeholder="0" style="width:52px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#fff;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
+    <span style="font-size:10px;color:#ddd;margin-right:6px">${f.unit||''}</span>
+    ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}
+  `).join('');
+  document.getElementById('unreg-sf-0')?.focus();
+}
+
+function _updateUnregSizeHidden(){
+  const cat=(document.getElementById('unreg-cat')?.value||'가방').trim();
+  const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+  const parts=cfg.map((f,i)=>{
+    const v=document.getElementById('unreg-sf-'+i)?.value?.trim();
+    return v?`${f.label} ${v}${f.unit||''}`:null;
+  }).filter(Boolean);
+  const result=parts.join(' × ');
+  const hidden=document.getElementById('unreg-size-hidden');
+  if(hidden) hidden.value=result;
+  const display=document.getElementById('unreg-size-display');
+  if(display) display.textContent=result||'탭하여 입력';
+}
+
+// 검수결과 데이터를 미등록 폼에 자동 채우기
+function fillUnregForm(){
+  const a=resultData?.analysis||{};
+  document.getElementById('unreg-brand').value=(document.getElementById('r-brand')?.textContent||'').replace('—','').trim()||a.brand||'';
+  document.getElementById('unreg-model-ko').value=(document.getElementById('r-model-ko')?.textContent||'').replace('—','').trim()||a.model_name_ko||'';
+  document.getElementById('unreg-model').value=(document.getElementById('r-model')?.textContent||'').replace('—','').trim()||a.model_name||'';
+  document.getElementById('unreg-color').value=a.color||'';
+  document.getElementById('unreg-sku').value=(document.getElementById('r-sku')?.textContent||'').replace('—','').trim()||'';
+  document.getElementById('unreg-size-name').value=(document.getElementById('r-size-name')?.textContent||'').replace('—','').trim()||'';
+  const catSel=document.getElementById('unreg-cat');
+  if(catSel&&a.category) catSel.value=a.category;
+  // 실측
+  const sizeText=(document.getElementById('r-size')?.textContent||'').replace('—','').trim()||'';
+  const hidden=document.getElementById('unreg-size-hidden');
+  if(hidden) hidden.value=sizeText;
+  const display=document.getElementById('unreg-size-display');
+  if(display) display.textContent=sizeText||'탭하여 입력';
+  // 사진 (검수 이미지)
+  _unregPhotos=[];
+  _renderUnregPhotos();
+  _unregAccList=[];
+  _renderUnregAccList();
+}
+
+async function saveUnregSku(btn){
+  const brand=document.getElementById('unreg-brand').value.trim();
+  const modelKo=document.getElementById('unreg-model-ko').value.trim();
+  const modelEn=document.getElementById('unreg-model').value.trim();
+  const cat=document.getElementById('unreg-cat').value;
+  const color=document.getElementById('unreg-color').value.trim();
+  const sizeHidden=document.getElementById('unreg-size-hidden').value.trim();
+  const sizeName=document.getElementById('unreg-size-name').value.trim();
+  const skuCode=document.getElementById('unreg-sku').value.trim();
+  const url=document.getElementById('unreg-url').value.trim();
+  const notes=document.getElementById('unreg-notes').value.trim();
+
+  if(!brand&&!modelKo){ toast('❌ 브랜드 또는 모델명을 입력해주세요'); return; }
+
+  const origText=btn.textContent;
+  btn.textContent='⏳ 저장 중...'; btn.disabled=true;
+
+  try{
+    // 사진 업로드
+    let uploadedUrls=[];
+    if(_unregPhotos.length){
+      toast('⏳ 사진 업로드 중...');
+      const token=localStorage.getItem('lca_token')||'';
+      uploadedUrls=await Promise.all(_unregPhotos.map(async dataUrl=>{
+        const b64=dataUrl.split(',')[1];
+        const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json','x-access-token':token},body:JSON.stringify({action:'upload_image',imageBase64:b64})});
+        const j=await res.json();
+        return j.url||'';
+      }));
+      uploadedUrls=uploadedUrls.filter(Boolean);
+    }
+
+    const token=localStorage.getItem('lca_token')||'';
+    const skuData={
+      brand, model_name_ko:modelKo, model_name:modelEn,
+      category:cat, color, size_actual:sizeHidden,
+      size_label:sizeName, sku_code:skuCode,
+      site_url:url, notes,
+      accessories:_unregAccList,
+      extra_images:uploadedUrls,
+      ref_image_url:uploadedUrls[0]||null,
+      source:'model'
+    };
+    const res=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json','x-access-token':token},body:JSON.stringify({action:'save_sku',skuData})});
+    const j=await res.json();
+    if(j.success){
+      toast('✅ DB 저장 완료!');
+      // 폼 초기화
+      ['unreg-brand','unreg-model-ko','unreg-model','unreg-color','unreg-size-name','unreg-sku','unreg-url','unreg-notes'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.value='';
+      });
+      document.getElementById('unreg-size-hidden').value='';
+      document.getElementById('unreg-size-display').textContent='탭하여 입력';
+      document.getElementById('unreg-size-wrap').innerHTML='<span id="unreg-size-display" style="color:#ddd;font-size:12px">탭하여 입력</span>';
+      _unregPhotos=[]; _renderUnregPhotos();
+      _unregAccList=[]; _renderUnregAccList();
+      // skuListAll 캐시에 추가
+      if(j.data&&j.data[0]) skuListAll.unshift(j.data[0]);
+    } else {
+      toast('❌ 저장 실패: '+(j.error||''));
+    }
+  }catch(e){ toast('❌ 오류: '+e.message); }
+  finally{ btn.textContent=origText; btn.disabled=false; }
 }
 
 function searchSkuOnGoogle(){
