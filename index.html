@@ -5012,6 +5012,22 @@ function openSpecGoogleSearch(){
 
 
 // ══════════════════════════════════════════════════════════════
+// SUPABASE 직접 연결 설정
+// ══════════════════════════════════════════════════════════════
+var _SB_URL   = 'https://rpenhtoazbdjonezxxwn.supabase.co';
+var _SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZW5odG9hemJkam9uZXp4eHduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTE5NjQsImV4cCI6MjA5NDA4Nzk2NH0.ZjIiZdRo0Zgtto5EStPDAbXZ8JzX2eNjqUN7za0RfAs';
+var _SB_TABLE = 'sku_items';
+
+function sbHeaders(){
+  return {
+    'Content-Type': 'application/json',
+    'apikey': _SB_KEY,
+    'Authorization': 'Bearer ' + _SB_KEY,
+    'Prefer': 'return=representation'
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
 // ✨ AI 스펙 자동완성 — Gemini google_search 기반
 // ══════════════════════════════════════════════════════════════
 
@@ -5156,9 +5172,13 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         // 잘린 JSON에서 부분 추출 시도
         try{
           var partials = {};
-          var matches2 = rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*?)"/g);
-          for(var m of matches2){ partials[m[1]] = m[2]; }
-          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공'); }
+          // 문자열 값 추출
+          var strMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g);
+          for(var m of strMatches){ partials[m[1]] = m[2]; }
+          // 숫자 값 추출 (size_w, size_h, size_d 등)
+          var numMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
+          for(var m of numMatches){ partials[m[1]] = m[2]; }
+          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공', partials); }
           else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
         } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
       }
