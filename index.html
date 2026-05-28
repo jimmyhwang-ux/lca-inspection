@@ -5264,8 +5264,8 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     + '"size_label": "사이즈 명칭 (예: OS, Small, MM)",\n'
     + '"material": "소재",\n'
     + '"made_in": "제조국",\n'
-    + '"official_url": "스타일번호가 포함된 정확한 공식 제품 페이지 URL",\n'
-    + '"image_url": "공식 대표 이미지 URL",\n'
+    + '"official_url": "공식 제품 페이지 URL (없으면 빈 문자열)",\n'
+    + '"image_url": "공식 대표 이미지 URL (없으면 빈 문자열)",\n'
     + '"notes": "검수 참고 정보"\n'
     + '}';
 
@@ -5340,11 +5340,11 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
           else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
         } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
       }
-      // 카테고리별 필수 필드 충족 여부 확인
+      // 카테고리별 필수 필드 충족 여부 확인 (URL 없어도 사이즈만 있으면 OK)
       var _isComplete = (function(){
-        if(cat==='주얼리') return parsed.size_w && parsed.size_d && parsed.official_url;
-        if(cat==='시계') return parsed.size_w && parsed.size_h && parsed.official_url;
-        if(cat==='가방'||cat==='지갑') return parsed.size_w && parsed.size_h && parsed.official_url;
+        if(cat==='주얼리') return parsed.size_w && parsed.size_d;
+        if(cat==='시계') return parsed.size_w && parsed.size_h;
+        if(cat==='가방'||cat==='지갑') return parsed.size_w && parsed.size_h;
         return parsed.size_w;
       })();
       if(_isComplete){
@@ -5463,7 +5463,10 @@ function _applySpecToForm(data, cat){
                  || (newPhotoInp && newPhotoInp._dataUrls && newPhotoInp._dataUrls.length > 0);
 
     if(!hasPhotos){
-      _fetchOfficialImage(data.image_url);
+      var _fbBrand = document.getElementById('sku-brand')?.value || data.brand || '';
+      var _fbModel = document.getElementById('sku-model-ko')?.value || data.model_ko || '';
+      var _fbQuery = [_fbBrand, _fbModel].filter(Boolean).join(' ');
+      _fetchOfficialImage(data.image_url, _fbQuery || null);
     }
   }
 
@@ -5558,7 +5561,7 @@ document.addEventListener('click', function(e){
 
 
 // ── 공식 이미지 URL → SKU 사진 슬롯 자동 추가 ────────────────
-async function _fetchOfficialImage(imgUrl){
+async function _fetchOfficialImage(imgUrl, fallbackQuery){
   try{
     // 서버 프록시로 CORS 우회
     const token = localStorage.getItem('lca_token')||'';
@@ -5568,7 +5571,15 @@ async function _fetchOfficialImage(imgUrl){
       body:JSON.stringify({action:'proxy_image',imageUrl:imgUrl})
     });
     const j = await res.json();
-    if(!j.success||!j.base64){ console.warn('[AutoFill Image] 프록시 실패:', j.error); return; }
+    if(!j.success||!j.base64){
+      console.warn('[AutoFill Image] 프록시 실패:', j.error);
+      // 404 등 실패시 구글 이미지 검색으로 폴백
+      if(fallbackQuery){
+        console.log('[AutoFill Image] 폴백 이미지 검색:', fallbackQuery);
+        _fetchImageBySearch(fallbackQuery);
+      }
+      return;
+    }
     const dataUrl = 'data:'+j.mime+';base64,'+j.base64;
 
     {
@@ -5602,9 +5613,62 @@ async function _fetchOfficialImage(imgUrl){
 
 
 
-// ══════════════════════════════════════════════════════════════
-// AI 자동기입 — 검수결과 화면 (SKU매칭탭/신규등록탭 공용)
-// ══════════════════════════════════════════════════════════════
+// ── 이미지 폴백: Gemini google_search로 이미지 URL 검색 ─────────
+async function _fetchImageBySearch(query){
+  try{
+    const apiKey = _getGeminiKey();
+    if(!apiKey) return;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey;
+    const res = await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.0, maxOutputTokens:200}
+      })
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+    const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
+    if(m && m[1] && m[1].startsWith('http')){
+      console.log('[AutoFill Image] 폴백 이미지 URL:', m[1]);
+      _fetchOfficialImage(m[1], null);
+    }
+  }catch(e){ console.warn('[AutoFill Image] 폴백 검색 실패:', e); }
+}
+
+async function _fetchImageBySearchTo(query, target){
+  try{
+    const apiKey = _getGeminiKey();
+    if(!apiKey) return;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey;
+    const res = await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.0, maxOutputTokens:200}
+      })
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+    const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
+    if(m && m[1] && m[1].startsWith('http')){
+      console.log('[AutoFill Image] 폴백 이미지 URL ('+target+'):', m[1]);
+      _fetchOfficialImageTo(m[1], target, null);
+    }
+  }catch(e){ console.warn('[AutoFill Image] 폴백 검색 실패:', e); }
+}
+
+
 async function aiAutoFillFromResult(){
   var brand   = (document.getElementById('r-brand')||{}).textContent||'';
   var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
@@ -5715,12 +5779,15 @@ function _applySpecToUnreg(data, cat){
   if(data.image_url && data.image_url!=='—' && data.image_url!=='N/A'){
     var preview = document.getElementById('unreg-photo-preview');
     var hasPhotos = preview && preview.children.length > 0;
-    if(!hasPhotos) _fetchOfficialImageTo(data.image_url, 'unreg');
+    if(!hasPhotos){
+      var _fbQ = [data.brand||'', data.model_ko||''].filter(Boolean).join(' ');
+      _fetchOfficialImageTo(data.image_url, 'unreg', _fbQ||null);
+    }
   }
 }
 
 // 이미지를 특정 섹션에 추가 (unreg / sku) — 서버 프록시로 CORS 우회
-async function _fetchOfficialImageTo(imgUrl, target){
+async function _fetchOfficialImageTo(imgUrl, target, fallbackQuery){
   try{
     const token=localStorage.getItem('lca_token')||'';
     const res=await fetch('/api/inspect',{
@@ -5729,7 +5796,11 @@ async function _fetchOfficialImageTo(imgUrl, target){
       body:JSON.stringify({action:'proxy_image',imageUrl:imgUrl})
     });
     const j=await res.json();
-    if(!j.success||!j.base64){ console.warn('[ProxyImage] 실패:', j.error); return; }
+    if(!j.success||!j.base64){
+      console.warn('[ProxyImage] 실패:', j.error);
+      if(fallbackQuery) _fetchImageBySearchTo(fallbackQuery, target);
+      return;
+    }
     const dataUrl='data:'+j.mime+';base64,'+j.base64;
     if(target==='unreg'){
       _unregPhotos.unshift(dataUrl);
