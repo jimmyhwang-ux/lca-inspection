@@ -3402,6 +3402,9 @@ async function _enrichAiBadges(){
     var rows = await res.json();
     if(!rows || !rows.length) return;
     var aiIds = new Set(rows.map(function(r){ return String(r.id); }));
+    // _aiBadgeIds에도 추가 (renderSkuList에서 활용)
+    aiIds.forEach(function(id){ _aiBadgeIds.add(id); });
+    _saveAiBadgeIds();
     // 목록 카드에 뱃지 추가
     document.querySelectorAll('.sku-list-item').forEach(function(card){
       var skuId = String(card.dataset.skuid||'');
@@ -3486,7 +3489,7 @@ function renderSkuPage(wrapId){
             ${item.color?`<span class="sku-meta-tag">${item.color}</span>`:''}
             ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span><button onclick="event.stopPropagation();window.open('https://www.google.com/search?q='+encodeURIComponent('${(item.brand||'').replace(/'/g,"\\'")} ${(item.sku_code||'').replace(/'/g,"\\'")}'),'_blank')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px;vertical-align:middle;opacity:.7;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>`:''}
             ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
-            ${item.official_specs?`<span class="sku-meta-tag" style="background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)">✨ AI기입</span>`:''}
+            ${(item.official_specs||_aiBadgeIds.has(String(item.id)))?`<span class="sku-meta-tag" style="background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)">✨ AI기입</span>`:''}
             ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
           </div>
           ${(()=>{const _a=safeAccArr(item.accessories);return _a.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${_a.map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:'';})()}
@@ -5070,6 +5073,12 @@ function openSpecGoogleSearch(){
 // SUPABASE 직접 연결 설정
 // ══════════════════════════════════════════════════════════════
 var _SB_URL   = 'https://rpenhtoazbdjonezxxwn.supabase.co';
+// AI 자동기입된 SKU ID — localStorage 영구 보존
+var _aiBadgeIds = (function(){
+  try{ return new Set(JSON.parse(localStorage.getItem('_aiBadgeIds')||'[]')); }
+  catch(e){ return new Set(); }
+})();
+function _saveAiBadgeIds(){ try{ localStorage.setItem('_aiBadgeIds', JSON.stringify([..._aiBadgeIds])); }catch(e){} }
 var _SB_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwZW5odG9hemJkam9uZXp4eHduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTE5NjQsImV4cCI6MjA5NDA4Nzk2NH0.ZjIiZdRo0Zgtto5EStPDAbXZ8JzX2eNjqUN7za0RfAs';
 var _SB_TABLE = 'sku_items';
 
@@ -5640,6 +5649,7 @@ async function aiAutoFillEditModal(){
     toast('✨ AI 스펙 자동기입 완료!');
     // 저장 버튼 클릭 시 뱃지 추가 예약
     window._pendingAiBadgeId = efId;
+    if(efId){ _aiBadgeIds.add(efId); _saveAiBadgeIds(); }
   } catch(err){
     status.style.color = '#ef4444';
     status.textContent = '❌ ' + (err.message||'조회 실패');
