@@ -5200,17 +5200,44 @@ async function runSpecGoogleSearch(){
 
 function _parseSpecRawText(txt){
   var r={size_w:'',size_h:'',size_d:'',size_unit:'cm',size_label:'',style_number:'',material:'',official_url:'',notes:''};
-  var sz=txt.match(/(\d+\.?\d*)\s*(cm|mm)[^\d]*[\/x×]\s*(\d+\.?\d*)/i);
-  if(sz){r.size_w=sz[1];r.size_h=sz[3];r.size_unit=sz[2].toLowerCase();}else{
-    var sw=txt.match(/가로[:\s]*(\d+\.?\d*)\s*(cm|mm)/i),sh=txt.match(/세로[:\s]*(\d+\.?\d*)\s*(cm|mm)/i),sd=txt.match(/(?:폭|두께|체인)[:\s]*(\d+\.?\d*)\s*(cm|mm)/i);
-    if(sw){r.size_w=sw[1];r.size_unit=sw[2].toLowerCase();}if(sh)r.size_h=sh[1];if(sd)r.size_d=sd[1];
-  }
-  var sn=txt.match(/스타일\s*번호[:\s\*→]*([A-Z0-9\-]+)/i)||txt.match(/[→:]\s*([A-Z0-9]{5,})/);
-  if(sn)r.style_number=sn[1];
-  var url=txt.match(/https?:\/\/[^\s\)]+/);
-  if(url)r.official_url=url[0];
-  var mat=txt.match(/소재[:\s\*→]*([^\n•\*]+)/i);
-  if(mat)r.material=mat[1].trim();
+
+  // 단위 감지 (mm 우선)
+  var unitMatch = txt.match(/\b(mm|cm)\b/i);
+  if(unitMatch) r.size_unit = unitMatch[1].toLowerCase();
+
+  // 가로 — "가로 20cm" / "Width: 20" / 첫 번째 숫자
+  var sw = txt.match(/(?:가로|width|w)[:\s→*]*([\d.]+)\s*(cm|mm)?/i)
+          || txt.match(/([\d.]+)\s*(cm|mm)\s*[/x×]/i);
+  if(sw){ r.size_w=sw[1]; if(sw[2]) r.size_unit=sw[2].toLowerCase(); }
+
+  // 세로 — "세로 16cm" / "Height: 16"
+  var sh = txt.match(/(?:세로|height|h)[:\s→*]*([\d.]+)\s*(cm|mm)?/i)
+          || txt.match(/[/x×]\s*([\d.]+)\s*(cm|mm)/i);
+  if(sh){ r.size_h=sh[1]; if(sh[2]) r.size_unit=sh[2].toLowerCase(); }
+
+  // 폭/두께/체인 — "폭 3cm" / "Depth/두께/체인길이"
+  var sd = txt.match(/(?:폭|두께|체인|depth|d)[:\s→*]*([\d.]+)\s*(cm|mm)?/i);
+  if(sd){ r.size_d=sd[1]; }
+
+  // 스타일번호
+  var sn = txt.match(/(?:스타일\s*번호|style\s*no|ref)[:\s→*]*([A-Z0-9][A-Z0-9\-\.]{3,})/i)
+          || txt.match(/\b([A-Z]{2,}[0-9]{4,}[A-Z0-9]*)\b/);
+  if(sn) r.style_number = sn[1];
+
+  // 공식 URL
+  var url = txt.match(/https?:\/\/[^\s)\]]+/);
+  if(url) r.official_url = url[0].replace(/[.,]$/, '');
+
+  // 소재
+  var mat = txt.match(/(?:소재|material)[:\s→*]*([^\n•*+]+)/i);
+  if(mat) r.material = mat[1].trim().replace(/\s*\|.*$/, '');
+
+  // 특이사항 — 소재 외 나머지 불릿 포인트
+  var noteLines = txt.split('\n').filter(function(l){
+    return /^[\s•*+-]/.test(l) && !/(?:사이즈|size|소재|스타일|url|http)/i.test(l) && l.trim().length > 2;
+  }).map(function(l){ return l.replace(/^[\s•*+-]+/,'').trim(); });
+  if(noteLines.length) r.notes = noteLines.join(' | ');
+
   return r;
 }
 
@@ -5218,42 +5245,13 @@ async function applySpecGoogleResult(){
   var raw = (document.getElementById('spec-google-raw')||{}).value||'';
   if(!raw || raw==='검색 중...') return;
 
-  // 현재 열린 폼 감지 (unreg vs SKU수정)
   var isUnreg = (document.getElementById('unreg-content')?.style.display !== 'none');
-
-  var apiKey = _getGeminiKey();
-  if(!apiKey){ toast('Gemini API 키가 없어요'); return; }
-
-  toast('⏳ 파싱 중...');
+  toast('⏳ 반영 중...');
 
   try{
-    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents:[{parts:[{text:
-          '아래 텍스트에서 제품 스펙을 추출해. 반드시 JSON 객체 하나만 반환해. 설명, 마크다운, 코드블록 절대 금지. 첫 글자가 { 이어야 해.\n'
-          +'{\n"size_w":"가로숫자만",\n"size_h":"세로숫자만",\n"size_d":"체인길이또는두께숫자만",\n"size_unit":"cm또는mm",\n"size_label":"사이즈명칭없으면빈문자열",\n"style_number":"스타일번호없으면빈문자열",\n"material":"소재없으면빈문자열",\n"official_url":"공식URL없으면빈문자열",\n"notes":"특이사항없으면빈문자열"\n}\n\n텍스트:\n'+raw
-        }]}],
-        generationConfig:{temperature:0.0, maxOutputTokens:400}
-      })
-    });
-    var data = await res.json();
-    var txt = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
-    // JSON 클린업 — 코드블록, 앞뒤 텍스트 제거
-    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
-    // { } 사이만 추출
-    var jsonStart = txt.indexOf('{');
-    var jsonEnd   = txt.lastIndexOf('}');
-    if(jsonStart === -1 || jsonEnd === -1){
-      // JSON 없으면 원문에서 직접 추출 시도
-      console.warn('[SpecGoogle] JSON 없음 — 정규식 폴백');
-      parsed = _parseSpecRawText(raw);
-    } else {
-      txt = txt.slice(jsonStart, jsonEnd+1);
-      try{ parsed = JSON.parse(txt); }
-      catch(pe){ console.warn('[SpecGoogle] JSON 파싱 실패, 정규식 폴백:', pe); parsed = _parseSpecRawText(raw); }
-    }
+    // 정규식으로 원문 직접 파싱 (Gemini 재호출 없음 — 빠르고 안정적)
+    var parsed = _parseSpecRawText(raw);
+    console.log('[SpecGoogle] 파싱 결과:', parsed);
 
     // 폼 채우기
     var prefix = isUnreg ? 'unreg' : 'sku';
