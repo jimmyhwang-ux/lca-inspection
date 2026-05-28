@@ -5062,7 +5062,7 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     + '모델명: ' + modelName + '\n'
     + '카테고리: ' + cat + '\n\n'
     + '다음 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
-    + '{"style_number":"스타일번호","model_ko":"한글모델명(예:디바스드림펜던트)","size_w":"가로cm숫자만","size_h":"세로cm숫자만","size_d":"너비cm숫자만","size_unit":"cm","size_label":"사이즈명칭","material":"소재","made_in":"제조국","official_url":"공식URL","notes":"검수참고정보"}';
+    + '{"style_number":"스타일번호","model_ko":"한글모델명","size_w":"가로숫자만","size_h":"세로숫자만","size_d":"너비숫자만","size_unit":"cm","size_label":"사이즈명칭","material":"소재","made_in":"제조국","official_url":"공식페이지URL","image_url":"공식대표이미지URL(jpg/png직접링크)","notes":"검수참고정보"}';
 
   function fetchWithTimeout(url, opts, ms){
     var ctrl = new AbortController();
@@ -5197,9 +5197,23 @@ function _applySpecToForm(data, cat){
   }
 
   // 사이트 URL
-  if(data.official_url && data.official_url !== '—'){
+  if(data.official_url && data.official_url !== '—' && data.official_url !== 'N/A'){
     var urlEl = document.getElementById('sku-url');
     if(urlEl && !urlEl.value) urlEl.value = data.official_url;
+  }
+
+  // 공식 이미지 자동 추가 (사진이 없을 때만)
+  if(data.image_url && data.image_url !== '—' && data.image_url !== 'N/A'){
+    var existingPhotos = document.getElementById('sku-photo-wrap');
+    var newPhotoPreview = document.getElementById('sku-new-photo-preview');
+    var newPhotoInp = document.getElementById('sku-new-photo');
+    var hasPhotos = (existingPhotos && existingPhotos.children.length > 0)
+                 || (newPhotoPreview && newPhotoPreview.children.length > 0)
+                 || (newPhotoInp && newPhotoInp._dataUrls && newPhotoInp._dataUrls.length > 0);
+
+    if(!hasPhotos){
+      _fetchOfficialImage(data.image_url);
+    }
   }
 
   // 사이즈 명칭
@@ -5262,6 +5276,79 @@ document.addEventListener('click', function(e){
     document.activeElement.blur();
   }
 });
+
+
+// ── 공식 이미지 URL → SKU 사진 슬롯 자동 추가 ────────────────
+async function _fetchOfficialImage(imgUrl){
+  try{
+    // CORS 우회: img 태그로 로드 후 canvas로 변환
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function(){
+      try{
+        var MAX = 800;
+        var w = img.width, h = img.height;
+        if(w > MAX || h > MAX){
+          if(w > h){ h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        // sku-new-photo에 추가
+        var inp = document.getElementById('sku-new-photo');
+        var wrap = document.getElementById('sku-new-photo-preview');
+        if(!inp) return;
+        inp._dataUrls = inp._dataUrls || [];
+        inp._dataUrls.unshift(dataUrl); // 맨 앞에 추가
+
+        if(wrap){
+          wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px';
+          // AI 뱃지 포함 썸네일 추가
+          var thumbDiv = document.createElement('div');
+          thumbDiv.style.cssText = 'position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1.5px solid rgba(255,107,43,.5)';
+          var thumbImg = document.createElement('img');
+          thumbImg.src = dataUrl;
+          thumbImg.style.cssText = 'width:100%;height:100%;object-fit:cover';
+          var badge = document.createElement('div');
+          badge.textContent = 'AI';
+          badge.style.cssText = 'position:absolute;top:3px;right:3px;background:#ff6b2b;color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:4px';
+          thumbDiv.appendChild(thumbImg);
+          thumbDiv.appendChild(badge);
+          wrap.insertBefore(thumbDiv, wrap.firstChild);
+        }
+        toast('🖼️ 공식 이미지 자동 추가됨');
+      } catch(ce){
+        console.warn('[AutoFill Image] canvas 변환 실패:', ce);
+        // canvas 실패 시 URL만 메모에 기록
+        _fallbackImageNote(imgUrl);
+      }
+    };
+    img.onerror = function(){
+      console.warn('[AutoFill Image] 이미지 로드 실패 (CORS 차단):', imgUrl);
+      _fallbackImageNote(imgUrl);
+    };
+    img.src = imgUrl;
+  } catch(e){
+    console.warn('[AutoFill Image]', e);
+  }
+}
+
+function _fallbackImageNote(imgUrl){
+  // CORS 차단 시 특이사항에 URL 기록
+  var notesEl = document.getElementById('sku-notes');
+  if(notesEl){
+    var cur = notesEl.value;
+    var imgNote = '공식이미지: ' + imgUrl;
+    if(!cur.includes(imgNote)){
+      notesEl.value = cur ? (cur + '\n' + imgNote) : imgNote;
+    }
+  }
+  toast('⚠ 이미지 직접 추가 불가 — 특이사항에 URL 기록됨');
+}
+
 
 </script>
 
