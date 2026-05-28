@@ -164,6 +164,26 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ model_name_en: '' }); }
   }
 
+  if (action === 'proxy_image') {
+    try {
+      const { imageUrl } = req.body;
+      if (!imageUrl) return res.status(400).json({ success: false, error: 'URL 없음' });
+      const r = await fetch(imageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'image/*,*/*',
+          'Referer': new URL(imageUrl).origin
+        }
+      });
+      if (!r.ok) return res.status(400).json({ success: false, error: 'fetch 실패: '+r.status });
+      const arrayBuf = await r.arrayBuffer();
+      const buf = Buffer.from(arrayBuf);
+      const b64 = buf.toString('base64');
+      const ct = r.headers.get('content-type') || 'image/jpeg';
+      return res.status(200).json({ success: true, base64: b64, mime: ct });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
   // ── 메인 검수 ─────────────────────────────────────────────────
   if (!imageBase64) return res.status(400).json({ error: '이미지 없음' });
 
