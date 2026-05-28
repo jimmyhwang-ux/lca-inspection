@@ -1535,6 +1535,9 @@ function _renderDbCardList(items){
     (function(mid, itemId){
       aiBtn.onclick = function(e){
         e.stopPropagation();
+        // 버튼 초기화
+        this.innerHTML = '✨ AI 스펙 자동완성';
+        this.style.color='#ff6b2b'; this.style.borderColor='rgba(255,107,43,.35)';
         aiAutoFillForCard(mid, itemId, this);
       };
     })(mId, m.id);
@@ -5744,39 +5747,45 @@ function _applySpecToUnreg(data, cat){
   }
 }
 
-// 이미지를 특정 섹션에 추가 (unreg / sku)
-function _fetchOfficialImageTo(imgUrl, target){
-  var img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = function(){
-    try{
-      var MAX=800, w=img.width, h=img.height;
-      if(w>MAX||h>MAX){ if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
-      var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      var dataUrl=canvas.toDataURL('image/jpeg',0.85);
-      if(target==='unreg'){
-        _unregPhotos = _unregPhotos||[];
-        _unregPhotos.unshift(dataUrl);
-        _renderUnregPhotos && _renderUnregPhotos();
-      } else {
-        var inp=document.getElementById('sku-new-photo');
-        var wrap=document.getElementById('sku-new-photo-preview');
-        if(inp){ inp._dataUrls=inp._dataUrls||[]; inp._dataUrls.unshift(dataUrl); }
-        if(wrap){
-          wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px';
-          var td=document.createElement('div');
-          td.style.cssText='position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1.5px solid rgba(255,107,43,.5)';
-          var ti=document.createElement('img'); ti.src=dataUrl; ti.style.cssText='width:100%;height:100%;object-fit:cover';
-          var tb=document.createElement('div'); tb.textContent='AI'; tb.style.cssText='position:absolute;top:3px;right:3px;background:#ff6b2b;color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:4px';
-          td.appendChild(ti); td.appendChild(tb); wrap.insertBefore(td,wrap.firstChild);
-        }
+// 이미지를 특정 섹션에 추가 (unreg / sku) — 서버 프록시로 CORS 우회
+async function _fetchOfficialImageTo(imgUrl, target){
+  try{
+    const token=localStorage.getItem('lca_token')||'';
+    const res=await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body:JSON.stringify({action:'proxy_image',imageUrl:imgUrl})
+    });
+    const j=await res.json();
+    if(!j.success||!j.base64){ console.warn('[ProxyImage] 실패:', j.error); return; }
+    const dataUrl='data:'+j.mime+';base64,'+j.base64;
+    if(target==='unreg'){
+      _unregPhotos.unshift(dataUrl);
+      _renderUnregPhotos();
+      toast('🖼️ 공식 이미지 추가됨');
+    } else {
+      // sku 수동등록탭
+      var inp=document.getElementById('sku-new-photo');
+      var wrap=document.getElementById('sku-new-photo-preview');
+      if(!inp) return;
+      inp._dataUrls=inp._dataUrls||[];
+      inp._dataUrls.unshift(dataUrl);
+      if(wrap){
+        wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px';
+        var thumbDiv=document.createElement('div');
+        thumbDiv.style.cssText='position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1.5px solid rgba(255,107,43,.5)';
+        var thumbImg=document.createElement('img');
+        thumbImg.src=dataUrl;
+        thumbImg.style.cssText='width:100%;height:100%;object-fit:cover';
+        var badge=document.createElement('div');
+        badge.textContent='AI';
+        badge.style.cssText='position:absolute;top:3px;right:3px;background:#ff6b2b;color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:4px';
+        thumbDiv.appendChild(thumbImg); thumbDiv.appendChild(badge);
+        wrap.insertBefore(thumbDiv,wrap.firstChild);
       }
-      toast('🖼️ 공식 이미지 자동 추가됨');
-    } catch(e){ _fallbackImageNote(imgUrl); }
-  };
-  img.onerror = function(){ _fallbackImageNote(imgUrl); };
-  img.src = imgUrl;
+      toast('🖼️ 공식 이미지 추가됨');
+    }
+  }catch(e){ console.warn('[ProxyImage]', e); }
 }
 
 // ══════════════════════════════════════════════════════════════
