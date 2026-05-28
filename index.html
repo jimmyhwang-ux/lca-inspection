@@ -835,7 +835,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779975008');
+console.error('APP VERSION: 1779975198');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5356,7 +5356,7 @@ async function applySpecGoogleResult(){
     if(hasSize){
       if(!isUnreg){ var _sw=document.getElementById('sku-size-wrap'); if(_sw)_sw.dataset.cat=''; editSkuSize&&editSkuSize(); }
 
-      setTimeout(function(){\
+      setTimeout(function(){
         if(isUnreg) editUnregSize&&editUnregSize();
         setTimeout(function(){
           var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
