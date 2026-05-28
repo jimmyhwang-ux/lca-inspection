@@ -5180,12 +5180,12 @@ async function runSpecGoogleSearch(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         contents:[{parts:[{text:
-          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목을 한국어로 정리해줘:\n'
-          +'- 실측 사이즈 (가로/세로/체인 등)\n- 소재\n- 스타일번호\n- 공식 사이트 URL\n- 특이사항\n\n'
-          +'찾은 정보만 간결하게 텍스트로 작성해줘. JSON 금지.'
+          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘 (불필요한 설명 없이):\n'
+          +'• 실측 사이즈 (가로/세로/두께 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n'
+          +'없는 항목은 "없음"으로 표시. 간결하게.'
         }]}],
         tools:[{google_search:{}}],
-        generationConfig:{temperature:0.1, maxOutputTokens:600}
+        generationConfig:{temperature:0.1, maxOutputTokens:1500}
       })
     });
     var data = await res.json();
