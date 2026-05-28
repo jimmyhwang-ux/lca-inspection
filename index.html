@@ -835,7 +835,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779975198');
+console.error('APP VERSION: 1779976379');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5315,13 +5315,6 @@ async function applySpecGoogleResult(){
     else cat='가방';
   }
   console.log('[SpecGoogle] 카테고리:', cat);
-  // 카테고리 폼에 세팅 + 필드 렌더
-  var catEl=document.getElementById(prefix+'-cat');
-  if(catEl){
-    catEl.value=cat;
-    if(isUnreg) onUnregCatChange&&onUnregCatChange(catEl);
-    else catEl.dispatchEvent(new Event('change'));
-  }
 
   toast('⏳ 반영 중...');
 
@@ -5343,9 +5336,7 @@ async function applySpecGoogleResult(){
       if(parts.length){var cur=noteEl.value,add=parts.join(' | ');if(!cur.includes(add))noteEl.value=cur?cur+'\n'+add:add;}
     }
 
-    // 실측 사이즈 — SIZE_CONFIG 기반으로 주입
-    var _cat = cat; // 클로저 캡처용 별도 변수
-    var cfg=SIZE_CONFIG[_cat]||SIZE_CONFIG['가방'];
+    var _cat = cat;
     var valMap={
       '가로': parsed.size_w, '세로': parsed.size_h,
       '너비': parsed.size_d, '폭':   parsed.size_d||parsed.size_f,
@@ -5356,9 +5347,23 @@ async function applySpecGoogleResult(){
     if(hasSize){
       if(!isUnreg){ var _sw=document.getElementById('sku-size-wrap'); if(_sw)_sw.dataset.cat=''; editSkuSize&&editSkuSize(); }
 
+      // 1) 카테고리 세팅
+      var catEl2=document.getElementById(prefix+'-cat');
+      if(catEl2){ catEl2.value=_cat; }
+
       setTimeout(function(){
+        // 2) onUnregCatChange + editUnregSize
+        var catEl3=document.getElementById(prefix+'-cat');
+        if(catEl3){
+          catEl3.value=_cat;
+          if(isUnreg) onUnregCatChange&&onUnregCatChange(catEl3);
+          else catEl3.dispatchEvent(new Event('change'));
+        }
         if(isUnreg) editUnregSize&&editUnregSize();
         setTimeout(function(){
+          // 3) 카테고리 한번 더 확인 후 값 주입
+          var catEl4=document.getElementById(prefix+'-cat');
+          if(catEl4) catEl4.value=_cat;
           var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
           console.log('[SpecGoogle] 주입 _cat=['+_cat+'] fields='+cfg2.map(function(f){return f.label;}).join(','));
           cfg2.forEach(function(f,i){
