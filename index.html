@@ -338,19 +338,6 @@ input[type=file]{display:none}
 
   <div id="ref-section" style="display:none"></div>
 
-  <!-- 공식 스펙 Google 검색 버튼 -->
-  <div id="spec-google-wrap" style="display:none;margin:6px 16px 4px;display:flex;flex-direction:column;gap:6px">
-    <button id="spec-ai-btn" onclick="aiAutoFillFromResult()"
-      style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-      ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
-    </button>
-    <button id="spec-google-btn" onclick="openSpecGoogleSearch()"
-      style="width:100%;background:rgba(66,133,244,.12);color:#4285f4;border:1px solid rgba(66,133,244,.35);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-      🔍 공식 스펙 Google 검색
-    </button>
-    <div id="spec-ai-status" style="display:none;font-size:11px;color:#888;text-align:center;padding:6px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a"></div>
-  </div>
-
   <!-- 숨겨진 데이터 필드 (기존 로직 호환) -->
   <div style="display:none">
     <div id="r-size">—</div>
@@ -378,6 +365,13 @@ input[type=file]{display:none}
 
   <!-- 토글 콘텐츠 (기본 접힘) -->
   <div id="unreg-content" style="display:none;padding:12px 14px">
+
+  <!-- ✨ AI 스펙 자동완성 -->
+  <button id="spec-ai-btn" onclick="aiAutoFillFromResult()"
+    style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px">
+    ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
+  </button>
+  <div id="spec-ai-status" style="display:none;font-size:11px;color:#888;text-align:center;padding:6px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;margin-bottom:8px"></div>
 
   <!-- 사진 추가 -->
   <div style="margin-bottom:10px">
@@ -4855,6 +4849,12 @@ async function saveUnregSku(btn){
     const j=await res.json();
     if(j.success){
       toast('✅ DB 저장 완료!');
+      // AI 자동완성으로 저장된 경우 뱃지 추가
+      if(window._pendingAiBadgeUnreg && j.data && j.data[0]){
+        _aiBadgeIds.add(String(j.data[0].id));
+        _saveAiBadgeIds();
+        window._pendingAiBadgeUnreg = false;
+      }
       // AI 자동기입 뱃지 처리
       if(window._pendingAiBadgeUnreg && j.data && j.data[0]){
         _aiBadgeIds.add(String(j.data[0].id));
@@ -5621,25 +5621,39 @@ function _applySpecToUnreg(data, cat){
   if(data.style_number && data.style_number !== '—' && data.style_number !== 'N/A'){
     var el2 = document.getElementById('unreg-sku');
     if(el2 && !el2.value) el2.value = data.style_number;
-    // r-sku 숨김 필드도 반영
     var rsku = document.getElementById('r-sku');
     if(rsku && (rsku.textContent==='—'||!rsku.textContent.trim())) rsku.textContent = data.style_number;
   }
   if(data.official_url && data.official_url !== '—' && data.official_url !== 'N/A'){
-    var el3 = document.getElementById('unreg-site-url');
+    var el3 = document.getElementById('unreg-url'); // 수정: unreg-site-url → unreg-url
     if(el3 && !el3.value) el3.value = data.official_url;
   }
-  // 사이즈
+  // 카테고리
+  if(data.category && data.category !== '—' && data.category !== 'N/A'){
+    var catEl = document.getElementById('unreg-cat');
+    if(catEl && !catEl.value) { catEl.value = data.category; onUnregCatChange(catEl); }
+  }
+  // 사이즈 hidden에 직접 세팅
   var w=data.size_w, h=data.size_h, d=data.size_d;
   var unit=data.size_unit||'cm';
-  if(w||h){
+  if(w||h||d){
     var parts=[];
     if(w) parts.push('가로 '+w+unit);
     if(h) parts.push('세로 '+h+unit);
     if(d) parts.push('너비 '+d+unit);
     var sizeStr = parts.join(' × ');
-    var el4 = document.getElementById('unreg-size');
-    if(el4 && !el4.value) el4.value = sizeStr;
+    var hidden = document.getElementById('unreg-size-hidden');
+    if(hidden) hidden.value = sizeStr;
+    var display = document.getElementById('unreg-size-display');
+    if(display) display.textContent = sizeStr;
+    // 실측 필드도 채우기
+    editUnregSize();
+    setTimeout(function(){
+      if(w){ var i=document.getElementById('unreg-sf-0'); if(i) i.value=w; }
+      if(h){ var i=document.getElementById('unreg-sf-1'); if(i) i.value=h; }
+      if(d){ var i=document.getElementById('unreg-sf-2'); if(i) i.value=d; }
+      _updateUnregSizeHidden();
+    }, 100);
   }
   if(data.size_label && data.size_label !== '—'){
     var el5 = document.getElementById('unreg-size-name');
