@@ -835,7 +835,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779974245');
+console.error('APP VERSION: 1779974547');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5295,7 +5295,7 @@ async function applySpecGoogleResult(){
   var prefix=isUnreg?'unreg':'sku';
 
   // 카테고리: r-cat-tag(검수결과 뱃지) 우선 → 폼값 → 원문 추론
-  var cat=(document.getElementById('r-cat-tag')?.textContent||'').replace('✎','').trim();
+  var cat=(document.getElementById('r-cat-tag')?.textContent||'').replace(/[^\uAC00-\uD7A3]/g,'').trim();
   if(!cat) cat=(document.getElementById(prefix+'-cat')?.value||'').trim();
   if(!cat){
     var rt=raw;
