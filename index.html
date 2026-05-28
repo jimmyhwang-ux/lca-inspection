@@ -5212,29 +5212,28 @@ function _parseSpecRawText(txt){
   if(unitMatch) r.size_unit = unitMatch[1].toLowerCase();
 
   // 실측 사이즈 — 여러 형식 지원
-  // 형식1: "32cm (가로/세로/두께)" → w=32
-  // 형식2: "32cm (가로) x 26cm (세로) x 14cm (두께)"
-  // 형식3: "가로 32 / 세로 26 / 두께 14 cm"
-  // 형식4: "32 x 26 x 14 cm"
+  // 형식A: "가로 10.5mm, 세로 8.1mm" (각 항목에 단위 붙음)
+  // 형식B: "32cm x 26cm x 14cm"
+  // 형식C: "32 x 26 x 14 cm"
 
-  // 형식2: N단위 (가로) x N단위 (세로) x N단위 (두께)
-  var m2 = t.match(/([\d.]+)\s*(?:cm|mm)[^\d]*(?:가로)[^\d]*([\d.]+)\s*(?:cm|mm)[^\d]*(?:세로)[^\d]*([\d.]+)\s*(?:cm|mm)/i)
-         || t.match(/([\d.]+)\s*(?:cm|mm)\s*[x×,]\s*([\d.]+)\s*(?:cm|mm)\s*[x×,]\s*([\d.]+)\s*(?:cm|mm)/i);
-  if(m2){ r.size_w=m2[1]; r.size_h=m2[2]; r.size_d=m2[3]; }
-  else {
-    // 형식3: 가로 N / 세로 N / 두께(폭/체인) N
-    var sw = t.match(/(?:가로|width)[:\s→*]*([\d.]+)/i);
-    var sh = t.match(/(?:세로|height)[:\s→*]*([\d.]+)/i);
-    var sd = t.match(/(?:폭|두께|체인|depth)[:\s→*]*([\d.]+)/i);
-    if(sw) r.size_w=sw[1];
-    if(sh) r.size_h=sh[1];
-    if(sd) r.size_d=sd[1];
+  // 형식A: 가로/세로/폭 각각 개별 단위 — 가장 정확
+  var swA = t.match(/(?:가로|width)[:\s→*,]*([\d.]+)\s*(cm|mm)/i);
+  var shA = t.match(/(?:세로|height)[:\s→*,]*([\d.]+)\s*(cm|mm)/i);
+  var sdA = t.match(/(?:폭|두께|체인|펜던트|depth)[:\s→*,]*([\d.]+)\s*(cm|mm)/i);
+  if(swA){ r.size_w=swA[1]; r.size_unit=swA[2].toLowerCase(); }
+  if(shA){ r.size_h=shA[1]; if(!swA && shA[2]) r.size_unit=shA[2].toLowerCase(); }
+  if(sdA){ r.size_d=sdA[1]; }
 
-    // 형식4: 숫자 x 숫자 (단위)
-    if(!r.size_w){
-      var m4 = t.match(/([\d.]+)\s*[x×]\s*([\d.]+)(?:\s*[x×]\s*([\d.]+))?\s*(cm|mm)/i);
-      if(m4){ r.size_w=m4[1]; r.size_h=m4[2]; if(m4[3])r.size_d=m4[3]; if(m4[4])r.size_unit=m4[4].toLowerCase(); }
-    }
+  // 형식B: N(cm|mm) x N(cm|mm) x N(cm|mm)
+  if(!r.size_w){
+    var mB = t.match(/([\d.]+)\s*(cm|mm)\s*[x×]\s*([\d.]+)\s*(cm|mm)(?:\s*[x×]\s*([\d.]+)\s*(cm|mm))?/i);
+    if(mB){ r.size_w=mB[1]; r.size_unit=mB[2].toLowerCase(); r.size_h=mB[3]; if(mB[5])r.size_d=mB[5]; }
+  }
+
+  // 형식C: N x N x N cm
+  if(!r.size_w){
+    var mC = t.match(/([\d.]+)\s*[x×]\s*([\d.]+)(?:\s*[x×]\s*([\d.]+))?\s*(cm|mm)/i);
+    if(mC){ r.size_w=mC[1]; r.size_h=mC[2]; if(mC[3])r.size_d=mC[3]; r.size_unit=mC[4].toLowerCase(); }
   }
 
   // 사이즈 명칭 — "소(Small)", "OS", "원사이즈", "GM" 등
@@ -5247,9 +5246,14 @@ function _parseSpecRawText(txt){
           || t.match(/\b([A-Z]{2,}[0-9]{4,}[A-Z0-9]*)\b/);
   if(sn) r.style_number = sn[1];
 
-  // 공식 URL — 마크다운 링크 [텍스트](url) 형식도 처리
-  var urlM = t.match(/\[(?:[^\]]+)\]\((https?:\/\/[^)]+)\)/) || t.match(/https?:\/\/[^\s)\]\[]+/);
-  if(urlM) r.official_url = (urlM[1]||urlM[0]).replace(/[.,]$/, '');
+  // 공식 URL — https://, http://, www. 형식 모두 처리
+  var urlM = t.match(/\[(?:[^\]]+)\]\((https?:\/\/[^)]+)\)/)
+           || t.match(/https?:\/\/[^\s)\]\[,]+/)
+           || t.match(/www\.[a-z0-9\-]+\.[a-z]{2,}[^\s)\]\[,]*/i);
+  if(urlM){
+    var rawUrl = (urlM[1]||urlM[0]).replace(/[.,]$/, '');
+    r.official_url = rawUrl.startsWith('http') ? rawUrl : 'https://'+rawUrl;
+  }
 
   // 소재 — [cite] 뒤 텍스트 제거
   var mat = t.match(/(?:소재|material)[:\s→*]*([^\n•*+\[]+)/i);
