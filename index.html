@@ -2428,6 +2428,7 @@ async function _rematchSkuByModel(brand, modelName){
     const list = listJ.data;
     const v = modelName.trim().toLowerCase();
     if(!v) return;
+    const vNoSpace = v.replace(/\s+/g,''); // 띄어쓰기 제거 버전
     const normBrand = (brand||'').trim();
 
     // 브랜드 필터 — _brandMatch로 한글↔영문 양방향 매칭
@@ -2437,19 +2438,21 @@ async function _rematchSkuByModel(brand, modelName){
     });
     if(!brandList.length){ console.warn('SKU재매칭: 브랜드 매칭 없음', normBrand); return; }
 
-    // 1차: 완전일치
+    // 1차: 완전일치 (띄어쓰기 무시 포함)
     let found = brandList.filter(function(i){
       const ko=(i.model_name_ko||'').trim().toLowerCase();
       const en=(i.model_name||'').trim().toLowerCase();
-      return ko===v || en===v;
+      const koNS=ko.replace(/\s+/g,''), enNS=en.replace(/\s+/g,'');
+      return ko===v || en===v || koNS===vNoSpace || enNS===vNoSpace;
     });
 
-    // 2차: v가 모델명에 포함 (단방향 — 검색어가 모델명 안에 있어야 함)
+    // 2차: v가 모델명에 포함 (띄어쓰기 무시 포함)
     if(!found.length){
       found = brandList.filter(function(i){
         const ko=(i.model_name_ko||'').toLowerCase();
         const en=(i.model_name||'').toLowerCase();
-        return ko.includes(v) || en.includes(v);
+        const koNS=ko.replace(/\s+/g,''), enNS=en.replace(/\s+/g,'');
+        return ko.includes(v) || en.includes(v) || koNS.includes(vNoSpace) || enNS.includes(vNoSpace);
       });
     }
 
@@ -5201,42 +5204,63 @@ async function runSpecGoogleSearch(){
 function _parseSpecRawText(txt){
   var r={size_w:'',size_h:'',size_d:'',size_unit:'cm',size_label:'',style_number:'',material:'',official_url:'',notes:''};
 
-  // 단위 감지 (mm 우선)
-  var unitMatch = txt.match(/\b(mm|cm)\b/i);
+  // [cite: N] 제거
+  var t = txt.replace(/\[cite:\s*\d+\]/g,'').replace(/\*\*/g,'');
+
+  // 단위 감지
+  var unitMatch = t.match(/\b(mm|cm)\b/i);
   if(unitMatch) r.size_unit = unitMatch[1].toLowerCase();
 
-  // 가로 — "가로 20cm" / "Width: 20" / 첫 번째 숫자
-  var sw = txt.match(/(?:가로|width|w)[:\s→*]*([\d.]+)\s*(cm|mm)?/i)
-          || txt.match(/([\d.]+)\s*(cm|mm)\s*[/x×]/i);
-  if(sw){ r.size_w=sw[1]; if(sw[2]) r.size_unit=sw[2].toLowerCase(); }
+  // 실측 사이즈 — 여러 형식 지원
+  // 형식1: "32cm (가로/세로/두께)" → w=32
+  // 형식2: "32cm (가로) x 26cm (세로) x 14cm (두께)"
+  // 형식3: "가로 32 / 세로 26 / 두께 14 cm"
+  // 형식4: "32 x 26 x 14 cm"
 
-  // 세로 — "세로 16cm" / "Height: 16"
-  var sh = txt.match(/(?:세로|height|h)[:\s→*]*([\d.]+)\s*(cm|mm)?/i)
-          || txt.match(/[/x×]\s*([\d.]+)\s*(cm|mm)/i);
-  if(sh){ r.size_h=sh[1]; if(sh[2]) r.size_unit=sh[2].toLowerCase(); }
+  // 형식2: N단위 (가로) x N단위 (세로) x N단위 (두께)
+  var m2 = t.match(/([\d.]+)\s*(?:cm|mm)[^\d]*(?:가로)[^\d]*([\d.]+)\s*(?:cm|mm)[^\d]*(?:세로)[^\d]*([\d.]+)\s*(?:cm|mm)/i)
+         || t.match(/([\d.]+)\s*(?:cm|mm)\s*[x×,]\s*([\d.]+)\s*(?:cm|mm)\s*[x×,]\s*([\d.]+)\s*(?:cm|mm)/i);
+  if(m2){ r.size_w=m2[1]; r.size_h=m2[2]; r.size_d=m2[3]; }
+  else {
+    // 형식3: 가로 N / 세로 N / 두께(폭/체인) N
+    var sw = t.match(/(?:가로|width)[:\s→*]*([\d.]+)/i);
+    var sh = t.match(/(?:세로|height)[:\s→*]*([\d.]+)/i);
+    var sd = t.match(/(?:폭|두께|체인|depth)[:\s→*]*([\d.]+)/i);
+    if(sw) r.size_w=sw[1];
+    if(sh) r.size_h=sh[1];
+    if(sd) r.size_d=sd[1];
 
-  // 폭/두께/체인 — "폭 3cm" / "Depth/두께/체인길이"
-  var sd = txt.match(/(?:폭|두께|체인|depth|d)[:\s→*]*([\d.]+)\s*(cm|mm)?/i);
-  if(sd){ r.size_d=sd[1]; }
+    // 형식4: 숫자 x 숫자 (단위)
+    if(!r.size_w){
+      var m4 = t.match(/([\d.]+)\s*[x×]\s*([\d.]+)(?:\s*[x×]\s*([\d.]+))?\s*(cm|mm)/i);
+      if(m4){ r.size_w=m4[1]; r.size_h=m4[2]; if(m4[3])r.size_d=m4[3]; if(m4[4])r.size_unit=m4[4].toLowerCase(); }
+    }
+  }
 
-  // 스타일번호
-  var sn = txt.match(/(?:스타일\s*번호|style\s*no|ref)[:\s→*]*([A-Z0-9][A-Z0-9\-\.]{3,})/i)
-          || txt.match(/\b([A-Z]{2,}[0-9]{4,}[A-Z0-9]*)\b/);
+  // 사이즈 명칭 — "소(Small)", "OS", "원사이즈", "GM" 등
+  var szLabel = t.match(/\b(Small|Medium|Large|Mini|GM|PM|MM|OS|원사이즈|소|중|대)\b/i);
+  if(szLabel) r.size_label = szLabel[1];
+
+  // 스타일번호 — "861231AA9E13G39" 형식
+  var sn = t.match(/(?:스타일\s*번호|style\s*(?:no|number)|ref(?:erence)?)[:\s→*#]*([A-Z0-9][A-Z0-9\-\.]{4,})/i)
+          || t.match(/\b([0-9]{6}[A-Z0-9]{2,})\b/)
+          || t.match(/\b([A-Z]{2,}[0-9]{4,}[A-Z0-9]*)\b/);
   if(sn) r.style_number = sn[1];
 
-  // 공식 URL
-  var url = txt.match(/https?:\/\/[^\s)\]]+/);
-  if(url) r.official_url = url[0].replace(/[.,]$/, '');
+  // 공식 URL — 마크다운 링크 [텍스트](url) 형식도 처리
+  var urlM = t.match(/\[(?:[^\]]+)\]\((https?:\/\/[^)]+)\)/) || t.match(/https?:\/\/[^\s)\]\[]+/);
+  if(urlM) r.official_url = (urlM[1]||urlM[0]).replace(/[.,]$/, '');
 
-  // 소재
-  var mat = txt.match(/(?:소재|material)[:\s→*]*([^\n•*+]+)/i);
-  if(mat) r.material = mat[1].trim().replace(/\s*\|.*$/, '');
+  // 소재 — [cite] 뒤 텍스트 제거
+  var mat = t.match(/(?:소재|material)[:\s→*]*([^\n•*+\[]+)/i);
+  if(mat) r.material = mat[1].trim().replace(/\s*[|,].*$/, '');
 
-  // 특이사항 — 소재 외 나머지 불릿 포인트
-  var noteLines = txt.split('\n').filter(function(l){
-    return /^[\s•*+-]/.test(l) && !/(?:사이즈|size|소재|스타일|url|http)/i.test(l) && l.trim().length > 2;
-  }).map(function(l){ return l.replace(/^[\s•*+-]+/,'').trim(); });
-  if(noteLines.length) r.notes = noteLines.join(' | ');
+  // 특이사항
+  var noteLines = t.split('\n').filter(function(l){
+    var cl = l.replace(/^[\s•*+\-\[\]\d:.→]+/,'').trim();
+    return cl.length>4 && !/(?:실측|사이즈|소재|스타일|url|http|공식|site)/i.test(cl);
+  }).map(function(l){ return l.replace(/^[\s•*+\-]+/,'').trim(); }).filter(Boolean);
+  if(noteLines.length) r.notes = noteLines.slice(0,3).join(' | ');
 
   return r;
 }
