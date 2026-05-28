@@ -5674,12 +5674,33 @@ function _applySpecToEditModal(data, cat){
 // Supabase에 ID로 직접 스펙 저장
 async function saveSpecToSupabaseById(id, specs){
   try{
-    await fetch(_SB_URL+'/rest/v1/'+_SB_TABLE+'?id=eq.'+id,{
+    var res = await fetch(_SB_URL+'/rest/v1/'+_SB_TABLE+'?id=eq.'+id,{
       method:'PATCH',
       headers:sbHeaders(),
       body:JSON.stringify({official_specs:specs})
     });
-    console.log('[Supabase] official_specs 저장 완료 id='+id);
+    var txt = await res.text();
+    console.log('[Supabase] PATCH 결과:', res.status, txt.substring(0,200));
+    if(res.ok){
+      console.log('[Supabase] official_specs 저장 완료 id='+id);
+      // 저장 후 즉시 해당 카드에 뱃지 추가
+      setTimeout(function(){
+        var card = document.querySelector('.sku-list-item[data-skuid="'+id+'"]');
+        if(card && !card.querySelector('.ai-badge-tag')){
+          var metaWrap = card.querySelector('.sku-list-meta');
+          if(metaWrap){
+            var badge = document.createElement('span');
+            badge.className = 'sku-meta-tag ai-badge-tag';
+            badge.style.cssText = 'background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)';
+            badge.textContent = '✨ AI기입';
+            metaWrap.appendChild(badge);
+            console.log('[Badge] 뱃지 추가됨 id='+id);
+          }
+        }
+      }, 100);
+    } else {
+      console.warn('[Supabase] 저장 실패:', res.status, txt);
+    }
   } catch(e){ console.warn('[Supabase saveSpecById]',e); }
 }
 
