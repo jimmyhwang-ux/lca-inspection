@@ -5198,6 +5198,22 @@ async function runSpecGoogleSearch(){
   btn.disabled = false;
 }
 
+function _parseSpecRawText(txt){
+  var r={size_w:'',size_h:'',size_d:'',size_unit:'cm',size_label:'',style_number:'',material:'',official_url:'',notes:''};
+  var sz=txt.match(/(\d+\.?\d*)\s*(cm|mm)[^\d]*[\/x×]\s*(\d+\.?\d*)/i);
+  if(sz){r.size_w=sz[1];r.size_h=sz[3];r.size_unit=sz[2].toLowerCase();}else{
+    var sw=txt.match(/가로[:\s]*(\d+\.?\d*)\s*(cm|mm)/i),sh=txt.match(/세로[:\s]*(\d+\.?\d*)\s*(cm|mm)/i),sd=txt.match(/(?:폭|두께|체인)[:\s]*(\d+\.?\d*)\s*(cm|mm)/i);
+    if(sw){r.size_w=sw[1];r.size_unit=sw[2].toLowerCase();}if(sh)r.size_h=sh[1];if(sd)r.size_d=sd[1];
+  }
+  var sn=txt.match(/스타일\s*번호[:\s\*→]*([A-Z0-9\-]+)/i)||txt.match(/[→:]\s*([A-Z0-9]{5,})/);
+  if(sn)r.style_number=sn[1];
+  var url=txt.match(/https?:\/\/[^\s\)]+/);
+  if(url)r.official_url=url[0];
+  var mat=txt.match(/소재[:\s\*→]*([^\n•\*]+)/i);
+  if(mat)r.material=mat[1].trim();
+  return r;
+}
+
 async function applySpecGoogleResult(){
   var raw = (document.getElementById('spec-google-raw')||{}).value||'';
   if(!raw || raw==='검색 중...') return;
@@ -5216,8 +5232,8 @@ async function applySpecGoogleResult(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         contents:[{parts:[{text:
-          '아래 텍스트에서 제품 스펙을 추출해서 JSON으로만 반환해. 다른 말 없이 JSON만.\n'
-          +'{\n  "size_w": "가로(숫자만, 단위제외)",\n  "size_h": "세로(숫자만)",\n  "size_d": "체인길이 또는 두께(숫자만)",\n  "size_unit": "cm 또는 mm",\n  "size_label": "사이즈 명칭(예:GM,원사이즈 등, 없으면 빈 문자열)",\n  "style_number": "스타일번호(없으면 빈 문자열)",\n  "material": "소재(없으면 빈 문자열)",\n  "official_url": "공식URL(없으면 빈 문자열)",\n  "notes": "기타 특이사항(없으면 빈 문자열)"\n}\n\n텍스트:\n'+raw
+          '아래 텍스트에서 제품 스펙을 추출해. 반드시 JSON 객체 하나만 반환해. 설명, 마크다운, 코드블록 절대 금지. 첫 글자가 { 이어야 해.\n'
+          +'{\n"size_w":"가로숫자만",\n"size_h":"세로숫자만",\n"size_d":"체인길이또는두께숫자만",\n"size_unit":"cm또는mm",\n"size_label":"사이즈명칭없으면빈문자열",\n"style_number":"스타일번호없으면빈문자열",\n"material":"소재없으면빈문자열",\n"official_url":"공식URL없으면빈문자열",\n"notes":"특이사항없으면빈문자열"\n}\n\n텍스트:\n'+raw
         }]}],
         generationConfig:{temperature:0.0, maxOutputTokens:400}
       })
@@ -5229,9 +5245,15 @@ async function applySpecGoogleResult(){
     // { } 사이만 추출
     var jsonStart = txt.indexOf('{');
     var jsonEnd   = txt.lastIndexOf('}');
-    if(jsonStart === -1 || jsonEnd === -1) throw new Error('JSON 블록을 찾지 못했어요');
-    txt = txt.slice(jsonStart, jsonEnd+1);
-    var parsed = JSON.parse(txt);
+    if(jsonStart === -1 || jsonEnd === -1){
+      // JSON 없으면 원문에서 직접 추출 시도
+      console.warn('[SpecGoogle] JSON 없음 — 정규식 폴백');
+      parsed = _parseSpecRawText(raw);
+    } else {
+      txt = txt.slice(jsonStart, jsonEnd+1);
+      try{ parsed = JSON.parse(txt); }
+      catch(pe){ console.warn('[SpecGoogle] JSON 파싱 실패, 정규식 폴백:', pe); parsed = _parseSpecRawText(raw); }
+    }
 
     // 폼 채우기
     var prefix = isUnreg ? 'unreg' : 'sku';
