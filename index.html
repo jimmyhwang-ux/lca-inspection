@@ -5056,27 +5056,12 @@ async function aiAutoFillSpec(){
 
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
   var modelName = modelKo || modelEn || '';
-  var prompt = '당신은 명품 전문 감정사입니다. 구글 검색으로 브랜드 공식 사이트에서 아래 상품의 스펙을 찾아주세요.\n\n'
-    + '[조회 상품]\n'
-    + '- 브랜드: ' + brand + '\n'
-    + '- 모델명: ' + modelName + '\n'
-    + '- 카테고리: ' + cat + '\n\n'
-    + '[검색 우선 사이트] 에르메스→hermes.com, 샤넬→chanel.com, 루이비통→louisvuitton.com, '
-    + '롤렉스→rolex.com, 구찌→gucci.com, 디올→dior.com, 프라다→prada.com, '
-    + '발렌시아가→balenciaga.com, 보테가베네타→bottegaveneta.com, 셀린느→celine.com\n\n'
-    + '[출력] 아래 JSON만. 다른 텍스트 없이.\n'
-    + '{\n'
-    + '  "style_number": "스타일번호 (예: M41534)",\n'
-    + '  "size_w": "가로 수치만 (예: 30)",\n'
-    + '  "size_h": "세로 수치만 (예: 22)",\n'
-    + '  "size_d": "폭/깊이 수치만 (예: 16)",\n'
-    + '  "size_unit": "cm 또는 mm",\n'
-    + '  "size_label": "사이즈 명칭 (예: MM, GM, 30)",\n'
-    + '  "material": "소재 (예: 모노그램 캔버스)",\n'
-    + '  "made_in": "제조국 (예: 프랑스)",\n'
-    + '  "official_url": "공식 페이지 URL",\n'
-    + '  "notes": "소재·하드웨어·클로저 등 검수 참고 정보 1~2줄"\n'
-    + '}';
+  var prompt = '아래 명품 상품의 공식 스펙을 알려주세요. 반드시 JSON 형식으로만 답하세요. 설명, 인사말, 마크다운 불필요.\n\n'
+    + '브랜드: ' + brand + '\n'
+    + '모델명: ' + modelName + '\n'
+    + '카테고리: ' + cat + '\n\n'
+    + '다음 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
+    + '{"style_number":"스타일번호","size_w":"가로cm숫자만","size_h":"세로cm숫자만","size_d":"너비cm숫자만","size_unit":"cm","size_label":"사이즈명칭","material":"소재","made_in":"제조국","official_url":"공식URL","notes":"검수참고정보"}';
 
   function fetchWithTimeout(url, opts, ms){
     var ctrl = new AbortController();
@@ -5124,10 +5109,14 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
       var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
       if(!rawText){ lastErr = mc.model + ': 빈 응답'; continue; }
 
-      var jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*\})/);
-      if(!jsonMatch){ lastErr = mc.model + ': JSON 없음'; continue; }
-
-      var parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      var parsed = null;
+      try{
+        var jStr = rawText.trim();
+        var jm1a = rawText.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
+        var jm1b = rawText.match(/({[\s\S]*})/);
+        jStr = (jm1a && jm1a[1]) || (jm1b && jm1b[0]) || jStr;
+        parsed = JSON.parse(jStr);
+      } catch(pe){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
       // 실측 사이즈가 없으면 2단계로
       if(parsed.size_w || parsed.size_h){
         console.log('[AI AutoFill] 빠른 성공:', mc.model, parsed);
@@ -5167,11 +5156,16 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
       var raw2 = ((data2.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
       if(!raw2){ lastErr = mc2.model + ': 빈 응답'; continue; }
 
-      var jm2 = raw2.match(/```json\s*([\s\S]*?)```/) || raw2.match(/(\{[\s\S]*\})/);
-      if(!jm2){ lastErr = mc2.model + ': JSON 없음'; continue; }
-
-      var parsed2 = JSON.parse(jm2[1] || jm2[0]);
+      var parsed2 = null;
+      try{
+        var jStr2 = raw2.trim();
+        var jm2a = raw2.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
+        var jm2b = raw2.match(/({[\s\S]*})/);
+        jStr2 = (jm2a && jm2a[1]) || (jm2b && jm2b[0]) || jStr2;
+        parsed2 = JSON.parse(jStr2);
+      } catch(pe2){ lastErr = mc2.model + ': JSON 파싱 실패'; continue; }
       console.log('[AI AutoFill] 검색 성공:', mc2.model, parsed2);
+      return parsed2;
       return parsed2;
     } catch(e){
       lastErr = mc2.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
