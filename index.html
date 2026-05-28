@@ -5242,13 +5242,15 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
           // 숫자 값 추출 (size_w, size_h, size_d 등)
           var numMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
           for(var m of numMatches){ partials[m[1]] = m[2]; }
-          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공', partials); }
+          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공', partials); localStorage.setItem('_lastAutoFill', JSON.stringify(partials)); }
           else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
         } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
       }
       // 실측 사이즈가 없으면 2단계로
       if(parsed.size_w || parsed.size_h){
-        console.log('[AI AutoFill] 빠른 성공:', mc.model, parsed);
+        localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
+        localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
+        console.log('[AI AutoFill] 빠른 성공:', mc.model, 'size_w='+parsed.size_w, 'size_h='+parsed.size_h, parsed);
         return parsed;
       }
       console.log('[AI AutoFill] 사이즈 없음 — 검색 모드로 전환');
@@ -5294,7 +5296,8 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         jStr2 = (jm2a && jm2a[1]) || (jm2b && jm2b[0]) || jStr2;
         parsed2 = JSON.parse(jStr2);
       } catch(pe2){ lastErr = mc2.model + ': JSON 파싱 실패'; continue; }
-      console.log('[AI AutoFill] 검색 성공:', mc2.model, parsed2);
+      localStorage.setItem('_lastAutoFill', JSON.stringify(parsed2));
+      console.log('[AI AutoFill] 검색 성공:', mc2.model, 'size_w='+parsed2.size_w, 'size_h='+parsed2.size_h, parsed2);
       return parsed2;
       return parsed2;
     } catch(e){
