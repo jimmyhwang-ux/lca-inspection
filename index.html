@@ -5266,8 +5266,14 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
           else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
         } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
       }
-      // 실측 사이즈가 없으면 2단계로
-      if(parsed.size_w || parsed.size_h){
+      // 카테고리별 필수 필드 충족 여부 확인
+      var _isComplete = (function(){
+        if(cat==='주얼리') return parsed.size_w && parsed.size_d && parsed.official_url;
+        if(cat==='시계') return parsed.size_w && parsed.size_h && parsed.official_url;
+        if(cat==='가방'||cat==='지갑') return parsed.size_w && parsed.size_h && parsed.official_url;
+        return parsed.size_w;
+      })();
+      if(_isComplete){
         localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
         localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
         console.log('[AI AutoFill] 빠른 성공:', mc.model, 'size_w='+parsed.size_w, 'size_h='+parsed.size_h, parsed);
