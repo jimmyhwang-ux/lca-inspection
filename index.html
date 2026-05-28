@@ -3705,8 +3705,30 @@ async function copySkuTo(skuId, targetSource){
     // 대상 탭 새로고침
     // 현재 보고있는 탭 새로고침 (대상탭이 아닌 현재 탭 기준)
     const _at=document.querySelector('.sku-tab.active')?.id?.replace('tab-','');
-    setTimeout(()=>loadSkuList(_at||targetTab||'list'),300);
-    setTimeout(_enrichAiBadges, 700);
+    setTimeout(function(){
+      loadSkuList(_at||targetTab||'list');
+      // AI 자동기입 뱃지 예약 처리
+      if(window._pendingAiBadgeId){
+        var pendId = window._pendingAiBadgeId;
+        window._pendingAiBadgeId = null;
+        setTimeout(function(){
+          var card = document.querySelector('.sku-list-item[data-skuid="'+pendId+'"]');
+          if(card && !card.querySelector('.ai-badge-tag')){
+            var m = card.querySelector('.sku-list-meta');
+            if(m){
+              var b = document.createElement('span');
+              b.className = 'sku-meta-tag ai-badge-tag';
+              b.style.cssText = 'background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)';
+              b.textContent = '✨ AI기입';
+              m.appendChild(b);
+            }
+          }
+          setTimeout(_enrichAiBadges, 200);
+        }, 600);
+      } else {
+        setTimeout(_enrichAiBadges, 700);
+      }
+    }, 300);
   }catch(e){
     toast('❌ 오류: '+e.message);
   }
@@ -5616,6 +5638,8 @@ async function aiAutoFillEditModal(){
     btn.style.color = '#22c55e';
     btn.style.borderColor = 'rgba(34,197,94,.4)';
     toast('✨ AI 스펙 자동기입 완료!');
+    // 저장 버튼 클릭 시 뱃지 추가 예약
+    window._pendingAiBadgeId = efId;
   } catch(err){
     status.style.color = '#ef4444';
     status.textContent = '❌ ' + (err.message||'조회 실패');
