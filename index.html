@@ -354,10 +354,21 @@ input[type=file]{display:none}
 
   <!-- 구글 AI 검색 버튼 -->
   <div id="spec-google-wrap" style="display:none;margin:0 16px 10px">
-    <button onclick="openSpecGoogleSearch()"
+    <button id="spec-google-btn" onclick="runSpecGoogleSearch()"
       style="width:100%;background:linear-gradient(135deg,rgba(66,133,244,.15),rgba(66,133,244,.08));color:#4285f4;border:1px solid rgba(66,133,244,.4);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
       🔍 구글 AI 검색으로 스펙 조회
     </button>
+    <!-- 결과 원문 + 반영 버튼 (검색 후 노출) -->
+    <div id="spec-google-result" style="display:none;margin-top:8px">
+      <div style="font-size:11px;color:#888;margin-bottom:4px">검색 결과 원문</div>
+      <textarea id="spec-google-raw" rows="6"
+        style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:8px;color:#ddd;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box"
+        placeholder="검색 중..."></textarea>
+      <button onclick="applySpecGoogleResult()"
+        style="width:100%;margin-top:6px;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">
+        ✅ 폼에 자동 반영하기
+      </button>
+    </div>
   </div>
 
   <!-- ④ 주황 테두리: 실측사이즈 + 부속품 -->
@@ -5144,17 +5155,122 @@ function _refreshDbCardPics(idx, itemId){
 
 
 // ── 공식 스펙 Google AI 검색 ─────────────────────────────────
-function openSpecGoogleSearch(){
+async function runSpecGoogleSearch(){
   var brand   = (document.getElementById('r-brand')||{}).textContent||'';
   var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
   var modelEn = (document.getElementById('r-model')||{}).textContent||'';
   var styleNo = ((document.getElementById('r-sku')||{}).textContent||'').replace('—','').trim();
-
   var keyword = styleNo
-    ? (brand + ' ' + styleNo + ' 사이즈 스펙 소재')
-    : (brand + ' ' + (modelKo || modelEn) + ' 사이즈 스펙 소재');
+    ? (brand+' '+styleNo+' 사이즈 소재 스타일번호 공식 스펙')
+    : (brand+' '+(modelKo||modelEn)+' 사이즈 소재 스타일번호 공식 스펙');
 
-  window.open('https://www.google.com/search?q=' + encodeURIComponent(keyword) + '&udm=50', '_blank');
+  var btn  = document.getElementById('spec-google-btn');
+  var resW = document.getElementById('spec-google-result');
+  var raw  = document.getElementById('spec-google-raw');
+  btn.textContent = '🔍 검색 중...';
+  btn.disabled = true;
+  resW.style.display = 'block';
+  raw.value = '검색 중...';
+
+  try{
+    var apiKey = _getGeminiKey();
+    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 구글 AI 검색으로 스펙 조회'; btn.disabled=false; return; }
+    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목을 한국어로 정리해줘:\n'
+          +'- 실측 사이즈 (가로/세로/체인 등)\n- 소재\n- 스타일번호\n- 공식 사이트 URL\n- 특이사항\n\n'
+          +'찾은 정보만 간결하게 텍스트로 작성해줘. JSON 금지.'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.1, maxOutputTokens:600}
+      })
+    });
+    var data = await res.json();
+    var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+    raw.value = text || '검색 결과를 찾지 못했어요.';
+  }catch(e){
+    raw.value = '검색 실패: '+e.message;
+  }
+  btn.textContent = '🔍 다시 검색';
+  btn.disabled = false;
+}
+
+async function applySpecGoogleResult(){
+  var raw = (document.getElementById('spec-google-raw')||{}).value||'';
+  if(!raw || raw==='검색 중...') return;
+
+  // 현재 열린 폼 감지 (unreg vs SKU수정)
+  var isUnreg = (document.getElementById('unreg-content')?.style.display !== 'none');
+
+  var apiKey = _getGeminiKey();
+  if(!apiKey){ toast('Gemini API 키가 없어요'); return; }
+
+  toast('⏳ 파싱 중...');
+
+  try{
+    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          '아래 텍스트에서 제품 스펙을 추출해서 JSON으로만 반환해. 다른 말 없이 JSON만.\n'
+          +'{\n  "size_w": "가로(숫자만, 단위제외)",\n  "size_h": "세로(숫자만)",\n  "size_d": "체인길이 또는 두께(숫자만)",\n  "size_unit": "cm 또는 mm",\n  "size_label": "사이즈 명칭(예:GM,원사이즈 등, 없으면 빈 문자열)",\n  "style_number": "스타일번호(없으면 빈 문자열)",\n  "material": "소재(없으면 빈 문자열)",\n  "official_url": "공식URL(없으면 빈 문자열)",\n  "notes": "기타 특이사항(없으면 빈 문자열)"\n}\n\n텍스트:\n'+raw
+        }]}],
+        generationConfig:{temperature:0.0, maxOutputTokens:400}
+      })
+    });
+    var data = await res.json();
+    var txt = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+    txt = txt.replace(/```json|```/g,'').trim();
+    var parsed = JSON.parse(txt);
+
+    // 폼 채우기
+    var prefix = isUnreg ? 'unreg' : 'sku';
+    function _set(id, val){ var el=document.getElementById(id); if(el && val && val!=='—') el.value=val; }
+
+    _set(prefix+'-size-name', parsed.size_label);
+    _set(prefix+'-sku',       parsed.style_number);
+    _set(prefix+'-url',       parsed.official_url);
+
+    // 특이사항 — 소재+메모 합치기
+    var noteEl = document.getElementById(prefix+'-notes');
+    if(noteEl){
+      var parts=[];
+      if(parsed.material) parts.push('소재: '+parsed.material);
+      if(parsed.notes) parts.push(parsed.notes);
+      if(parts.length){
+        var cur = noteEl.value;
+        var add = parts.join(' | ');
+        if(!cur.includes(add)) noteEl.value = cur ? cur+'\n'+add : add;
+      }
+    }
+
+    // 실측 사이즈 세팅
+    var w=parsed.size_w||'', h=parsed.size_h||'', d=parsed.size_d||'', unit=parsed.size_unit||'cm';
+    if(w||h||d){
+      if(isUnreg){
+        var f1=document.getElementById('unreg-sf-1'), f2=document.getElementById('unreg-sf-2'), f3=document.getElementById('unreg-sf-3');
+        var fu=document.getElementById('unreg-size-unit');
+        if(f1) f1.value=w; if(f2) f2.value=h; if(f3) f3.value=d;
+        if(fu) fu.value=unit;
+        _updateUnregSizeHidden && _updateUnregSizeHidden();
+      } else {
+        var sf1=document.getElementById('sku-sf-1'), sf2=document.getElementById('sku-sf-2'), sf3=document.getElementById('sku-sf-3');
+        var sfu=document.getElementById('sku-size-unit');
+        if(sf1) sf1.value=w; if(sf2) sf2.value=h; if(sf3) sf3.value=d;
+        if(sfu) sfu.value=unit;
+        _updateSkuSizeHidden && _updateSkuSizeHidden();
+      }
+    }
+
+    toast('✅ 폼에 반영됐어요!');
+  }catch(e){
+    toast('⚠ 파싱 실패: '+e.message);
+    console.warn('[SpecGoogle] 파싱 실패', e);
+  }
 }
 
 // ── 결과 화면 진입 시 구글 검색 버튼 노출 ───────────────────
