@@ -5320,8 +5320,20 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         var jm2a = raw2.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
         var jm2b = raw2.match(/({[\s\S]*})/);
         jStr2 = (jm2a && jm2a[1]) || (jm2b && jm2b[0]) || jStr2;
+        if(jStr2 && !jStr2.trim().endsWith('}')) jStr2 = jStr2.replace(/,\s*$/, '') + '}';
         parsed2 = JSON.parse(jStr2);
-      } catch(pe2){ lastErr = mc2.model + ': JSON 파싱 실패'; continue; }
+      } catch(pe2){
+        // 부분 추출 시도 (1단계와 동일)
+        try{
+          var partials2 = {};
+          var strM2 = raw2.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g);
+          for(var sm of strM2){ partials2[sm[1]] = sm[2]; }
+          var numM2 = raw2.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
+          for(var nm of numM2){ partials2[nm[1]] = nm[2]; }
+          if(Object.keys(partials2).length > 0){ parsed2 = partials2; console.warn('[AutoFill 2단계] 부분 파싱 성공', partials2); }
+          else { lastErr = mc2.model + ': JSON 파싱 실패'; console.warn('[AutoFill 2단계]', raw2.substring(0,300)); continue; }
+        } catch(pe3){ lastErr = mc2.model + ': JSON 파싱 실패'; console.warn('[AutoFill 2단계]', raw2.substring(0,300)); continue; }
+      }
       localStorage.setItem('_lastAutoFill', JSON.stringify(parsed2));
       console.log('[AI AutoFill] 검색 성공:', mc2.model, 'size_w='+parsed2.size_w, 'size_h='+parsed2.size_h, parsed2);
       return parsed2;
