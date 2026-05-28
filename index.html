@@ -3329,6 +3329,7 @@ async function loadSkuList(tab){
       filterSkuListByCat(skuListAll,wrapId,'전체','');
     } else {
       renderSkuList(skuListAll);
+      setTimeout(_enrichAiBadges, 300);
     }
   }catch(e){
     if(wrap) wrap.innerHTML=`<div class="sku-empty">불러오기 실패: ${e.message}</div>`;
@@ -3388,6 +3389,36 @@ function _sortByRichness(list){
     return new Date(b.created_at||0) - new Date(a.created_at||0);
   });
 }
+
+
+// official_specs 뱃지 보강 — 백엔드가 컬럼을 안 내려줄 때 Supabase 직접 조회
+async function _enrichAiBadges(){
+  try{
+    var res = await fetch(
+      _SB_URL + '/rest/v1/' + _SB_TABLE + '?select=id&official_specs=not.is.null&limit=500',
+      {headers: {'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY}}
+    );
+    if(!res.ok) return;
+    var rows = await res.json();
+    if(!rows || !rows.length) return;
+    var aiIds = new Set(rows.map(function(r){ return String(r.id); }));
+    // 목록 카드에 뱃지 추가
+    document.querySelectorAll('.sku-list-item').forEach(function(card){
+      var skuId = String(card.dataset.skuid||'');
+      if(!aiIds.has(skuId)) return;
+      // 이미 뱃지 있으면 스킵
+      if(card.querySelector('.ai-badge-tag')) return;
+      var metaWrap = card.querySelector('.sku-list-meta');
+      if(!metaWrap) return;
+      var badge = document.createElement('span');
+      badge.className = 'sku-meta-tag ai-badge-tag';
+      badge.style.cssText = 'background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)';
+      badge.textContent = '✨ AI기입';
+      metaWrap.appendChild(badge);
+    });
+  } catch(e){ console.warn('[AI Badge]', e); }
+}
+
 
 function renderSkuList(list, wrapId){
   const wrap=document.getElementById(wrapId||'sku-list-wrap');
@@ -3674,6 +3705,7 @@ async function copySkuTo(skuId, targetSource){
     // 현재 보고있는 탭 새로고침 (대상탭이 아닌 현재 탭 기준)
     const _at=document.querySelector('.sku-tab.active')?.id?.replace('tab-','');
     setTimeout(()=>loadSkuList(_at||targetTab||'list'),300);
+    setTimeout(_enrichAiBadges, 700);
   }catch(e){
     toast('❌ 오류: '+e.message);
   }
