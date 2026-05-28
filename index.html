@@ -5306,17 +5306,43 @@ async function applySpecGoogleResult(){
     var w=parsed.size_w||'', h=parsed.size_h||'', d=parsed.size_d||'', unit=parsed.size_unit||'cm';
     if(w||h||d){
       if(isUnreg){
-        var f1=document.getElementById('unreg-sf-1'), f2=document.getElementById('unreg-sf-2'), f3=document.getElementById('unreg-sf-3');
-        var fu=document.getElementById('unreg-size-unit');
-        if(f1) f1.value=w; if(f2) f2.value=h; if(f3) f3.value=d;
-        if(fu) fu.value=unit;
-        _updateUnregSizeHidden && _updateUnregSizeHidden();
+        // editUnregSize() 먼저 호출해서 input 렌더링
+        editUnregSize && editUnregSize();
+        setTimeout(function(){
+          var nums=[w,h,d].filter(Boolean);
+          nums.forEach(function(v,i){
+            var el=document.getElementById('unreg-sf-'+i);
+            if(el) el.value=v;
+          });
+          // 단위 선택 input
+          var unitEl=document.querySelector('#unreg-size-wrap select, #unreg-size-wrap [id*="unit"]');
+          if(unitEl) unitEl.value=unit;
+          _updateUnregSizeHidden && _updateUnregSizeHidden();
+        }, 80);
       } else {
-        var sf1=document.getElementById('sku-sf-1'), sf2=document.getElementById('sku-sf-2'), sf3=document.getElementById('sku-sf-3');
-        var sfu=document.getElementById('sku-size-unit');
-        if(sf1) sf1.value=w; if(sf2) sf2.value=h; if(sf3) sf3.value=d;
-        if(sfu) sfu.value=unit;
-        _updateSkuSizeHidden && _updateSkuSizeHidden();
+        // editSkuSize() 먼저 호출
+        var _sw=document.getElementById('sku-size-wrap');
+        if(_sw) _sw.dataset.cat='';
+        editSkuSize && editSkuSize();
+        setTimeout(function(){
+          var nums=[w,h,d].filter(Boolean);
+          nums.forEach(function(v,i){
+            var el=document.getElementById('sku-sf-'+i)||document.getElementById('ssku-w'+(i===0?'':'h'.charAt(0)));
+            if(!el){
+              // ssku- 접두사 방식 시도
+              var allInps=document.querySelectorAll('#sku-size-wrap input[type="number"]');
+              if(allInps[i]) allInps[i].value=v;
+            } else { el.value=v; }
+          });
+          var hidden=document.getElementById('sku-size-hidden');
+          if(hidden){
+            var parts=[w,h,d].filter(Boolean).join(' × ');
+            hidden.value=parts+(unit?' '+unit:'');
+          }
+          var dispEl=document.getElementById('sku-size-display');
+          var dispTxt=[w&&('가로 '+w),h&&('세로 '+h),d&&('폭 '+d)].filter(Boolean).join(' × ')+(unit?' '+unit:'');
+          if(dispEl) dispEl.textContent=dispTxt;
+        }, 80);
       }
     }
 
