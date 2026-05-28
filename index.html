@@ -5570,14 +5570,15 @@ async function _fetchOfficialImage(imgUrl, fallbackQuery){
       headers:{'Content-Type':'application/json','x-access-token':token},
       body:JSON.stringify({action:'proxy_image',imageUrl:imgUrl})
     });
+    if(!res.ok){
+      console.warn('[AutoFill Image] 서버 에러:', res.status);
+      if(fallbackQuery){ console.log('[AutoFill Image] 폴백 검색:', fallbackQuery); _fetchImageBySearch(fallbackQuery); }
+      return;
+    }
     const j = await res.json();
     if(!j.success||!j.base64){
       console.warn('[AutoFill Image] 프록시 실패:', j.error);
-      // 404 등 실패시 구글 이미지 검색으로 폴백
-      if(fallbackQuery){
-        console.log('[AutoFill Image] 폴백 이미지 검색:', fallbackQuery);
-        _fetchImageBySearch(fallbackQuery);
-      }
+      if(fallbackQuery){ console.log('[AutoFill Image] 폴백 이미지 검색:', fallbackQuery); _fetchImageBySearch(fallbackQuery); }
       return;
     }
     const dataUrl = 'data:'+j.mime+';base64,'+j.base64;
@@ -5795,6 +5796,11 @@ async function _fetchOfficialImageTo(imgUrl, target, fallbackQuery){
       headers:{'Content-Type':'application/json','x-access-token':token},
       body:JSON.stringify({action:'proxy_image',imageUrl:imgUrl})
     });
+    if(!res.ok){
+      console.warn('[ProxyImage] 서버 에러:', res.status);
+      if(fallbackQuery) _fetchImageBySearchTo(fallbackQuery, target);
+      return;
+    }
     const j=await res.json();
     if(!j.success||!j.base64){
       console.warn('[ProxyImage] 실패:', j.error);
