@@ -5294,14 +5294,10 @@ async function applySpecGoogleResult(){
   var isUnreg=(document.getElementById('unreg-content')?.style.display!=='none');
   var prefix=isUnreg?'unreg':'sku';
 
-  // 현재 카테고리 읽기 — 폼이 비어있으면 검수결과 화면에서 읽기
-  var cat=(document.getElementById(prefix+'-cat')?.value||'').trim();
+  // 카테고리: r-cat-tag(검수결과 뱃지) 우선 → 폼값 → 원문 추론
+  var cat=(document.getElementById('r-cat-tag')?.textContent||'').replace('✎','').trim();
+  if(!cat) cat=(document.getElementById(prefix+'-cat')?.value||'').trim();
   if(!cat){
-    // r-cat-tag: 검수결과 화면 카테고리 뱃지
-    cat=(document.getElementById('r-cat-tag')?.textContent||'').replace('✎','').trim();
-  }
-  if(!cat){
-    // 원문에서 카테고리 추론
     var rt=raw;
     if(/목걸이|펜던트|네크리스|팔찌|반지|귀걸이|브로치|주얼리|necklace|bracelet|ring|earring/i.test(rt)) cat='주얼리';
     else if(/시계|워치|watch/i.test(rt)) cat='시계';
@@ -5311,11 +5307,11 @@ async function applySpecGoogleResult(){
     else if(/의류|자켓|코트|셔츠|바지/i.test(rt)) cat='의류';
     else cat='가방';
   }
-  // 카테고리 폼에도 자동 세팅
+  console.log('[SpecGoogle] 카테고리:', cat);
+  // 카테고리 폼에 세팅
   var catEl=document.getElementById(prefix+'-cat');
-  if(catEl && !catEl.value){
+  if(catEl){
     catEl.value=cat;
-    // 카테고리 변경 이벤트 트리거 (사이즈 필드 재렌더)
     if(isUnreg) onUnregCatChange&&onUnregCatChange(catEl);
     else catEl.dispatchEvent(new Event('change'));
   }
