@@ -5168,12 +5168,20 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     + '브랜드: ' + brand + '\n'
     + '모델명: ' + modelName + '\n'
     + '카테고리: ' + cat + '\n\n'
-    + '중요: size_w(가로), size_h(세로), size_d(너비)는 반드시 숫자만 입력하세요. 단위 포함 금지.\n'
-    + '예시: 구찌 GG 인터로킹 체인 스트랩 지갑 → size_w는 19, size_h는 10, size_d는 3\n\n'
+    + '[카테고리별 사이즈 입력 규칙 - SIZE_CONFIG 기준]\n'
+    + '가방/지갑: size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm\n'
+    + '주얼리 공통: size_w=가로(mm), size_h=세로(mm), size_d=체인길이(cm), size_unit=mm\n'
+    + '  - 반지는 size_w=두께(mm), size_label=호수 / 목걸이는 size_d=체인길이(cm)\n'
+    + '  - 귀걸이는 size_w=길이(mm) / 팔찌는 size_w=내경또는길이(mm)\n'
+    + '시계: size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm\n'
+    + '의류/신발: size_w=사이즈표기(S,M,L,95,270등), size_unit 비워둠\n'
+    + '벨트: size_w=폭(cm), size_unit=cm\n'
+    + '모르는 값은 반드시 비워두세요. 0 입력 절대 금지.\n\n'
     + '출력 형식 (이 JSON 구조를 그대로 사용):\n'
     + '{\n'
     + '"style_number": "스타일번호",\n'
     + '"model_ko": "한글 모델명",\n'
+    + '"category": "카테고리 (가방/지갑/주얼리/시계/의류/신발/벨트 중 하나)",\n'
     + '"size_w": "가로 cm 숫자만 (예: 19)",\n'
     + '"size_h": "세로 cm 숫자만 (예: 10)",\n'
     + '"size_d": "너비 cm 숫자만 (예: 3)",\n'
@@ -5322,6 +5330,15 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
 function _applySpecToForm(data, cat){
   if(!data) return;
 
+  // 카테고리 자동 적용
+  if(data.category && data.category !== '—' && data.category !== 'N/A'){
+    var catEl = document.getElementById('sku-cat');
+    if(catEl && !catEl.value){
+      catEl.value = data.category;
+      onSkuCatInput && onSkuCatInput(catEl);
+    }
+  }
+
   // 한글 모델명 (비어있을 때만)
   if(data.model_ko && data.model_ko !== '—' && data.model_ko !== 'N/A'){
     var koEl = document.getElementById('sku-model-ko');
@@ -5364,7 +5381,9 @@ function _applySpecToForm(data, cat){
   }
 
   // 실측 사이즈 — hidden input에 직접 세팅 (가장 안정적)
-  var w = data.size_w; var h = data.size_h; var d = data.size_d;
+  var w = (data.size_w && data.size_w!=='0' && data.size_w!==0) ? data.size_w : '';
+  var h = (data.size_h && data.size_h!=='0' && data.size_h!==0) ? data.size_h : '';
+  var d = (data.size_d && data.size_d!=='0' && data.size_d!==0) ? data.size_d : '';
   var unit = data.size_unit || 'cm';
   if(w || h){
     var parts = [];
@@ -5397,9 +5416,13 @@ function _applySpecToForm(data, cat){
       var wInp = document.getElementById('ssku-sz-w');
       var hInp = document.getElementById('ssku-sz-h');
       var dInp = document.getElementById('ssku-sz-d');
+      var eInp = document.getElementById('ssku-sz-e');
+      var fInp = document.getElementById('ssku-sz-f');
       if(wInp && w) wInp.value = w;
       if(hInp && h) hInp.value = h;
       if(dInp && d) dInp.value = d;
+      if(eInp && data.size_e && data.size_e!=='0') eInp.value = data.size_e;
+      if(fInp && data.size_f && data.size_f!=='0') fInp.value = data.size_f;
       var cfg2 = SIZE_CONFIG[cat] || SIZE_CONFIG['가방'];
       saveSkuSize(cfg2);
     }, 200);
@@ -5696,6 +5719,11 @@ async function aiAutoFillEditModal(){
 
 function _applySpecToEditModal(data, cat){
   if(!data) return;
+  // 카테고리
+  if(data.category && data.category!=='—' && data.category!=='N/A'){
+    var catEf=document.getElementById('ef-cat');
+    if(catEf && !catEf.value) catEf.value=data.category;
+  }
   if(data.model_ko && data.model_ko!=='—' && data.model_ko!=='N/A'){
     var el=document.getElementById('ef-model-ko'); if(el&&!el.value) el.value=data.model_ko;
   }
@@ -5717,9 +5745,13 @@ function _applySpecToEditModal(data, cat){
       var wi=document.getElementById('sef-sz-w')||document.getElementById('ssku-sz-w');
       var hi=document.getElementById('sef-sz-h')||document.getElementById('ssku-sz-h');
       var di=document.getElementById('sef-sz-d')||document.getElementById('ssku-sz-d');
+      var ei=document.getElementById('sef-sz-e')||document.getElementById('ssku-sz-e');
+      var fi=document.getElementById('sef-sz-f')||document.getElementById('ssku-sz-f');
       if(wi&&w) wi.value=w;
       if(hi&&h) hi.value=h;
       if(di&&d) di.value=d;
+      if(ei&&data.size_e&&data.size_e!=='0') ei.value=data.size_e;
+      if(fi&&data.size_f&&data.size_f!=='0') fi.value=data.size_f;
       var cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
       saveEfSize&&saveEfSize(cfg);
     },200);
