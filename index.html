@@ -5297,8 +5297,8 @@ async function applySpecGoogleResult(){
   // 현재 카테고리 읽기 — 폼이 비어있으면 검수결과 화면에서 읽기
   var cat=(document.getElementById(prefix+'-cat')?.value||'').trim();
   if(!cat){
-    // r-cat: 검수결과 화면 카테고리 뱃지
-    cat=(document.getElementById('r-cat')?.textContent||'').trim();
+    // r-cat-tag: 검수결과 화면 카테고리 뱃지
+    cat=(document.getElementById('r-cat-tag')?.textContent||'').replace('✎','').trim();
   }
   if(!cat){
     // 원문에서 카테고리 추론
