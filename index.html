@@ -5062,7 +5062,7 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     + '모델명: ' + modelName + '\n'
     + '카테고리: ' + cat + '\n\n'
     + '다음 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
-    + '{"style_number":"스타일번호","size_w":"가로cm숫자만","size_h":"세로cm숫자만","size_d":"너비cm숫자만","size_unit":"cm","size_label":"사이즈명칭","material":"소재","made_in":"제조국","official_url":"공식URL","notes":"검수참고정보"}';
+    + '{"style_number":"스타일번호","model_ko":"한글모델명(예:디바스드림펜던트)","size_w":"가로cm숫자만","size_h":"세로cm숫자만","size_d":"너비cm숫자만","size_unit":"cm","size_label":"사이즈명칭","material":"소재","made_in":"제조국","official_url":"공식URL","notes":"검수참고정보"}';
 
   function fetchWithTimeout(url, opts, ms){
     var ctrl = new AbortController();
@@ -5092,8 +5092,9 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
+          system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
           contents: [{parts: [{text: prompt}]}],
-          generationConfig: {temperature: 0.1, maxOutputTokens: 1000}
+          generationConfig: {temperature: 0.0, maxOutputTokens: 1000, response_mime_type: 'application/json'}
         })
       }, mc.timeout);
 
@@ -5145,9 +5146,10 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
+          system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
           contents: [{parts: [{text: prompt}]}],
           tools: [{google_search: {}}],
-          generationConfig: {temperature: 0.1, maxOutputTokens: 1000}
+          generationConfig: {temperature: 0.0, maxOutputTokens: 1000}
         })
       }, mc2.timeout);
 
@@ -5178,6 +5180,15 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
 
 function _applySpecToForm(data, cat){
   if(!data) return;
+
+  // 한글 모델명 (비어있을 때만)
+  if(data.model_ko && data.model_ko !== '—' && data.model_ko !== 'N/A'){
+    var koEl = document.getElementById('sku-model-ko');
+    if(koEl && (!koEl.value || koEl.value === koEl.getAttribute('data-ai-filled'))) {
+      koEl.value = data.model_ko;
+      koEl.setAttribute('data-ai-filled', data.model_ko);
+    }
+  }
 
   // 스타일번호
   if(data.style_number && data.style_number !== '—' && data.style_number !== 'N/A'){
