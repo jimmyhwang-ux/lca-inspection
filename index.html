@@ -4852,6 +4852,16 @@ async function saveUnregSku(btn){
     const j=await res.json();
     if(j.success){
       toast('✅ DB 저장 완료!');
+      // AI 자동기입 뱃지 처리
+      if(window._pendingAiBadgeUnreg && j.data && j.data[0]){
+        _aiBadgeIds.add(String(j.data[0].id));
+        _saveAiBadgeIds();
+        window._pendingAiBadgeUnreg = false;
+      } else if(window._pendingAiBadgeId){
+        _aiBadgeIds.add(window._pendingAiBadgeId);
+        _saveAiBadgeIds();
+        window._pendingAiBadgeId = null;
+      }
       // 폼 초기화
       ['unreg-brand','unreg-model-ko','unreg-model','unreg-color','unreg-size-name','unreg-sku','unreg-url','unreg-notes'].forEach(id=>{
         const el=document.getElementById(id);
@@ -5139,6 +5149,7 @@ async function aiAutoFillSpec(){
     btn.style.borderColor = 'rgba(34,197,94,.4)';
     btn.style.color = '#22c55e';
     toast('✨ AI 스펙 자동완성 완료!');
+    window._pendingAiBadgeUnreg = true; // 등록탭 AI기입 플래그
   } catch(err){
     console.error('[AI AutoFill]', err);
     status.style.display = 'block';
