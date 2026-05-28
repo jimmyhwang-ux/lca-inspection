@@ -894,6 +894,7 @@ function loadPhoto(input,key){
 }
 
 const SLOT_ORDER=['main','label1','label2','label3','logo','origin','back','add1','add2','add3','add4','add5','add6'];
+// paste 이벤트 — 포커스 문제 방지를 위해 capture 단계에 등록
 document.addEventListener('paste',e=>{
   const items=[...(e.clipboardData?.items||[])];
   const imgItem=items.find(it=>it.type.startsWith('image/'));
@@ -5227,6 +5228,29 @@ function _applySpecToForm(data, cat){
   }
 }
 
+
+
+// 페이지 포커스 복귀 시 paste 이벤트 정상화
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden){
+    // 포커스를 body로 돌려서 paste 이벤트가 document에 제대로 전달되게
+    if(document.activeElement && document.activeElement.tagName === 'INPUT' 
+       || document.activeElement && document.activeElement.tagName === 'TEXTAREA'){
+      // input에 포커스가 있으면 그대로
+    } else {
+      document.body.focus();
+    }
+  }
+});
+
+// 슬롯 클릭 후 포커스가 슬롯에 남아있어 paste가 안 되는 문제 방지
+document.addEventListener('click', function(e){
+  var slot = e.target.closest('[id^="slot-"]');
+  if(!slot && document.activeElement && document.activeElement.closest && 
+     document.activeElement.closest('[id^="slot-"]')){
+    document.activeElement.blur();
+  }
+});
 
 </script>
 
