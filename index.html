@@ -1899,7 +1899,10 @@ async function renderResult(){
     })();
 
   } else {
-    dbWrap.innerHTML='';
+    // 매칭 결과 없어도 빈 탭 UI 표시 (사용자가 직접 검색 가능)
+    window._dbSkuItems = [];
+    window._dbGearItems = [];
+    _buildDbTabUI();
     const _unregHdr=document.getElementById('unregistered-header');
     if(_unregHdr) _unregHdr.style.display='block';
     accessories=[];renderAcc();
