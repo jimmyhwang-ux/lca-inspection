@@ -5224,7 +5224,13 @@ async function applySpecGoogleResult(){
     });
     var data = await res.json();
     var txt = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
-    txt = txt.replace(/```json|```/g,'').trim();
+    // JSON 클린업 — 코드블록, 앞뒤 텍스트 제거
+    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    // { } 사이만 추출
+    var jsonStart = txt.indexOf('{');
+    var jsonEnd   = txt.lastIndexOf('}');
+    if(jsonStart === -1 || jsonEnd === -1) throw new Error('JSON 블록을 찾지 못했어요');
+    txt = txt.slice(jsonStart, jsonEnd+1);
     var parsed = JSON.parse(txt);
 
     // 폼 채우기
