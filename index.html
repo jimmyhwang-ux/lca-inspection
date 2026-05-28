@@ -3429,6 +3429,7 @@ function renderSkuList(list, wrapId){
   if(isGear){ _gearFilteredList=list; _gearPage=1; }
   else { _skuFilteredList=list; _skuPage=1; }
   renderSkuPage(wrapId||'sku-list-wrap');
+  setTimeout(_enrichAiBadges, 500);
 }
 function renderSkuPage(wrapId){
   const isGear = wrapId==='gear-list-wrap';
