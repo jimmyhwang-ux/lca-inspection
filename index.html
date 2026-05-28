@@ -5083,23 +5083,29 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     return fetch(url, Object.assign({}, opts, {signal: ctrl.signal})).finally(function(){ clearTimeout(tid); });
   }
 
-  var candidates = [
-    {model:'gemini-2.5-flash', timeout:50000},
-    {model:'gemini-2.5-pro',   timeout:60000}
+  // 1단계: 그라운딩 없이 빠르게 (학습 데이터 기반, 5~10초)
+  var fastModels = [
+    {model:'gemini-2.5-flash', timeout:15000},
+    {model:'gemini-2.0-flash', timeout:12000}
+  ];
+  // 2단계: 그라운딩 포함 (실시간 검색, 느리지만 정확)
+  var searchModels = [
+    {model:'gemini-2.5-flash', timeout:50000}
   ];
 
   var lastErr = '';
-  for(var i=0; i<candidates.length; i++){
-    var mc = candidates[i];
+
+  // 1단계 시도 — 그라운딩 없이 빠르게
+  for(var i=0; i<fastModels.length; i++){
+    var mc = fastModels[i];
     var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + mc.model + ':generateContent?key=' + apiKey;
     try{
-      console.log('[AI AutoFill] 시도:', mc.model);
+      console.log('[AI AutoFill] 빠른 시도 (학습데이터):', mc.model);
       var res = await fetchWithTimeout(url, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           contents: [{parts: [{text: prompt}]}],
-          tools: [{google_search: {}}],
           generationConfig: {temperature: 0.1, maxOutputTokens: 1000}
         })
       }, mc.timeout);
@@ -5108,8 +5114,7 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         var et = await res.text();
         lastErr = mc.model + ': HTTP ' + res.status;
         if(res.status === 429){
-          console.log('[AI AutoFill] 429 — 3초 대기 후 다음 모델');
-          await new Promise(function(r){ setTimeout(r, 3000); });
+          await new Promise(function(r){ setTimeout(r, 2000); });
         }
         continue;
       }
@@ -5118,15 +5123,57 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
       var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
       if(!rawText){ lastErr = mc.model + ': 빈 응답'; continue; }
 
-      var jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*?\})/);
+      var jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/(\{[\s\S]*\})/);
       if(!jsonMatch){ lastErr = mc.model + ': JSON 없음'; continue; }
 
       var parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-      console.log('[AI AutoFill] 성공:', mc.model, parsed);
-      return parsed;
-
+      // 실측 사이즈가 없으면 2단계로
+      if(parsed.size_w || parsed.size_h){
+        console.log('[AI AutoFill] 빠른 성공:', mc.model, parsed);
+        return parsed;
+      }
+      console.log('[AI AutoFill] 사이즈 없음 — 검색 모드로 전환');
+      lastErr = '사이즈 없음';
     } catch(e){
       lastErr = mc.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
+      console.warn('[AI AutoFill]', lastErr);
+    }
+  }
+
+  // 2단계 — google_search 그라운딩으로 실시간 검색
+  console.log('[AI AutoFill] 실시간 검색 모드 시작...');
+  var statusEl = document.getElementById('ai-autofill-status');
+  if(statusEl) statusEl.textContent = '공식 사이트에서 실측 사이즈 검색 중... (15~30초 소요)';
+
+  for(var j=0; j<searchModels.length; j++){
+    var mc2 = searchModels[j];
+    var url2 = 'https://generativelanguage.googleapis.com/v1beta/models/' + mc2.model + ':generateContent?key=' + apiKey;
+    try{
+      console.log('[AI AutoFill] 검색 시도:', mc2.model);
+      var res2 = await fetchWithTimeout(url2, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          contents: [{parts: [{text: prompt}]}],
+          tools: [{google_search: {}}],
+          generationConfig: {temperature: 0.1, maxOutputTokens: 1000}
+        })
+      }, mc2.timeout);
+
+      if(!res2.ok){ lastErr = mc2.model + ': HTTP ' + res2.status; continue; }
+
+      var data2 = await res2.json();
+      var raw2 = ((data2.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
+      if(!raw2){ lastErr = mc2.model + ': 빈 응답'; continue; }
+
+      var jm2 = raw2.match(/```json\s*([\s\S]*?)```/) || raw2.match(/(\{[\s\S]*\})/);
+      if(!jm2){ lastErr = mc2.model + ': JSON 없음'; continue; }
+
+      var parsed2 = JSON.parse(jm2[1] || jm2[0]);
+      console.log('[AI AutoFill] 검색 성공:', mc2.model, parsed2);
+      return parsed2;
+    } catch(e){
+      lastErr = mc2.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
       console.warn('[AI AutoFill]', lastErr);
     }
   }
