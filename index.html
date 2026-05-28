@@ -5072,12 +5072,28 @@ async function aiAutoFillSpec(){
 
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
   var modelName = modelKo || modelEn || '';
-  var prompt = '아래 명품 상품의 공식 스펙을 알려주세요. 반드시 JSON 형식으로만 답하세요. 설명, 인사말, 마크다운 불필요.\n\n'
+  var prompt = '당신은 명품 감정 전문가입니다. 아래 상품의 공식 스펙을 JSON으로만 답하세요.\n'
+    + '절대로 JSON 외 다른 텍스트를 출력하지 마세요. 마크다운 금지.\n\n'
     + '브랜드: ' + brand + '\n'
     + '모델명: ' + modelName + '\n'
     + '카테고리: ' + cat + '\n\n'
-    + '다음 JSON 형식으로만 출력 (다른 텍스트 절대 금지):\n'
-    + '{"style_number":"스타일번호","model_ko":"한글모델명","size_w":"가로숫자만","size_h":"세로숫자만","size_d":"너비숫자만","size_unit":"cm","size_label":"사이즈명칭","material":"소재","made_in":"제조국","official_url":"공식페이지URL","image_url":"공식대표이미지URL(jpg/png직접링크)","notes":"검수참고정보"}';
+    + '중요: size_w(가로), size_h(세로), size_d(너비)는 반드시 숫자만 입력하세요. 단위 포함 금지.\n'
+    + '예시: 구찌 GG 인터로킹 체인 스트랩 지갑 → size_w는 19, size_h는 10, size_d는 3\n\n'
+    + '출력 형식 (이 JSON 구조를 그대로 사용):\n'
+    + '{\n'
+    + '"style_number": "스타일번호",\n'
+    + '"model_ko": "한글 모델명",\n'
+    + '"size_w": "가로 cm 숫자만 (예: 19)",\n'
+    + '"size_h": "세로 cm 숫자만 (예: 10)",\n'
+    + '"size_d": "너비 cm 숫자만 (예: 3)",\n'
+    + '"size_unit": "cm",\n'
+    + '"size_label": "사이즈 명칭 (예: OS, Small, MM)",\n'
+    + '"material": "소재",\n'
+    + '"made_in": "제조국",\n'
+    + '"official_url": "공식 페이지 URL",\n'
+    + '"image_url": "공식 대표 이미지 URL",\n'
+    + '"notes": "검수 참고 정보"\n'
+    + '}';
 
   function fetchWithTimeout(url, opts, ms){
     var ctrl = new AbortController();
