@@ -5447,10 +5447,10 @@ function _applySpecToForm(data, cat){
     if(skuEl && !skuEl.value) skuEl.value = data.style_number;
   }
 
-  // 사이트 URL
+  // 사이트 URL (AI가 가져오면 항상 덮어쓰기)
   if(data.official_url && data.official_url !== '—' && data.official_url !== 'N/A'){
     var urlEl = document.getElementById('sku-url');
-    if(urlEl && !urlEl.value) urlEl.value = data.official_url;
+    if(urlEl) urlEl.value = data.official_url;
   }
 
   // 공식 이미지 자동 추가 (사진이 없을 때만)
@@ -5560,32 +5560,27 @@ document.addEventListener('click', function(e){
 // ── 공식 이미지 URL → SKU 사진 슬롯 자동 추가 ────────────────
 async function _fetchOfficialImage(imgUrl){
   try{
-    // CORS 우회: img 태그로 로드 후 canvas로 변환
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function(){
-      try{
-        var MAX = 800;
-        var w = img.width, h = img.height;
-        if(w > MAX || h > MAX){
-          if(w > h){ h = Math.round(h * MAX / w); w = MAX; }
-          else { w = Math.round(w * MAX / h); h = MAX; }
-        }
-        var canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    // 서버 프록시로 CORS 우회
+    const token = localStorage.getItem('lca_token')||'';
+    const res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body:JSON.stringify({action:'proxy_image',imageUrl:imgUrl})
+    });
+    const j = await res.json();
+    if(!j.success||!j.base64){ console.warn('[AutoFill Image] 프록시 실패:', j.error); return; }
+    const dataUrl = 'data:'+j.mime+';base64,'+j.base64;
 
+    {
         // sku-new-photo에 추가
         var inp = document.getElementById('sku-new-photo');
         var wrap = document.getElementById('sku-new-photo-preview');
         if(!inp) return;
         inp._dataUrls = inp._dataUrls || [];
-        inp._dataUrls.unshift(dataUrl); // 맨 앞에 추가
+        inp._dataUrls.unshift(dataUrl);
 
         if(wrap){
           wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px';
-          // AI 뱃지 포함 썸네일 추가
           var thumbDiv = document.createElement('div');
           thumbDiv.style.cssText = 'position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1.5px solid rgba(255,107,43,.5)';
           var thumbImg = document.createElement('img');
@@ -5599,33 +5594,10 @@ async function _fetchOfficialImage(imgUrl){
           wrap.insertBefore(thumbDiv, wrap.firstChild);
         }
         toast('🖼️ 공식 이미지 자동 추가됨');
-      } catch(ce){
-        console.warn('[AutoFill Image] canvas 변환 실패:', ce);
-        // canvas 실패 시 URL만 메모에 기록
-        _fallbackImageNote(imgUrl);
-      }
-    };
-    img.onerror = function(){
-      console.warn('[AutoFill Image] 이미지 로드 실패 (CORS 차단):', imgUrl);
-      _fallbackImageNote(imgUrl);
-    };
-    img.src = imgUrl;
+    }
   } catch(e){
     console.warn('[AutoFill Image]', e);
   }
-}
-
-function _fallbackImageNote(imgUrl){
-  // CORS 차단 시 특이사항에 URL 기록
-  var notesEl = document.getElementById('sku-notes');
-  if(notesEl){
-    var cur = notesEl.value;
-    var imgNote = '공식이미지: ' + imgUrl;
-    if(!cur.includes(imgNote)){
-      notesEl.value = cur ? (cur + '\n' + imgNote) : imgNote;
-    }
-  }
-  toast('⚠ 이미지 직접 추가 불가 — 특이사항에 URL 기록됨');
 }
 
 
