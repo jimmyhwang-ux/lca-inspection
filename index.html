@@ -5108,7 +5108,7 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         body: JSON.stringify({
           system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
           contents: [{parts: [{text: prompt}]}],
-          generationConfig: {temperature: 0.0, maxOutputTokens: 1000, response_mime_type: 'application/json'}
+          generationConfig: {temperature: 0.0, maxOutputTokens: 2000, response_mime_type: 'application/json'}
         })
       }, mc.timeout);
 
@@ -5131,8 +5131,21 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
         var jm1a = rawText.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
         var jm1b = rawText.match(/({[\s\S]*})/);
         jStr = (jm1a && jm1a[1]) || (jm1b && jm1b[0]) || jStr;
+        // JSON이 잘린 경우 닫는 괄호 보완
+        if(jStr && !jStr.trim().endsWith('}')){
+          jStr = jStr.replace(/,\s*$/, '') + '}';
+        }
         parsed = JSON.parse(jStr);
-      } catch(pe){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
+      } catch(pe){
+        // 잘린 JSON에서 부분 추출 시도
+        try{
+          var partials = {};
+          var matches2 = rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*?)"/g);
+          for(var m of matches2){ partials[m[1]] = m[2]; }
+          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공'); }
+          else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
+        } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
+      }
       // 실측 사이즈가 없으면 2단계로
       if(parsed.size_w || parsed.size_h){
         console.log('[AI AutoFill] 빠른 성공:', mc.model, parsed);
@@ -5163,7 +5176,7 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
           system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
           contents: [{parts: [{text: prompt}]}],
           tools: [{google_search: {}}],
-          generationConfig: {temperature: 0.0, maxOutputTokens: 1000}
+          generationConfig: {temperature: 0.0, maxOutputTokens: 2000}
         })
       }, mc2.timeout);
 
