@@ -5610,15 +5610,16 @@ function _applySpecToEditModal(data, cat){
   if(w||h){
     editEfSize();
     setTimeout(function(){
-      var wi=document.getElementById('ssef-sz-w')||document.getElementById('ssku-sz-w');
-      var hi=document.getElementById('ssef-sz-h')||document.getElementById('ssku-sz-h');
-      var di=document.getElementById('ssef-sz-d')||document.getElementById('ssku-sz-d');
+      // edit modal: sef- prefix, SKU등록: ssku- prefix
+      var wi=document.getElementById('sef-sz-w')||document.getElementById('ssku-sz-w');
+      var hi=document.getElementById('sef-sz-h')||document.getElementById('ssku-sz-h');
+      var di=document.getElementById('sef-sz-d')||document.getElementById('ssku-sz-d');
       if(wi&&w) wi.value=w;
       if(hi&&h) hi.value=h;
       if(di&&d) di.value=d;
       var cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
       saveEfSize&&saveEfSize(cfg);
-    },150);
+    },200);
   }
   // 특이사항
   var noteParts=[];
