@@ -5313,7 +5313,12 @@ async function applySpecGoogleResult(){
   }
   // 카테고리 폼에도 자동 세팅
   var catEl=document.getElementById(prefix+'-cat');
-  if(catEl && !catEl.value) catEl.value=cat;
+  if(catEl && !catEl.value){
+    catEl.value=cat;
+    // 카테고리 변경 이벤트 트리거 (사이즈 필드 재렌더)
+    if(isUnreg) onUnregCatChange&&onUnregCatChange(catEl);
+    else catEl.dispatchEvent(new Event('change'));
+  }
 
   toast('⏳ 반영 중...');
 
