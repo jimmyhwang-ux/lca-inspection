@@ -835,7 +835,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779974547');
+console.error('APP VERSION: 1779974826');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5291,8 +5291,15 @@ async function applySpecGoogleResult(){
   var raw=(document.getElementById('spec-google-raw')||{}).value||'';
   if(!raw||raw==='검색 중...') return;
 
-  var isUnreg=(document.getElementById('unreg-content')?.style.display!=='none');
+  // isUnreg 감지 — unreg-content가 접혀있어도 unreg 폼이면 true
+  var unregContent=document.getElementById('unreg-content');
+  var skuPanel=document.getElementById('sku-edit-panel')||document.getElementById('sku-card-panel');
+  var isUnreg = !!(unregContent) && !(skuPanel && skuPanel.style.display!=='none');
+  // 더 확실한 방법: unreg-brand 필드에 값이 있으면 unreg
+  if(!isUnreg && document.getElementById('unreg-brand')?.value) isUnreg=true;
+  if(isUnreg && document.getElementById('sku-brand')?.value && !document.getElementById('unreg-brand')?.value) isUnreg=false;
   var prefix=isUnreg?'unreg':'sku';
+  console.log('[SpecGoogle] isUnreg='+isUnreg+' prefix='+prefix);
 
   // 카테고리: r-cat-tag(검수결과 뱃지) 우선 → 폼값 → 원문 추론
   var cat=(document.getElementById('r-cat-tag')?.textContent||'').replace(/[^\uAC00-\uD7A3]/g,'').trim();
