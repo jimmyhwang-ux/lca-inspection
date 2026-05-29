@@ -502,7 +502,7 @@ input[type=file]{display:none}
   <div class="sku-topbar">
     <button class="sku-back" onclick="showScreen(_skuPrevScreen||'shoot')">←</button>
     <div class="sku-title">모델 SKU 관리</div>
-    <button onclick="showScreen('shoot')" style="margin-left:auto;background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
+    <button onclick="showScreen('shoot')" style="background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   </div>
 
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
@@ -512,6 +512,15 @@ input[type=file]{display:none}
   </div>
 
   <div id="sku-save-panel">
+    <!-- Gemini API 키 입력 (미설정 시만 노출) -->
+    <div id="gemini-key-row" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 기능을 사용할 수 있어요</div>
+      <div style="display:flex;gap:6px">
+        <input id="gemini-key-inline" type="text" placeholder="AIza..." autocomplete="off"
+          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
+        <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+      </div>
+    </div>
     <!-- ✨ AI 스펙 자동완성 버튼 -->
     <button id="ai-autofill-btn" onclick="aiAutoFillSpec()" style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;color:#ff6b2b;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px">
       ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
@@ -836,7 +845,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779977100');
+console.error('APP VERSION: 1779977300');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3257,6 +3266,7 @@ function switchSkuTab(tab, autoCat){
     if(el) el.className='sku-tab'+(tab===t?' active':'');
   });
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
+  if(tab==='save') setTimeout(_checkGeminiKeyRow, 50);
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
   const dbP=document.getElementById('sku-db-panel');
   const gearP=document.getElementById('sku-gear-panel');
@@ -5428,26 +5438,21 @@ function sbHeaders(){
 // ✨ AI 스펙 자동완성 — Gemini google_search 기반
 // ══════════════════════════════════════════════════════════════
 
-function openGeminiKeyModal(){
-  var modal = document.getElementById('gemini-key-modal');
-  var inp   = document.getElementById('gemini-key-input');
-  var status= document.getElementById('gemini-key-status');
-  var existing = _getGeminiKey();
-  modal.style.display='flex';
-  inp.value = existing || '';
-  inp.type  = 'password';
-  status.textContent = existing ? '✅ 현재 키: '+existing.substring(0,8)+'...' : '키가 설정되지 않았어요';
-}
-
-function saveGeminiKeyModal(){
-  var inp = document.getElementById('gemini-key-input');
+function saveGeminiKeyInline(){
+  var inp = document.getElementById('gemini-key-inline');
   var key = (inp.value||'').trim();
   if(!key){ toast('⚠ API 키를 입력해주세요'); return; }
-  if(!key.startsWith('AIza')){ toast('⚠ 올바른 Gemini API 키가 아닙니다 (AIza...로 시작)'); return; }
+  if(!key.startsWith('AIza')){ toast('⚠ AIza...로 시작하는 키를 입력해주세요'); return; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
-  document.getElementById('gemini-key-modal').style.display='none';
-  toast('✅ Gemini API 키가 저장됐어요!');
+  document.getElementById('gemini-key-row').style.display='none';
+  toast('✅ Gemini API 키 저장됐어요!');
+}
+
+function _checkGeminiKeyRow(){
+  var row = document.getElementById('gemini-key-row');
+  if(!row) return;
+  row.style.display = _getGeminiKey() ? 'none' : 'block';
 }
 
 
@@ -6330,21 +6335,5 @@ async function saveSpecToSupabaseById(id, specs){
   <option value="모카">
   <option value="샴페인">
 </datalist>
-
-  <!-- Gemini API 키 설정 모달 — body 최상단 고정 -->
-  <button id="gemini-key-btn" onclick="openGeminiKeyModal()" style="position:fixed;top:12px;right:52px;z-index:9000;background:rgba(30,30,30,.9);border:1px solid #444;border-radius:8px;color:#ddd;font-size:16px;cursor:pointer;padding:4px 8px;line-height:1" title="Gemini API 키 설정">⚙️</button>
-  <div id="gemini-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
-    <div style="background:#1a1a1a;border:1px solid #444;border-radius:16px;padding:22px;width:100%;max-width:360px;box-sizing:border-box">
-      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">⚙️ Gemini API 키 설정</div>
-      <div style="font-size:12px;color:#888;margin-bottom:14px">aistudio.google.com 에서 무료 발급 가능</div>
-      <input id="gemini-key-input" type="text" placeholder="AIza..." autocomplete="off"
-        style="width:100%;background:#111;border:1px solid #444;border-radius:10px;padding:11px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:10px;outline:none">
-      <div style="display:flex;gap:8px">
-        <button onclick="saveGeminiKeyModal()" style="flex:1;background:#ff6b2b;border:none;border-radius:10px;padding:12px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">저장</button>
-        <button onclick="document.getElementById('gemini-key-modal').style.display='none'" style="flex:1;background:#222;border:1px solid #333;border-radius:10px;padding:12px;color:#ddd;font-size:13px;cursor:pointer">취소</button>
-      </div>
-      <div id="gemini-key-status" style="font-size:11px;color:#888;margin-top:10px;text-align:center"></div>
-    </div>
-  </div>
 </body>
 </html>
