@@ -506,20 +506,6 @@ input[type=file]{display:none}
     <button onclick="showScreen('shoot')" style="background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   </div>
 
-  <!-- Gemini API 키 설정 모달 -->
-  <div id="gemini-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
-    <div style="background:#1a1a1a;border:1px solid #333;border-radius:16px;padding:20px;width:90%;max-width:360px;box-sizing:border-box">
-      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">⚙️ Gemini API 키 설정</div>
-      <div style="font-size:12px;color:#888;margin-bottom:14px">aistudio.google.com 에서 무료 발급 가능</div>
-      <input id="gemini-key-input" type="password" placeholder="AIza..." autocomplete="off"
-        style="width:100%;background:#111;border:1px solid #333;border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:10px">
-      <div style="display:flex;gap:8px">
-        <button onclick="saveGeminiKeyModal()" style="flex:1;background:#ff6b2b;border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">저장</button>
-        <button onclick="document.getElementById('gemini-key-modal').style.display='none'" style="flex:1;background:#222;border:1px solid #333;border-radius:10px;padding:11px;color:#ddd;font-size:13px;cursor:pointer">취소</button>
-      </div>
-      <div id="gemini-key-status" style="font-size:11px;color:#888;margin-top:8px;text-align:center"></div>
-    </div>
-  </div>
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">등록</div>
     <div class="sku-tab" id="tab-list" onclick="switchSkuTab('list')">모델SKU</div>
@@ -851,7 +837,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779976261');
+console.error('APP VERSION: 1779977000');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6345,5 +6331,20 @@ async function saveSpecToSupabaseById(id, specs){
   <option value="모카">
   <option value="샴페인">
 </datalist>
+
+  <!-- Gemini API 키 설정 모달 — body 최상단 고정 -->
+  <div id="gemini-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
+    <div style="background:#1a1a1a;border:1px solid #444;border-radius:16px;padding:22px;width:100%;max-width:360px;box-sizing:border-box">
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">⚙️ Gemini API 키 설정</div>
+      <div style="font-size:12px;color:#888;margin-bottom:14px">aistudio.google.com 에서 무료 발급 가능</div>
+      <input id="gemini-key-input" type="text" placeholder="AIza..." autocomplete="off"
+        style="width:100%;background:#111;border:1px solid #444;border-radius:10px;padding:11px 12px;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:10px;outline:none">
+      <div style="display:flex;gap:8px">
+        <button onclick="saveGeminiKeyModal()" style="flex:1;background:#ff6b2b;border:none;border-radius:10px;padding:12px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">저장</button>
+        <button onclick="document.getElementById('gemini-key-modal').style.display='none'" style="flex:1;background:#222;border:1px solid #333;border-radius:10px;padding:12px;color:#ddd;font-size:13px;cursor:pointer">취소</button>
+      </div>
+      <div id="gemini-key-status" style="font-size:11px;color:#888;margin-top:10px;text-align:center"></div>
+    </div>
+  </div>
 </body>
 </html>
