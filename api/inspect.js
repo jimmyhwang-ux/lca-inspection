@@ -105,6 +105,8 @@ export default async function handler(req, res) {
         fields.ref_image_url = fields.extra_images[0];
       }
       if (fields.accessories && !Array.isArray(fields.accessories)) fields.accessories = [];
+      // updated_at 자동 주입
+      fields.updated_at = new Date().toISOString();
       const r = await sb(`sku_items?id=eq.${id}`, {
         method: 'PATCH',
         prefer: 'return=minimal',
