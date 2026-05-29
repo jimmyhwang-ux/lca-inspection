@@ -606,8 +606,14 @@ input[type=file]{display:none}
 
   <div id="sku-list-panel" style="display:none">
     <div style="margin-bottom:10px">
-      <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;margin-bottom:6px" oninput="filterSkuList()" oncompositionend="filterSkuList()">
-      <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuNotes(this.value)" oncompositionend="filterSkuNotes(this.value)">
+      <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+        <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuList()" oncompositionend="filterSkuList()">
+        <button id="sku-sort-btn" onclick="toggleSkuSort()" title="정렬 방식 변경"
+          style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:10px 12px;color:#aaa;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+          🕐 최신순
+        </button>
+      </div>
+      <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;box-sizing:border-box" oninput="filterSkuNotes(this.value)" oncompositionend="filterSkuNotes(this.value)">
     </div>
     <div id="sku-count-bar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:8px 12px;background:#111;border-radius:10px;border:1px solid #1e1e1e"></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="sku-cat-tabs">
@@ -854,7 +860,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780014763');
+console.error('APP VERSION: 1780027115');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -4635,6 +4641,34 @@ function resolveTokenToEnglish(t){
   return results;
 }
 
+// 정렬 상태: 'brand'(기본 브랜드순), 'created'(최신등록순), 'updated'(최종수정순)
+var _skuSortMode = 'brand';
+
+function toggleSkuSort(){
+  var modes = ['brand','created','updated'];
+  var labels = {'brand':'🔤 브랜드순','created':'🕐 최신등록순','updated':'✏️ 최종수정순'};
+  var idx = modes.indexOf(_skuSortMode);
+  _skuSortMode = modes[(idx+1) % modes.length];
+  var btn = document.getElementById('sku-sort-btn');
+  if(btn) btn.textContent = labels[_skuSortMode];
+  filterSkuList();
+}
+
+function _applySortMode(list){
+  var arr = list.slice();
+  if(_skuSortMode === 'created'){
+    arr.sort(function(a,b){ return new Date(b.created_at||0) - new Date(a.created_at||0); });
+  } else if(_skuSortMode === 'updated'){
+    arr.sort(function(a,b){
+      var ta = new Date(b.updated_at||b.created_at||0);
+      var tb = new Date(a.updated_at||a.created_at||0);
+      return ta - tb;
+    });
+  }
+  // brand 모드는 기존 순서 유지 (loadSkuList에서 이미 정렬됨)
+  return arr;
+}
+
 function filterSkuList(){
   const raw=document.getElementById('sku-search').value.trim();
   const q=raw.toLowerCase();
@@ -4652,18 +4686,17 @@ function filterSkuList(){
     const color=(i.color||'').toLowerCase();
     const notes=(i.notes||'').toLowerCase();
     const hay=brand+' '+modelEn+' '+modelKo+' '+sku+' '+color+' '+notes;
-    const hayNoSpace=hay.replace(/\s+/g,''); // 공백 제거 버전
+    const hayNoSpace=hay.replace(/\s+/g,'');
     const textOk=tokens.every(t=>{
       const tNoSpace=t.replace(/\s+/g,'');
       if(hay.includes(t)) return true;
-      if(hayNoSpace.includes(tNoSpace)) return true; // 띄어쓰기 무시 매칭
+      if(hayNoSpace.includes(tNoSpace)) return true;
       const enList=resolveTokenToEnglish(t);
       return enList.some(en=>hay.includes(en)||hayNoSpace.includes(en.replace(/\s+/g,'')));
     });
     return catOk&&textOk;
   });
-  // 검색 결과는 정보량 많은 순으로 정렬
-  const sortedFiltered = q ? _sortByRichness(filtered) : filtered;
+  const sortedFiltered = q ? _sortByRichness(filtered) : _applySortMode(filtered);
   renderSkuList(sortedFiltered);
 }
 
