@@ -354,6 +354,15 @@ input[type=file]{display:none}
 
   <!-- 구글 AI 검색 버튼 -->
   <div id="spec-google-wrap" style="display:none;margin:0 16px 10px">
+    <!-- Gemini 키 없을 때 입력창 -->
+    <div id="gemini-key-row-result" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+      <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 검색을 사용할 수 있어요</div>
+      <div style="display:flex;gap:6px">
+        <input id="gemini-key-inline-result" type="text" placeholder="AIza..." autocomplete="off"
+          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
+        <button onclick="saveGeminiKeyResult()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+      </div>
+    </div>
     <button id="spec-google-btn" onclick="runSpecGoogleSearch()"
       style="width:100%;background:linear-gradient(135deg,rgba(66,133,244,.15),rgba(66,133,244,.08));color:#4285f4;border:1px solid rgba(66,133,244,.4);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
       🔍 구글 AI 검색으로 스펙 조회
@@ -845,7 +854,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779977300');
+console.error('APP VERSION: 1780014763');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -2042,7 +2051,7 @@ async function renderResult(){
   showScreen('result');
   // 구글 검색 버튼 노출
   var _sgw = document.getElementById('spec-google-wrap');
-  if(_sgw) _sgw.style.display = 'block';
+  if(_sgw) { _sgw.style.display = 'block'; _checkGeminiKeyRow && _checkGeminiKeyRow(); }
 }
 
 function renderAcc(){
@@ -5438,6 +5447,8 @@ function sbHeaders(){
 // ✨ AI 스펙 자동완성 — Gemini google_search 기반
 // ══════════════════════════════════════════════════════════════
 
+var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
+
 function saveGeminiKeyInline(){
   var inp = document.getElementById('gemini-key-inline');
   var key = (inp.value||'').trim();
@@ -5446,13 +5457,31 @@ function saveGeminiKeyInline(){
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   document.getElementById('gemini-key-row').style.display='none';
+  // 결과화면 입력창도 숨기기
+  var r2=document.getElementById('gemini-key-row-result');
+  if(r2) r2.style.display='none';
+  toast('✅ Gemini API 키 저장됐어요!');
+}
+
+function saveGeminiKeyResult(){
+  var inp = document.getElementById('gemini-key-inline-result');
+  var key = (inp.value||'').trim();
+  if(!key){ toast('⚠ API 키를 입력해주세요'); return; }
+  if(!key.startsWith('AIza')){ toast('⚠ AIza...로 시작하는 키를 입력해주세요'); return; }
+  sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
+  localStorage.setItem(_GEMINI_KEY_STORAGE, key);
+  document.getElementById('gemini-key-row-result').style.display='none';
+  var r1=document.getElementById('gemini-key-row');
+  if(r1) r1.style.display='none';
   toast('✅ Gemini API 키 저장됐어요!');
 }
 
 function _checkGeminiKeyRow(){
-  var row = document.getElementById('gemini-key-row');
-  if(!row) return;
-  row.style.display = _getGeminiKey() ? 'none' : 'block';
+  var hasKey = !!_getGeminiKey();
+  var row1=document.getElementById('gemini-key-row');
+  var row2=document.getElementById('gemini-key-row-result');
+  if(row1) row1.style.display = hasKey ? 'none' : 'block';
+  if(row2) row2.style.display = hasKey ? 'none' : 'block';
 }
 
 
