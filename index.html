@@ -894,7 +894,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780042500');
+console.error('APP VERSION: 1780043100');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3318,6 +3318,16 @@ function switchSkuTab(tab, autoCat){
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
   if(tab==='save') setTimeout(_checkGeminiKeyRow, 50);
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
+  // 탭 전환 시 구글 AI 검색 결과 초기화
+  if(tab==='list'){
+    var resW=document.getElementById('sku-list-google-result');
+    var raw=document.getElementById('sku-list-google-raw');
+    var btn=document.getElementById('sku-list-google-btn');
+    if(resW) resW.style.display='none';
+    if(raw) raw.value='';
+    if(btn){ btn.textContent='🔍 구글 AI로 검색한 모델 스펙 조회'; btn.disabled=false; }
+    _selectedSkuIds&&_selectedSkuIds.clear();
+  }
   const dbP=document.getElementById('sku-db-panel');
   const gearP=document.getElementById('sku-gear-panel');
   if(dbP) dbP.style.display=tab==='db'?'block':'none';
@@ -3604,6 +3614,17 @@ function renderSkuPage(wrapId){
           ${(()=>{const _a=safeAccArr(item.accessories);return _a.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${_a.map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:'';})()}
           ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#ddd;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
           <div id="sku-detail-${item.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">
+          <!-- 인라인 빠른 편집 패널 -->
+          <div id="sku-quickedit-${item.id}" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:12px;margin-bottom:8px">
+            <div style="font-size:11px;color:#ff6b2b;margin-bottom:8px;font-weight:700">✏️ 빠른 수정</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+              <div><div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div><input id="qe-size-${item.id}" type="text" value="${item.size_actual||''}" placeholder="가로 × 세로 × 너비" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box"></div>
+              <div><div style="font-size:10px;color:#888;margin-bottom:3px">스타일번호</div><input id="qe-sku-${item.id}" type="text" value="${item.sku_code||''}" placeholder="SKU" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box"></div>
+              <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div><input id="qe-url-${item.id}" type="text" value="${item.site_url||''}" placeholder="https://..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box"></div>
+              <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div><textarea id="qe-notes-${item.id}" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none;resize:none;box-sizing:border-box">${item.notes||''}</textarea></div>
+            </div>
+            <button onclick="saveQuickEdit('${item.id}')" style="width:100%;background:#ff6b2b;border:none;border-radius:8px;padding:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 저장</button>
+          </div>
             ${(()=>{
               const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
               const itemSource=item.source||'model';
@@ -5578,6 +5599,45 @@ function brandDropdownKey(e, dropId){
   }
 }
 
+async function saveQuickEdit(id){
+  var token = localStorage.getItem('lca_token')||'';
+  var size  = document.getElementById('qe-size-'+id)?.value.trim();
+  var sku   = document.getElementById('qe-sku-'+id)?.value.trim();
+  var url   = document.getElementById('qe-url-'+id)?.value.trim();
+  var notes = document.getElementById('qe-notes-'+id)?.value.trim();
+
+  var skuData = {id: id};
+  if(size)  skuData.size_actual = size;
+  if(sku)   skuData.sku_code    = sku;
+  if(url)   skuData.site_url    = url;
+  if(notes) skuData.notes       = notes;
+
+  if(Object.keys(skuData).length <= 1){ toast('⚠ 수정된 내용이 없어요'); return; }
+
+  var btn = document.querySelector('#sku-quickedit-'+id+' button');
+  if(btn){ btn.textContent='저장 중...'; btn.disabled=true; }
+
+  try{
+    var res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body:JSON.stringify({action:'update_sku', skuData: skuData})
+    });
+    var j = await res.json();
+    if(!j.success) throw new Error(j.error||'저장 실패');
+    // 로컬 데이터 업데이트
+    var item = (skuListAll||[]).find(function(i){ return String(i.id)===String(id); });
+    if(item){ if(size) item.size_actual=size; if(sku) item.sku_code=sku; if(url) item.site_url=url; if(notes) item.notes=notes; }
+    toast('✅ 저장됐어요!');
+    var qe = document.getElementById('sku-quickedit-'+id);
+    if(qe) qe.style.display='none';
+    renderSkuList(_skuFilteredList||skuListAll);
+  }catch(e){
+    toast('⚠ 저장 실패: '+e.message);
+    if(btn){ btn.textContent='💾 저장'; btn.disabled=false; }
+  }
+}
+
 // ── SKU 목록탭 구글 AI 검색 ──────────────────────────────────
 var _selectedSkuIds = new Set();
 
@@ -5694,10 +5754,11 @@ async function applySkuListGoogleResult(){
     if(!Object.keys(patch).length) continue;
 
     try{
+      var skuDataPatch = Object.assign({id: item.id}, patch);
       await fetch('/api/inspect',{
         method:'POST',
         headers:{'Content-Type':'application/json','x-access-token':token},
-        body:JSON.stringify({action:'update_sku', id:item.id, fields:patch})
+        body:JSON.stringify({action:'update_sku', skuData: skuDataPatch})
       });
       // 로컬 데이터도 업데이트
       Object.assign(item, patch);
@@ -5705,10 +5766,25 @@ async function applySkuListGoogleResult(){
     }catch(e){ console.warn('[SkuListGoogle] patch 실패:', e); }
   }
 
-  toast('✅ '+updated+'개 SKU에 스펙 적용됐어요!');
+  toast('✅ '+updated+'개 SKU에 스펙 적용됐어요! 아래에서 확인 후 저장해주세요');
+  // 체크된 카드 빠른 편집 패널 열기
+  _selectedSkuIds.forEach(function(id){
+    var detail = document.getElementById('sku-detail-'+id);
+    var qe = document.getElementById('sku-quickedit-'+id);
+    if(detail) detail.style.display='block';
+    if(qe){
+      // 최신 값으로 업데이트
+      var item=(skuListAll||[]).find(function(i){return String(i.id)===String(id);});
+      if(item){
+        var sz=document.getElementById('qe-size-'+id); if(sz&&item.size_actual) sz.value=item.size_actual;
+        var sk=document.getElementById('qe-sku-'+id); if(sk&&item.sku_code) sk.value=item.sku_code;
+        var ur=document.getElementById('qe-url-'+id); if(ur&&item.site_url) ur.value=item.site_url;
+        var nt=document.getElementById('qe-notes-'+id); if(nt&&item.notes) nt.value=item.notes;
+      }
+      qe.style.display='block';
+    }
+  });
   _selectedSkuIds.clear();
-  // 목록 새로고침
-  renderSkuList(_skuFilteredList||skuListAll);
 }
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
