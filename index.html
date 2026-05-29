@@ -418,7 +418,15 @@ input[type=file]{display:none}
 
   <!-- 폼 필드 -->
   <div class="sku-card" style="margin-bottom:10px">
-    <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="unreg-brand" type="text" placeholder="—" list="brand-list" autocomplete="off"></div>
+    <div class="sku-row"><div class="sku-key">브랜드</div>
+      <div style="position:relative;flex:1">
+        <input class="sku-input" id="unreg-brand" type="text" placeholder="—" autocomplete="off"
+          oninput="showBrandDropdown(this,'unreg-brand-drop')"
+          onblur="setTimeout(function(){hideBrandDropdown('unreg-brand-drop')},150)"
+          onkeydown="brandDropdownKey(event,'unreg-brand-drop')">
+        <div id="unreg-brand-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #333;border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+      </div>
+    </div>
     <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="unreg-model-ko" type="text" placeholder="—" oninput="onUnregModelKoInput(this)"></div>
     <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="unreg-model" type="text" placeholder="—"></div>
     <div class="sku-row"><div class="sku-key">카테고리</div>
@@ -544,7 +552,15 @@ input[type=file]{display:none}
       <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#ddd;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">📷</span><span>사진 추가 <span style="font-size:11px;color:#ddd">· 탭하거나 붙여넣기</span></span></button>
     </div>
     <div class="sku-card">
-      <div class="sku-row"><div class="sku-key">브랜드</div><input class="sku-input" id="sku-brand" type="text" placeholder="—" list="brand-list" autocomplete="off"></div>
+      <div class="sku-row"><div class="sku-key">브랜드</div>
+        <div style="position:relative;flex:1">
+          <input class="sku-input" id="sku-brand" type="text" placeholder="—" autocomplete="off"
+            oninput="showBrandDropdown(this,'sku-brand-drop')"
+            onblur="setTimeout(function(){hideBrandDropdown('sku-brand-drop')},150)"
+            onkeydown="brandDropdownKey(event,'sku-brand-drop')">
+          <div id="sku-brand-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #333;border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+        </div>
+      </div>
       <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—" oninput="onSkuModelKoInput(this)"></div>
       <div class="sku-row"><div class="sku-key">모델명 (영문)</div><input class="sku-input" id="sku-model" type="text" placeholder="—"></div>
       <div class="sku-row"><div class="sku-key">카테고리</div>
@@ -860,7 +876,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780027115');
+console.error('APP VERSION: 1780041282');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -2282,8 +2298,9 @@ function buildSizeInput(cfg, nums){
       </span>${sep}`;
     }
     if(isText){
+      const unitLabel = f.unit ? `${f.label}(${f.unit})` : f.label;
       return `<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">
-        <span style="font-size:8px;color:#ddd">${f.label}</span>
+        <span style="font-size:8px;color:#ddd">${unitLabel}</span>
         <input id="${f.id}" onclick="event.stopPropagation()" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;color:#fff;font-size:13px;font-weight:700;outline:none;padding:0 2px" type="text" value="${nums[i]||''}" placeholder="30, Small...">
       </span>${sep}`;
     }
@@ -5479,6 +5496,63 @@ function sbHeaders(){
 // ══════════════════════════════════════════════════════════════
 // ✨ AI 스펙 자동완성 — Gemini google_search 기반
 // ══════════════════════════════════════════════════════════════
+
+// ── 브랜드 커스텀 자동완성 ─────────────────────────────────────
+function _getBrandList(){
+  return Array.from(document.querySelectorAll('#brand-list option')).map(o=>o.value).filter(Boolean);
+}
+
+function showBrandDropdown(inp, dropId){
+  var q = (inp.value||'').trim().toLowerCase();
+  var drop = document.getElementById(dropId);
+  if(!drop) return;
+  if(!q){ drop.style.display='none'; return; }
+  var brands = _getBrandList();
+  var filtered = brands.filter(function(b){ return b.toLowerCase().includes(q); }).slice(0,10);
+  if(!filtered.length){ drop.style.display='none'; return; }
+  drop.innerHTML = filtered.map(function(b){
+    var hi = b.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<b style="color:#ff6b2b">$1</b>');
+    return '<div onclick="selectBrand(\''+b+'\',\''+inp.id+'\',\''+dropId+'\')" style="padding:10px 14px;font-size:13px;color:#f0f0f0;cursor:pointer;border-bottom:1px solid #222" onmouseenter="this.style.background=\'#222\'" onmouseleave="this.style.background=\'\'">'+hi+'</div>';
+  }).join('');
+  drop.style.display='block';
+}
+
+function selectBrand(brand, inpId, dropId){
+  var inp = document.getElementById(inpId);
+  if(inp) inp.value = brand;
+  hideBrandDropdown(dropId);
+  // AI 자동기입 트리거 (브랜드 선택 시 모델명 자동완성 활성화)
+  inp && inp.dispatchEvent(new Event('input'));
+}
+
+function hideBrandDropdown(dropId){
+  var drop = document.getElementById(dropId);
+  if(drop) drop.style.display='none';
+}
+
+function brandDropdownKey(e, dropId){
+  var drop = document.getElementById(dropId);
+  if(!drop || drop.style.display==='none') return;
+  var items = drop.querySelectorAll('div');
+  var cur = drop.querySelector('div.active');
+  var idx = Array.from(items).indexOf(cur);
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    if(cur) cur.classList.remove('active'), cur.style.background='';
+    var next = items[idx+1] || items[0];
+    next.classList.add('active'); next.style.background='#2a2a2a';
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    if(cur) cur.classList.remove('active'), cur.style.background='';
+    var prev = items[idx-1] || items[items.length-1];
+    prev.classList.add('active'); prev.style.background='#2a2a2a';
+  } else if(e.key==='Enter' && cur){
+    e.preventDefault();
+    cur.click();
+  } else if(e.key==='Escape'){
+    hideBrandDropdown(dropId);
+  }
+}
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
 
