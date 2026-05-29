@@ -502,8 +502,7 @@ input[type=file]{display:none}
   <div class="sku-topbar">
     <button class="sku-back" onclick="showScreen(_skuPrevScreen||'shoot')">←</button>
     <div class="sku-title">모델 SKU 관리</div>
-    <button onclick="openGeminiKeyModal()" style="margin-left:auto;background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px" title="Gemini API 키 설정">⚙️</button>
-    <button onclick="showScreen('shoot')" style="background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
+    <button onclick="showScreen('shoot')" style="margin-left:auto;background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   </div>
 
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
@@ -837,7 +836,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1779977000');
+console.error('APP VERSION: 1779977100');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6333,6 +6332,7 @@ async function saveSpecToSupabaseById(id, specs){
 </datalist>
 
   <!-- Gemini API 키 설정 모달 — body 최상단 고정 -->
+  <button id="gemini-key-btn" onclick="openGeminiKeyModal()" style="position:fixed;top:12px;right:52px;z-index:9000;background:rgba(30,30,30,.9);border:1px solid #444;border-radius:8px;color:#ddd;font-size:16px;cursor:pointer;padding:4px 8px;line-height:1" title="Gemini API 키 설정">⚙️</button>
   <div id="gemini-key-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:99999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box">
     <div style="background:#1a1a1a;border:1px solid #444;border-radius:16px;padding:22px;width:100%;max-width:360px;box-sizing:border-box">
       <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px">⚙️ Gemini API 키 설정</div>
