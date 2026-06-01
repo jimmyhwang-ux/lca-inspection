@@ -632,7 +632,12 @@ input[type=file]{display:none}
       <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;box-sizing:border-box" oninput="filterSkuNotes(this.value)" oncompositionend="filterSkuNotes(this.value)">
     </div>
 
-    <!-- 구글 AI 검색 (SKU 관리 목록탭) -->
+    <!-- 미등록 SKU 알림 -->
+    <div id="sku-unregistered-notice" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none">
+      <div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:6px">⚠️ 미등록 SKU입니다</div>
+      <div id="sku-unregistered-msg" style="font-size:11px;color:#ddd;margin-bottom:8px"></div>
+      <button onclick="openSkuListNewFormFromNotice()" style="width:100%;background:#f59e0b;border:none;border-radius:8px;padding:8px;color:#000;font-size:12px;font-weight:700;cursor:pointer">➕ 지금 등록하기</button>
+    </div>
     <div style="margin-bottom:10px">
       <button id="sku-list-google-btn" onclick="runSkuListGoogleSearch()"
         style="width:100%;background:linear-gradient(135deg,rgba(66,133,244,.15),rgba(66,133,244,.08));color:#4285f4;border:1px solid rgba(66,133,244,.4);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
@@ -994,7 +999,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780302224');
+console.error('APP VERSION: 1780302500');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -4869,6 +4874,35 @@ function filterSkuList(){
   });
   const sortedFiltered = q ? _sortByRichness(filtered) : _applySortMode(filtered);
   renderSkuList(sortedFiltered);
+
+  // 미등록 SKU 감지 — 스타일번호처럼 생긴 검색어일 때
+  var notice = document.getElementById('sku-unregistered-notice');
+  var msg = document.getElementById('sku-unregistered-msg');
+  if(notice) notice.style.display = 'none';
+
+  if(raw && /^[A-Z0-9\-]{5,}$/i.test(raw.trim())){
+    var skuQ = raw.trim().toUpperCase();
+    var exactMatch = skuListAll.filter(function(i){
+      return (i.sku_code||'').toUpperCase() === skuQ;
+    });
+    if(exactMatch.length === 0 && filtered.length === 0){
+      // 완전 미등록
+      if(notice && msg){
+        msg.textContent = '"'+raw+'" 스타일번호가 DB에 없어요. 새로 등록할까요?';
+        notice.style.display = 'block';
+      }
+    } else if(exactMatch.length > 1){
+      // 중복 감지
+      if(notice && msg){
+        msg.innerHTML = '⚠️ <b style="color:#f59e0b">'+exactMatch.length+'개</b> 중복 스타일번호가 있어요!';
+        notice.style.background = 'rgba(239,68,68,.1)';
+        notice.style.borderColor = 'rgba(239,68,68,.4)';
+        notice.querySelector('div:first-child').style.color = '#ef4444';
+        notice.querySelector('button').style.display = 'none';
+        notice.style.display = 'block';
+      }
+    }
+  }
 }
 
 async function deleteSku(id){
@@ -5853,6 +5887,18 @@ async function fetchNlOfficialImage(){
     _nlRenderPhotos();
     toast('✅ 대표사진 추가됐어요!');
   }catch(e){ toast('⚠ 오류: '+e.message); }
+}
+
+function openSkuListNewFormFromNotice(){
+  // 검색어를 스타일번호로 채워서 신규 등록 폼 열기
+  var q = document.getElementById('sku-search')?.value.trim()||'';
+  // 구글 AI 검색 결과 없어도 폼 열기
+  openSkuListNewForm();
+  // 스타일번호 자동 채우기
+  setTimeout(function(){
+    var skuInp = document.getElementById('nl-sku');
+    if(skuInp && !skuInp.value) skuInp.value = q;
+  }, 100);
 }
 
 function openSkuListNewForm(){
