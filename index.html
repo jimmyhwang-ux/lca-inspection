@@ -523,8 +523,8 @@ input[type=file]{display:none}
   </div>
 
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
-    <div class="sku-tab active" id="tab-save" onclick="switchSkuTab('save')">등록</div>
-    <div class="sku-tab" id="tab-list" onclick="switchSkuTab('list')">모델SKU</div>
+    <div class="sku-tab" id="tab-save" style="opacity:0.3;pointer-events:none;cursor:default">등록</div>
+    <div class="sku-tab active" id="tab-list" onclick="switchSkuTab('list')">모델SKU</div>
     <div class="sku-tab" id="tab-gear" onclick="switchSkuTab('gear')" style="display:none">검기어</div>
   </div>
 
@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780299681');
+console.error('APP VERSION: 1780300000');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3380,11 +3380,13 @@ async function saveToSupabase(source, btnEl){
       toast(`✅ ${_srcLabel}에 저장되었습니다`);
       const savedCat=document.getElementById('sku-cat').value||'전체';
       const _srcTab={'model':'list','gear':'gear'}[source||'model']||'list';
+      // 등록탭 비활성화 — 항상 list로
+      const _targetTab = _srcTab === 'save' ? 'list' : _srcTab;
       // 카운트 즉시 갱신 — 새 항목 로컬 캐시에 추가
       if(j.data&&j.data[0]){
         skuListAll.unshift(j.data[0]);
       }
-      setTimeout(()=>switchSkuTab(_srcTab, savedCat), 600);
+      setTimeout(()=>switchSkuTab(_targetTab, savedCat), 600);
     } else throw new Error(j.error||'저장 실패');
   }catch(e){
     toast('❌ 저장 실패: '+e.message);
