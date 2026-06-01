@@ -999,7 +999,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780318453');
+console.error('APP VERSION: 1780318833');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5802,23 +5802,14 @@ function _updateNlSizeHidden(cfg){
 
 var _nlAccCat = '가방';
 
-var _ACC_OPTIONS = {
-  '가방':  ['더스트백','자물쇠','열쇠','숄더스트랩','클러치백','레인커버','카드','보증서','영수증'],
-  '지갑':  ['더스트백','카드','보증서','영수증'],
-  '주얼리':['더스트백','보증서','영수증','케이스','클리닝클로스'],
-  '의류':  ['행택','여분단추','보증서'],
-  '신발':  ['더스트백','슈트리','여분끈','보증서','영수증'],
-  '시계':  ['여분줄','공구','보증서','영수증','케이스'],
-};
-
 function setNlAccCat(cat, btn){
   _nlAccCat = cat;
   document.querySelectorAll('#nl-acc-tabs button').forEach(function(b){
     b.style.borderColor='#333'; b.style.background='transparent'; b.style.color='#888';
   });
-  btn.style.borderColor='#ff6b2b'; btn.style.background='rgba(255,107,43,.2)'; btn.style.color='#ff6b2b';
+  if(btn){ btn.style.borderColor='#ff6b2b'; btn.style.background='rgba(255,107,43,.2)'; btn.style.color='#ff6b2b'; }
   var sel = document.getElementById('nl-acc-select');
-  var opts = _ACC_OPTIONS[cat]||[];
+  var opts = (window.ACC_MAP||{})[cat]||[];
   sel.innerHTML = '<option value="">-- 드롭다운에서 선택 --</option>'+opts.map(function(o){return '<option>'+o+'</option>';}).join('');
 }
 
