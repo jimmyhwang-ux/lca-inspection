@@ -655,8 +655,8 @@ input[type=file]{display:none}
       </button>
       <div id="sku-list-google-result" style="display:none;margin-top:8px">
         <div style="font-size:11px;color:#888;margin-bottom:4px">검색 결과 원문</div>
-        <textarea id="sku-list-google-raw" rows="5"
-          style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:8px;color:#ddd;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box"
+        <textarea id="sku-list-google-raw" rows="4"
+          style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:8px;color:#ddd;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box;max-height:160px"
           placeholder="검색 중..."></textarea>
         <div style="display:flex;gap:6px;margin-top:6px">
           <button onclick="applySkuListGoogleResult()"
@@ -757,7 +757,7 @@ input[type=file]{display:none}
               <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
             </div>
           </div>
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;margin-top:8px">
             <button onclick="saveSkuListNewForm()" style="flex:2;background:#22c55e;border:none;border-radius:8px;padding:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 저장</button>
             <button onclick="document.getElementById('sku-list-new-form').style.display='none'" style="flex:1;background:#222;border:1px solid #333;border-radius:8px;padding:10px;color:#ddd;font-size:12px;cursor:pointer">취소</button>
           </div>
@@ -1009,7 +1009,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780319809');
+console.error('APP VERSION: 1780320064');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
