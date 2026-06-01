@@ -954,7 +954,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780298973');
+console.error('APP VERSION: 1780299252');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5763,6 +5763,7 @@ async function saveSkuListNewForm(){
 }
 
 
+async function saveQuickEdit(id){
   var token = localStorage.getItem('lca_token')||'';
   var size  = document.getElementById('qe-size-'+id)?.value.trim();
   var sku   = document.getElementById('qe-sku-'+id)?.value.trim();
