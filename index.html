@@ -1009,7 +1009,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780319557');
+console.error('APP VERSION: 1780319809');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5524,9 +5524,19 @@ function _parseSpecRawText(txt, cat){
   } else {
     // 가방/지갑 기본
     r.size_unit='cm';
+    // 패턴1: 레이블: 숫자 (가로: 25cm)
     var swA=t.match(/(?:가로|width)[:\s→*,]*([0-9.]+)\s*(cm|mm)?/i);
     var shA=t.match(/(?:세로|height)[:\s→*,]*([0-9.]+)\s*(cm|mm)?/i);
     var sdA=t.match(/(?:너비|폭|깊이|두께|depth)[:\s→*,]*([0-9.]+)\s*(cm|mm)?/i);
+    // 패턴2: 숫자 레이블 (25.6cm (가로) x 16.5cm (세로) x 8.5cm (너비))
+    if(!swA) swA=t.match(/([0-9.]+)\s*(cm|mm)\s*\(가로\)/i);
+    if(!shA) shA=t.match(/([0-9.]+)\s*(cm|mm)\s*\(세로\)/i);
+    if(!sdA) sdA=t.match(/([0-9.]+)\s*(cm|mm)\s*\((?:너비|폭|깊이|두께)\)/i);
+    // 패턴3: 숫자 x 숫자 x 숫자 (가로 x 세로 x 너비) — 레이블이 뒤에 묶여서 오는 경우
+    if(!swA && !shA){
+      var mRev=t.match(/([0-9.]+)\s*[x×]\s*([0-9.]+)(?:\s*[x×]\s*([0-9.]+))?\s*(cm|mm)[^)]*\(가로[^)]*세로/i);
+      if(mRev){swA=[null,mRev[1]]; shA=[null,mRev[2]]; if(mRev[3])sdA=[null,mRev[3]];}
+    }
     if(swA){r.size_w=swA[1]; if(swA[2])r.size_unit=swA[2].toLowerCase();}
     if(shA) r.size_h=shA[1];
     if(sdA) r.size_d=sdA[1];
