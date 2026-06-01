@@ -523,7 +523,7 @@ input[type=file]{display:none}
   </div>
 
   <div class="sku-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
-    <div class="sku-tab" id="tab-save" style="opacity:0.3;pointer-events:none;cursor:default">등록</div>
+    <div class="sku-tab" id="tab-save" style="display:none">등록</div>
     <div class="sku-tab active" id="tab-list" onclick="switchSkuTab('list')">모델SKU</div>
     <div class="sku-tab" id="tab-gear" onclick="switchSkuTab('gear')" style="display:none">검기어</div>
   </div>
@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780300000');
+console.error('APP VERSION: 1780300100');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
