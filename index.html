@@ -999,7 +999,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780318148');
+console.error('APP VERSION: 1780318305');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -4883,7 +4883,9 @@ function filterSkuList(){
   if(raw && /^[A-Z0-9\-]{5,}$/i.test(raw.trim())){
     var skuQ = raw.trim().toUpperCase();
     var exactMatch = skuListAll.filter(function(i){
-      return (i.sku_code||'').toUpperCase() === skuQ;
+      var sku = (i.sku_code||'').toUpperCase();
+      // 완전일치 또는 검색어가 SKU의 앞부분인 경우 (1BH204 → 1BH204-2C6A-F0002)
+      return sku === skuQ || sku.startsWith(skuQ+'-') || sku.startsWith(skuQ+'_');
     });
     if(exactMatch.length === 0){
       // 완전 미등록
