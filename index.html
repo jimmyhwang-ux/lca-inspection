@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780300100');
+console.error('APP VERSION: 1780300200');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5868,7 +5868,17 @@ async function saveSkuListNewForm(){
     });
     var j = await res.json();
     if(!j.success) throw new Error(j.error||'저장 실패');
-    if(j.data&&j.data[0]) skuListAll.unshift(j.data[0]);
+    if(j.data&&j.data[0]){
+      skuListAll.unshift(j.data[0]);
+      var newId = String(j.data[0].id);
+      // AI 뱃지 추가 (구글 AI 검색 기반 등록)
+      _aiBadgeIds.add(newId);
+      _saveAiBadgeIds();
+      // official_specs 저장 → DB에도 AI 뱃지 영구 보존
+      var token2 = localStorage.getItem('lca_token')||'';
+      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json','x-access-token':token2},
+        body:JSON.stringify({action:'update_sku', skuData:{id:newId, official_specs:{source:'google_ai_search'}}})}).catch(function(){});
+    }
     toast('✅ 신규 SKU가 등록됐어요!');
     _nlPhotos = []; _nlRenderPhotos();
     document.getElementById('sku-list-new-form').style.display='none';
