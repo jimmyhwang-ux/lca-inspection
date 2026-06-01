@@ -999,7 +999,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780318305');
+console.error('APP VERSION: 1780318453');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -4882,31 +4882,42 @@ function filterSkuList(){
 
   if(raw && /^[A-Z0-9\-]{5,}$/i.test(raw.trim())){
     var skuQ = raw.trim().toUpperCase();
-    var exactMatch = skuListAll.filter(function(i){
+    // prefix 포함 매칭 (등록 여부 확인)
+    var prefixMatch = skuListAll.filter(function(i){
       var sku = (i.sku_code||'').toUpperCase();
-      // 완전일치 또는 검색어가 SKU의 앞부분인 경우 (1BH204 → 1BH204-2C6A-F0002)
       return sku === skuQ || sku.startsWith(skuQ+'-') || sku.startsWith(skuQ+'_');
     });
-    if(exactMatch.length === 0){
-      // 완전 미등록
+    // 완전 일치만 (중복 감지)
+    var exactMatch = skuListAll.filter(function(i){
+      return (i.sku_code||'').toUpperCase() === skuQ;
+    });
+
+    if(prefixMatch.length === 0){
+      // 미등록
       if(notice && msg){
         notice.style.background = 'rgba(245,158,11,.1)';
         notice.style.borderColor = 'rgba(245,158,11,.4)';
         notice.querySelector('div:first-child').style.color = '#f59e0b';
         notice.querySelector('div:first-child').textContent = '⚠️ 미등록 SKU입니다';
+        msg.textContent = '"'+raw+'" 스타일번호가 DB에 없어요. 구글 AI로 스펙 검색 후 등록할 수 있어요.';
         var regBtn = notice.querySelector('button');
-        if(regBtn) regBtn.style.display = 'block';
-        msg.textContent = '"'+raw+'" 스타일번호가 DB에 없어요. 새로 등록할까요?';
+        if(regBtn){
+          regBtn.style.display = 'block';
+          regBtn.textContent = '🔍 구글 AI 검색 후 등록하기';
+          regBtn.onclick = function(){ _noticeStartGoogleSearch(skuQ); };
+        }
         notice.style.display = 'block';
       }
     } else if(exactMatch.length > 1){
-      // 중복 감지
+      // 완전 일치 중복만 경고
       if(notice && msg){
-        msg.innerHTML = '⚠️ <b style="color:#f59e0b">'+exactMatch.length+'개</b> 중복 스타일번호가 있어요!';
         notice.style.background = 'rgba(239,68,68,.1)';
         notice.style.borderColor = 'rgba(239,68,68,.4)';
         notice.querySelector('div:first-child').style.color = '#ef4444';
-        notice.querySelector('button').style.display = 'none';
+        notice.querySelector('div:first-child').textContent = '⚠️ 중복 스타일번호';
+        msg.innerHTML = '동일 스타일번호 <b style="color:#ef4444">'+exactMatch.length+'개</b>가 있어요. 확인이 필요해요.';
+        var regBtn2 = notice.querySelector('button');
+        if(regBtn2) regBtn2.style.display = 'none';
         notice.style.display = 'block';
       }
     }
@@ -5895,6 +5906,30 @@ async function fetchNlOfficialImage(){
     _nlRenderPhotos();
     toast('✅ 대표사진 추가됐어요!');
   }catch(e){ toast('⚠ 오류: '+e.message); }
+}
+
+function _noticeStartGoogleSearch(skuQ){
+  // 구글 AI 검색 버튼 클릭 유도 — 검색창에 SKU 입력 후 자동 실행
+  var googleBtn = document.getElementById('sku-list-google-btn');
+  var resW = document.getElementById('sku-list-google-result');
+  var raw = document.getElementById('sku-list-google-raw');
+  if(resW) resW.style.display = 'block';
+  if(raw) raw.value = '검색 중...';
+  if(googleBtn){
+    googleBtn.textContent = '🔍 검색 중...';
+    googleBtn.disabled = true;
+  }
+  // 검색창 값을 스타일번호로 세팅 후 구글 AI 검색 실행
+  var searchInp = document.getElementById('sku-search');
+  if(searchInp && !searchInp.value.trim()) searchInp.value = skuQ;
+  // 구글 AI 검색 실행
+  runSkuListGoogleSearch().then(function(){
+    // 검색 완료 후 신규 등록 폼 자동 열기 유도
+    var newBtn = document.getElementById('sku-list-google-result')?.querySelector('button[onclick*="openSkuListNewForm"]');
+    if(newBtn) newBtn.style.animation = 'pulse 1s infinite';
+  });
+  // 스크롤
+  if(googleBtn) googleBtn.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
 function openSkuListNewFormFromNotice(){
