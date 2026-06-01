@@ -697,8 +697,8 @@ input[type=file]{display:none}
               <div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div>
               <input id="nl-url" type="text" placeholder="https://..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box">
             </div>
-            <div style="grid-column:1/-1">
-              <div style="font-size:10px;color:#888;margin-bottom:3px">사진</div>
+          <div style="grid-column:1/-1">
+              <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
               <div id="nl-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
               <div style="display:flex;gap:6px">
                 <label style="flex:1;background:#000;border:1px dashed #444;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
@@ -718,7 +718,24 @@ input[type=file]{display:none}
               <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid #333;border-radius:6px;padding:7px;color:#888;font-size:11px;cursor:pointer">🔍 공홈 URL에서 대표사진 가져오기</button>
             </div>
             <div style="grid-column:1/-1">
-              <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
+              <div style="font-size:10px;color:#888;margin-bottom:3px">부속품</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px" id="nl-acc-tabs">
+                <button onclick="setNlAccCat('가방',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #ff6b2b;background:rgba(255,107,43,.2);color:#ff6b2b;font-size:11px;cursor:pointer">가방</button>
+                <button onclick="setNlAccCat('지갑',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">지갑</button>
+                <button onclick="setNlAccCat('주얼리',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">주얼리</button>
+                <button onclick="setNlAccCat('의류',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">의류</button>
+                <button onclick="setNlAccCat('신발',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">신발</button>
+                <button onclick="setNlAccCat('시계',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">시계</button>
+              </div>
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <select id="nl-acc-select" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none">
+                  <option value="">-- 드롭다운에서 선택 --</option>
+                </select>
+                <input id="nl-acc-input" type="text" placeholder="직접 입력" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none">
+                <button onclick="addNlAcc()" style="background:#ff6b2b;border:none;border-radius:6px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">추가</button>
+              </div>
+              <div id="nl-acc-list" style="font-size:12px;color:#ddd;padding:4px 0">부속품 없음</div>
+            </div>
               <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
             </div>
           </div>
@@ -974,7 +991,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780301565');
+console.error('APP VERSION: 1780301719');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5692,7 +5709,52 @@ function brandDropdownKey(e, dropId){
   }
 }
 
-// ── 신규 등록 폼 사진 기능 ──────────────────────────────────
+var _nlAccList = [];
+var _nlAccCat = '가방';
+
+var _ACC_OPTIONS = {
+  '가방':  ['더스트백','자물쇠','열쇠','숄더스트랩','클러치백','레인커버','카드','보증서','영수증'],
+  '지갑':  ['더스트백','카드','보증서','영수증'],
+  '주얼리':['더스트백','보증서','영수증','케이스','클리닝클로스'],
+  '의류':  ['행택','여분단추','보증서'],
+  '신발':  ['더스트백','슈트리','여분끈','보증서','영수증'],
+  '시계':  ['여분줄','공구','보증서','영수증','케이스'],
+};
+
+function setNlAccCat(cat, btn){
+  _nlAccCat = cat;
+  document.querySelectorAll('#nl-acc-tabs button').forEach(function(b){
+    b.style.borderColor='#333'; b.style.background='transparent'; b.style.color='#888';
+  });
+  btn.style.borderColor='#ff6b2b'; btn.style.background='rgba(255,107,43,.2)'; btn.style.color='#ff6b2b';
+  var sel = document.getElementById('nl-acc-select');
+  var opts = _ACC_OPTIONS[cat]||[];
+  sel.innerHTML = '<option value="">-- 드롭다운에서 선택 --</option>'+opts.map(function(o){return '<option>'+o+'</option>';}).join('');
+}
+
+function addNlAcc(){
+  var sel = document.getElementById('nl-acc-select');
+  var inp = document.getElementById('nl-acc-input');
+  var name = inp.value.trim() || sel.value;
+  if(!name) return;
+  _nlAccList.push({name:name, status:'Y'});
+  inp.value=''; sel.value='';
+  _renderNlAccList();
+}
+
+function _renderNlAccList(){
+  var wrap = document.getElementById('nl-acc-list');
+  if(!wrap) return;
+  if(!_nlAccList.length){ wrap.innerHTML='<span style="color:#555">부속품 없음</span>'; return; }
+  wrap.innerHTML = _nlAccList.map(function(a,i){
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:3px 8px;margin:2px;font-size:11px">'
+      +a.name+'<button onclick="_nlRemoveAcc('+i+')" style="background:none;border:none;color:#888;cursor:pointer;font-size:10px;padding:0">✕</button></span>';
+  }).join('');
+}
+
+function _nlRemoveAcc(i){ _nlAccList.splice(i,1); _renderNlAccList(); }
+
+
 var _nlPhotos = [];
 
 function _nlRenderPhotos(){
@@ -5779,7 +5841,7 @@ function openSkuListNewForm(){
   if(/목걸이|펜던트|팔찌|반지|귀걸이|주얼리/i.test(q+raw)) cat='주얼리';
   else if(/시계|watch/i.test(q+raw)) cat='시계';
   else if(/지갑|wallet|카드\s*홀더|카드\s*케이스|카드\s*지갑|card\s*holder|card\s*case|coin\s*purse|동전|클러치/i.test(q+raw)) cat='지갑';
-  else if(/신발|슈즈|스니커|에스파듀|에스파드리|펌프스|로퍼|부츠|샌들|shoes|sneaker|espadrille|pump|loafer|boot|sandal|굽\s*높이|신발\s*사이즈/i.test(q+raw)) cat='신발';
+  else if(/신발|슈즈|스니커|에스파듀|에스파드리|에스파드류|에스파드리유|펌프스|로퍼|부츠|샌들|뮬|플랫|힐|shoes|sneaker|espadrille|pump|loafer|boot|sandal|mule|heel|굽\s*높이|신발\s*사이즈|유럽\s*사이즈|shoe\s*size/i.test(q+raw)) cat='신발';
   else if(/의류|자켓|코트|셔츠|바지|스커트|원피스|블라우스|가디건|니트|jacket|coat|shirt|pants|dress|skirt/i.test(q+raw)) cat='의류';
   else if(/벨트|belt/i.test(q+raw)) cat='벨트';
 
@@ -5797,6 +5859,10 @@ function openSkuListNewForm(){
   document.getElementById('nl-brand').value = brand;
   document.getElementById('nl-model-ko').value = modelKo||'';
   document.getElementById('nl-cat').value = cat;
+  // 부속품 카테고리 동기화
+  _nlAccList = []; _renderNlAccList();
+  var firstAccBtn = document.querySelector('#nl-acc-tabs button');
+  if(firstAccBtn){ setNlAccCat(cat, document.querySelector('#nl-acc-tabs button[onclick*="\''+cat+'\'"]')||firstAccBtn); }
   document.getElementById('nl-sku').value = parsed.style_number||'';
   document.getElementById('nl-url').value = parsed.official_url||'';
   document.getElementById('nl-color').value = '';
@@ -5868,6 +5934,7 @@ async function saveSkuListNewForm(){
     notes:         document.getElementById('nl-notes')?.value.trim()||'',
     extra_images:  _nlPhotos.filter(function(p){ return p.startsWith('http'); }),
     newImageBase64: _nlPhotos.find(function(p){ return p.startsWith('data:'); })?.split(',')[1]||undefined,
+    accessories: _nlAccList.length ? _nlAccList : [],
   };
 
   try{
@@ -5895,6 +5962,7 @@ async function saveSkuListNewForm(){
     }
     toast('✅ 신규 SKU가 등록됐어요!');
     _nlPhotos = []; _nlRenderPhotos();
+    _nlAccList = []; _renderNlAccList();
     document.getElementById('sku-list-new-form').style.display='none';
     renderSkuList(skuListAll);
   }catch(e){
