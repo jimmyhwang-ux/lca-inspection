@@ -691,7 +691,10 @@ input[type=file]{display:none}
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div>
-              <input id="nl-size" type="text" placeholder="가로 × 세로 × 너비 cm" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box">
+              <div id="nl-size-wrap" onclick="editNlSize()" style="background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;cursor:pointer;min-height:36px;display:flex;align-items:center">
+                <span id="nl-size-display" style="color:#555">탭하여 입력</span>
+              </div>
+              <input type="hidden" id="nl-size">
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div>
@@ -991,7 +994,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780301719');
+console.error('APP VERSION: 1780302224');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5709,7 +5712,41 @@ function brandDropdownKey(e, dropId){
   }
 }
 
-var _nlAccList = [];
+function editNlSize(){
+  var cat = (document.getElementById('nl-cat')?.value||'가방').trim();
+  var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+  var wrap = document.getElementById('nl-size-wrap');
+  if(!wrap) return;
+  var hidden = document.getElementById('nl-size');
+  var curNums = (hidden?.value||'').replace(/[^0-9.\s]/g,'').trim().split(/\s*[×x]\s*/).map(function(v){return v.trim();});
+
+  wrap.innerHTML = '<span id="sz-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">'+buildSizeInput(cfg, curNums)+'</span>';
+  wrap.querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('input', function(){ _updateNlSizeHidden(cfg); });
+    inp.addEventListener('click', function(e){ e.stopPropagation(); });
+  });
+}
+
+function _updateNlSizeHidden(cfg){
+  if(!cfg) cfg = SIZE_CONFIG[document.getElementById('nl-cat')?.value||'가방']||SIZE_CONFIG['가방'];
+  var nums = cfg.map(function(f){ return (document.getElementById(f.id)?.value||'').trim(); });
+  var unit = cfg[0]?.unit||'cm';
+  var parts = cfg.map(function(f,i){
+    var v=nums[i]; if(!v) return null;
+    return f.label+(f.unit?'('+f.unit+')':'')+': '+v;
+  }).filter(Boolean);
+  var display = cfg.map(function(f,i){
+    var v=nums[i]; if(!v) return null;
+    return (f.label==='가로'?'가로 ':f.label==='세로'?'세로 ':f.label+' ')+v;
+  }).filter(Boolean).join(' × ');
+  if(display) display += ' '+unit;
+  var hidden = document.getElementById('nl-size');
+  var disp = document.getElementById('nl-size-display');
+  if(hidden) hidden.value = display||'';
+  if(disp) disp.textContent = display||'탭하여 입력';
+}
+
+
 var _nlAccCat = '가방';
 
 var _ACC_OPTIONS = {
@@ -5847,34 +5884,50 @@ function openSkuListNewForm(){
 
   var parsed = raw ? _parseSpecRawText(raw, cat) : {};
 
-  // 모델명 — 검색창에서 못 뽑으면 원문 첫 줄에서 추출
+  // 모델명 — 검색창에서 못 뽑으면 원문에서 추출
   if(!modelKo && raw){
+    // 원문 첫 줄에서 "브랜드 모델명의 공식 스펙은..." 형식 처리
     var firstLine=raw.split('\n')[0].replace(/^[*•\-\s]+/,'').trim();
+    // "의 공식 스펙은|의 스펙은|공식 스펙|다음과 같습니다" 제거
+    firstLine = firstLine.replace(/의?\s*공식\s*스펙.*$|의?\s*스펙.*$|다음과\s*같습니다.*$/,'').trim();
+    firstLine = firstLine.replace(/\.$/, '').trim();
     if(brand && firstLine.toLowerCase().startsWith(brand.toLowerCase()))
       modelKo=firstLine.slice(brand.length).trim();
-    else modelKo=firstLine;
+    else if(firstLine.length < 30) modelKo=firstLine; // 너무 길면 사용 안 함
   }
 
   // 폼 채우기
   document.getElementById('nl-brand').value = brand;
   document.getElementById('nl-model-ko').value = modelKo||'';
   document.getElementById('nl-cat').value = cat;
+  // 카테고리 변경 시 실측 사이즈 재렌더
+  var nlCatEl = document.getElementById('nl-cat');
+  nlCatEl.onchange = function(){ editNlSize(); };
+  editNlSize();
   // 부속품 카테고리 동기화
   _nlAccList = []; _renderNlAccList();
-  var firstAccBtn = document.querySelector('#nl-acc-tabs button');
-  if(firstAccBtn){ setNlAccCat(cat, document.querySelector('#nl-acc-tabs button[onclick*="\''+cat+'\'"]')||firstAccBtn); }
+  var accBtns = document.querySelectorAll('#nl-acc-tabs button');
+  var matchedBtn = null;
+  accBtns.forEach(function(b){ if(b.textContent.trim()===cat) matchedBtn=b; });
+  if(matchedBtn) setNlAccCat(cat, matchedBtn);
+  else if(accBtns[0]) setNlAccCat('가방', accBtns[0]);
   document.getElementById('nl-sku').value = parsed.style_number||'';
   document.getElementById('nl-url').value = parsed.official_url||'';
   document.getElementById('nl-color').value = '';
   var sizeText='';
   if(parsed.size_w){
-    var sp=[];
-    if(parsed.size_w) sp.push('가로 '+parsed.size_w);
-    if(parsed.size_h) sp.push('세로 '+parsed.size_h);
-    if(parsed.size_d) sp.push('너비 '+parsed.size_d);
-    sizeText=sp.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
+    // 동적 필드에 값 주입
+    setTimeout(function(){
+      var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+      var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_d,
+        '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
+      cfg.forEach(function(f){
+        var el=document.getElementById(f.id);
+        if(el && valMap[f.label]) el.value=valMap[f.label];
+      });
+      _updateNlSizeHidden(cfg);
+    }, 100);
   }
-  document.getElementById('nl-size').value = sizeText;
   var notes='';
   if(parsed.material) notes+='소재: '+parsed.material;
   if(parsed.notes) notes+=(notes?'\n':'')+parsed.notes;
