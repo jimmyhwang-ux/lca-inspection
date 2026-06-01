@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780301136');
+console.error('APP VERSION: 1780301565');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5779,6 +5779,8 @@ function openSkuListNewForm(){
   if(/목걸이|펜던트|팔찌|반지|귀걸이|주얼리/i.test(q+raw)) cat='주얼리';
   else if(/시계|watch/i.test(q+raw)) cat='시계';
   else if(/지갑|wallet|카드\s*홀더|카드\s*케이스|카드\s*지갑|card\s*holder|card\s*case|coin\s*purse|동전|클러치/i.test(q+raw)) cat='지갑';
+  else if(/신발|슈즈|스니커|에스파듀|에스파드리|펌프스|로퍼|부츠|샌들|shoes|sneaker|espadrille|pump|loafer|boot|sandal|굽\s*높이|신발\s*사이즈/i.test(q+raw)) cat='신발';
+  else if(/의류|자켓|코트|셔츠|바지|스커트|원피스|블라우스|가디건|니트|jacket|coat|shirt|pants|dress|skirt/i.test(q+raw)) cat='의류';
   else if(/벨트|belt/i.test(q+raw)) cat='벨트';
 
   var parsed = raw ? _parseSpecRawText(raw, cat) : {};
@@ -6011,6 +6013,9 @@ async function applySkuListGoogleResult(){
     if(/목걸이|펜던트|팔찌|반지|귀걸이|주얼리|necklace/i.test(raw)) cat='주얼리';
     else if(/시계|watch/i.test(raw)) cat='시계';
     else if(/지갑|wallet|카드\s*홀더|카드\s*케이스|카드\s*지갑|card\s*holder|card\s*case/i.test(raw)) cat='지갑';
+    else if(/신발|슈즈|스니커|에스파듀|에스파드리|펌프스|로퍼|부츠|샌들|shoes|sneaker|espadrille|pump|loafer|boot|sandal|굽\s*높이|신발\s*사이즈/i.test(raw)) cat='신발';
+    else if(/의류|자켓|코트|셔츠|바지|스커트|원피스|jacket|coat|shirt|pants|dress/i.test(raw)) cat='의류';
+    else if(/벨트|belt/i.test(raw)) cat='벨트';
     else cat='가방';
   }
 
