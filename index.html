@@ -646,7 +646,7 @@ input[type=file]{display:none}
         <div style="display:flex;gap:6px;margin-top:6px">
           <button onclick="applySkuListGoogleResult()"
             style="flex:1;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">
-            ✅ 체크한 SKU에 스펙 적용
+            ✅ 기존 DB에 스펙 적용
           </button>
           <button onclick="openSkuListNewForm()"
             style="flex:1;background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(34,197,94,.08));color:#22c55e;border:1px solid rgba(34,197,94,.4);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">
@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780300445');
+console.error('APP VERSION: 1780300575');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5946,7 +5946,7 @@ function _updateSkuApplyBtn(){
   var btn = document.querySelector('#sku-list-google-result button[onclick="applySkuListGoogleResult()"]');
   if(!btn) return;
   var cnt = _selectedSkuIds.size;
-  btn.textContent = cnt > 0 ? '✅ 체크한 SKU '+cnt+'개에 스펙 적용' : '✅ 체크한 SKU에 스펙 적용';
+  btn.textContent = cnt > 0 ? '✅ 기존 DB에 스펙 적용 ('+cnt+'개)' : '✅ 기존 DB에 스펙 적용';
   btn.style.opacity = cnt > 0 ? '1' : '0.5';
 }
 async function runSkuListGoogleSearch(){
