@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780300200');
+console.error('APP VERSION: 1780300304');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5877,7 +5877,11 @@ async function saveSkuListNewForm(){
       // official_specs 저장 → DB에도 AI 뱃지 영구 보존
       var token2 = localStorage.getItem('lca_token')||'';
       fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json','x-access-token':token2},
-        body:JSON.stringify({action:'update_sku', skuData:{id:newId, official_specs:{source:'google_ai_search'}}})}).catch(function(){});
+        body:JSON.stringify({action:'update_sku', skuData:{id:newId, official_specs:{source:'google_ai_search'}}})
+      }).then(function(r){return r.json();}).then(function(r2){
+        if(r2.success) console.log('[AI Badge] official_specs 저장 완료 id='+newId);
+        else console.warn('[AI Badge] 저장 실패:', r2.error);
+      }).catch(function(e){console.warn('[AI Badge] 오류:', e);});
     }
     toast('✅ 신규 SKU가 등록됐어요!');
     _nlPhotos = []; _nlRenderPhotos();
