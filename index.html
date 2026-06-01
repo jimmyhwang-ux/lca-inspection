@@ -999,7 +999,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780302500');
+console.error('APP VERSION: 1780318016');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -4885,9 +4885,15 @@ function filterSkuList(){
     var exactMatch = skuListAll.filter(function(i){
       return (i.sku_code||'').toUpperCase() === skuQ;
     });
-    if(exactMatch.length === 0 && filtered.length === 0){
+    if(exactMatch.length === 0){
       // 완전 미등록
       if(notice && msg){
+        notice.style.background = 'rgba(245,158,11,.1)';
+        notice.style.borderColor = 'rgba(245,158,11,.4)';
+        notice.querySelector('div:first-child').style.color = '#f59e0b';
+        notice.querySelector('div:first-child').textContent = '⚠️ 미등록 SKU입니다';
+        var regBtn = notice.querySelector('button');
+        if(regBtn) regBtn.style.display = 'block';
         msg.textContent = '"'+raw+'" 스타일번호가 DB에 없어요. 새로 등록할까요?';
         notice.style.display = 'block';
       }
