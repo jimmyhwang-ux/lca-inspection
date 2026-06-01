@@ -698,6 +698,26 @@ input[type=file]{display:none}
               <input id="nl-url" type="text" placeholder="https://..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div style="grid-column:1/-1">
+              <div style="font-size:10px;color:#888;margin-bottom:3px">사진</div>
+              <div id="nl-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+              <div style="display:flex;gap:6px">
+                <label style="flex:1;background:#000;border:1px dashed #444;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
+                  📁 파일 선택
+                  <input type="file" accept="image/*" multiple style="display:none" onchange="addNlPhotos(this.files)">
+                </label>
+                <div id="nl-paste-zone" style="flex:1;background:#000;border:1px dashed #444;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px" 
+                  onclick="this.focus()" tabindex="0"
+                  onpaste="handleNlPaste(event)"
+                  onkeydown=""
+                  onfocus="this.style.borderColor='#ff6b2b';this.style.color='#ff6b2b'"
+                  onblur="this.style.borderColor='#444';this.style.color='#888'">
+                  📋 클릭 후 Ctrl+V
+                </div>
+              </div>
+              <div style="font-size:10px;color:#555;margin-top:4px">※ 공홈 URL 입력 시 🔍 버튼으로 대표사진 자동 시도</div>
+              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid #333;border-radius:6px;padding:7px;color:#888;font-size:11px;cursor:pointer">🔍 공홈 URL에서 대표사진 가져오기</button>
+            </div>
+            <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
               <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
             </div>
@@ -954,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780299252');
+console.error('APP VERSION: 1780299411');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5670,6 +5690,70 @@ function brandDropdownKey(e, dropId){
   }
 }
 
+// ── 신규 등록 폼 사진 기능 ──────────────────────────────────
+var _nlPhotos = [];
+
+function _nlRenderPhotos(){
+  var wrap = document.getElementById('nl-photo-preview');
+  if(!wrap) return;
+  if(!_nlPhotos.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = _nlPhotos.map(function(url,i){
+    return '<div style="position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1px solid #333">'
+      +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">'
+      +'<button onclick="_nlRemovePhoto('+i+')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:10px;cursor:pointer;border-radius:50%;width:16px;height:16px;line-height:16px;padding:0">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+function _nlRemovePhoto(i){
+  _nlPhotos.splice(i,1);
+  _nlRenderPhotos();
+}
+
+function addNlPhotos(files){
+  Array.from(files).forEach(function(file){
+    var reader = new FileReader();
+    reader.onload = function(e){ _nlPhotos.push(e.target.result); _nlRenderPhotos(); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleNlPaste(e){
+  var items = (e.clipboardData||e.originalEvent?.clipboardData)?.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image')){
+      var file = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(ev){ _nlPhotos.push(ev.target.result); _nlRenderPhotos(); };
+      reader.readAsDataURL(file);
+      toast('📋 사진 붙여넣기 완료!');
+      e.preventDefault();
+      break;
+    }
+  }
+}
+
+async function fetchNlOfficialImage(){
+  var url = (document.getElementById('nl-url')?.value||'').trim();
+  if(!url){ toast('⚠ 공홈 URL을 먼저 입력해주세요'); return; }
+  toast('🔍 대표사진 가져오는 중...');
+  try{
+    var token = localStorage.getItem('lca_token')||'';
+    var res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body:JSON.stringify({action:'proxy_image', imageUrl: url})
+    });
+    var j = await res.json();
+    if(!j.success||!j.base64){ toast('⚠ 사진 가져오기 실패 — URL에서 직접 이미지를 찾지 못했어요'); return; }
+    var dataUrl = 'data:'+j.mime+';base64,'+j.base64;
+    _nlPhotos.unshift(dataUrl);
+    _nlRenderPhotos();
+    toast('✅ 대표사진 추가됐어요!');
+  }catch(e){ toast('⚠ 오류: '+e.message); }
+}
+
 function openSkuListNewForm(){
   var raw = (document.getElementById('sku-list-google-raw')||{}).value||'';
   var form = document.getElementById('sku-list-new-form');
@@ -5719,6 +5803,7 @@ function openSkuListNewForm(){
   document.getElementById('nl-notes').value = notes;
 
   form.style.display = 'block';
+  _nlPhotos = []; _nlRenderPhotos();
   form.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
@@ -5742,6 +5827,8 @@ async function saveSkuListNewForm(){
     size_actual:   document.getElementById('nl-size')?.value.trim()||'',
     site_url:      document.getElementById('nl-url')?.value.trim()||'',
     notes:         document.getElementById('nl-notes')?.value.trim()||'',
+    extra_images:  _nlPhotos.filter(function(p){ return p.startsWith('http'); }),
+    newImageBase64: _nlPhotos.find(function(p){ return p.startsWith('data:'); })?.split(',')[1]||undefined,
   };
 
   try{
@@ -5754,6 +5841,7 @@ async function saveSkuListNewForm(){
     if(!j.success) throw new Error(j.error||'저장 실패');
     if(j.data&&j.data[0]) skuListAll.unshift(j.data[0]);
     toast('✅ 신규 SKU가 등록됐어요!');
+    _nlPhotos = []; _nlRenderPhotos();
     document.getElementById('sku-list-new-form').style.display='none';
     renderSkuList(skuListAll);
   }catch(e){
