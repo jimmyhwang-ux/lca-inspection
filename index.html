@@ -999,7 +999,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780318016');
+console.error('APP VERSION: 1780318148');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5896,15 +5896,45 @@ async function fetchNlOfficialImage(){
 }
 
 function openSkuListNewFormFromNotice(){
-  // 검색어를 스타일번호로 채워서 신규 등록 폼 열기
-  var q = document.getElementById('sku-search')?.value.trim()||'';
-  // 구글 AI 검색 결과 없어도 폼 열기
-  openSkuListNewForm();
-  // 스타일번호 자동 채우기
-  setTimeout(function(){
-    var skuInp = document.getElementById('nl-sku');
-    if(skuInp && !skuInp.value) skuInp.value = q;
-  }, 100);
+  var q = (document.getElementById('sku-search')?.value||'').trim();
+  var form = document.getElementById('sku-list-new-form');
+  if(!form) return;
+
+  // 구글 검색 결과 영역도 보이게
+  var resW = document.getElementById('sku-list-google-result');
+  if(resW) resW.style.display = 'block';
+
+  // 폼 초기화 후 열기
+  _nlPhotos = []; _nlRenderPhotos();
+  _nlAccList = []; _renderNlAccList();
+
+  // 브랜드/모델명 추출 — 검색어에서
+  var brand = '', modelKo = '';
+  var brands = _getBrandList();
+  for(var i=0;i<brands.length;i++){
+    if(q.toLowerCase().startsWith(brands[i].toLowerCase())){
+      brand=brands[i]; modelKo=q.slice(brands[i].length).trim(); break;
+    }
+  }
+  if(!brand && q){ var qp=q.split(/\s+/); brand=qp[0]; modelKo=qp.slice(1).join(' '); }
+
+  document.getElementById('nl-brand').value = brand;
+  document.getElementById('nl-model-ko').value = modelKo||'';
+  document.getElementById('nl-cat').value = '가방';
+  document.getElementById('nl-sku').value = q; // 검색어=스타일번호
+  document.getElementById('nl-url').value = '';
+  document.getElementById('nl-color').value = '';
+  document.getElementById('nl-notes').value = '';
+
+  var nlCatEl = document.getElementById('nl-cat');
+  nlCatEl.onchange = function(){ editNlSize(); };
+  editNlSize();
+
+  var accBtns = document.querySelectorAll('#nl-acc-tabs button');
+  if(accBtns[0]) setNlAccCat('가방', accBtns[0]);
+
+  form.style.display = 'block';
+  form.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function openSkuListNewForm(){
