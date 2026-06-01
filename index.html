@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780299411');
+console.error('APP VERSION: 1780299681');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5805,6 +5805,33 @@ function openSkuListNewForm(){
   form.style.display = 'block';
   _nlPhotos = []; _nlRenderPhotos();
   form.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // 이미지 URL 자동 추출 및 프록시 시도
+  var imgUrl = '';
+  // 원문에서 이미지 URL 찾기 (jpg/png/webp 포함된 URL)
+  var imgMatch = raw.match(/https?:\/\/[^\s"')]+\.(?:jpg|jpeg|png|webp|avif)[^\s"').]*/i);
+  if(imgMatch) imgUrl = imgMatch[0];
+  // 없으면 공홈 URL로 시도
+  if(!imgUrl && parsed.official_url && parsed.official_url.startsWith('http')) imgUrl = parsed.official_url;
+
+  if(imgUrl){
+    setTimeout(async function(){
+      try{
+        var token = localStorage.getItem('lca_token')||'';
+        var res = await fetch('/api/inspect',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-access-token':token},
+          body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl})
+        });
+        var j = await res.json();
+        if(j.success && j.base64){
+          _nlPhotos.unshift('data:'+j.mime+';base64,'+j.base64);
+          _nlRenderPhotos();
+          toast('🖼️ 대표사진 자동 추가됐어요!');
+        }
+      }catch(e){ console.warn('[NL Image]', e); }
+    }, 300);
+  }
 }
 
 async function saveSkuListNewForm(){
