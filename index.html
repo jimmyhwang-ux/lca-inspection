@@ -974,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780300575');
+console.error('APP VERSION: 1780301136');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5761,19 +5761,21 @@ function openSkuListNewForm(){
   var form = document.getElementById('sku-list-new-form');
   if(!form) return;
 
-  // 검색창에서 브랜드/모델 추출
   var q = (document.getElementById('sku-search')?.value||'').trim();
   var brand = '', modelKo = '';
-  // "브랜드 모델명" 형식에서 브랜드 목록 매칭
+
+  // 브랜드 목록 매칭
   var brands = _getBrandList();
   for(var i=0;i<brands.length;i++){
-    if(q.startsWith(brands[i])){ brand=brands[i]; modelKo=q.slice(brands[i].length).trim(); break; }
+    if(q.toLowerCase().startsWith(brands[i].toLowerCase())){
+      brand=brands[i]; modelKo=q.slice(brands[i].length).trim(); break;
+    }
   }
-  if(!brand && q) brand = q.split(' ')[0];
+  // 못 찾으면 첫 단어=브랜드, 나머지=모델명
+  if(!brand && q){ var qp=q.split(/\s+/); brand=qp[0]; modelKo=qp.slice(1).join(' '); }
 
-  // 구글 검색 결과 파싱
-  var cat = (document.getElementById('nl-cat')?.value||'가방');
-  // 검색어에서 카테고리 추론
+  // 카테고리 추론
+  var cat='가방';
   if(/목걸이|펜던트|팔찌|반지|귀걸이|주얼리/i.test(q+raw)) cat='주얼리';
   else if(/시계|watch/i.test(q+raw)) cat='시계';
   else if(/지갑|wallet|카드\s*홀더|카드\s*케이스|카드\s*지갑|card\s*holder|card\s*case|coin\s*purse|동전|클러치/i.test(q+raw)) cat='지갑';
@@ -5781,27 +5783,33 @@ function openSkuListNewForm(){
 
   var parsed = raw ? _parseSpecRawText(raw, cat) : {};
 
+  // 모델명 — 검색창에서 못 뽑으면 원문 첫 줄에서 추출
+  if(!modelKo && raw){
+    var firstLine=raw.split('\n')[0].replace(/^[*•\-\s]+/,'').trim();
+    if(brand && firstLine.toLowerCase().startsWith(brand.toLowerCase()))
+      modelKo=firstLine.slice(brand.length).trim();
+    else modelKo=firstLine;
+  }
+
   // 폼 채우기
   document.getElementById('nl-brand').value = brand;
-  document.getElementById('nl-model-ko').value = modelKo || parsed.size_label || '';
+  document.getElementById('nl-model-ko').value = modelKo||'';
   document.getElementById('nl-cat').value = cat;
-  document.getElementById('nl-sku').value = parsed.style_number || '';
-  document.getElementById('nl-url').value = parsed.official_url || '';
+  document.getElementById('nl-sku').value = parsed.style_number||'';
+  document.getElementById('nl-url').value = parsed.official_url||'';
   document.getElementById('nl-color').value = '';
-  // 사이즈
-  var sizeText = '';
+  var sizeText='';
   if(parsed.size_w){
-    var parts=[];
-    if(parsed.size_w) parts.push('가로 '+parsed.size_w);
-    if(parsed.size_h) parts.push('세로 '+parsed.size_h);
-    if(parsed.size_d) parts.push('너비 '+parsed.size_d);
-    sizeText = parts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
+    var sp=[];
+    if(parsed.size_w) sp.push('가로 '+parsed.size_w);
+    if(parsed.size_h) sp.push('세로 '+parsed.size_h);
+    if(parsed.size_d) sp.push('너비 '+parsed.size_d);
+    sizeText=sp.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
   }
   document.getElementById('nl-size').value = sizeText;
-  // 특이사항
-  var notes = '';
-  if(parsed.material) notes += '소재: '+parsed.material;
-  if(parsed.notes) notes += (notes?'\n':'')+parsed.notes;
+  var notes='';
+  if(parsed.material) notes+='소재: '+parsed.material;
+  if(parsed.notes) notes+=(notes?'\n':'')+parsed.notes;
   document.getElementById('nl-notes').value = notes;
 
   form.style.display = 'block';
