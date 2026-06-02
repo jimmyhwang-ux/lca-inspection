@@ -745,6 +745,7 @@ input[type=file]{display:none}
               </div>
               <div style="font-size:10px;color:#555;margin-top:4px">※ 공홈 URL 입력 시 🔍 버튼으로 대표사진 자동 시도</div>
               <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid #333;border-radius:6px;padding:7px;color:#888;font-size:11px;cursor:pointer">🔍 구글 이미지 검색으로 대표사진 가져오기</button>
+              <button onclick="testImageSearch()" style="width:100%;margin-top:4px;background:#111;border:1px solid rgba(66,133,244,.4);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer">🧪 이미지 검색 테스트</button>
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">부속품</div>
@@ -1016,7 +1017,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780436681');
+console.error('APP VERSION: 1780437020');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6424,6 +6425,31 @@ async function applySkuListGoogleResult(){
   _selectedSkuIds.clear();
 }
 
+
+async function testImageSearch(){
+  var res = document.getElementById('img-test-result');
+  res.style.display='block';
+  res.textContent='검색 중...';
+  try{
+    var k = _getGeminiKey();
+    var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+k, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text:'chanel classic medium flap bag product image URL from farfetch or mytheresa. respond only with JSON: {"image_url":"URL"}'}]}],
+        tools:[{google_search:{}}],
+        generationConfig:{maxOutputTokens:200}
+      })
+    });
+    var d = await r.json();
+    var parts = (d.candidates||[])[0]?.content?.parts||[];
+    var txt = parts.map(function(p){return p.text||'';}).join('');
+    res.innerHTML = '<b>응답:</b><br>'+txt.substring(0,500)+'<br><button onclick="document.getElementById(\"img-test-result\").style.display=\"none\"">닫기</button>';
+  }catch(e){
+    res.textContent = '오류: '+e.message;
+  }
+}
+
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
 
 function saveGeminiKeyInline(){
@@ -7341,5 +7367,9 @@ async function saveSpecToSupabaseById(id, specs){
   <option value="모카">
   <option value="샴페인">
 </datalist>
+
+  <!-- 임시 이미지 테스트 버튼 -->
+  <div id="img-test-result" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;background:#1a1a1a;border:1px solid #ff6b2b;border-radius:10px;padding:14px;z-index:9999;font-size:11px;color:#ddd;max-height:200px;overflow-y:auto"></div>
+
 </body>
 </html>
