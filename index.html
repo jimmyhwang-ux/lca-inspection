@@ -660,7 +660,7 @@ input[type=file]{display:none}
     <div style="margin-bottom:10px">
       <button id="sku-list-google-btn" onclick="runSkuListGoogleSearch()"
         style="width:100%;background:linear-gradient(135deg,rgba(66,133,244,.15),rgba(66,133,244,.08));color:#4285f4;border:1px solid rgba(66,133,244,.4);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        🔍 구글 AI로 검색한 모델 스펙 조회
+        🔍 모델 정보 자동 조회
       </button>
       <div id="sku-list-google-result" style="display:none;margin-top:8px">
         <div style="font-size:11px;color:#888;margin-bottom:4px">검색 결과 원문</div>
@@ -752,7 +752,7 @@ input[type=file]{display:none}
                   📋 클릭 후 Ctrl+V
                 </div>
               </div>
-              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer">🔍 쇼핑몰 검색으로 대표사진 자동 가져오기</button>
+              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer">📸 대표사진 원클릭 등록</button>
               <div style="font-size:10px;color:#555;margin-top:4px;line-height:1.5">
                 💡 안 될 경우 공홈에서 이미지 우클릭 → <b style="color:#888">복사</b> 후 📋 Ctrl+V
               </div>
@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780438950');
+console.error('APP VERSION: 1780439000');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3465,7 +3465,7 @@ function switchSkuTab(tab, autoCat){
     var btn=document.getElementById('sku-list-google-btn');
     if(resW) resW.style.display='none';
     if(raw) raw.value='';
-    if(btn){ btn.textContent='🔍 구글 AI로 검색한 모델 스펙 조회'; btn.disabled=false; }
+    if(btn){ btn.textContent='🔍 모델 정보 자동 조회'; btn.disabled=false; }
     var newForm=document.getElementById('sku-list-new-form');
     if(newForm) newForm.style.display='none';
     var saveRow=document.getElementById('nl-save-row');
@@ -5964,7 +5964,7 @@ function _showUnregisteredNotice(notice, msg, raw, type){
   var regBtn = notice.querySelector('button');
   if(regBtn){
     regBtn.style.display = 'block';
-    regBtn.textContent = '🔍 구글 AI 검색 후 등록하기';
+    regBtn.textContent = '🤖 AI 모델 검색·등록';
     regBtn.onclick = function(){ _noticeStartGoogleSearch(raw); };
   }
   notice.style.display = 'block';
@@ -6313,7 +6313,7 @@ async function runSkuListGoogleSearch(){
 
   try{
     var apiKey = _getGeminiKey();
-    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 구글 AI로 검색한 모델 스펙 조회'; btn.disabled=false; return; }
+    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 모델 정보 자동 조회'; btn.disabled=false; return; }
     var keyword = q + catHint + ' 공식 사이즈 스타일번호 소재 공식URL 스펙';
     var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
       method:'POST',
