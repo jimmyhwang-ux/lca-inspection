@@ -668,6 +668,17 @@ input[type=file]{display:none}
             ➕ 신규 등록
           </button>
         </div>
+        <!-- 저장/취소 — 신규 등록 폼 열릴 때만 노출 -->
+        <div id="nl-save-row" style="display:none;gap:6px;margin-top:6px">
+          <button onclick="saveSkuListNewForm()"
+            style="flex:1;background:#22c55e;border:none;border-radius:8px;padding:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">
+            💾 저장
+          </button>
+          <button onclick="closeNlForm()"
+            style="flex:1;background:#222;border:1px solid #333;border-radius:8px;padding:9px;color:#ddd;font-size:12px;cursor:pointer">
+            취소
+          </button>
+        </div>
         <!-- 신규 등록 인라인 폼 -->
         <div id="sku-list-new-form" style="display:none;margin-top:8px;background:#111;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:14px">
           <div style="font-size:12px;color:#22c55e;font-weight:700;margin-bottom:10px">➕ 신규 SKU 등록 — 확인 후 저장해주세요</div>
@@ -756,10 +767,6 @@ input[type=file]{display:none}
             </div>
               <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
             </div>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:8px">
-            <button onclick="saveSkuListNewForm()" style="flex:2;background:#22c55e;border:none;border-radius:8px;padding:12px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 저장</button>
-            <button onclick="document.getElementById('sku-list-new-form').style.display='none'" style="flex:1;background:#222;border:1px solid #333;border-radius:8px;padding:12px;color:#ddd;font-size:13px;cursor:pointer">취소</button>
           </div>
         </div>
       </div>
@@ -1009,7 +1016,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780361835');
+console.error('APP VERSION: 1780361959');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3449,6 +3456,8 @@ function switchSkuTab(tab, autoCat){
     if(btn){ btn.textContent='🔍 구글 AI로 검색한 모델 스펙 조회'; btn.disabled=false; }
     var newForm=document.getElementById('sku-list-new-form');
     if(newForm) newForm.style.display='none';
+    var saveRow=document.getElementById('nl-save-row');
+    if(saveRow) saveRow.style.display='none';
     _selectedSkuIds&&_selectedSkuIds.clear();
   }
   const dbP=document.getElementById('sku-db-panel');
@@ -5963,6 +5972,15 @@ function _noticeStartGoogleSearch(skuQ){
   if(googleBtn) googleBtn.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
+function closeNlForm(){
+  var form = document.getElementById('sku-list-new-form');
+  var saveRow = document.getElementById('nl-save-row');
+  if(form) form.style.display='none';
+  if(saveRow) saveRow.style.display='none';
+  _nlPhotos=[]; _nlRenderPhotos();
+  _nlAccList=[]; _renderNlAccList();
+}
+
 function openSkuListNewFormFromNotice(){
   var q = (document.getElementById('sku-search')?.value||'').trim();
   var form = document.getElementById('sku-list-new-form');
@@ -6084,6 +6102,7 @@ function openSkuListNewForm(){
   document.getElementById('nl-notes').value = notes;
 
   form.style.display = 'block';
+  var saveRow=document.getElementById('nl-save-row'); if(saveRow) saveRow.style.display='flex';
   _nlPhotos = []; _nlRenderPhotos();
   form.scrollIntoView({behavior:'smooth', block:'nearest'});
 
