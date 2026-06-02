@@ -1017,7 +1017,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780437020');
+console.error('APP VERSION: 1780437194');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6436,18 +6436,23 @@ async function testImageSearch(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        contents:[{parts:[{text:'chanel classic medium flap bag product image URL from farfetch or mytheresa. respond only with JSON: {"image_url":"URL"}'}]}],
+        contents:[{parts:[{text:'샤넬 클래식 미듐 가방 이미지 farfetch mytheresa 쇼핑몰에서 이미지 URL 찾아줘. 이미지 URL만 답해줘.'}]}],
         tools:[{google_search:{}}],
-        generationConfig:{maxOutputTokens:200}
+        generationConfig:{maxOutputTokens:500}
       })
     });
     var d = await r.json();
-    var parts = (d.candidates||[])[0]?.content?.parts||[];
-    var txt = parts.map(function(p){return p.text||'';}).join('');
-    res.innerHTML = '<b>응답:</b><br>'+txt.substring(0,500)+'<br><button onclick="document.getElementById(\"img-test-result\").style.display=\"none\"">닫기</button>';
-  }catch(e){
-    res.textContent = '오류: '+e.message;
-  }
+    var allParts = (d.candidates||[])[0]?.content?.parts||[];
+    var out = '<b>파트 수: '+allParts.length+'</b><br>';
+    allParts.forEach(function(p,i){
+      out += '<b>[파트'+i+'] '+Object.keys(p).join(',')+':</b><br>';
+      if(p.text) out += p.text.substring(0,400)+'<br>';
+    });
+    if(d.error) out += '<b>에러:</b>'+JSON.stringify(d.error);
+    out += '<br><button onclick="document.getElementById(\'img-test-result\').style.display=\'none\'">닫기</button>';
+    res.innerHTML = out;
+  }catch(e){ res.textContent = '오류: '+e.message; }
+}
 }
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
