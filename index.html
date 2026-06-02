@@ -1016,7 +1016,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780435757');
+console.error('APP VERSION: 1780436134');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6114,23 +6114,41 @@ function openSkuListNewForm(){
   // 없으면 공홈 URL로 시도
   if(!imgUrl && parsed.official_url && parsed.official_url.startsWith('http')) imgUrl = parsed.official_url;
 
-  if(imgUrl){
+  // 이미지 자동 시도 — 구글 이미지 검색 기반 (공홈 프록시는 대부분 차단)
+  var searchQ = [brand, modelKo].filter(Boolean).join(' ');
+  if(searchQ){
     setTimeout(async function(){
       try{
-        var token = localStorage.getItem('lca_token')||'';
-        var res = await fetch('/api/inspect',{
+        var apiKey = _getGeminiKey();
+        if(!apiKey) return;
+        var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
           method:'POST',
-          headers:{'Content-Type':'application/json','x-access-token':token},
-          body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl})
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contents:[{parts:[{text: searchQ+' 제품 공식 대표 이미지 URL 하나만. 반드시 직접 접근 가능한 이미지 URL(jpg/png/webp). JSON만: {"image_url":"URL"}'}]}],
+            tools:[{google_search:{}}],
+            generationConfig:{temperature:0, maxOutputTokens:100}
+          })
         });
-        var j = await res.json();
-        if(j.success && j.base64){
-          _nlPhotos.unshift('data:'+j.mime+';base64,'+j.base64);
+        var d = await r.json();
+        var txt = ((d.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+        var m = txt.match(/"image_url"\s*:\s*"(https?:\/\/[^"]+)"/);
+        if(!m) return;
+        var imgUrl2 = m[1];
+        var token2 = localStorage.getItem('lca_token')||'';
+        var res2 = await fetch('/api/inspect',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-access-token':token2},
+          body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl2})
+        });
+        var j2 = await res2.json();
+        if(j2.success && j2.base64){
+          _nlPhotos.unshift('data:'+j2.mime+';base64,'+j2.base64);
           _nlRenderPhotos();
           toast('🖼️ 대표사진 자동 추가됐어요!');
         }
-      }catch(e){ console.warn('[NL Image]', e); }
-    }, 300);
+      }catch(e){ console.warn('[NL AutoImage]', e); }
+    }, 500);
   }
 }
 
