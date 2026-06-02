@@ -538,15 +538,6 @@ input[type=file]{display:none}
         <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
-    <!-- SerpAPI 키 입력 -->
-    <div id="serpapi-key-row" style="display:none;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
-      <div style="font-size:11px;color:#4285f4;margin-bottom:6px">🔍 SerpAPI 키 — 대표사진 자동 검색에 사용돼요</div>
-      <div style="display:flex;gap:6px">
-        <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
-          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
-        <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
-      </div>
-    </div>
     <!-- ✨ AI 스펙 자동완성 버튼 -->
     <button id="ai-autofill-btn" onclick="aiAutoFillSpec()" style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;color:#ff6b2b;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px">
       ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
@@ -630,6 +621,15 @@ input[type=file]{display:none}
   </div>
 
   <div id="sku-list-panel" style="display:none">
+    <!-- SerpAPI 키 입력 (없을 때만 노출) -->
+    <div id="serpapi-key-row" style="display:none;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;color:#4285f4;margin-bottom:6px">🔍 SerpAPI 키 입력 시 신규 등록 폼에서 대표사진 자동 검색이 가능해요</div>
+      <div style="display:flex;gap:6px">
+        <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
+          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
+        <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+      </div>
+    </div>
     <div style="margin-bottom:10px">
       <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
         <select id="sku-list-cat-select" onchange="filterSkuList()" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 10px;font-size:13px;color:#f0f0f0;outline:none;cursor:pointer;flex-shrink:0">
@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780438626');
+console.error('APP VERSION: 1780438776');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3456,6 +3456,7 @@ function switchSkuTab(tab, autoCat){
   });
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
   if(tab==='save') setTimeout(_checkGeminiKeyRow, 50);
+  if(tab==='list') setTimeout(_checkGeminiKeyRow, 50);
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
   // 탭 전환 시 구글 AI 검색 결과 초기화
   if(tab==='list'){
