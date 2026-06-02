@@ -166,6 +166,80 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ model_name_en: '' }); }
   }
 
+  if (action === 'search_image') {
+    try {
+      const { query, serpApiKey } = req.body;
+      if (!query) return res.status(400).json({ success: false, error: 'query 없음' });
+
+      // SerpAPI Google Images 검색
+      if (serpApiKey) {
+        const encoded = encodeURIComponent(query);
+        const serpUrl = `https://serpapi.com/search.json?q=${encoded}&tbm=isch&api_key=${serpApiKey}&num=5&safe=active`;
+        try {
+          const serpR = await fetch(serpUrl);
+          if (serpR.ok) {
+            const serpD = await serpR.json();
+            const imgs = serpD.images_results || [];
+            for (const img of imgs) {
+              const imgUrl = img.original || img.thumbnail;
+              if (!imgUrl) continue;
+              try {
+                const ir = await fetch(imgUrl, {
+                  headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.google.com' }
+                });
+                if (!ir.ok) continue;
+                const buf = Buffer.from(await ir.arrayBuffer());
+                if (buf.length < 2000) continue;
+                const b64 = buf.toString('base64');
+                const ct = ir.headers.get('content-type') || 'image/jpeg';
+                return res.status(200).json({ success: true, base64: b64, mime: ct, sourceUrl: imgUrl });
+              } catch (e) { continue; }
+            }
+          }
+        } catch (e) { console.log('[search_image] SerpAPI 오류:', e.message); }
+      }
+
+      // SerpAPI 없거나 실패 시 — Farfetch/Mytheresa HTML 스크래핑
+      const encoded = encodeURIComponent(query);
+      const sources = [
+        `https://www.farfetch.com/kr/shopping/women/search/?q=${encoded}&view=90&sort=3`,
+        `https://www.farfetch.com/kr/shopping/men/search/?q=${encoded}&view=90&sort=3`,
+        `https://www.mytheresa.com/int_en/search.html?q=${encoded}`,
+      ];
+      for (const url of sources) {
+        try {
+          const r = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Accept': 'text/html',
+              'Accept-Language': 'ko-KR,ko;q=0.9',
+            }
+          });
+          if (!r.ok) continue;
+          const html = await r.text();
+          const patterns = [
+            /cdn-images\.farfetch-contents\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi,
+            /media\.mytheresa\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi,
+          ];
+          for (const pat of patterns) {
+            const matches = html.match(pat);
+            if (matches && matches.length > 0) {
+              const imgUrl = 'https://' + matches[0];
+              const imgR = await fetch(imgUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': url } });
+              if (!imgR.ok) continue;
+              const buf = Buffer.from(await imgR.arrayBuffer());
+              if (buf.length < 1000) continue;
+              const b64 = buf.toString('base64');
+              const ct = imgR.headers.get('content-type') || 'image/jpeg';
+              return res.status(200).json({ success: true, base64: b64, mime: ct, sourceUrl: imgUrl });
+            }
+          }
+        } catch (e) { continue; }
+      }
+      return res.status(200).json({ success: false, error: '이미지를 찾지 못했어요' });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
   if (action === 'proxy_image') {
     try {
       const { imageUrl } = req.body;
