@@ -1017,7 +1017,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780437194');
+console.error('APP VERSION: 1780437372');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6428,6 +6428,7 @@ async function applySkuListGoogleResult(){
 
 async function testImageSearch(){
   var res = document.getElementById('img-test-result');
+  if(!res) return;
   res.style.display='block';
   res.textContent='검색 중...';
   try{
@@ -6446,13 +6447,12 @@ async function testImageSearch(){
     var out = '<b>파트 수: '+allParts.length+'</b><br>';
     allParts.forEach(function(p,i){
       out += '<b>[파트'+i+'] '+Object.keys(p).join(',')+':</b><br>';
-      if(p.text) out += p.text.substring(0,400)+'<br>';
+      if(p.text) out += p.text.substring(0,400).replace(/</g,'&lt;')+'<br>';
     });
     if(d.error) out += '<b>에러:</b>'+JSON.stringify(d.error);
-    out += '<br><button onclick="document.getElementById(\'img-test-result\').style.display=\'none\'">닫기</button>';
+    out += "<br><button onclick=\"this.parentNode.style.display='none'\">닫기</button>";
     res.innerHTML = out;
   }catch(e){ res.textContent = '오류: '+e.message; }
-}
 }
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
