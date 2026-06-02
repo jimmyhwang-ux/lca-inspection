@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780438776');
+console.error('APP VERSION: 1780438900');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6459,10 +6459,10 @@ function saveSerpApiKeyInline(){
   if(!key){ toast('⚠ SerpAPI 키를 입력해주세요'); return; }
   localStorage.setItem('bungae_serpapi_key', key);
   inp.value='';
-  toast('✅ SerpAPI 키 저장됐어요! 이제 대표사진 자동 검색이 가능해요.');
-  // 저장 확인 표시
+  // 입력란 숨기기
   var row = document.getElementById('serpapi-key-row');
-  if(row) row.style.borderColor='rgba(34,197,94,.4)';
+  if(row) row.style.display='none';
+  toast('✅ SerpAPI 키 저장됐어요! 이제 대표사진 자동 검색이 가능해요.');
 }
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
