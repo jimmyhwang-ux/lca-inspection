@@ -538,6 +538,21 @@ input[type=file]{display:none}
         <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
+    <!-- SerpAPI 키 입력 -->
+    <div id="serpapi-key-row" style="background:#111;border:1px solid rgba(66,133,244,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;color:#4285f4;margin-bottom:6px">🔍 SerpAPI 키 — 대표사진 자동 검색에 사용돼요</div>
+      <div style="display:flex;gap:6px">
+        <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
+          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
+        <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+      </div>
+    </div>
+      <div style="display:flex;gap:6px">
+        <input id="gemini-key-inline" type="text" placeholder="AIza..." autocomplete="off"
+          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
+        <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+      </div>
+    </div>
     <!-- ✨ AI 스펙 자동완성 버튼 -->
     <button id="ai-autofill-btn" onclick="aiAutoFillSpec()" style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;color:#ff6b2b;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px">
       ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
@@ -743,8 +758,9 @@ input[type=file]{display:none}
                   📋 클릭 후 Ctrl+V
                 </div>
               </div>
+              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer">🔍 쇼핑몰 검색으로 대표사진 자동 가져오기</button>
               <div style="font-size:10px;color:#555;margin-top:4px;line-height:1.5">
-                💡 공홈에서 이미지 우클릭 → <b style="color:#888">복사</b> 후 📋 클릭 후 Ctrl+V 에 붙여넣기
+                💡 안 될 경우 공홈에서 이미지 우클릭 → <b style="color:#888">복사</b> 후 📋 Ctrl+V
               </div>
             </div>
             <div style="grid-column:1/-1">
@@ -1017,7 +1033,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780437895');
+console.error('APP VERSION: 1780438050');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5915,33 +5931,12 @@ async function fetchNlOfficialImage(){
 
   async function _tryImg(query){
     try{
-      var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:
-            query+' 상품 이미지\n\n'+
-            '위 상품의 이미지 파일 URL을 google_search로 찾아줘.\n'+
-            'cdn-images.farfetch-contents.com 또는 media.mytheresa.com 또는 img.ssense.com 도메인의 이미지 URL만.\n'+
-            '반드시 .jpg .png .webp 확장자 포함된 URL이어야 함.\n'+
-            'URL 하나만 출력. 설명 없이.'
-          }]}],
-          tools:[{google_search:{}}],
-          generationConfig:{temperature:0, maxOutputTokens:200}
-        })
-      });
-      var d = await r.json();
-      var txt = ((d.candidates||[])[0]?.content?.parts||[]).map(function(p){return p.text||'';}).join(' ');
-      console.log('[ImgSearch] 응답:', txt.substring(0,200));
-      var urls = txt.match(/https?:\/\/[^\s"'<>)\]]+/g)||[];
-      var imgUrl = urls.find(function(u){
-        return /cdn-images\.farfetch|media\.mytheresa|img\.ssense|images\.net-a-porter|cdn\.24s\.com/i.test(u);
-      }) || urls.find(function(u){
-        return /\.(jpg|jpeg|png|webp)(\?|$)/i.test(u);
-      });
-      if(!imgUrl) return false;
+      var token2 = localStorage.getItem('lca_token')||'';
+      var serpKey = localStorage.getItem('bungae_serpapi_key')||'';
       var res = await fetch('/api/inspect',{
-        method:'POST', headers:{'Content-Type':'application/json','x-access-token':token2},
-        body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl})
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-access-token':token2},
+        body:JSON.stringify({action:'search_image', query: query, serpApiKey: serpKey})
       });
       if(!res.ok) return false;
       var j = await res.json();
@@ -6461,6 +6456,18 @@ async function testImageSearch(){
     out += "<br><button onclick=\"this.parentNode.style.display='none'\">닫기</button>";
     res.innerHTML = out;
   }catch(e){ res.textContent = '오류: '+e.message; }
+}
+
+function saveSerpApiKeyInline(){
+  var inp = document.getElementById('serpapi-key-inline');
+  var key = (inp?.value||'').trim();
+  if(!key){ toast('⚠ SerpAPI 키를 입력해주세요'); return; }
+  localStorage.setItem('bungae_serpapi_key', key);
+  inp.value='';
+  toast('✅ SerpAPI 키 저장됐어요! 이제 대표사진 자동 검색이 가능해요.');
+  // 저장 확인 표시
+  var row = document.getElementById('serpapi-key-row');
+  if(row) row.style.borderColor='rgba(34,197,94,.4)';
 }
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
