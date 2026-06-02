@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780438900');
+console.error('APP VERSION: 1780438950');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5876,11 +5876,15 @@ function _nlRenderPhotos(){
   if(!wrap) return;
   if(!_nlPhotos.length){ wrap.innerHTML=''; return; }
   wrap.innerHTML = _nlPhotos.map(function(url,i){
-    return '<div style="position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1px solid #333">'
-      +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">'
-      +'<button onclick="_nlRemovePhoto('+i+')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:10px;cursor:pointer;border-radius:50%;width:16px;height:16px;line-height:16px;padding:0">✕</button>'
+    return '<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid #333;flex-shrink:0">'
+      +'<img src="'+url+'" onclick="_nlZoomPhoto('+i+')" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in">'
+      +'<button onclick="event.stopPropagation();_nlRemovePhoto('+i+')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.75);border:none;color:#fff;font-size:10px;cursor:pointer;border-radius:50%;width:18px;height:18px;line-height:18px;padding:0;z-index:2">✕</button>'
       +'</div>';
   }).join('');
+}
+
+function _nlZoomPhoto(i){
+  openLightbox(_nlPhotos[i], _nlPhotos);
 }
 
 function _nlRemovePhoto(i){
