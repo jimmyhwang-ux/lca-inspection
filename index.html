@@ -1017,7 +1017,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780437525');
+console.error('APP VERSION: 1780437728');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5918,23 +5918,27 @@ async function fetchNlOfficialImage(){
       var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
         method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          contents:[{parts:[{text: query+' 제품 이미지 URL. farfetch mytheresa ssense cdn 이미지 URL만 텍스트로 출력. 다른 설명 없이 URL만.'}]}],
+          contents:[{parts:[{text:
+            query+' 상품 이미지\n\n'+
+            '위 상품의 이미지 파일 URL을 google_search로 찾아줘.\n'+
+            'cdn-images.farfetch-contents.com 또는 media.mytheresa.com 또는 img.ssense.com 도메인의 이미지 URL만.\n'+
+            '반드시 .jpg .png .webp 확장자 포함된 URL이어야 함.\n'+
+            'URL 하나만 출력. 설명 없이.'
+          }]}],
           tools:[{google_search:{}}],
-          generationConfig:{temperature:0, maxOutputTokens:300}
+          generationConfig:{temperature:0, maxOutputTokens:200}
         })
       });
       var d = await r.json();
       var txt = ((d.candidates||[])[0]?.content?.parts||[]).map(function(p){return p.text||'';}).join(' ');
-      // URL 추출 — 어떤 형식이든 https로 시작하는 URL 찾기
-      var urls = txt.match(/https?:\/\/[^\s"'<>)]+/g)||[];
-      // 이미지 URL 우선 (jpg/png/webp 포함)
-      var imgUrl = urls.find(function(u){ return /\.(jpg|jpeg|png|webp)/i.test(u); })
-                || urls.find(function(u){ return /cdn-images|media\.|img\.|images\./i.test(u); })
-                || urls[0];
+      console.log('[ImgSearch] 응답:', txt.substring(0,200));
+      var urls = txt.match(/https?:\/\/[^\s"'<>)\]]+/g)||[];
+      var imgUrl = urls.find(function(u){
+        return /cdn-images\.farfetch|media\.mytheresa|img\.ssense|images\.net-a-porter|cdn\.24s\.com/i.test(u);
+      }) || urls.find(function(u){
+        return /\.(jpg|jpeg|png|webp)(\?|$)/i.test(u);
+      });
       if(!imgUrl) return false;
-      // 공홈 차단 도메인 스킵
-      var blockedDomains = ['chanel.com','louisvuitton.com','hermes.com','gucci.com','prada.com','dior.com','goyard.com','celine.com','loewe.com','balenciaga.com'];
-      if(blockedDomains.some(function(bd){ return imgUrl.includes(bd); })) return false;
       var res = await fetch('/api/inspect',{
         method:'POST', headers:{'Content-Type':'application/json','x-access-token':token2},
         body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl})
@@ -5948,7 +5952,7 @@ async function fetchNlOfficialImage(){
         return true;
       }
       return false;
-    }catch(e){ return false; }
+    }catch(e){ console.warn('[ImgSearch]',e); return false; }
   }
 
   var ok = await _tryImg(q);
