@@ -744,7 +744,7 @@ input[type=file]{display:none}
                 </div>
               </div>
               <div style="font-size:10px;color:#555;margin-top:4px">※ 공홈 URL 입력 시 🔍 버튼으로 대표사진 자동 시도</div>
-              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid #333;border-radius:6px;padding:7px;color:#888;font-size:11px;cursor:pointer">🔍 공홈 URL에서 대표사진 가져오기</button>
+              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid #333;border-radius:6px;padding:7px;color:#888;font-size:11px;cursor:pointer">🔍 구글 이미지 검색으로 대표사진 가져오기</button>
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">부속품</div>
@@ -1016,7 +1016,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780436500');
+console.error('APP VERSION: 1780436681');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5901,23 +5901,54 @@ function handleNlPaste(e){
 }
 
 async function fetchNlOfficialImage(){
-  var url = (document.getElementById('nl-url')?.value||'').trim();
-  if(!url){ toast('⚠ 공홈 URL을 먼저 입력해주세요'); return; }
-  toast('🔍 대표사진 가져오는 중...');
-  try{
-    var token = localStorage.getItem('lca_token')||'';
-    var res = await fetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':token},
-      body:JSON.stringify({action:'proxy_image', imageUrl: url})
-    });
-    var j = await res.json();
-    if(!j.success||!j.base64){ toast('⚠ 사진 가져오기 실패 — URL에서 직접 이미지를 찾지 못했어요'); return; }
-    var dataUrl = 'data:'+j.mime+';base64,'+j.base64;
-    _nlPhotos.unshift(dataUrl);
-    _nlRenderPhotos();
-    toast('✅ 대표사진 추가됐어요!');
-  }catch(e){ toast('⚠ 오류: '+e.message); }
+  var brand = (document.getElementById('nl-brand')?.value||'').trim();
+  var modelKo = (document.getElementById('nl-model-ko')?.value||'').trim();
+  var q = [brand, modelKo].filter(Boolean).join(' ');
+  if(!q){ toast('⚠ 브랜드/모델명을 먼저 입력해주세요'); return; }
+
+  var apiKey = _getGeminiKey();
+  if(!apiKey){ toast('⚠ Gemini API 키가 없어요'); return; }
+  toast('🔍 이미지 검색 중...');
+
+  var token2 = localStorage.getItem('lca_token')||'';
+
+  async function _tryImg(query){
+    try{
+      var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[{text: query+' 제품 이미지 URL. farfetch mytheresa ssense 쇼핑몰 우선. 직접 접근 가능한 jpg/png/webp. JSON만: {"image_url":"URL"}'}]}],
+          tools:[{google_search:{}}],
+          generationConfig:{temperature:0, maxOutputTokens:150}
+        })
+      });
+      var d = await r.json();
+      var txt = ((d.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+      var m = txt.match(/"image_url"\s*:\s*"(https?:\/\/[^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i)
+             || txt.match(/"image_url"\s*:\s*"(https?:\/\/[^"]+)"/);
+      if(!m) return false;
+      var imgUrl = m[1];
+      var blockedDomains = ['chanel.com','louisvuitton.com','hermes.com','gucci.com','prada.com','dior.com','goyard.com','celine.com'];
+      if(blockedDomains.some(function(bd){ return imgUrl.includes(bd); })) return false;
+      var res = await fetch('/api/inspect',{
+        method:'POST', headers:{'Content-Type':'application/json','x-access-token':token2},
+        body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl})
+      });
+      if(!res.ok) return false;
+      var j = await res.json();
+      if(j.success && j.base64 && j.base64.length > 1000){
+        _nlPhotos.unshift('data:'+j.mime+';base64,'+j.base64);
+        _nlRenderPhotos();
+        toast('✅ 대표사진 추가됐어요!');
+        return true;
+      }
+      return false;
+    }catch(e){ return false; }
+  }
+
+  var ok = await _tryImg(q);
+  if(!ok) ok = await _tryImg(q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
 }
 
 function _showUnregisteredNotice(notice, msg, raw, type){
@@ -6114,62 +6145,11 @@ function openSkuListNewForm(){
   // 없으면 공홈 URL로 시도
   if(!imgUrl && parsed.official_url && parsed.official_url.startsWith('http')) imgUrl = parsed.official_url;
 
-  // 이미지 자동 시도 — 구글 이미지 검색 2단계
-  var searchQ = [brand, modelKo].filter(Boolean).join(' ');
-  if(searchQ && _getGeminiKey()){
-    setTimeout(async function(){
-      var apiKey = _getGeminiKey();
-      var token2 = localStorage.getItem('lca_token')||'';
-
-      async function _tryFetchImage(q){
-        try{
-          var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              contents:[{parts:[{text: q+' 제품 이미지 URL 하나만. 직접 접근 가능한 jpg/png/webp URL. 쇼핑몰(farfetch, mytheresa, ssense, 24s, matchesfashion) 우선. JSON만: {"image_url":"URL"}'}]}],
-              tools:[{google_search:{}}],
-              generationConfig:{temperature:0, maxOutputTokens:150}
-            })
-          });
-          var d = await r.json();
-          var txt = ((d.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
-          var m = txt.match(/"image_url"\s*:\s*"(https?:\/\/[^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i)
-                 || txt.match(/"image_url"\s*:\s*"(https?:\/\/[^"]+)"/);
-          if(!m) return false;
-          var imgUrl2 = m[1];
-          // 공홈 URL이면 스킵 (봇 차단)
-          var blockedDomains = ['chanel.com','louisvuitton.com','hermes.com','gucci.com','prada.com','dior.com','lv.com'];
-          if(blockedDomains.some(function(d){ return imgUrl2.includes(d); })) return false;
-          var res2 = await fetch('/api/inspect',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','x-access-token':token2},
-            body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl2})
-          });
-          if(!res2.ok) return false;
-          var j2 = await res2.json();
-          if(j2.success && j2.base64 && j2.base64.length > 1000){
-            _nlPhotos.unshift('data:'+j2.mime+';base64,'+j2.base64);
-            _nlRenderPhotos();
-            toast('🖼️ 대표사진 추가됐어요!');
-            return true;
-          }
-          return false;
-        }catch(e){ return false; }
-      }
-
-      // 1단계: 브랜드+모델명 검색
-      var ok = await _tryFetchImage(searchQ);
-      if(!ok){
-        // 2단계: 쇼핑몰 한정 재검색
-        ok = await _tryFetchImage(searchQ+' farfetch OR mytheresa OR ssense 제품 이미지');
-      }
-      if(!ok){
-        console.log('[NL AutoImage] 이미지를 찾지 못했어요. 수동으로 추가해주세요.');
-      }
-    }, 500);
-  }
+  // 이미지는 수동으로 추가 (📋 붙여넣기 또는 📁 파일 선택)
+  // 자동 이미지 검색은 공홈/쇼핑몰 봇 차단으로 신뢰도 낮아 제거
 }
+
+
 
 async function saveSkuListNewForm(){
   var brand   = document.getElementById('nl-brand')?.value.trim();
