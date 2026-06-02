@@ -18,18 +18,18 @@ body{background:#000;color:#f0f0f0;font-family:-apple-system,'Apple SD Gothic Ne
 @media(min-width:600px){
   .app-wrap{border-left:1px solid #1a1a1a;border-right:1px solid #1a1a1a;min-height:100vh}
   .slot-big{min-height:90px}
-  .slot-big.filled{aspect-ratio:unset;height:260px}
+  .slot-big.filled{aspect-ratio:unset;height:320px}
   .slot-grid{grid-template-columns:repeat(6,1fr)}
-  .slot-sm{aspect-ratio:unset;height:80px}
+  .slot-sm{aspect-ratio:1}
 }
 .header{text-align:center;padding:16px 20px 12px}
 .header h1{font-size:19px;font-weight:800;margin-bottom:4px}
 .header p{font-size:12px;color:#ddd;line-height:1.4}
 .photo-wrap{padding:0 16px;margin-bottom:6px}
-.slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:80px}
+.slot-big{background:#1a1a1a;border:2px dashed #2a2a2a;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:120px}
 .slot-big:hover{border-color:#ff6b2b}
 .slot-big.filled{border-style:solid;border-color:#ddd;min-height:0;aspect-ratio:3/2}
-.slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px;width:100%}
+.slot-big .slot-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 16px;width:100%}
 .slot-big.filled .slot-inner{display:none}
 .slot-big img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;border-radius:12px;z-index:1;background:#1a1a1a}
 .slot-big.filled img.preview{display:block}
@@ -206,47 +206,6 @@ input[type=file]{display:none}
   .app-wrap{max-width:1100px}
 }
 
-
-/* ── PC 검수 화면 2단 레이아웃 ─── */
-@media(min-width:768px){
-  #screen-shoot .photo-wrap{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    align-items:start;
-  }
-  #screen-shoot .slot-big{
-    margin-bottom:0;
-    grid-column:1;
-    grid-row:1;
-    min-height:200px;
-  }
-  #screen-shoot .slot-grid{
-    grid-column:2;
-    grid-row:1;
-    grid-template-columns:repeat(3,1fr);
-    gap:8px;
-  }
-  #screen-shoot .slot-sm{
-    aspect-ratio:1;
-    height:auto;
-  }
-  #screen-shoot .hint{grid-column:1/-1}
-  /* 검수화면 헤더 */
-  #screen-shoot .header{padding:20px 24px 14px}
-  #screen-shoot .cta-wrap{padding:0 16px 16px}
-}
-
-/* ── SKU 리스트 검색바 정리 ─── */
-#sku-list-panel > div:first-child > div:first-child{
-  flex-wrap:nowrap;
-}
-
-/* slot-sm 최소 높이 통일 */
-.slot-sm{min-height:80px}
-@media(min-width:600px){
-  .slot-sm{min-height:unset}
-}
 </style>
 </head>
 <body>
@@ -580,18 +539,12 @@ input[type=file]{display:none}
       </div>
     </div>
     <!-- SerpAPI 키 입력 -->
-    <div id="serpapi-key-row" style="background:#111;border:1px solid rgba(66,133,244,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+    <div id="serpapi-key-row" style="display:none;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
       <div style="font-size:11px;color:#4285f4;margin-bottom:6px">🔍 SerpAPI 키 — 대표사진 자동 검색에 사용돼요</div>
       <div style="display:flex;gap:6px">
         <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
           style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
         <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
-      </div>
-    </div>
-      <div style="display:flex;gap:6px">
-        <input id="gemini-key-inline" type="text" placeholder="AIza..." autocomplete="off"
-          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
-        <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
     <!-- ✨ AI 스펙 자동완성 버튼 -->
@@ -1074,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780438050');
+console.error('APP VERSION: 1780438626');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6546,6 +6499,9 @@ function _checkGeminiKeyRow(){
   var row2=document.getElementById('gemini-key-row-result');
   if(row1) row1.style.display = hasKey ? 'none' : 'block';
   if(row2) row2.style.display = hasKey ? 'none' : 'block';
+  // SerpAPI 키 없으면 노출
+  var serpRow=document.getElementById('serpapi-key-row');
+  if(serpRow) serpRow.style.display = localStorage.getItem('bungae_serpapi_key') ? 'none' : 'block';
 }
 
 
