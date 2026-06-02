@@ -1016,7 +1016,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780361959');
+console.error('APP VERSION: 1780435757');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -4471,7 +4471,7 @@ function renderEditPhotos(urls){
       style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:16px">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
         onclick="openLightbox(window._efPhotoUrls[${idx}], window._efPhotoUrls)" alt=""
-        onerror="this.parentNode.style.display='none'">
+        onerror="this.style.background='#2a2a2a';this.style.display='flex';this.removeAttribute('src');this.insertAdjacentHTML('afterend','<div style=\\'width:72px;height:72px;border-radius:8px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;border:1px dashed #444\\'>오류</div>');this.remove()">
       <button onclick="deleteEditPhoto(${idx})"
         style="position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:#ef4444;border:2px solid #0d0d0d;color:#fff;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:10">✕</button>
     </div>`).join('');
@@ -6141,8 +6141,17 @@ async function saveSkuListNewForm(){
   if(!brand || !modelKo){ toast('⚠ 브랜드와 모델명(한글)은 필수예요'); return; }
 
   var token = localStorage.getItem('lca_token')||'';
-  var btn = document.querySelector('#sku-list-new-form button');
+  var btn = document.querySelector('#nl-save-row button');
   if(btn){ btn.textContent='저장 중...'; btn.disabled=true; }
+
+  // 저장 직전 실측 사이즈 hidden 업데이트
+  var cat2 = document.getElementById('nl-cat')?.value||'가방';
+  var cfg2 = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
+  _updateNlSizeHidden(cfg2);
+
+  // base64 이미지 모두 업로드 처리
+  var dataPhotos = _nlPhotos.filter(function(p){ return p.startsWith('data:'); });
+  var httpPhotos = _nlPhotos.filter(function(p){ return p.startsWith('http'); });
 
   var skuData = {
     brand:         brand,
@@ -6154,10 +6163,14 @@ async function saveSkuListNewForm(){
     size_actual:   document.getElementById('nl-size')?.value.trim()||'',
     site_url:      document.getElementById('nl-url')?.value.trim()||'',
     notes:         document.getElementById('nl-notes')?.value.trim()||'',
-    extra_images:  _nlPhotos.filter(function(p){ return p.startsWith('http'); }),
-    newImageBase64: _nlPhotos.find(function(p){ return p.startsWith('data:'); })?.split(',')[1]||undefined,
+    extra_images:  httpPhotos,
+    // 첫 번째 base64만 newImageBase64로 (서버가 upload 처리)
+    newImageBase64: dataPhotos[0]?.split(',')[1]||undefined,
     accessories: _nlAccList.length ? _nlAccList : [],
   };
+
+  // 추가 base64 이미지들은 저장 후 update_sku로 처리
+  var extraBase64 = dataPhotos.slice(1);
 
   try{
     var res = await fetch('/api/inspect',{
@@ -6170,6 +6183,18 @@ async function saveSkuListNewForm(){
     if(j.data&&j.data[0]){
       skuListAll.unshift(j.data[0]);
       var newId = String(j.data[0].id);
+      // 추가 base64 이미지 순차 업로드
+      if(extraBase64.length > 0){
+        for(var ei=0; ei<extraBase64.length; ei++){
+          try{
+            await fetch('/api/inspect',{
+              method:'POST',
+              headers:{'Content-Type':'application/json','x-access-token':token},
+              body:JSON.stringify({action:'update_sku', skuData:{id:newId, newImageBase64:extraBase64[ei].split(',')[1]}})
+            });
+          }catch(e){ console.warn('[NL extra image]', e); }
+        }
+      }
       // AI 뱃지 추가 (구글 AI 검색 기반 등록)
       _aiBadgeIds.add(newId);
       _saveAiBadgeIds();
