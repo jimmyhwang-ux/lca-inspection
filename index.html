@@ -6576,6 +6576,28 @@ async function aiAutoFillSpec(){
 }
 
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
+  var statusEl = document.getElementById('ai-autofill-status');
+  if(statusEl) statusEl.textContent = '공식 사이트에서 스펙 검색 중... (10~20초 소요)';
+  var _token = localStorage.getItem('lca_token') || '';
+  try {
+    var res = await fetch('/api/inspect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-access-token':_token},
+      body: JSON.stringify({action:'serp_autofill', brand:brand, modelKo:modelKo, modelEn:modelEn, cat:cat})
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    var j = await res.json();
+    if(!j.success) throw new Error(j.error || '조회 실패');
+    console.log('[AutoFill] 성공 source=' + j.source, j.data);
+    localStorage.setItem('_lastAutoFill', JSON.stringify(j.data));
+    return j.data;
+  } catch(e) {
+    console.warn('[AutoFill] 실패:', e.message);
+    throw new Error(e.message || '모델 정보 조회 실패');
+  }
+}
+
+async function _callGeminiAutoFill_UNUSED(apiKey, brand, modelKo, modelEn, cat){
   var modelName = modelKo || modelEn || '';
   var prompt = '당신은 명품 감정 전문가입니다. 아래 상품의 공식 스펙을 JSON으로만 답하세요.\n'
     + '절대로 JSON 외 다른 텍스트를 출력하지 마세요. 마크다운 금지.\n\n'
