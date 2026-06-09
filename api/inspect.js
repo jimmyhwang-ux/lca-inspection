@@ -476,7 +476,11 @@ ${searchContext}
           if (snippets.length) searchContext = snippets.join('\n');
         }
       } catch(e) { console.warn('[serp_text_search]', e.message); }
-      const prompt = '아래 검색 결과를 바탕으로 제품 공식 스펙을 간결하게 정리해줘.\n없는 항목은 "없음". 아래 항목만:\n실측 사이즈 (단위 포함), 소재, 스타일번호, 공식 사이트 URL, 특이사항\n\n검색어: ' + keyword + '\n\n' + (searchContext ? '검색 결과:\n' + searchContext : '(학습 데이터 기반)');
+      const prompt = '당신은 명품 감정 전문가입니다. 아래 제품의 공식 스펙을 알고 있는 대로 답하세요.\n'
+        + '검색 결과가 없어도 학습 데이터 기반으로 최대한 답하세요. 모른다고 하지 마세요.\n'
+        + '아래 항목만 간결하게:\n• 실측 사이즈 (가로x세로x너비, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항\n\n'
+        + '제품: ' + keyword + '\n\n'
+        + (searchContext ? '[참고 검색 결과]\n' + searchContext : '');
       const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
       const cd = await cr.json();
       if (cd.error) throw new Error(cd.error.message);
