@@ -342,6 +342,8 @@ ${searchContext}
       }
       if (fields.accessories && !Array.isArray(fields.accessories)) fields.accessories = [];
       fields.updated_at = new Date().toISOString();
+      fields.verified = true;
+      fields.verified_at = new Date().toISOString();
       const r = await sb(`sku_items?id=eq.${id}`, {
         method: 'PATCH',
         prefer: 'return=minimal',
