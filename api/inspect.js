@@ -300,6 +300,28 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
+  if (action === 'gemini_proxy') {
+    try {
+      const { apiKey, model, body } = req.body;
+      if (!apiKey || !body) return res.status(400).json({ success: false, error: '파라미터 없음' });
+      const targetModel = model || 'gemini-2.5-flash';
+      // 서버에서 호출 — AQ. 키도 x-goog-api-key 헤더로 정상 작동
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify(body)
+        }
+      );
+      const data = await geminiRes.json();
+      return res.status(200).json({ success: true, data });
+    } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
   if (action === 'proxy_image') {
     try {
       const { imageUrl } = req.body;
