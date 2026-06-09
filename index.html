@@ -6619,11 +6619,13 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
 
   // 1단계: 그라운딩 없이 빠르게 (학습 데이터 기반, 5~10초)
   var fastModels = [
-    {model:'gemini-2.5-flash', timeout:20000}
+    {model:'gemini-2.5-flash', timeout:20000},
+    {model:'gemini-2.0-flash', timeout:20000}
   ];
   // 2단계: 그라운딩 포함 (실시간 검색, 느리지만 정확)
   var searchModels = [
-    {model:'gemini-2.5-flash', timeout:50000}
+    {model:'gemini-2.5-flash', timeout:50000},
+    {model:'gemini-2.0-flash', timeout:50000}
   ];
 
   var lastErr = '';
