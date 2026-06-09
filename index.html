@@ -4679,7 +4679,8 @@ async function saveEditSku(){
           notes: data.notes,
           accessories: data.accessories,
           extra_images: allImages,
-          ref_image_url: newRef  // null이면 기존값 제거
+          ref_image_url: newRef,
+          verified: true
         };
       }
 
@@ -6258,7 +6259,7 @@ async function saveQuickEdit(id){
     if(!j.success) throw new Error(j.error||'저장 실패');
     // 로컬 데이터 업데이트
     var item = (skuListAll||[]).find(function(i){ return String(i.id)===String(id); });
-    if(item){ if(size) item.size_actual=size; if(sku) item.sku_code=sku; if(url) item.site_url=url; if(notes) item.notes=notes; }
+    if(item){ if(size) item.size_actual=size; if(sku) item.sku_code=sku; if(url) item.site_url=url; if(notes) item.notes=notes; item.verified=true; }
     toast('✅ 저장됐어요!');
     var qe = document.getElementById('sku-quickedit-'+id);
     if(qe) qe.style.display='none';
