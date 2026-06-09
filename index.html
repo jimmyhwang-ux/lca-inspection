@@ -1545,7 +1545,7 @@ function _renderDbCardList(items){
       ? '<button onclick="event.stopPropagation();window.open(\'https://www.google.com/search?q=\'+encodeURIComponent(\''+(m.brand||'').replace(/'/g,"\\'").replace(/"/g,'\\"')+' '+(m.sku_code||'').replace(/'/g,"\\'").replace(/"/g,'\\"')+'\'),\'_blank\')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px 0 4px;vertical-align:middle;opacity:.6;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>'
       : '';
     const hasAiBadge = _aiBadgeIds.has(String(m.id)) || m.official_specs;
-    info.innerHTML = '<div style="font-size:14px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.model_name_ko||m.model_name||'—')+(hasAiBadge?'<span style="background:rgba(255,107,43,.15);color:#ff6b2b;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle">✨ AI기입</span>':'')+'</div>'
+    info.innerHTML = '<div style="font-size:14px;font-weight:700;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.model_name_ko||m.model_name||'—')+(hasAiBadge?'<svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px;margin-left:4px"><circle cx="12" cy="12" r="11" fill="#1DA1F2"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>인증':'')+'</div>'
       +'<div style="font-size:11px;color:#fff;margin-top:2px;display:flex;align-items:center">'+(m.brand||'')+(m.sku_code?' · '+m.sku_code:'')+googleBtn+'</div>';
     mainRow.appendChild(info);
 
@@ -3697,7 +3697,7 @@ function renderSkuPage(wrapId){
             ${item.color?`<span class="sku-meta-tag">${item.color}</span>`:''}
             ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span><button onclick="event.stopPropagation();window.open('https://www.google.com/search?q='+encodeURIComponent('${(item.brand||'').replace(/'/g,"\\'")} ${(item.sku_code||'').replace(/'/g,"\\'")}'),'_blank')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px;vertical-align:middle;opacity:.7;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>`:''}
             ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
-            ${(item.official_specs && Object.keys(typeof item.official_specs==='string'?JSON.parse(item.official_specs||'{}'):item.official_specs||{}).length > 0) || _aiBadgeIds.has(String(item.id)) ?`<span class="sku-meta-tag ai-badge-tag" style="background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)">✨ AI기입</span>`:''}
+            ${(item.official_specs && Object.keys(typeof item.official_specs==='string'?JSON.parse(item.official_specs||'{}'):item.official_specs||{}).length > 0) || _aiBadgeIds.has(String(item.id)) ?`<span class="sku-meta-tag ai-badge-tag" style="display:inline-flex;align-items:center;gap:3px;background:rgba(29,161,242,.12);color:#1DA1F2;border:1px solid rgba(29,161,242,.3);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700"><svg width="13" height="13" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1DA1F2"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>인증</span>`:''}
             ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
           </div>
           ${(()=>{const _a=safeAccArr(item.accessories);return _a.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${_a.map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:'';})()}
@@ -6889,7 +6889,8 @@ async function saveSpecToSupabaseById(id, specs){
             var badge = document.createElement('span');
             badge.className = 'sku-meta-tag ai-badge-tag';
             badge.style.cssText = 'background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)';
-            badge.textContent = '✨ AI기입';
+            badge.style.cssText = 'display:inline-flex;align-items:center;gap:3px;background:rgba(29,161,242,.12);color:#1DA1F2;border:1px solid rgba(29,161,242,.3);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700';
+            badge.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="flex-shrink:0;vertical-align:-2px"><circle cx="12" cy="12" r="11" fill="#1DA1F2"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>인증';
             metaWrap.appendChild(badge);
             console.log('[Badge] 뱃지 추가됨 id='+id);
           }
