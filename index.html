@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780439300');
+console.error('APP VERSION: 1780439400');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6458,7 +6458,7 @@ function saveSerpApiKeyInline(){
 
 // ── Gemini API 공통 fetch (429 시 2.0-flash로 자동 fallback) ──
 async function _geminiGenerate(apiKey, body){
-  var models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  var models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
   for(var mi=0; mi<models.length; mi++){
     var model = models[mi];
     var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey;
@@ -6468,14 +6468,13 @@ async function _geminiGenerate(apiKey, body){
         if(mi < models.length-1){
           console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도');
           continue;
-        } else {
-          // 모든 모델 실패 - 10초 대기 후 첫 모델 재시도
-          console.warn('[Gemini] 모든 모델 429, 10초 대기 후 재시도...');
-          toast('⏳ API 사용량 초과 — 10초 후 자동 재시도...');
-          await new Promise(function(resolve){ setTimeout(resolve, 10000); });
-          mi = -1; // 처음부터 다시
-          continue;
         }
+        // 마지막 모델도 429 — 60초 대기 후 1회 재시도
+        toast('⏳ API 사용량 초과 — 60초 후 자동 재시도...');
+        await new Promise(function(resolve){ setTimeout(resolve, 60000); });
+        var r2 = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,
+          {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+        return await r2.json();
       }
       return await r.json();
     }catch(e){ if(mi === models.length-1) throw e; }
