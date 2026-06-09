@@ -126,8 +126,61 @@ export default async function handler(req, res) {
     }
   }
 
-  // ✅ 새로 추가: SerpAPI + Claude 기반 모델 스펙 자동 조회
-  if (action === 'serp_autofill') {
+  // ✅ serp_text_search: 키워드로 SerpAPI 검색 후 Claude가 텍스트로 요약
+  if (action === 'serp_text_search') {
+    try {
+      const { keyword } = req.body;
+      if (!keyword) return res.status(400).json({ success: false, error: 'keyword 없음' });
+
+      // SerpAPI 검색
+      let searchContext = '';
+      try {
+        const encoded = encodeURIComponent(keyword);
+        const serpRes = await fetch(
+          `https://serpapi.com/search.json?q=${encoded}&api_key=${SERP_KEY}&num=8&hl=ko`,
+          { signal: AbortSignal.timeout(10000) }
+        );
+        if (serpRes.ok) {
+          const serpData = await serpRes.json();
+          const results = serpData.organic_results || [];
+          const snippets = results.slice(0, 5).map(r => `[${r.title}] ${r.snippet||''}`).filter(Boolean);
+          if (snippets.length > 0) searchContext = snippets.join('\n');
+        }
+      } catch (e) {
+        console.warn('[serp_text_search] SerpAPI 오류:', e.message);
+      }
+
+      const prompt = `아래 검색 결과를 바탕으로 제품 공식 스펙을 간결하게 정리해줘.
+없는 항목은 "없음"으로 표시. 불필요한 설명 없이 아래 항목만:
+• 실측 사이즈 (가로/세로/두께 또는 체인길이, 단위 포함)
+• 소재
+• 스타일번호
+• 공식 사이트 URL
+• 특이사항 (있을 때만)
+
+검색어: ${keyword}
+
+${searchContext ? '검색 결과:\n' + searchContext : '(검색 결과 없음 — 학습 데이터 기반으로 답변)'}`;
+
+      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 800,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const claudeData = await claudeRes.json();
+      if (claudeData.error) throw new Error('Claude 오류: ' + claudeData.error.message);
+      const text = claudeData.content?.[0]?.text?.trim() || '';
+      return res.status(200).json({ success: true, text, source: searchContext ? 'serp+claude' : 'claude' });
+    } catch (e) {
+      return res.status(200).json({ success: false, error: e.message });
+    }
+  }
+
+  // ✅ serp_autofill
     try {
       const { brand, modelKo, modelEn, cat } = req.body;
       const modelName = modelKo || modelEn || '';
