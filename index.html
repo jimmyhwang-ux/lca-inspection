@@ -5480,19 +5480,16 @@ async function runSpecGoogleSearch(){
   raw.value = '검색 중...';
 
   try{
-    var apiKey = _getGeminiKey();
-    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 구글 AI 검색으로 스펙 조회'; btn.disabled=false; return; }
-    var data = await _geminiGenerate(apiKey, {
-        contents:[{parts:[{text:
-          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘 (불필요한 설명 없이):\n'
-          +'• 실측 사이즈 (가로/세로/두께 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n'
-          +'없는 항목은 "없음"으로 표시. 간결하게.'
-        }]}],
-        tools:[{google_search:{}}],
-        generationConfig:{temperature:0.1, maxOutputTokens:1500}
-      });
-    var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
-    raw.value = text || '검색 결과를 찾지 못했어요.';
+    var _token = localStorage.getItem('lca_token')||'';
+    var res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':_token},
+      body:JSON.stringify({action:'serp_text_search', keyword:keyword})
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var j = await res.json();
+    if(!j.success) throw new Error(j.error||'검색 실패');
+    raw.value = j.text || '검색 결과를 찾지 못했어요.';
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
@@ -5916,9 +5913,6 @@ async function fetchNlOfficialImage(){
   var modelKo = (document.getElementById('nl-model-ko')?.value||'').trim();
   var q = [brand, modelKo].filter(Boolean).join(' ');
   if(!q){ toast('⚠ 브랜드/모델명을 먼저 입력해주세요'); return; }
-
-  var apiKey = _getGeminiKey();
-  if(!apiKey){ toast('⚠ Gemini API 키가 없어요'); return; }
   toast('🔍 이미지 검색 중...');
 
   var token2 = localStorage.getItem('lca_token')||'';
@@ -6307,21 +6301,17 @@ async function runSkuListGoogleSearch(){
   raw.value = '검색 중...';
 
   try{
-    var apiKey = _getGeminiKey();
-    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 모델 정보 자동 조회'; btn.disabled=false; return; }
     var keyword = q + catHint + ' 공식 사이즈 스타일번호 소재 공식URL 스펙';
-    var data = await _geminiGenerate(apiKey, {
-        contents:[{parts:[{text:
-          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘:\n'
-          +'• 실측 사이즈 (가로/세로/너비 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n없는 항목은 "없음"으로. 간결하게.'
-        }]}],
-        tools:[{google_search:{}}],
-        generationConfig:{temperature:0.1, maxOutputTokens:1500}
-      });
-    var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
-    if(!text && data.error) text = '오류: '+data.error.message;
-    if(!text && data.candidates?.length === 0) text = 'Gemini 응답이 비어있어요. 잠시 후 다시 시도해주세요.';
-    raw.value = text || '검색 결과를 찾지 못했어요.';
+    var _token = localStorage.getItem('lca_token')||'';
+    var res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':_token},
+      body:JSON.stringify({action:'serp_text_search', keyword:keyword})
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var j = await res.json();
+    if(!j.success) throw new Error(j.error||'검색 실패');
+    raw.value = j.text || '검색 결과를 찾지 못했어요.';
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
@@ -6424,24 +6414,7 @@ async function testImageSearch(){
   var res = document.getElementById('img-test-result');
   if(!res) return;
   res.style.display='block';
-  res.textContent='검색 중...';
-  try{
-    var k = _getGeminiKey();
-    var d = await _geminiGenerate(k, {
-        contents:[{parts:[{text:'샤넬 클래식 미듐 가방 이미지 farfetch mytheresa 쇼핑몰에서 이미지 URL 찾아줘. 이미지 URL만 답해줘.'}]}],
-        tools:[{google_search:{}}],
-        generationConfig:{maxOutputTokens:500}
-      });
-    var allParts = (d.candidates||[])[0]?.content?.parts||[];
-    var out = '<b>파트 수: '+allParts.length+'</b><br>';
-    allParts.forEach(function(p,i){
-      out += '<b>[파트'+i+'] '+Object.keys(p).join(',')+':</b><br>';
-      if(p.text) out += p.text.substring(0,400).replace(/</g,'&lt;')+'<br>';
-    });
-    if(d.error) out += '<b>에러:</b>'+JSON.stringify(d.error);
-    out += "<br><button onclick=\"this.parentNode.style.display='none'\">닫기</button>";
-    res.innerHTML = out;
-  }catch(e){ res.textContent = '오류: '+e.message; }
+  res.textContent='(테스트 기능 비활성화됨)';
 }
 
 function saveSerpApiKeyInline(){
@@ -6595,201 +6568,6 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     console.warn('[AutoFill] 실패:', e.message);
     throw new Error(e.message || '모델 정보 조회 실패');
   }
-}
-
-async function _callGeminiAutoFill_UNUSED(apiKey, brand, modelKo, modelEn, cat){
-  var modelName = modelKo || modelEn || '';
-  var prompt = '당신은 명품 감정 전문가입니다. 아래 상품의 공식 스펙을 JSON으로만 답하세요.\n'
-    + '절대로 JSON 외 다른 텍스트를 출력하지 마세요. 마크다운 금지.\n\n'
-    + '브랜드: ' + brand + '\n'
-    + '모델명: ' + modelName + '\n'
-    + '카테고리: ' + cat + '\n\n'
-    + '[카테고리별 사이즈 입력 규칙 - SIZE_CONFIG 기준, 0 입력 절대 금지]\n'
-    + '가방/지갑: size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm\n'
-    + '주얼리-목걸이/펜던트: size_d=체인길이(cm) 반드시 입력, size_w=펜던트가로(mm), size_unit=mm\n'
-    + '주얼리-반지: size_w=두께(mm), size_label=호수(예:52), size_unit=mm\n'
-    + '주얼리-팔찌: size_w=내경또는길이(mm), size_unit=mm\n'
-    + '주얼리-귀걸이: size_w=길이(mm), size_unit=mm\n'
-    + '시계: size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm\n'
-    + '의류/신발: size_w=사이즈표기(S,M,L,95,270등), size_unit 비워둠\n'
-    + '벨트: size_w=폭(cm), size_unit=cm\n'
-    + '값을 모를 경우 빈문자열(\'\')로 입력. 절대로 0 입력 금지.\n\n'
-    + '출력 형식 (이 JSON 구조를 그대로 사용):\n'
-    + '{\n'
-    + '"style_number": "스타일번호",\n'
-    + '"model_ko": "한글 모델명",\n'
-    + '"category": "카테고리 (가방/지갑/주얼리/시계/의류/신발/벨트 중 하나)",\n'
-    + '"size_w": "가로 cm 숫자만 (예: 19)",\n'
-    + '"size_h": "세로 cm 숫자만 (예: 10)",\n'
-    + '"size_d": "너비 cm 숫자만 (예: 3)",\n'
-    + '"size_unit": "cm",\n'
-    + '"size_label": "사이즈 명칭 (예: OS, Small, MM)",\n'
-    + '"material": "소재",\n'
-    + '"made_in": "제조국",\n'
-    + '"official_url": "공식 제품 페이지 URL (없으면 빈 문자열)",\n'
-    + '"image_url": "공식 대표 이미지 URL (없으면 빈 문자열)",\n'
-    + '"notes": "검수 참고 정보"\n'
-    + '}';
-
-  function _geminiHeaders(key){ return {'Content-Type':'application/json'}; }
-  function _geminiUrl(model, key){ return '/api/inspect'; }
-  function fetchWithTimeout(url, opts, ms){
-    var ctrl = new AbortController();
-    var tid = setTimeout(function(){ ctrl.abort(); }, ms);
-    return fetch(url, Object.assign({}, opts, {signal: ctrl.signal})).finally(function(){ clearTimeout(tid); });
-  }
-
-  // 1단계: 그라운딩 없이 빠르게 (학습 데이터 기반, 5~10초)
-  var fastModels = [
-    {model:'gemini-2.5-flash', timeout:20000},
-    {model:'gemini-2.0-flash', timeout:20000}
-  ];
-  // 2단계: 그라운딩 포함 (실시간 검색, 느리지만 정확)
-  var searchModels = [
-    {model:'gemini-2.5-flash', timeout:50000},
-    {model:'gemini-2.0-flash', timeout:50000}
-  ];
-
-  var lastErr = '';
-
-  // 1단계 시도 — 그라운딩 없이 빠르게
-  for(var i=0; i<fastModels.length; i++){
-    var mc = fastModels[i];
-    try{
-      console.log('[AI AutoFill] 빠른 시도 (학습데이터):', mc.model);
-      var _token = localStorage.getItem('lca_token')||'';
-      var res = await fetchWithTimeout('/api/inspect', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json','x-access-token':_token},
-        body: JSON.stringify({
-          action: 'gemini_proxy', apiKey: apiKey, model: mc.model,
-          body: {
-            system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
-            contents: [{parts: [{text: prompt}]}],
-            generationConfig: {temperature: 0.0, maxOutputTokens: 2000, response_mime_type: 'application/json'}
-          }
-        })
-      }, mc.timeout);
-
-      if(!res.ok){
-        lastErr = mc.model + ': HTTP ' + res.status;
-        continue;
-      }
-
-      var _proxyJ = await res.json();
-      if(!_proxyJ.success){ lastErr = mc.model + ': ' + (_proxyJ.error||'프록시 오류'); if((_proxyJ.data?.error?.code===429)) await new Promise(function(r){ setTimeout(r, 2000); }); continue; }
-      var data = _proxyJ.data;
-      var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
-      if(!rawText){ lastErr = mc.model + ': 빈 응답'; continue; }
-
-      var parsed = null;
-      try{
-        var jStr = rawText.trim();
-        var jm1a = rawText.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
-        var jm1b = rawText.match(/({[\s\S]*})/);
-        jStr = (jm1a && jm1a[1]) || (jm1b && jm1b[0]) || jStr;
-        // JSON이 잘린 경우 닫는 괄호 보완
-        if(jStr && !jStr.trim().endsWith('}')){
-          jStr = jStr.replace(/,\s*$/, '') + '}';
-        }
-        parsed = JSON.parse(jStr);
-      } catch(pe){
-        // 잘린 JSON에서 부분 추출 시도
-        try{
-          var partials = {};
-          // 문자열 값 추출
-          var strMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g);
-          for(var m of strMatches){ partials[m[1]] = m[2]; }
-          // 숫자 값 추출 (size_w, size_h, size_d 등)
-          var numMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
-          for(var m of numMatches){ partials[m[1]] = m[2]; }
-          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공', partials); localStorage.setItem('_lastAutoFill', JSON.stringify(partials)); }
-          else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
-        } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
-      }
-      // 카테고리별 필수 필드 충족 여부 확인 (URL 없어도 사이즈만 있으면 OK)
-      var _isComplete = (function(){
-        if(cat==='주얼리') return parsed.size_w && parsed.size_d;
-        if(cat==='시계') return parsed.size_w && parsed.size_h;
-        if(cat==='가방'||cat==='지갑') return parsed.size_w && parsed.size_h;
-        return parsed.size_w;
-      })();
-      if(_isComplete){
-        localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
-        localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
-        console.log('[AI AutoFill] 빠른 성공:', mc.model, 'size_w='+parsed.size_w, 'size_h='+parsed.size_h, parsed);
-        return parsed;
-      }
-      console.log('[AI AutoFill] 사이즈 없음 — 검색 모드로 전환');
-      lastErr = '사이즈 없음';
-    } catch(e){
-      lastErr = mc.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
-      console.warn('[AI AutoFill]', lastErr);
-    }
-  }
-
-  // 2단계 — google_search 그라운딩으로 실시간 검색
-  console.log('[AI AutoFill] 실시간 검색 모드 시작...');
-  var statusEl = document.getElementById('ai-autofill-status');
-  if(statusEl) statusEl.textContent = '공식 사이트에서 실측 사이즈 검색 중... (15~30초 소요)';
-
-  for(var j=0; j<searchModels.length; j++){
-    var mc2 = searchModels[j];
-    try{
-      console.log('[AI AutoFill] 검색 시도:', mc2.model);
-      var _token2 = localStorage.getItem('lca_token')||'';
-      var res2 = await fetchWithTimeout('/api/inspect', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json','x-access-token':_token2},
-        body: JSON.stringify({
-          action: 'gemini_proxy', apiKey: apiKey, model: mc2.model,
-          body: {
-            system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
-            contents: [{parts: [{text: prompt}]}],
-            tools: [{google_search: {}}],
-            generationConfig: {temperature: 0.0, maxOutputTokens: 2000}
-          }
-        })
-      }, mc2.timeout);
-
-      if(!res2.ok){ lastErr = mc2.model + ': HTTP ' + res2.status; continue; }
-
-      var _proxyJ2 = await res2.json();
-      if(!_proxyJ2.success){ lastErr = mc2.model + ': ' + (_proxyJ2.error||'프록시 오류'); continue; }
-      var data2 = _proxyJ2.data;
-      var raw2 = ((data2.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
-      if(!raw2){ lastErr = mc2.model + ': 빈 응답'; continue; }
-
-      var parsed2 = null;
-      try{
-        var jStr2 = raw2.trim();
-        var jm2a = raw2.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
-        var jm2b = raw2.match(/({[\s\S]*})/);
-        jStr2 = (jm2a && jm2a[1]) || (jm2b && jm2b[0]) || jStr2;
-        if(jStr2 && !jStr2.trim().endsWith('}')) jStr2 = jStr2.replace(/,\s*$/, '') + '}';
-        parsed2 = JSON.parse(jStr2);
-      } catch(pe2){
-        // 부분 추출 시도 (1단계와 동일)
-        try{
-          var partials2 = {};
-          var strM2 = raw2.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g);
-          for(var sm of strM2){ partials2[sm[1]] = sm[2]; }
-          var numM2 = raw2.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
-          for(var nm of numM2){ partials2[nm[1]] = nm[2]; }
-          if(Object.keys(partials2).length > 0){ parsed2 = partials2; console.warn('[AutoFill 2단계] 부분 파싱 성공', partials2); }
-          else { lastErr = mc2.model + ': JSON 파싱 실패'; console.warn('[AutoFill 2단계]', raw2.substring(0,300)); continue; }
-        } catch(pe3){ lastErr = mc2.model + ': JSON 파싱 실패'; console.warn('[AutoFill 2단계]', raw2.substring(0,300)); continue; }
-      }
-      localStorage.setItem('_lastAutoFill', JSON.stringify(parsed2));
-      console.log('[AI AutoFill] 검색 성공:', mc2.model, 'size_w='+parsed2.size_w, 'size_h='+parsed2.size_h, parsed2);
-      return parsed2;
-      return parsed2;
-    } catch(e){
-      lastErr = mc2.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
-      console.warn('[AI AutoFill]', lastErr);
-    }
-  }
-  throw new Error(lastErr || '모든 모델 실패');
 }
 
 function _applySpecToForm(data, cat){
@@ -6986,45 +6764,37 @@ async function _fetchOfficialImage(imgUrl, fallbackQuery){
 
 
 
-// ── 이미지 폴백: Gemini google_search로 이미지 URL 검색 ─────────
+// ── 이미지 폴백: SerpAPI로 이미지 검색 ─────────────────────────
 async function _fetchImageBySearch(query){
   try{
-    const apiKey = _getGeminiKey();
-    if(!apiKey) return;
-    const data = await _geminiGenerate(apiKey, {
-        contents:[{parts:[{text:
-          query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
-        }]}],
-        tools:[{google_search:{}}],
-        generationConfig:{temperature:0.0, maxOutputTokens:200}
-      });
-    if(!data) return;
-    const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
-    const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
-    if(m && m[1] && m[1].startsWith('http')){
-      console.log('[AutoFill Image] 폴백 이미지 URL:', m[1]);
-      _fetchOfficialImage(m[1], null);
+    const _token = localStorage.getItem('lca_token')||'';
+    const serpKey = localStorage.getItem('bungae_serpapi_key')||'';
+    const res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':_token},
+      body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey})
+    });
+    if(!res.ok) return;
+    const j = await res.json();
+    if(j.success && j.base64){
+      _fetchOfficialImage('data:'+j.mime+';base64,'+j.base64, null);
     }
   }catch(e){ console.warn('[AutoFill Image] 폴백 검색 실패:', e); }
 }
 
 async function _fetchImageBySearchTo(query, target){
   try{
-    const apiKey = _getGeminiKey();
-    if(!apiKey) return;
-    const data = await _geminiGenerate(apiKey, {
-        contents:[{parts:[{text:
-          query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
-        }]}],
-        tools:[{google_search:{}}],
-        generationConfig:{temperature:0.0, maxOutputTokens:200}
-      });
-    if(!data) return;
-    const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
-    const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
-    if(m && m[1] && m[1].startsWith('http')){
-      console.log('[AutoFill Image] 폴백 이미지 URL ('+target+'):', m[1]);
-      _fetchOfficialImageTo(m[1], target, null);
+    const _token = localStorage.getItem('lca_token')||'';
+    const serpKey = localStorage.getItem('bungae_serpapi_key')||'';
+    const res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':_token},
+      body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey})
+    });
+    if(!res.ok) return;
+    const j = await res.json();
+    if(j.success && j.base64){
+      _fetchOfficialImageTo('data:'+j.mime+';base64,'+j.base64, target, null);
     }
   }catch(e){ console.warn('[AutoFill Image] 폴백 검색 실패:', e); }
 }
