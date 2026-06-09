@@ -151,8 +151,6 @@ input[type=file]{display:none}
 .sku-save-btn:hover{background:#ff8c55}
 .sku-list-item{background:#111;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid #1e1e1e}
 .sku-list-brand{font-size:11px;color:#ff6b2b;font-weight:600;margin-bottom:2px}
-.verified-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:#1da1f2;border-radius:50%;margin-left:4px;vertical-align:middle;flex-shrink:0}
-.verified-badge svg{width:9px;height:9px}
 .sku-list-model{font-size:14px;font-weight:700;color:#f0f0f0;margin-bottom:2px}
 .sku-list-model-en{font-size:11px;color:#ddd;margin-bottom:6px}
 .sku-list-meta{display:flex;gap:8px;flex-wrap:wrap}
@@ -360,7 +358,7 @@ input[type=file]{display:none}
     <div id="gemini-key-row-result" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:10px 12px;margin-bottom:8px">
       <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 검색을 사용할 수 있어요</div>
       <div style="display:flex;gap:6px">
-        <input id="gemini-key-inline-result" type="text" placeholder="API Key..." autocomplete="off"
+        <input id="gemini-key-inline-result" type="text" placeholder="AIza..." autocomplete="off"
           style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
         <button onclick="saveGeminiKeyResult()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
@@ -535,7 +533,7 @@ input[type=file]{display:none}
     <div id="gemini-key-row" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
       <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 기능을 사용할 수 있어요</div>
       <div style="display:flex;gap:6px">
-        <input id="gemini-key-inline" type="text" placeholder="API Key..." autocomplete="off"
+        <input id="gemini-key-inline" type="text" placeholder="AIza..." autocomplete="off"
           style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
         <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
@@ -623,28 +621,9 @@ input[type=file]{display:none}
   </div>
 
   <div id="sku-list-panel" style="display:none">
-    <!-- SerpAPI 키 입력 (없을 때만 노출) -->
-    <div id="serpapi-key-row" style="display:none;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
-      <div style="font-size:11px;color:#4285f4;margin-bottom:6px">🔍 SerpAPI 키 입력 시 신규 등록 폼에서 대표사진 자동 검색이 가능해요</div>
-      <div style="display:flex;gap:6px">
-        <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
-          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
-        <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
-      </div>
-    </div>
     <div style="margin-bottom:10px">
       <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
-        <select id="sku-list-cat-select" onchange="filterSkuList()" style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 10px;font-size:13px;color:#f0f0f0;outline:none;cursor:pointer;flex-shrink:0">
-          <option value="전체">전체</option>
-          <option value="가방">가방</option>
-          <option value="지갑">지갑</option>
-          <option value="주얼리">주얼리</option>
-          <option value="의류">의류</option>
-          <option value="신발">신발</option>
-          <option value="시계">시계</option>
-          <option value="벨트">벨트</option>
-        </select>
-        <input id="sku-search" type="text" placeholder="브랜드 · 모델명 · 스타일번호 검색..." style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuList()" oncompositionend="filterSkuList()">
+        <input id="sku-search" type="text" placeholder="브랜드, 모델명 검색..." style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit" oninput="filterSkuList()" oncompositionend="filterSkuList()">
         <button id="sku-sort-btn" onclick="toggleSkuSort()" title="정렬 방식 변경"
           style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:10px 12px;color:#aaa;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">
           🕐 최신순
@@ -653,21 +632,16 @@ input[type=file]{display:none}
       <input id="sku-notes-search" type="text" placeholder="특이사항 검색..." style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:11px 14px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;box-sizing:border-box" oninput="filterSkuNotes(this.value)" oncompositionend="filterSkuNotes(this.value)">
     </div>
 
-    <!-- 미등록 SKU 알림 -->
-    <div id="sku-unregistered-notice" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none">
-      <div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:6px">⚠️ 미등록 SKU입니다</div>
-      <div id="sku-unregistered-msg" style="font-size:11px;color:#ddd;margin-bottom:8px"></div>
-      <button onclick="openSkuListNewFormFromNotice()" style="width:100%;background:#f59e0b;border:none;border-radius:8px;padding:8px;color:#000;font-size:12px;font-weight:700;cursor:pointer">➕ 지금 등록하기</button>
-    </div>
+    <!-- 구글 AI 검색 (SKU 관리 목록탭) -->
     <div style="margin-bottom:10px">
       <button id="sku-list-google-btn" onclick="runSkuListGoogleSearch()"
         style="width:100%;background:linear-gradient(135deg,rgba(66,133,244,.15),rgba(66,133,244,.08));color:#4285f4;border:1px solid rgba(66,133,244,.4);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        🔍 모델 정보 자동 조회
+        🔍 구글 AI로 검색한 모델 스펙 조회
       </button>
       <div id="sku-list-google-result" style="display:none;margin-top:8px">
         <div style="font-size:11px;color:#888;margin-bottom:4px">검색 결과 원문</div>
-        <textarea id="sku-list-google-raw" rows="4"
-          style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:8px;color:#ddd;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box;max-height:160px"
+        <textarea id="sku-list-google-raw" rows="5"
+          style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:8px;color:#ddd;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box"
           placeholder="검색 중..."></textarea>
         <div style="display:flex;gap:6px;margin-top:6px">
           <button onclick="applySkuListGoogleResult()"
@@ -677,17 +651,6 @@ input[type=file]{display:none}
           <button onclick="openSkuListNewForm()"
             style="flex:1;background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(34,197,94,.08));color:#22c55e;border:1px solid rgba(34,197,94,.4);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">
             ➕ 신규 등록
-          </button>
-        </div>
-        <!-- 저장/취소 — 신규 등록 폼 열릴 때만 노출 -->
-        <div id="nl-save-row" style="display:none;gap:6px;margin-top:6px">
-          <button onclick="saveSkuListNewForm()"
-            style="flex:1;background:#22c55e;border:none;border-radius:8px;padding:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">
-            💾 저장
-          </button>
-          <button onclick="closeNlForm()"
-            style="flex:1;background:#222;border:1px solid #333;border-radius:8px;padding:9px;color:#ddd;font-size:12px;cursor:pointer">
-            취소
           </button>
         </div>
         <!-- 신규 등록 인라인 폼 -->
@@ -728,17 +691,14 @@ input[type=file]{display:none}
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div>
-              <div id="nl-size-wrap" onclick="editNlSize()" style="background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;cursor:pointer;min-height:36px;display:flex;align-items:center">
-                <span id="nl-size-display" style="color:#555">탭하여 입력</span>
-              </div>
-              <input type="hidden" id="nl-size">
+              <input id="nl-size" type="text" placeholder="가로 × 세로 × 너비 cm" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div>
               <input id="nl-url" type="text" placeholder="https://..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;box-sizing:border-box">
             </div>
-          <div style="grid-column:1/-1">
-              <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
+            <div style="grid-column:1/-1">
+              <div style="font-size:10px;color:#888;margin-bottom:3px">사진</div>
               <div id="nl-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
               <div style="display:flex;gap:6px">
                 <label style="flex:1;background:#000;border:1px dashed #444;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
@@ -754,32 +714,17 @@ input[type=file]{display:none}
                   📋 클릭 후 Ctrl+V
                 </div>
               </div>
-              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid rgba(66,133,244,.3);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer">📸 대표사진 원클릭 등록</button>
-              <div style="font-size:10px;color:#555;margin-top:4px;line-height:1.5">
-                💡 안 될 경우 공홈에서 이미지 우클릭 → <b style="color:#888">복사</b> 후 📋 Ctrl+V
-              </div>
+              <div style="font-size:10px;color:#555;margin-top:4px">※ 공홈 URL 입력 시 🔍 버튼으로 대표사진 자동 시도</div>
+              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#111;border:1px solid #333;border-radius:6px;padding:7px;color:#888;font-size:11px;cursor:pointer">🔍 공홈 URL에서 대표사진 가져오기</button>
             </div>
             <div style="grid-column:1/-1">
-              <div style="font-size:10px;color:#888;margin-bottom:3px">부속품</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px" id="nl-acc-tabs">
-                <button onclick="setNlAccCat('가방',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #ff6b2b;background:rgba(255,107,43,.2);color:#ff6b2b;font-size:11px;cursor:pointer">가방</button>
-                <button onclick="setNlAccCat('지갑',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">지갑</button>
-                <button onclick="setNlAccCat('주얼리',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">주얼리</button>
-                <button onclick="setNlAccCat('의류',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">의류</button>
-                <button onclick="setNlAccCat('신발',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">신발</button>
-                <button onclick="setNlAccCat('시계',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">시계</button>
-              </div>
-              <div style="display:flex;gap:6px;margin-bottom:6px">
-                <select id="nl-acc-select" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none">
-                  <option value="">-- 드롭다운에서 선택 --</option>
-                </select>
-                <input id="nl-acc-input" type="text" placeholder="직접 입력" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#fff;font-size:12px;outline:none">
-                <button onclick="addNlAcc()" style="background:#ff6b2b;border:none;border-radius:6px;padding:7px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">추가</button>
-              </div>
-              <div id="nl-acc-list" style="font-size:12px;color:#ddd;padding:4px 0">부속품 없음</div>
-            </div>
+              <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
               <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#fff;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
             </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="saveSkuListNewForm()" style="flex:2;background:#22c55e;border:none;border-radius:8px;padding:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 저장</button>
+            <button onclick="document.getElementById('sku-list-new-form').style.display='none'" style="flex:1;background:#222;border:1px solid #333;border-radius:8px;padding:10px;color:#ddd;font-size:12px;cursor:pointer">취소</button>
           </div>
         </div>
       </div>
@@ -1029,7 +974,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780440000');
+console.error('APP VERSION: 1780300575');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -3458,7 +3403,6 @@ function switchSkuTab(tab, autoCat){
   });
   document.getElementById('sku-save-panel').style.display=tab==='save'?'block':'none';
   if(tab==='save') setTimeout(_checkGeminiKeyRow, 50);
-  if(tab==='list') setTimeout(_checkGeminiKeyRow, 50);
   document.getElementById('sku-list-panel').style.display=tab==='list'?'block':'none';
   // 탭 전환 시 구글 AI 검색 결과 초기화
   if(tab==='list'){
@@ -3467,11 +3411,9 @@ function switchSkuTab(tab, autoCat){
     var btn=document.getElementById('sku-list-google-btn');
     if(resW) resW.style.display='none';
     if(raw) raw.value='';
-    if(btn){ btn.textContent='🔍 모델 정보 자동 조회'; btn.disabled=false; }
+    if(btn){ btn.textContent='🔍 구글 AI로 검색한 모델 스펙 조회'; btn.disabled=false; }
     var newForm=document.getElementById('sku-list-new-form');
     if(newForm) newForm.style.display='none';
-    var saveRow=document.getElementById('nl-save-row');
-    if(saveRow) saveRow.style.display='none';
     _selectedSkuIds&&_selectedSkuIds.clear();
   }
   const dbP=document.getElementById('sku-db-panel');
@@ -3679,8 +3621,8 @@ async function _enrichAiBadges(){
       if(!metaWrap) return;
       var badge = document.createElement('span');
       badge.className = 'sku-meta-tag ai-badge-tag';
-      badge.style.cssText = 'background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)';
-      badge.textContent = '✨ AI기입';
+      badge.style.cssText = 'display:inline-flex;align-items:center;gap:3px;background:rgba(29,161,242,.12);color:#1DA1F2;border:1px solid rgba(29,161,242,.3);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700';
+      badge.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="flex-shrink:0;vertical-align:-2px"><circle cx="12" cy="12" r="11" fill="#1DA1F2"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>인증';
       metaWrap.appendChild(badge);
     });
   } catch(e){ console.warn('[AI Badge]', e); }
@@ -3998,8 +3940,8 @@ async function copySkuTo(skuId, targetSource){
             if(m){
               var b = document.createElement('span');
               b.className = 'sku-meta-tag ai-badge-tag';
-              b.style.cssText = 'background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)';
-              b.textContent = '✨ AI기입';
+              b.style.cssText = 'display:inline-flex;align-items:center;gap:3px;background:rgba(29,161,242,.12);color:#1DA1F2;border:1px solid rgba(29,161,242,.3);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700';
+              b.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" style="flex-shrink:0;vertical-align:-2px"><circle cx="12" cy="12" r="11" fill="#1DA1F2"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>인증';
               m.appendChild(b);
             }
           }
@@ -4485,7 +4427,7 @@ function renderEditPhotos(urls){
       style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:16px">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #2a2a2a;cursor:zoom-in;display:block"
         onclick="openLightbox(window._efPhotoUrls[${idx}], window._efPhotoUrls)" alt=""
-        onerror="this.style.background='#2a2a2a';this.style.display='flex';this.removeAttribute('src');this.insertAdjacentHTML('afterend','<div style=\\'width:72px;height:72px;border-radius:8px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;border:1px dashed #444\\'>오류</div>');this.remove()">
+        onerror="this.parentNode.style.display='none'">
       <button onclick="deleteEditPhoto(${idx})"
         style="position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:#ef4444;border:2px solid #0d0d0d;color:#fff;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:10">✕</button>
     </div>`).join('');
@@ -4647,9 +4589,8 @@ async function saveEditSku(){
     ref_image_url: newRef  // null이면 명시적으로 null 전송해서 DB에서도 지워짐
   };
   try{
-    const _token = localStorage.getItem('lca_token')||'';
     const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json','x-access-token':_token},
+      method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'update_sku',skuData:{id,...data}})
     });
     const j=await res.json();
@@ -4680,8 +4621,7 @@ async function saveEditSku(){
           notes: data.notes,
           accessories: data.accessories,
           extra_images: allImages,
-          ref_image_url: newRef,
-          verified: true
+          ref_image_url: newRef  // null이면 기존값 제거
         };
       }
 
@@ -4735,9 +4675,6 @@ function setSkuCatFilter(cat, btn){
   _skuCatFilter=cat;
   document.querySelectorAll('#sku-cat-tabs .cat-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  // 드롭다운도 동기화
-  var catSel = document.getElementById('sku-list-cat-select');
-  if(catSel) catSel.value = cat;
   filterSkuList();
 }
 
@@ -4884,15 +4821,6 @@ function _applySortMode(list){
 }
 
 function filterSkuList(){
-  // 드롭다운 카테고리 반영
-  var catSel = document.getElementById('sku-list-cat-select');
-  if(catSel && catSel.value && catSel.value !== _skuCatFilter){
-    _skuCatFilter = catSel.value;
-    // 카테고리 탭 버튼도 동기화
-    document.querySelectorAll('#sku-cat-tabs .cat-btn, .sku-cat-btn').forEach(function(b){
-      b.classList.toggle('active', b.textContent.trim()===_skuCatFilter||(b.textContent.trim()==='전체'&&_skuCatFilter==='전체'));
-    });
-  }
   const raw=document.getElementById('sku-search').value.trim();
   const q=raw.toLowerCase();
   const tokens=q.split(/\s+/).filter(Boolean);
@@ -4921,34 +4849,6 @@ function filterSkuList(){
   });
   const sortedFiltered = q ? _sortByRichness(filtered) : _applySortMode(filtered);
   renderSkuList(sortedFiltered);
-
-  // 미등록 SKU 감지
-  var notice = document.getElementById('sku-unregistered-notice');
-  var msg = document.getElementById('sku-unregistered-msg');
-  if(notice) notice.style.display = 'none';
-
-  if(raw && sortedFiltered.length === 0){
-    // 스타일번호 형식이면 prefix 매칭도 체크
-    var isSkuFormat = /^[A-Z0-9\-]{5,}$/i.test(raw.trim());
-    if(isSkuFormat){
-      var skuQ = raw.trim().toUpperCase();
-      var prefixMatch = skuListAll.filter(function(i){
-        var sku = (i.sku_code||'').toUpperCase();
-        return sku === skuQ || sku.startsWith(skuQ+'-') || sku.startsWith(skuQ+'_');
-      });
-      var exactMatch = skuListAll.filter(function(i){
-        return (i.sku_code||'').toUpperCase() === skuQ;
-      });
-      if(prefixMatch.length === 0){
-        _showUnregisteredNotice(notice, msg, raw, '스타일번호');
-      } else if(exactMatch.length > 1){
-        _showDuplicateNotice(notice, msg, exactMatch.length);
-      }
-    } else {
-      // 모델명 검색 결과 없음
-      _showUnregisteredNotice(notice, msg, raw, '모델');
-    }
-  }
 }
 
 async function deleteSku(id){
@@ -5484,16 +5384,24 @@ async function runSpecGoogleSearch(){
   raw.value = '검색 중...';
 
   try{
-    var _token = localStorage.getItem('lca_token')||'';
-    var res = await fetch('/api/inspect',{
+    var apiKey = _getGeminiKey();
+    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 구글 AI 검색으로 스펙 조회'; btn.disabled=false; return; }
+    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'serp_text_search', keyword:keyword})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘 (불필요한 설명 없이):\n'
+          +'• 실측 사이즈 (가로/세로/두께 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n'
+          +'없는 항목은 "없음"으로 표시. 간결하게.'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.1, maxOutputTokens:1500}
+      })
     });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    var j = await res.json();
-    if(!j.success) throw new Error(j.error||'검색 실패');
-    raw.value = j.text || '검색 결과를 찾지 못했어요.';
+    var data = await res.json();
+    var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+    raw.value = text || '검색 결과를 찾지 못했어요.';
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
@@ -5541,19 +5449,9 @@ function _parseSpecRawText(txt, cat){
   } else {
     // 가방/지갑 기본
     r.size_unit='cm';
-    // 패턴1: 레이블: 숫자 (가로: 25cm)
     var swA=t.match(/(?:가로|width)[:\s→*,]*([0-9.]+)\s*(cm|mm)?/i);
     var shA=t.match(/(?:세로|height)[:\s→*,]*([0-9.]+)\s*(cm|mm)?/i);
     var sdA=t.match(/(?:너비|폭|깊이|두께|depth)[:\s→*,]*([0-9.]+)\s*(cm|mm)?/i);
-    // 패턴2: 숫자 레이블 (25.6cm (가로) x 16.5cm (세로) x 8.5cm (너비))
-    if(!swA) swA=t.match(/([0-9.]+)\s*(cm|mm)\s*\(가로\)/i);
-    if(!shA) shA=t.match(/([0-9.]+)\s*(cm|mm)\s*\(세로\)/i);
-    if(!sdA) sdA=t.match(/([0-9.]+)\s*(cm|mm)\s*\((?:너비|폭|깊이|두께)\)/i);
-    // 패턴3: 숫자 x 숫자 x 숫자 (가로 x 세로 x 너비) — 레이블이 뒤에 묶여서 오는 경우
-    if(!swA && !shA){
-      var mRev=t.match(/([0-9.]+)\s*[x×]\s*([0-9.]+)(?:\s*[x×]\s*([0-9.]+))?\s*(cm|mm)[^)]*\(가로[^)]*세로/i);
-      if(mRev){swA=[null,mRev[1]]; shA=[null,mRev[2]]; if(mRev[3])sdA=[null,mRev[3]];}
-    }
     if(swA){r.size_w=swA[1]; if(swA[2])r.size_unit=swA[2].toLowerCase();}
     if(shA) r.size_h=shA[1];
     if(sdA) r.size_d=sdA[1];
@@ -5794,77 +5692,7 @@ function brandDropdownKey(e, dropId){
   }
 }
 
-function editNlSize(){
-  var cat = (document.getElementById('nl-cat')?.value||'가방').trim();
-  var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-  var wrap = document.getElementById('nl-size-wrap');
-  if(!wrap) return;
-  var hidden = document.getElementById('nl-size');
-  var curNums = (hidden?.value||'').replace(/[^0-9.\s]/g,'').trim().split(/\s*[×x]\s*/).map(function(v){return v.trim();});
-
-  wrap.innerHTML = '<span id="sz-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">'+buildSizeInput(cfg, curNums)+'</span>';
-  wrap.querySelectorAll('input').forEach(function(inp){
-    inp.addEventListener('input', function(){ _updateNlSizeHidden(cfg); });
-    inp.addEventListener('click', function(e){ e.stopPropagation(); });
-  });
-}
-
-function _updateNlSizeHidden(cfg){
-  if(!cfg) cfg = SIZE_CONFIG[document.getElementById('nl-cat')?.value||'가방']||SIZE_CONFIG['가방'];
-  var nums = cfg.map(function(f){ return (document.getElementById(f.id)?.value||'').trim(); });
-  var unit = cfg[0]?.unit||'cm';
-  var parts = cfg.map(function(f,i){
-    var v=nums[i]; if(!v) return null;
-    return f.label+(f.unit?'('+f.unit+')':'')+': '+v;
-  }).filter(Boolean);
-  var display = cfg.map(function(f,i){
-    var v=nums[i]; if(!v) return null;
-    return (f.label==='가로'?'가로 ':f.label==='세로'?'세로 ':f.label+' ')+v;
-  }).filter(Boolean).join(' × ');
-  if(display) display += ' '+unit;
-  var hidden = document.getElementById('nl-size');
-  var disp = document.getElementById('nl-size-display');
-  if(hidden) hidden.value = display||'';
-  if(disp) disp.textContent = display||'탭하여 입력';
-}
-
-
-var _nlAccCat = '가방';
-
-function setNlAccCat(cat, btn){
-  _nlAccCat = cat;
-  document.querySelectorAll('#nl-acc-tabs button').forEach(function(b){
-    b.style.borderColor='#333'; b.style.background='transparent'; b.style.color='#888';
-  });
-  if(btn){ btn.style.borderColor='#ff6b2b'; btn.style.background='rgba(255,107,43,.2)'; btn.style.color='#ff6b2b'; }
-  var sel = document.getElementById('nl-acc-select');
-  var opts = (window.ACC_MAP||{})[cat]||[];
-  sel.innerHTML = '<option value="">-- 드롭다운에서 선택 --</option>'+opts.map(function(o){return '<option>'+o+'</option>';}).join('');
-}
-
-function addNlAcc(){
-  var sel = document.getElementById('nl-acc-select');
-  var inp = document.getElementById('nl-acc-input');
-  var name = inp.value.trim() || sel.value;
-  if(!name) return;
-  _nlAccList.push({name:name, status:'Y'});
-  inp.value=''; sel.value='';
-  _renderNlAccList();
-}
-
-function _renderNlAccList(){
-  var wrap = document.getElementById('nl-acc-list');
-  if(!wrap) return;
-  if(!_nlAccList.length){ wrap.innerHTML='<span style="color:#555">부속품 없음</span>'; return; }
-  wrap.innerHTML = _nlAccList.map(function(a,i){
-    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:3px 8px;margin:2px;font-size:11px">'
-      +a.name+'<button onclick="_nlRemoveAcc('+i+')" style="background:none;border:none;color:#888;cursor:pointer;font-size:10px;padding:0">✕</button></span>';
-  }).join('');
-}
-
-function _nlRemoveAcc(i){ _nlAccList.splice(i,1); _renderNlAccList(); }
-
-
+// ── 신규 등록 폼 사진 기능 ──────────────────────────────────
 var _nlPhotos = [];
 
 function _nlRenderPhotos(){
@@ -5872,15 +5700,11 @@ function _nlRenderPhotos(){
   if(!wrap) return;
   if(!_nlPhotos.length){ wrap.innerHTML=''; return; }
   wrap.innerHTML = _nlPhotos.map(function(url,i){
-    return '<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid #333;flex-shrink:0">'
-      +'<img src="'+url+'" onclick="_nlZoomPhoto('+i+')" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in">'
-      +'<button onclick="event.stopPropagation();_nlRemovePhoto('+i+')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.75);border:none;color:#fff;font-size:10px;cursor:pointer;border-radius:50%;width:18px;height:18px;line-height:18px;padding:0;z-index:2">✕</button>'
+    return '<div style="position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1px solid #333">'
+      +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">'
+      +'<button onclick="_nlRemovePhoto('+i+')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:10px;cursor:pointer;border-radius:50%;width:16px;height:16px;line-height:16px;padding:0">✕</button>'
       +'</div>';
   }).join('');
-}
-
-function _nlZoomPhoto(i){
-  openLightbox(_nlPhotos[i], _nlPhotos);
 }
 
 function _nlRemovePhoto(i){
@@ -5913,141 +5737,23 @@ function handleNlPaste(e){
 }
 
 async function fetchNlOfficialImage(){
-  var brand = (document.getElementById('nl-brand')?.value||'').trim();
-  var modelKo = (document.getElementById('nl-model-ko')?.value||'').trim();
-  var q = [brand, modelKo].filter(Boolean).join(' ');
-  if(!q){ toast('⚠ 브랜드/모델명을 먼저 입력해주세요'); return; }
-  toast('🔍 이미지 검색 중...');
-
-  var token2 = localStorage.getItem('lca_token')||'';
-
-  async function _tryImg(query){
-    try{
-      var token2 = localStorage.getItem('lca_token')||'';
-      var serpKey = localStorage.getItem('bungae_serpapi_key')||'';
-      var res = await fetch('/api/inspect',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-access-token':token2},
-        body:JSON.stringify({action:'search_image', query: query, serpApiKey: serpKey})
-      });
-      if(!res.ok) return false;
-      var j = await res.json();
-      if(j.success && j.base64 && j.base64.length > 1000){
-        _nlPhotos.unshift('data:'+j.mime+';base64,'+j.base64);
-        _nlRenderPhotos();
-        toast('✅ 대표사진 추가됐어요!');
-        return true;
-      }
-      return false;
-    }catch(e){ console.warn('[ImgSearch]',e); return false; }
-  }
-
-  var ok = await _tryImg(q);
-  if(!ok) ok = await _tryImg(q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
-  if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
-}
-
-function _showUnregisteredNotice(notice, msg, raw, type){
-  if(!notice||!msg) return;
-  notice.style.background = 'rgba(245,158,11,.1)';
-  notice.style.borderColor = 'rgba(245,158,11,.4)';
-  notice.querySelector('div:first-child').style.color = '#f59e0b';
-  notice.querySelector('div:first-child').textContent = '⚠️ 미등록 SKU입니다';
-  msg.textContent = '"'+raw+'" '+type+'이(가) DB에 없어요. 구글 AI로 스펙 검색 후 등록할 수 있어요.';
-  var regBtn = notice.querySelector('button');
-  if(regBtn){
-    regBtn.style.display = 'block';
-    regBtn.textContent = '🤖 AI 모델 검색·등록';
-    regBtn.onclick = function(){ _noticeStartGoogleSearch(raw); };
-  }
-  notice.style.display = 'block';
-}
-
-function _showDuplicateNotice(notice, msg, count){
-  if(!notice||!msg) return;
-  notice.style.background = 'rgba(239,68,68,.1)';
-  notice.style.borderColor = 'rgba(239,68,68,.4)';
-  notice.querySelector('div:first-child').style.color = '#ef4444';
-  notice.querySelector('div:first-child').textContent = '⚠️ 중복 스타일번호';
-  msg.innerHTML = '동일 스타일번호 <b style="color:#ef4444">'+count+'개</b>가 있어요. 확인이 필요해요.';
-  var regBtn = notice.querySelector('button');
-  if(regBtn) regBtn.style.display = 'none';
-  notice.style.display = 'block';
-}
-
-function _noticeStartGoogleSearch(skuQ){
-  // 구글 AI 검색 버튼 클릭 유도 — 검색창에 SKU 입력 후 자동 실행
-  var googleBtn = document.getElementById('sku-list-google-btn');
-  var resW = document.getElementById('sku-list-google-result');
-  var raw = document.getElementById('sku-list-google-raw');
-  if(resW) resW.style.display = 'block';
-  if(raw) raw.value = '검색 중...';
-  if(googleBtn){
-    googleBtn.textContent = '🔍 검색 중...';
-    googleBtn.disabled = true;
-  }
-  // 검색창 값을 스타일번호로 세팅 후 구글 AI 검색 실행
-  var searchInp = document.getElementById('sku-search');
-  if(searchInp && !searchInp.value.trim()) searchInp.value = skuQ;
-  // 구글 AI 검색 실행
-  runSkuListGoogleSearch().then(function(){
-    // 검색 완료 후 신규 등록 폼 자동 열기 유도
-    var newBtn = document.getElementById('sku-list-google-result')?.querySelector('button[onclick*="openSkuListNewForm"]');
-    if(newBtn) newBtn.style.animation = 'pulse 1s infinite';
-  });
-  // 스크롤
-  if(googleBtn) googleBtn.scrollIntoView({behavior:'smooth', block:'center'});
-}
-
-function closeNlForm(){
-  var form = document.getElementById('sku-list-new-form');
-  var saveRow = document.getElementById('nl-save-row');
-  if(form) form.style.display='none';
-  if(saveRow) saveRow.style.display='none';
-  _nlPhotos=[]; _nlRenderPhotos();
-  _nlAccList=[]; _renderNlAccList();
-}
-
-function openSkuListNewFormFromNotice(){
-  var q = (document.getElementById('sku-search')?.value||'').trim();
-  var form = document.getElementById('sku-list-new-form');
-  if(!form) return;
-
-  // 구글 검색 결과 영역도 보이게
-  var resW = document.getElementById('sku-list-google-result');
-  if(resW) resW.style.display = 'block';
-
-  // 폼 초기화 후 열기
-  _nlPhotos = []; _nlRenderPhotos();
-  _nlAccList = []; _renderNlAccList();
-
-  // 브랜드/모델명 추출 — 검색어에서
-  var brand = '', modelKo = '';
-  var brands = _getBrandList();
-  for(var i=0;i<brands.length;i++){
-    if(q.toLowerCase().startsWith(brands[i].toLowerCase())){
-      brand=brands[i]; modelKo=q.slice(brands[i].length).trim(); break;
-    }
-  }
-  if(!brand && q){ var qp=q.split(/\s+/); brand=qp[0]; modelKo=qp.slice(1).join(' '); }
-
-  document.getElementById('nl-brand').value = brand;
-  document.getElementById('nl-model-ko').value = modelKo||'';
-  document.getElementById('nl-cat').value = '가방';
-  document.getElementById('nl-sku').value = q; // 검색어=스타일번호
-  document.getElementById('nl-url').value = '';
-  document.getElementById('nl-color').value = '';
-  document.getElementById('nl-notes').value = '';
-
-  var nlCatEl = document.getElementById('nl-cat');
-  nlCatEl.onchange = function(){ editNlSize(); };
-  editNlSize();
-
-  var accBtns = document.querySelectorAll('#nl-acc-tabs button');
-  if(accBtns[0]) setNlAccCat('가방', accBtns[0]);
-
-  form.style.display = 'block';
-  form.scrollIntoView({behavior:'smooth', block:'start'});
+  var url = (document.getElementById('nl-url')?.value||'').trim();
+  if(!url){ toast('⚠ 공홈 URL을 먼저 입력해주세요'); return; }
+  toast('🔍 대표사진 가져오는 중...');
+  try{
+    var token = localStorage.getItem('lca_token')||'';
+    var res = await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-access-token':token},
+      body:JSON.stringify({action:'proxy_image', imageUrl: url})
+    });
+    var j = await res.json();
+    if(!j.success||!j.base64){ toast('⚠ 사진 가져오기 실패 — URL에서 직접 이미지를 찾지 못했어요'); return; }
+    var dataUrl = 'data:'+j.mime+';base64,'+j.base64;
+    _nlPhotos.unshift(dataUrl);
+    _nlRenderPhotos();
+    toast('✅ 대표사진 추가됐어요!');
+  }catch(e){ toast('⚠ 오류: '+e.message); }
 }
 
 function openSkuListNewForm(){
@@ -6055,81 +5761,50 @@ function openSkuListNewForm(){
   var form = document.getElementById('sku-list-new-form');
   if(!form) return;
 
+  // 검색창에서 브랜드/모델 추출
   var q = (document.getElementById('sku-search')?.value||'').trim();
   var brand = '', modelKo = '';
-
-  // 브랜드 목록 매칭
+  // "브랜드 모델명" 형식에서 브랜드 목록 매칭
   var brands = _getBrandList();
   for(var i=0;i<brands.length;i++){
-    if(q.toLowerCase().startsWith(brands[i].toLowerCase())){
-      brand=brands[i]; modelKo=q.slice(brands[i].length).trim(); break;
-    }
+    if(q.startsWith(brands[i])){ brand=brands[i]; modelKo=q.slice(brands[i].length).trim(); break; }
   }
-  // 못 찾으면 첫 단어=브랜드, 나머지=모델명
-  if(!brand && q){ var qp=q.split(/\s+/); brand=qp[0]; modelKo=qp.slice(1).join(' '); }
+  if(!brand && q) brand = q.split(' ')[0];
 
-  // 카테고리 추론
-  var cat='가방';
+  // 구글 검색 결과 파싱
+  var cat = (document.getElementById('nl-cat')?.value||'가방');
+  // 검색어에서 카테고리 추론
   if(/목걸이|펜던트|팔찌|반지|귀걸이|주얼리/i.test(q+raw)) cat='주얼리';
   else if(/시계|watch/i.test(q+raw)) cat='시계';
   else if(/지갑|wallet|카드\s*홀더|카드\s*케이스|카드\s*지갑|card\s*holder|card\s*case|coin\s*purse|동전|클러치/i.test(q+raw)) cat='지갑';
-  else if(/신발|슈즈|스니커|에스파듀|에스파드리|에스파드류|에스파드리유|펌프스|로퍼|부츠|샌들|뮬|플랫|힐|shoes|sneaker|espadrille|pump|loafer|boot|sandal|mule|heel|굽\s*높이|신발\s*사이즈|유럽\s*사이즈|shoe\s*size/i.test(q+raw)) cat='신발';
-  else if(/의류|자켓|코트|셔츠|바지|스커트|원피스|블라우스|가디건|니트|jacket|coat|shirt|pants|dress|skirt/i.test(q+raw)) cat='의류';
   else if(/벨트|belt/i.test(q+raw)) cat='벨트';
 
   var parsed = raw ? _parseSpecRawText(raw, cat) : {};
 
-  // 모델명 — 검색창에서 못 뽑으면 원문에서 추출
-  if(!modelKo && raw){
-    // 원문 첫 줄에서 "브랜드 모델명의 공식 스펙은..." 형식 처리
-    var firstLine=raw.split('\n')[0].replace(/^[*•\-\s]+/,'').trim();
-    // "의 공식 스펙은|의 스펙은|공식 스펙|다음과 같습니다" 제거
-    firstLine = firstLine.replace(/의?\s*공식\s*스펙.*$|의?\s*스펙.*$|다음과\s*같습니다.*$/,'').trim();
-    firstLine = firstLine.replace(/\.$/, '').trim();
-    if(brand && firstLine.toLowerCase().startsWith(brand.toLowerCase()))
-      modelKo=firstLine.slice(brand.length).trim();
-    else if(firstLine.length < 30) modelKo=firstLine; // 너무 길면 사용 안 함
-  }
-
   // 폼 채우기
   document.getElementById('nl-brand').value = brand;
-  document.getElementById('nl-model-ko').value = modelKo||'';
+  document.getElementById('nl-model-ko').value = modelKo || parsed.size_label || '';
   document.getElementById('nl-cat').value = cat;
-  // 카테고리 변경 시 실측 사이즈 재렌더
-  var nlCatEl = document.getElementById('nl-cat');
-  nlCatEl.onchange = function(){ editNlSize(); };
-  editNlSize();
-  // 부속품 카테고리 동기화
-  _nlAccList = []; _renderNlAccList();
-  var accBtns = document.querySelectorAll('#nl-acc-tabs button');
-  var matchedBtn = null;
-  accBtns.forEach(function(b){ if(b.textContent.trim()===cat) matchedBtn=b; });
-  if(matchedBtn) setNlAccCat(cat, matchedBtn);
-  else if(accBtns[0]) setNlAccCat('가방', accBtns[0]);
-  document.getElementById('nl-sku').value = parsed.style_number||'';
-  document.getElementById('nl-url').value = parsed.official_url||'';
+  document.getElementById('nl-sku').value = parsed.style_number || '';
+  document.getElementById('nl-url').value = parsed.official_url || '';
   document.getElementById('nl-color').value = '';
-  var sizeText='';
+  // 사이즈
+  var sizeText = '';
   if(parsed.size_w){
-    // 동적 필드에 값 주입
-    setTimeout(function(){
-      var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-      var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_d,
-        '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
-      cfg.forEach(function(f){
-        var el=document.getElementById(f.id);
-        if(el && valMap[f.label]) el.value=valMap[f.label];
-      });
-      _updateNlSizeHidden(cfg);
-    }, 100);
+    var parts=[];
+    if(parsed.size_w) parts.push('가로 '+parsed.size_w);
+    if(parsed.size_h) parts.push('세로 '+parsed.size_h);
+    if(parsed.size_d) parts.push('너비 '+parsed.size_d);
+    sizeText = parts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
   }
-  var notes='';
-  if(parsed.material) notes+='소재: '+parsed.material;
-  if(parsed.notes) notes+=(notes?'\n':'')+parsed.notes;
+  document.getElementById('nl-size').value = sizeText;
+  // 특이사항
+  var notes = '';
+  if(parsed.material) notes += '소재: '+parsed.material;
+  if(parsed.notes) notes += (notes?'\n':'')+parsed.notes;
   document.getElementById('nl-notes').value = notes;
 
   form.style.display = 'block';
-  var saveRow=document.getElementById('nl-save-row'); if(saveRow) saveRow.style.display='flex';
   _nlPhotos = []; _nlRenderPhotos();
   form.scrollIntoView({behavior:'smooth', block:'nearest'});
 
@@ -6141,11 +5816,25 @@ function openSkuListNewForm(){
   // 없으면 공홈 URL로 시도
   if(!imgUrl && parsed.official_url && parsed.official_url.startsWith('http')) imgUrl = parsed.official_url;
 
-  // 이미지는 수동으로 추가 (📋 붙여넣기 또는 📁 파일 선택)
-  // 자동 이미지 검색은 공홈/쇼핑몰 봇 차단으로 신뢰도 낮아 제거
+  if(imgUrl){
+    setTimeout(async function(){
+      try{
+        var token = localStorage.getItem('lca_token')||'';
+        var res = await fetch('/api/inspect',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-access-token':token},
+          body:JSON.stringify({action:'proxy_image', imageUrl: imgUrl})
+        });
+        var j = await res.json();
+        if(j.success && j.base64){
+          _nlPhotos.unshift('data:'+j.mime+';base64,'+j.base64);
+          _nlRenderPhotos();
+          toast('🖼️ 대표사진 자동 추가됐어요!');
+        }
+      }catch(e){ console.warn('[NL Image]', e); }
+    }, 300);
+  }
 }
-
-
 
 async function saveSkuListNewForm(){
   var brand   = document.getElementById('nl-brand')?.value.trim();
@@ -6154,17 +5843,8 @@ async function saveSkuListNewForm(){
   if(!brand || !modelKo){ toast('⚠ 브랜드와 모델명(한글)은 필수예요'); return; }
 
   var token = localStorage.getItem('lca_token')||'';
-  var btn = document.querySelector('#nl-save-row button');
+  var btn = document.querySelector('#sku-list-new-form button');
   if(btn){ btn.textContent='저장 중...'; btn.disabled=true; }
-
-  // 저장 직전 실측 사이즈 hidden 업데이트
-  var cat2 = document.getElementById('nl-cat')?.value||'가방';
-  var cfg2 = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
-  _updateNlSizeHidden(cfg2);
-
-  // base64 이미지 유효성 필터 (너무 작은 건 스킵)
-  var dataPhotos = _nlPhotos.filter(function(p){ return p.startsWith('data:') && p.length > 1000; });
-  var httpPhotos = _nlPhotos.filter(function(p){ return p.startsWith('http'); });
 
   var skuData = {
     brand:         brand,
@@ -6176,14 +5856,9 @@ async function saveSkuListNewForm(){
     size_actual:   document.getElementById('nl-size')?.value.trim()||'',
     site_url:      document.getElementById('nl-url')?.value.trim()||'',
     notes:         document.getElementById('nl-notes')?.value.trim()||'',
-    extra_images:  httpPhotos,
-    // 첫 번째 base64만 newImageBase64로 (서버가 upload 처리)
-    newImageBase64: dataPhotos[0]?.split(',')[1]||undefined,
-    accessories: _nlAccList.length ? _nlAccList : [],
+    extra_images:  _nlPhotos.filter(function(p){ return p.startsWith('http'); }),
+    newImageBase64: _nlPhotos.find(function(p){ return p.startsWith('data:'); })?.split(',')[1]||undefined,
   };
-
-  // 추가 base64 이미지들은 저장 후 update_sku로 처리
-  var extraBase64 = dataPhotos.slice(1);
 
   try{
     var res = await fetch('/api/inspect',{
@@ -6196,18 +5871,6 @@ async function saveSkuListNewForm(){
     if(j.data&&j.data[0]){
       skuListAll.unshift(j.data[0]);
       var newId = String(j.data[0].id);
-      // 추가 base64 이미지 순차 업로드
-      if(extraBase64.length > 0){
-        for(var ei=0; ei<extraBase64.length; ei++){
-          try{
-            await fetch('/api/inspect',{
-              method:'POST',
-              headers:{'Content-Type':'application/json','x-access-token':token},
-              body:JSON.stringify({action:'update_sku', skuData:{id:newId, newImageBase64:extraBase64[ei].split(',')[1]}})
-            });
-          }catch(e){ console.warn('[NL extra image]', e); }
-        }
-      }
       // AI 뱃지 추가 (구글 AI 검색 기반 등록)
       _aiBadgeIds.add(newId);
       _saveAiBadgeIds();
@@ -6222,7 +5885,6 @@ async function saveSkuListNewForm(){
     }
     toast('✅ 신규 SKU가 등록됐어요!');
     _nlPhotos = []; _nlRenderPhotos();
-    _nlAccList = []; _renderNlAccList();
     document.getElementById('sku-list-new-form').style.display='none';
     renderSkuList(skuListAll);
   }catch(e){
@@ -6260,7 +5922,7 @@ async function saveQuickEdit(id){
     if(!j.success) throw new Error(j.error||'저장 실패');
     // 로컬 데이터 업데이트
     var item = (skuListAll||[]).find(function(i){ return String(i.id)===String(id); });
-    if(item){ if(size) item.size_actual=size; if(sku) item.sku_code=sku; if(url) item.site_url=url; if(notes) item.notes=notes; item.verified=true; }
+    if(item){ if(size) item.size_actual=size; if(sku) item.sku_code=sku; if(url) item.site_url=url; if(notes) item.notes=notes; }
     toast('✅ 저장됐어요!');
     var qe = document.getElementById('sku-quickedit-'+id);
     if(qe) qe.style.display='none';
@@ -6291,11 +5953,6 @@ async function runSkuListGoogleSearch(){
   var q = (document.getElementById('sku-search')?.value||'').trim();
   if(!q){ toast('⚠ 브랜드/모델명을 먼저 검색해주세요'); return; }
 
-  // 카테고리 드롭다운 값 반영
-  var catSel = document.getElementById('sku-list-cat-select');
-  var selCat = catSel?.value||'전체';
-  var catHint = selCat!=='전체' ? ' '+selCat : '';
-
   var btn  = document.getElementById('sku-list-google-btn');
   var resW = document.getElementById('sku-list-google-result');
   var raw  = document.getElementById('sku-list-google-raw');
@@ -6305,17 +5962,24 @@ async function runSkuListGoogleSearch(){
   raw.value = '검색 중...';
 
   try{
-    var keyword = q + catHint + ' 공식 사이즈 스타일번호 소재 공식URL 스펙';
-    var _token = localStorage.getItem('lca_token')||'';
-    var res = await fetch('/api/inspect',{
+    var apiKey = _getGeminiKey();
+    if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 구글 AI로 검색한 모델 스펙 조회'; btn.disabled=false; return; }
+    var keyword = q + ' 공식 사이즈 스타일번호 소재 공식URL 스펙';
+    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'serp_text_search', keyword:keyword})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘:\n'
+          +'• 실측 사이즈 (가로/세로/너비 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n없는 항목은 "없음"으로. 간결하게.'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.1, maxOutputTokens:1500}
+      })
     });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    var j = await res.json();
-    if(!j.success) throw new Error(j.error||'검색 실패');
-    raw.value = j.text || '검색 결과를 찾지 못했어요.';
+    var data = await res.json();
+    var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+    raw.value = text || '검색 결과를 찾지 못했어요.';
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
@@ -6339,9 +6003,6 @@ async function applySkuListGoogleResult(){
     if(/목걸이|펜던트|팔찌|반지|귀걸이|주얼리|necklace/i.test(raw)) cat='주얼리';
     else if(/시계|watch/i.test(raw)) cat='시계';
     else if(/지갑|wallet|카드\s*홀더|카드\s*케이스|카드\s*지갑|card\s*holder|card\s*case/i.test(raw)) cat='지갑';
-    else if(/신발|슈즈|스니커|에스파듀|에스파드리|펌프스|로퍼|부츠|샌들|shoes|sneaker|espadrille|pump|loafer|boot|sandal|굽\s*높이|신발\s*사이즈/i.test(raw)) cat='신발';
-    else if(/의류|자켓|코트|셔츠|바지|스커트|원피스|jacket|coat|shirt|pants|dress/i.test(raw)) cat='의류';
-    else if(/벨트|belt/i.test(raw)) cat='벨트';
     else cat='가방';
   }
 
@@ -6413,61 +6074,17 @@ async function applySkuListGoogleResult(){
   _selectedSkuIds.clear();
 }
 
-
-async function testImageSearch(){
-  var res = document.getElementById('img-test-result');
-  if(!res) return;
-  res.style.display='block';
-  res.textContent='(테스트 기능 비활성화됨)';
-}
-
-function saveSerpApiKeyInline(){
-  var inp = document.getElementById('serpapi-key-inline');
-  var key = (inp?.value||'').trim();
-  if(!key){ toast('⚠ SerpAPI 키를 입력해주세요'); return; }
-  localStorage.setItem('bungae_serpapi_key', key);
-  inp.value='';
-  // 입력란 숨기기
-  var row = document.getElementById('serpapi-key-row');
-  if(row) row.style.display='none';
-  toast('✅ SerpAPI 키 저장됐어요! 이제 대표사진 자동 검색이 가능해요.');
-}
-
-// ── Gemini API 공통 fetch (429 시 2.0-flash로 자동 fallback) ──
-async function _geminiGenerate(apiKey, body){
-  var models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
-  var token = localStorage.getItem('lca_token')||'';
-  for(var mi=0; mi<models.length; mi++){
-    var model = models[mi];
-    try{
-      var r = await fetch('/api/inspect', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'x-access-token': token},
-        body: JSON.stringify({action: 'gemini_proxy', apiKey: apiKey, model: model, body: body})
-      });
-      var j = await r.json();
-      if(!j.success){
-        var errMsg = (j.data?.error?.message||j.error||'');
-        if((j.data?.error?.code===429 || errMsg.includes('429') || errMsg.includes('quota')) && mi < models.length-1){
-          console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도');
-          continue;
-        }
-        throw new Error(errMsg || '서버 오류');
-      }
-      return j.data;
-    }catch(e){ if(mi === models.length-1) throw e; }
-  }
-}
-
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
 
 function saveGeminiKeyInline(){
   var inp = document.getElementById('gemini-key-inline');
   var key = (inp.value||'').trim();
   if(!key){ toast('⚠ API 키를 입력해주세요'); return; }
+  if(!key.startsWith('AIza')){ toast('⚠ AIza...로 시작하는 키를 입력해주세요'); return; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   document.getElementById('gemini-key-row').style.display='none';
+  // 결과화면 입력창도 숨기기
   var r2=document.getElementById('gemini-key-row-result');
   if(r2) r2.style.display='none';
   toast('✅ Gemini API 키 저장됐어요!');
@@ -6477,6 +6094,7 @@ function saveGeminiKeyResult(){
   var inp = document.getElementById('gemini-key-inline-result');
   var key = (inp.value||'').trim();
   if(!key){ toast('⚠ API 키를 입력해주세요'); return; }
+  if(!key.startsWith('AIza')){ toast('⚠ AIza...로 시작하는 키를 입력해주세요'); return; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   document.getElementById('gemini-key-row-result').style.display='none';
@@ -6491,9 +6109,6 @@ function _checkGeminiKeyRow(){
   var row2=document.getElementById('gemini-key-row-result');
   if(row1) row1.style.display = hasKey ? 'none' : 'block';
   if(row2) row2.style.display = hasKey ? 'none' : 'block';
-  // SerpAPI 키 없으면 노출
-  var serpRow=document.getElementById('serpapi-key-row');
-  if(serpRow) serpRow.style.display = localStorage.getItem('bungae_serpapi_key') ? 'none' : 'block';
 }
 
 
@@ -6505,7 +6120,7 @@ function _getGeminiKey(){
 
 function _promptGeminiKey(){
   var key = prompt('Gemini API 키를 입력해주세요 (AIza...)\n\naistudio.google.com 에서 무료 발급 가능합니다.');
-  if(!key || key.length < 10){ toast('⚠ API 키가 너무 짧아요'); return ''; }
+  if(!key || !key.startsWith('AIza')){ toast('⚠ 올바른 Gemini API 키가 아닙니다'); return ''; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   toast('✅ Gemini 키 저장됨');
@@ -6553,25 +6168,188 @@ async function aiAutoFillSpec(){
 }
 
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
-  var statusEl = document.getElementById('ai-autofill-status');
-  if(statusEl) statusEl.textContent = '공식 사이트에서 스펙 검색 중... (10~20초 소요)';
-  var _token = localStorage.getItem('lca_token') || '';
-  try {
-    var res = await fetch('/api/inspect', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','x-access-token':_token},
-      body: JSON.stringify({action:'serp_autofill', brand:brand, modelKo:modelKo, modelEn:modelEn, cat:cat})
-    });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    var j = await res.json();
-    if(!j.success) throw new Error(j.error || '조회 실패');
-    console.log('[AutoFill] 성공 source=' + j.source, j.data);
-    localStorage.setItem('_lastAutoFill', JSON.stringify(j.data));
-    return j.data;
-  } catch(e) {
-    console.warn('[AutoFill] 실패:', e.message);
-    throw new Error(e.message || '모델 정보 조회 실패');
+  var modelName = modelKo || modelEn || '';
+  var prompt = '당신은 명품 감정 전문가입니다. 아래 상품의 공식 스펙을 JSON으로만 답하세요.\n'
+    + '절대로 JSON 외 다른 텍스트를 출력하지 마세요. 마크다운 금지.\n\n'
+    + '브랜드: ' + brand + '\n'
+    + '모델명: ' + modelName + '\n'
+    + '카테고리: ' + cat + '\n\n'
+    + '[카테고리별 사이즈 입력 규칙 - SIZE_CONFIG 기준, 0 입력 절대 금지]\n'
+    + '가방/지갑: size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm\n'
+    + '주얼리-목걸이/펜던트: size_d=체인길이(cm) 반드시 입력, size_w=펜던트가로(mm), size_unit=mm\n'
+    + '주얼리-반지: size_w=두께(mm), size_label=호수(예:52), size_unit=mm\n'
+    + '주얼리-팔찌: size_w=내경또는길이(mm), size_unit=mm\n'
+    + '주얼리-귀걸이: size_w=길이(mm), size_unit=mm\n'
+    + '시계: size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm\n'
+    + '의류/신발: size_w=사이즈표기(S,M,L,95,270등), size_unit 비워둠\n'
+    + '벨트: size_w=폭(cm), size_unit=cm\n'
+    + '값을 모를 경우 빈문자열(\'\')로 입력. 절대로 0 입력 금지.\n\n'
+    + '출력 형식 (이 JSON 구조를 그대로 사용):\n'
+    + '{\n'
+    + '"style_number": "스타일번호",\n'
+    + '"model_ko": "한글 모델명",\n'
+    + '"category": "카테고리 (가방/지갑/주얼리/시계/의류/신발/벨트 중 하나)",\n'
+    + '"size_w": "가로 cm 숫자만 (예: 19)",\n'
+    + '"size_h": "세로 cm 숫자만 (예: 10)",\n'
+    + '"size_d": "너비 cm 숫자만 (예: 3)",\n'
+    + '"size_unit": "cm",\n'
+    + '"size_label": "사이즈 명칭 (예: OS, Small, MM)",\n'
+    + '"material": "소재",\n'
+    + '"made_in": "제조국",\n'
+    + '"official_url": "공식 제품 페이지 URL (없으면 빈 문자열)",\n'
+    + '"image_url": "공식 대표 이미지 URL (없으면 빈 문자열)",\n'
+    + '"notes": "검수 참고 정보"\n'
+    + '}';
+
+  function fetchWithTimeout(url, opts, ms){
+    var ctrl = new AbortController();
+    var tid = setTimeout(function(){ ctrl.abort(); }, ms);
+    return fetch(url, Object.assign({}, opts, {signal: ctrl.signal})).finally(function(){ clearTimeout(tid); });
   }
+
+  // 1단계: 그라운딩 없이 빠르게 (학습 데이터 기반, 5~10초)
+  var fastModels = [
+    {model:'gemini-2.5-flash', timeout:20000}
+  ];
+  // 2단계: 그라운딩 포함 (실시간 검색, 느리지만 정확)
+  var searchModels = [
+    {model:'gemini-2.5-flash', timeout:50000}
+  ];
+
+  var lastErr = '';
+
+  // 1단계 시도 — 그라운딩 없이 빠르게
+  for(var i=0; i<fastModels.length; i++){
+    var mc = fastModels[i];
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + mc.model + ':generateContent?key=' + apiKey;
+    try{
+      console.log('[AI AutoFill] 빠른 시도 (학습데이터):', mc.model);
+      var res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
+          contents: [{parts: [{text: prompt}]}],
+          generationConfig: {temperature: 0.0, maxOutputTokens: 2000, response_mime_type: 'application/json'}
+        })
+      }, mc.timeout);
+
+      if(!res.ok){
+        var et = await res.text();
+        lastErr = mc.model + ': HTTP ' + res.status;
+        if(res.status === 429){
+          await new Promise(function(r){ setTimeout(r, 2000); });
+        }
+        continue;
+      }
+
+      var data = await res.json();
+      var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
+      if(!rawText){ lastErr = mc.model + ': 빈 응답'; continue; }
+
+      var parsed = null;
+      try{
+        var jStr = rawText.trim();
+        var jm1a = rawText.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
+        var jm1b = rawText.match(/({[\s\S]*})/);
+        jStr = (jm1a && jm1a[1]) || (jm1b && jm1b[0]) || jStr;
+        // JSON이 잘린 경우 닫는 괄호 보완
+        if(jStr && !jStr.trim().endsWith('}')){
+          jStr = jStr.replace(/,\s*$/, '') + '}';
+        }
+        parsed = JSON.parse(jStr);
+      } catch(pe){
+        // 잘린 JSON에서 부분 추출 시도
+        try{
+          var partials = {};
+          // 문자열 값 추출
+          var strMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g);
+          for(var m of strMatches){ partials[m[1]] = m[2]; }
+          // 숫자 값 추출 (size_w, size_h, size_d 등)
+          var numMatches = rawText.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
+          for(var m of numMatches){ partials[m[1]] = m[2]; }
+          if(Object.keys(partials).length > 0){ parsed = partials; console.warn('[AutoFill] 부분 파싱 성공', partials); localStorage.setItem('_lastAutoFill', JSON.stringify(partials)); }
+          else { lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
+        } catch(pe2){ lastErr = mc.model + ': JSON 파싱 실패'; console.warn('[AutoFill]', rawText.substring(0,300)); continue; }
+      }
+      // 카테고리별 필수 필드 충족 여부 확인 (URL 없어도 사이즈만 있으면 OK)
+      var _isComplete = (function(){
+        if(cat==='주얼리') return parsed.size_w && parsed.size_d;
+        if(cat==='시계') return parsed.size_w && parsed.size_h;
+        if(cat==='가방'||cat==='지갑') return parsed.size_w && parsed.size_h;
+        return parsed.size_w;
+      })();
+      if(_isComplete){
+        localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
+        localStorage.setItem('_lastAutoFill', JSON.stringify(parsed));
+        console.log('[AI AutoFill] 빠른 성공:', mc.model, 'size_w='+parsed.size_w, 'size_h='+parsed.size_h, parsed);
+        return parsed;
+      }
+      console.log('[AI AutoFill] 사이즈 없음 — 검색 모드로 전환');
+      lastErr = '사이즈 없음';
+    } catch(e){
+      lastErr = mc.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
+      console.warn('[AI AutoFill]', lastErr);
+    }
+  }
+
+  // 2단계 — google_search 그라운딩으로 실시간 검색
+  console.log('[AI AutoFill] 실시간 검색 모드 시작...');
+  var statusEl = document.getElementById('ai-autofill-status');
+  if(statusEl) statusEl.textContent = '공식 사이트에서 실측 사이즈 검색 중... (15~30초 소요)';
+
+  for(var j=0; j<searchModels.length; j++){
+    var mc2 = searchModels[j];
+    var url2 = 'https://generativelanguage.googleapis.com/v1beta/models/' + mc2.model + ':generateContent?key=' + apiKey;
+    try{
+      console.log('[AI AutoFill] 검색 시도:', mc2.model);
+      var res2 = await fetchWithTimeout(url2, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
+          contents: [{parts: [{text: prompt}]}],
+          tools: [{google_search: {}}],
+          generationConfig: {temperature: 0.0, maxOutputTokens: 2000}
+        })
+      }, mc2.timeout);
+
+      if(!res2.ok){ lastErr = mc2.model + ': HTTP ' + res2.status; continue; }
+
+      var data2 = await res2.json();
+      var raw2 = ((data2.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
+      if(!raw2){ lastErr = mc2.model + ': 빈 응답'; continue; }
+
+      var parsed2 = null;
+      try{
+        var jStr2 = raw2.trim();
+        var jm2a = raw2.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/);
+        var jm2b = raw2.match(/({[\s\S]*})/);
+        jStr2 = (jm2a && jm2a[1]) || (jm2b && jm2b[0]) || jStr2;
+        if(jStr2 && !jStr2.trim().endsWith('}')) jStr2 = jStr2.replace(/,\s*$/, '') + '}';
+        parsed2 = JSON.parse(jStr2);
+      } catch(pe2){
+        // 부분 추출 시도 (1단계와 동일)
+        try{
+          var partials2 = {};
+          var strM2 = raw2.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g);
+          for(var sm of strM2){ partials2[sm[1]] = sm[2]; }
+          var numM2 = raw2.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g);
+          for(var nm of numM2){ partials2[nm[1]] = nm[2]; }
+          if(Object.keys(partials2).length > 0){ parsed2 = partials2; console.warn('[AutoFill 2단계] 부분 파싱 성공', partials2); }
+          else { lastErr = mc2.model + ': JSON 파싱 실패'; console.warn('[AutoFill 2단계]', raw2.substring(0,300)); continue; }
+        } catch(pe3){ lastErr = mc2.model + ': JSON 파싱 실패'; console.warn('[AutoFill 2단계]', raw2.substring(0,300)); continue; }
+      }
+      localStorage.setItem('_lastAutoFill', JSON.stringify(parsed2));
+      console.log('[AI AutoFill] 검색 성공:', mc2.model, 'size_w='+parsed2.size_w, 'size_h='+parsed2.size_h, parsed2);
+      return parsed2;
+      return parsed2;
+    } catch(e){
+      lastErr = mc2.model + (e.name==='AbortError' ? ': 타임아웃' : ': '+e.message);
+      console.warn('[AI AutoFill]', lastErr);
+    }
+  }
+  throw new Error(lastErr || '모든 모델 실패');
 }
 
 function _applySpecToForm(data, cat){
@@ -6768,37 +6546,57 @@ async function _fetchOfficialImage(imgUrl, fallbackQuery){
 
 
 
-// ── 이미지 폴백: SerpAPI로 이미지 검색 ─────────────────────────
+// ── 이미지 폴백: Gemini google_search로 이미지 URL 검색 ─────────
 async function _fetchImageBySearch(query){
   try{
-    const _token = localStorage.getItem('lca_token')||'';
-    const serpKey = localStorage.getItem('bungae_serpapi_key')||'';
-    const res = await fetch('/api/inspect',{
+    const apiKey = _getGeminiKey();
+    if(!apiKey) return;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey;
+    const res = await fetch(url,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.0, maxOutputTokens:200}
+      })
     });
     if(!res.ok) return;
-    const j = await res.json();
-    if(j.success && j.base64){
-      _fetchOfficialImage('data:'+j.mime+';base64,'+j.base64, null);
+    const data = await res.json();
+    const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+    const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
+    if(m && m[1] && m[1].startsWith('http')){
+      console.log('[AutoFill Image] 폴백 이미지 URL:', m[1]);
+      _fetchOfficialImage(m[1], null);
     }
   }catch(e){ console.warn('[AutoFill Image] 폴백 검색 실패:', e); }
 }
 
 async function _fetchImageBySearchTo(query, target){
   try{
-    const _token = localStorage.getItem('lca_token')||'';
-    const serpKey = localStorage.getItem('bungae_serpapi_key')||'';
-    const res = await fetch('/api/inspect',{
+    const apiKey = _getGeminiKey();
+    if(!apiKey) return;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey;
+    const res = await fetch(url,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[{text:
+          query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
+        }]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:0.0, maxOutputTokens:200}
+      })
     });
     if(!res.ok) return;
-    const j = await res.json();
-    if(j.success && j.base64){
-      _fetchOfficialImageTo('data:'+j.mime+';base64,'+j.base64, target, null);
+    const data = await res.json();
+    const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+    const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
+    if(m && m[1] && m[1].startsWith('http')){
+      console.log('[AutoFill Image] 폴백 이미지 URL ('+target+'):', m[1]);
+      _fetchOfficialImageTo(m[1], target, null);
     }
   }catch(e){ console.warn('[AutoFill Image] 폴백 검색 실패:', e); }
 }
@@ -7193,9 +6991,5 @@ async function saveSpecToSupabaseById(id, specs){
   <option value="모카">
   <option value="샴페인">
 </datalist>
-
-  <!-- 임시 이미지 테스트 버튼 -->
-  <div id="img-test-result" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;background:#1a1a1a;border:1px solid #ff6b2b;border-radius:10px;padding:14px;z-index:9999;font-size:11px;color:#ddd;max-height:200px;overflow-y:auto"></div>
-
 </body>
 </html>
