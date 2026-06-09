@@ -1,6 +1,4 @@
-export const config = { maxDuration: 60 };
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { imageBase64, imageMime, extras = {}, action, skuData } = req.body;
@@ -463,6 +461,57 @@ ${searchContext}
       }
       return res.status(200).json({ success: false, error: '이미지를 찾지 못했어요' });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
+  }
+
+  if (action === 'serp_text_search') {
+    try {
+      const { keyword } = req.body;
+      if (!keyword) return res.status(400).json({ success: false, error: 'keyword 없음' });
+      let searchContext = '';
+      try {
+        const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '&api_key=' + SERP_KEY + '&num=8&hl=ko', { signal: AbortSignal.timeout(10000) });
+        if (sr.ok) {
+          const sd = await sr.json();
+          const snippets = (sd.organic_results||[]).slice(0,5).map(r => '[' + r.title + '] ' + (r.snippet||'')).filter(Boolean);
+          if (snippets.length) searchContext = snippets.join('\n');
+        }
+      } catch(e) { console.warn('[serp_text_search]', e.message); }
+      const prompt = '아래 검색 결과를 바탕으로 제품 공식 스펙을 간결하게 정리해줘.\n없는 항목은 "없음". 아래 항목만:\n실측 사이즈 (단위 포함), 소재, 스타일번호, 공식 사이트 URL, 특이사항\n\n검색어: ' + keyword + '\n\n' + (searchContext ? '검색 결과:\n' + searchContext : '(학습 데이터 기반)');
+      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.error.message);
+      return res.status(200).json({ success: true, text: (cd.content||[])[0]?.text?.trim()||'', source: searchContext ? 'serp+claude' : 'claude' });
+    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
+  }
+
+  if (action === 'serp_autofill') {
+    try {
+      const { brand, modelKo, modelEn, cat } = req.body;
+      const modelName = modelKo || modelEn || '';
+      if (!modelName) return res.status(400).json({ success: false, error: '모델명 없음' });
+      let searchContext = '';
+      try {
+        const qs = [brand + ' ' + modelName + ' specifications size', brand + ' ' + modelName + ' 사이즈 스펙'];
+        const results = [];
+        for (const q of qs) {
+          const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(q) + '&api_key=' + SERP_KEY + '&num=5', { signal: AbortSignal.timeout(10000) });
+          if (!sr.ok) continue;
+          const sd = await sr.json();
+          for (const r of (sd.organic_results||[]).slice(0,3)) { if (r.title && r.snippet) results.push('[' + r.title + '] ' + r.snippet); }
+        }
+        if (results.length) searchContext = results.join('\n');
+      } catch(e) { console.warn('[serp_autofill]', e.message); }
+      const sizeRules = { '가방': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm)', '지갑': 'size_w=가로(cm), size_h=세로(cm)', '주얼리': 'size_d=체인길이(cm), size_w=펜던트가로(mm)', '시계': 'size_w=케이스직경(mm), size_h=두께(mm)', '의류': 'size_w=사이즈표기', '신발': 'size_w=사이즈표기', '벨트': 'size_w=폭(cm)' };
+      const prompt = '명품 감정 전문가. 공식 스펙 JSON만 답하세요. 마크다운 금지.\n브랜드: ' + brand + '\n모델명: ' + modelName + '\n카테고리: ' + cat + '\n사이즈규칙: ' + (sizeRules[cat]||'size_w=사이즈') + '\n' + (searchContext ? '[검색결과]\n' + searchContext + '\n' : '') + '\n출력: {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}';
+      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }) });
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.error.message);
+      const rawText = (cd.content||[])[0]?.text?.trim()||'';
+      let parsed = null;
+      try { parsed = JSON.parse(rawText.match(/({[^]*})/)?.[1] || rawText); }
+      catch(e) { const p = {}; for (const m of rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2]; if (Object.keys(p).length) parsed = p; else throw new Error('JSON 파싱 실패'); }
+      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+claude' : 'claude' });
+    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
   }
 
   if (action === 'gemini_proxy') {
