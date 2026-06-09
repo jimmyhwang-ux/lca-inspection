@@ -3649,7 +3649,18 @@ function renderSkuPage(wrapId){
   if(!wrap) return;
   if(!list.length){
     const q=document.getElementById('sku-search')?.value.trim()||'';
-    wrap.innerHTML=`<div class="sku-empty">${q?'검색 결과가 없습니다':'등록된 SKU가 없습니다'}</div>`;
+    if(q){
+      wrap.innerHTML=`<div style="background:#1a1a1a;border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:14px;margin:8px 0">
+        <div style="color:#f59e0b;font-size:12px;font-weight:700;margin-bottom:8px">⚠️ 미등록 SKU입니다</div>
+        <div style="color:#888;font-size:12px;margin-bottom:10px">"${q}" 모델이(가) DB에 없어요. 구글 AI로 스펙 검색 후 등록할 수 있어요.</div>
+        <button onclick="document.getElementById('sku-search').value='${q}';document.getElementById('sku-list-google-btn').click();"
+          style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.2),rgba(255,107,43,.1));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          🔍 AI 모델 검색·등록
+        </button>
+      </div>`;
+    } else {
+      wrap.innerHTML='<div class="sku-empty">등록된 SKU가 없습니다</div>';
+    }
     return;
   }
   const start = (page-1)*PAGE_SIZE;
