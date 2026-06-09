@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { imageBase64, imageMime, extras = {}, action, skuData } = req.body;
@@ -716,3 +716,5 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     return res.status(500).json({ success: false, error: err.message });
   }
 }
+
+module.exports = handler;
