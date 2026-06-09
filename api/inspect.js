@@ -178,7 +178,7 @@ ${searchContext ? '검색 결과:\n' + searchContext : '(검색 결과 없음 �
     }
   }
 
-  // ✅ serp_autofill
+  if (action === 'serp_autofill') {
     try {
       const { brand, modelKo, modelEn, cat } = req.body;
       const modelName = modelKo || modelEn || '';
