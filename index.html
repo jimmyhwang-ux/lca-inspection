@@ -4647,8 +4647,9 @@ async function saveEditSku(){
     ref_image_url: newRef  // null이면 명시적으로 null 전송해서 DB에서도 지워짐
   };
   try{
+    const _token = localStorage.getItem('lca_token')||'';
     const res=await fetch('/api/inspect',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'application/json','x-access-token':_token},
       body:JSON.stringify({action:'update_sku',skuData:{id,...data}})
     });
     const j=await res.json();
