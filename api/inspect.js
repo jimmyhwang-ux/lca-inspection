@@ -7,6 +7,7 @@ export default async function handler(req, res) {
 
   const SERP_KEY     = process.env.SERP_KEY;
   const CLAUDE_KEY   = process.env.CLAUDE_KEY;
+  const GEMINI_KEY   = process.env.GEMINI_API_KEY;  // ✅ 추가
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
     }
   });
 
-  // ── Supabase Storage 업로드 (imgbb 대체) ─────────────────────
+  // ── Supabase Storage 업로드 ─────────────────────────────────
   const uploadImage = async (b64) => {
     const buffer = Buffer.from(b64, 'base64');
     const fileName = `sku-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
@@ -57,6 +58,45 @@ export default async function handler(req, res) {
     const ACCESS_PW = process.env.ACCESS_PASSWORD || 'lca2024';
     const { password } = req.body;
     return res.status(200).json({ success: password === ACCESS_PW });
+  }
+
+  // ✅ Gemini API 키 상태 확인 (프론트에서 키 없이 동작하도록)
+  if (action === 'check_gemini_key') {
+    return res.status(200).json({ hasKey: !!GEMINI_KEY });
+  }
+
+  // ✅ Gemini AI 스펙 검색 (서버에서 키 사용)
+  if (action === 'gemini_search') {
+    try {
+      if (!GEMINI_KEY) {
+        return res.status(200).json({ success: false, error: 'Gemini API 키가 서버에 설정되지 않았어요' });
+      }
+      const { prompt } = req.body;
+      if (!prompt) return res.status(400).json({ success: false, error: 'prompt 없음' });
+
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+          })
+        }
+      );
+
+      if (!geminiRes.ok) {
+        const errText = await geminiRes.text();
+        return res.status(200).json({ success: false, error: 'Gemini 오류: ' + errText.slice(0, 200) });
+      }
+
+      const geminiData = await geminiRes.json();
+      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return res.status(200).json({ success: true, text });
+    } catch (e) {
+      return res.status(200).json({ success: false, error: e.message });
+    }
   }
 
   if (action === 'save_sku') {
@@ -90,22 +130,18 @@ export default async function handler(req, res) {
     try {
       const { id, newImageBase64, ...fields } = skuData;
       if (!id) return res.status(400).json({ success: false, error: 'id 없음' });
-      console.log('[update_sku] id:', id, 'extra_images:', JSON.stringify(fields.extra_images)?.slice(0,200), 'ref_image_url:', fields.ref_image_url?.slice(0,80));
       if (newImageBase64) {
         const url = await uploadImage(newImageBase64);
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
-      // 사진이 없으면 ref_image_url도 명시적으로 null 처리
       if (Array.isArray(fields.extra_images) && fields.extra_images.length === 0) {
         fields.ref_image_url = null;
       }
-      // ref_image_url이 없으면 extra_images 첫 번째로 설정
       if (!fields.ref_image_url && fields.extra_images?.length > 0) {
         fields.ref_image_url = fields.extra_images[0];
       }
       if (fields.accessories && !Array.isArray(fields.accessories)) fields.accessories = [];
-      // updated_at 자동 주입
       fields.updated_at = new Date().toISOString();
       const r = await sb(`sku_items?id=eq.${id}`, {
         method: 'PATCH',
@@ -170,8 +206,6 @@ export default async function handler(req, res) {
     try {
       const { query, serpApiKey } = req.body;
       if (!query) return res.status(400).json({ success: false, error: 'query 없음' });
-
-      // SerpAPI Google Images 검색
       if (serpApiKey) {
         const encoded = encodeURIComponent(query);
         const serpUrl = `https://serpapi.com/search.json?q=${encoded}&tbm=isch&api_key=${serpApiKey}&num=5&safe=active`;
@@ -184,9 +218,7 @@ export default async function handler(req, res) {
               const imgUrl = img.original || img.thumbnail;
               if (!imgUrl) continue;
               try {
-                const ir = await fetch(imgUrl, {
-                  headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.google.com' }
-                });
+                const ir = await fetch(imgUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.google.com' } });
                 if (!ir.ok) continue;
                 const buf = Buffer.from(await ir.arrayBuffer());
                 if (buf.length < 2000) continue;
@@ -198,8 +230,6 @@ export default async function handler(req, res) {
           }
         } catch (e) { console.log('[search_image] SerpAPI 오류:', e.message); }
       }
-
-      // SerpAPI 없거나 실패 시 — Farfetch/Mytheresa HTML 스크래핑
       const encoded = encodeURIComponent(query);
       const sources = [
         `https://www.farfetch.com/kr/shopping/women/search/?q=${encoded}&view=90&sort=3`,
@@ -208,13 +238,7 @@ export default async function handler(req, res) {
       ];
       for (const url of sources) {
         try {
-          const r = await fetch(url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Accept': 'text/html',
-              'Accept-Language': 'ko-KR,ko;q=0.9',
-            }
-          });
+          const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', 'Accept-Language': 'ko-KR,ko;q=0.9' } });
           if (!r.ok) continue;
           const html = await r.text();
           const patterns = [
@@ -289,7 +313,6 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       })
     }).then(r => r.json());
 
-    // Supabase Storage 업로드 (검수 이미지)
     const imageUrlPromise = uploadImage(imageBase64).catch(e => {
       console.warn('[Storage 업로드 실패]', e.message); return '';
     });
@@ -297,7 +320,6 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
       .then(async r => {
         const data = await r.json();
-        console.log('[DB]', r.status, Array.isArray(data)?data.length:'ERR:'+JSON.stringify(data).slice(0,80));
         return Array.isArray(data) ? data : [];
       })
       .catch(e => { console.error('[DB fetch error]', e.message); return []; });
@@ -308,43 +330,36 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-  const BRAND_MAP = {
-    'gucci':'구찌','louisvuitton':'루이비통',
-    'hermes':'에르메스','chanel':'샤넬','dior':'디올','prada':'프라다',
-    'balenciaga':'발렌시아가','saintlaurent':'생로랑','ysl':'생로랑',
-    'bottegaveneta':'보테가베네타','celine':'셀린느','loewe':'로에베',
-    'fendi':'펜디','valentino':'발렌티노','givenchy':'지방시',
-    'burberry':'버버리','moncler':'몽클레어','thombrowne':'톰브라운',
-    'miumiu':'미우미우','maisonmargiela':'메종마르지엘라',
-    'goyard':'고야드','delvaux':'델보','cartier':'까르띠에',
-    'rolex':'롤렉스','omega':'오메가','tagheuer':'태그호이어',
-    'patekphilippe':'파텍필립','audemarspiguet':'오데마피게',
-    'iwc':'아이더블유씨','breitling':'브라이틀링',
-    'bulgari':'불가리','bvlgari':'불가리','tiffany':'티파니',
-    'vancleefarpe':'반클리프','chaumet':'쇼메','fred':'프레드',
-    '반클리프앤아펠':'반클리프아펠','반클리프 앤 아펠':'반클리프아펠',
-    'van cleef & arpels':'반클리프아펠','van cleef arpels':'반클리프아펠',
-    'ferragamo':'페라가모','mulberry':'멀버리','coach':'코치',
-    'hamilton':'해밀턴','tissot':'티쏘','longines':'론진',
-    'vancleefarpels':'반클리프아펠',
-  };
+    const BRAND_MAP = {
+      'gucci':'구찌','louisvuitton':'루이비통','hermes':'에르메스','chanel':'샤넬',
+      'dior':'디올','prada':'프라다','balenciaga':'발렌시아가','saintlaurent':'생로랑',
+      'ysl':'생로랑','bottegaveneta':'보테가베네타','celine':'셀린느','loewe':'로에베',
+      'fendi':'펜디','valentino':'발렌티노','givenchy':'지방시','burberry':'버버리',
+      'moncler':'몽클레어','thombrowne':'톰브라운','miumiu':'미우미우',
+      'maisonmargiela':'메종마르지엘라','goyard':'고야드','delvaux':'델보',
+      'cartier':'까르띠에','rolex':'롤렉스','omega':'오메가','tagheuer':'태그호이어',
+      'patekphilippe':'파텍필립','audemarspiguet':'오데마피게','iwc':'아이더블유씨',
+      'breitling':'브라이틀링','bulgari':'불가리','bvlgari':'불가리','tiffany':'티파니',
+      'vancleefarpe':'반클리프','chaumet':'쇼메','fred':'프레드',
+      '반클리프앤아펠':'반클리프아펠','반클리프 앤 아펠':'반클리프아펠',
+      'van cleef & arpels':'반클리프아펠','van cleef arpels':'반클리프아펠',
+      'ferragamo':'페라가모','mulberry':'멀버리','coach':'코치',
+      'hamilton':'해밀턴','tissot':'티쏘','longines':'론진',
+      'vancleefarpels':'반클리프아펠',
+    };
 
-  function normBrand(b) {
-    return b.toLowerCase().replace(/[\s\-&·]/g, '');
-  }
-
-  function brandMatches(aiBrand, dbBrand) {
-    if (!aiBrand || !dbBrand) return false;
-    const ai = normBrand(aiBrand);
-    const db = normBrand(dbBrand);
-    if (db.includes(ai) || ai.includes(db)) return true;
-    const aiEn = BRAND_MAP[ai] ? normBrand(BRAND_MAP[ai]) : ai;
-    const dbEn = BRAND_MAP[db] ? normBrand(BRAND_MAP[db]) : db;
-    if (aiEn && dbEn && (aiEn.includes(dbEn) || dbEn.includes(aiEn))) return true;
-    const aiFromDb = Object.entries(BRAND_MAP).find(([k,v]) => normBrand(v) === db)?.[0];
-    if (aiFromDb && (ai.includes(aiFromDb) || aiFromDb.includes(ai))) return true;
-    return false;
-  }
+    function normBrand(b) { return b.toLowerCase().replace(/[\s\-&·]/g, ''); }
+    function brandMatches(aiBrand, dbBrand) {
+      if (!aiBrand || !dbBrand) return false;
+      const ai = normBrand(aiBrand), db = normBrand(dbBrand);
+      if (db.includes(ai) || ai.includes(db)) return true;
+      const aiEn = BRAND_MAP[ai] ? normBrand(BRAND_MAP[ai]) : ai;
+      const dbEn = BRAND_MAP[db] ? normBrand(BRAND_MAP[db]) : db;
+      if (aiEn && dbEn && (aiEn.includes(dbEn) || dbEn.includes(aiEn))) return true;
+      const aiFromDb = Object.entries(BRAND_MAP).find(([k,v]) => normBrand(v) === db)?.[0];
+      if (aiFromDb && (ai.includes(aiFromDb) || aiFromDb.includes(ai))) return true;
+      return false;
+    }
 
     let dbMatches = [];
     try {
@@ -353,25 +368,17 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const aiModel   = (analysis.model_name || '').toLowerCase().trim();
         const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
         const aiSku     = (analysis.sku || '').toLowerCase().trim();
-
         const candidates = [];
         for (const item of dbData) {
           const dbBrand   = (item.brand || '').toLowerCase().trim();
           const dbModel   = (item.model_name || '').toLowerCase().trim();
           const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
           const dbSku     = (item.sku_code || '').toLowerCase().trim();
-
           if (!aiBrand || !dbBrand) continue;
           const isUnknownBrand = ['unknown','기타','알수없음','unidentified'].includes(aiBrand.toLowerCase());
           if (!isUnknownBrand && !brandMatches(aiBrand, dbBrand)) continue;
-
-          if (aiSku && dbSku && aiSku === dbSku) {
-            candidates.push({ item, score: 200 });
-            continue;
-          }
-
+          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({ item, score: 200 }); continue; }
           let score = 0;
-
           if (aiModel && dbModel) {
             if (aiModel === dbModel) score = 100;
             else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
@@ -386,35 +393,24 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
               }
             }
           }
-
           if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) {
-              score = Math.max(score, 95);
-            } else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) {
-              score = Math.max(score, 70);
-            } else {
+            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
+            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
+            else {
               const koToks = aiModelKo.split(/\s+/).filter(w => w.length >= 2);
               if (koToks.length > 0) {
                 const hits = koToks.filter(t => dbModelKo.includes(t)).length;
-                if (hits > 0) {
-                  score = Math.max(score, Math.round(60 + (hits / koToks.length) * 30));
-                }
+                if (hits > 0) score = Math.max(score, Math.round(60 + (hits / koToks.length) * 30));
               }
             }
           }
-
           if (score >= 60) candidates.push({ item, score });
         }
-
         if (candidates.length > 0) {
           candidates.sort((a, b) => b.score - a.score);
           const maxScore = candidates[0].score;
           const topCandidates = candidates.filter(c => c.score >= maxScore - 10);
-          topCandidates.sort((a, b) => {
-            const aN = a.item.notes ? 1 : 0;
-            const bN = b.item.notes ? 1 : 0;
-            return bN - aN;
-          });
+          topCandidates.sort((a, b) => (b.item.notes ? 1 : 0) - (a.item.notes ? 1 : 0));
           dbMatches = topCandidates.slice(0, 5).map(c => c.item);
         }
       }
@@ -433,7 +429,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
         const j = await s.json();
         visualMatches = j.visual_matches || [];
       }
-    } catch (e) { console.warn('Lens skip:', e.message, 'imageUrl:', imageUrl?.slice(0,80)); }
+    } catch (e) { console.warn('Lens skip:', e.message); }
 
     dbMatches = dbMatches.map(m => ({
       ...m,
