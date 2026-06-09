@@ -523,15 +523,38 @@ ${searchContext}
   if (action === 'gemini_proxy') {
     try {
       const { apiKey, model, body } = req.body;
-      if (!apiKey || !body) return res.status(400).json({ success: false, error: '파라미터 없음' });
+      if (!body) return res.status(400).json({ success: false, error: '파라미터 없음' });
+
+      // AQ. 키(OAuth)면 Claude로 우회
+      const isOAuth = !apiKey || apiKey.startsWith('AQ.') || apiKey.startsWith('ya29.');
+      if (isOAuth) {
+        const parts = (body.contents||[]).flatMap(c => c.parts||[]);
+        const prompt = parts.map(p => p.text||'').join('\n');
+        const hasSearch = (body.tools||[]).some(t => t.google_search !== undefined);
+        const serpContext = hasSearch && SERP_KEY ? await (async () => {
+          try {
+            const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(prompt.slice(0,200)) + '&api_key=' + SERP_KEY + '&num=5', { signal: AbortSignal.timeout(8000) });
+            if (!sr.ok) return '';
+            const sd = await sr.json();
+            return (sd.organic_results||[]).slice(0,4).map(r => '[' + r.title + '] ' + (r.snippet||'')).join('\n');
+          } catch(e) { return ''; }
+        })() : '';
+        const finalPrompt = prompt + (serpContext ? '\n\n[검색결과]\n' + serpContext : '');
+        const cr = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: finalPrompt }] })
+        });
+        const cd = await cr.json();
+        const text = (cd.content||[])[0]?.text || '';
+        return res.status(200).json({ success: true, data: { candidates: [{ content: { parts: [{ text }] } }] } });
+      }
+
+      // 정상 AIzaSy 키면 Gemini 직접 호출
       const targetModel = model || 'gemini-2.5-flash';
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: JSON.stringify(body)
-        }
+        'https://generativelanguage.googleapis.com/v1beta/models/' + targetModel + ':generateContent',
+        { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) }
       );
       const data = await geminiRes.json();
       return res.status(200).json({ success: true, data });
