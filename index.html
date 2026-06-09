@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780439900');
+console.error('APP VERSION: 1780440000');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -6459,33 +6459,25 @@ function saveSerpApiKeyInline(){
 // ── Gemini API 공통 fetch (429 시 2.0-flash로 자동 fallback) ──
 async function _geminiGenerate(apiKey, body){
   var models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
-  // AQ. 키는 x-goog-api-key 헤더 방식 사용
-  var isOAuthStyle = apiKey.startsWith('AQ.');
+  var token = localStorage.getItem('lca_token')||'';
   for(var mi=0; mi<models.length; mi++){
     var model = models[mi];
-    var url, fetchOpts;
-    if(isOAuthStyle){
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent';
-      fetchOpts = {
-        method:'POST',
-        headers:{'Content-Type':'application/json', 'x-goog-api-key': apiKey},
-        body: JSON.stringify(body)
-      };
-    } else {
-      url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey;
-      fetchOpts = {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      };
-    }
     try{
-      var r = await fetch(url, fetchOpts);
-      if(r.status === 429){
-        if(mi < models.length-1){ console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도'); continue; }
-        throw new Error('API 사용량 초과 (429). 잠시 후 다시 시도해주세요.');
+      var r = await fetch('/api/inspect', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'x-access-token': token},
+        body: JSON.stringify({action: 'gemini_proxy', apiKey: apiKey, model: model, body: body})
+      });
+      var j = await r.json();
+      if(!j.success){
+        var errMsg = (j.data?.error?.message||j.error||'');
+        if((j.data?.error?.code===429 || errMsg.includes('429') || errMsg.includes('quota')) && mi < models.length-1){
+          console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도');
+          continue;
+        }
+        throw new Error(errMsg || '서버 오류');
       }
-      return await r.json();
+      return j.data;
     }catch(e){ if(mi === models.length-1) throw e; }
   }
 }
@@ -6617,8 +6609,8 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     + '"notes": "검수 참고 정보"\n'
     + '}';
 
-  function _geminiHeaders(key){ return key.startsWith('AQ.') ? {'Content-Type':'application/json','x-goog-api-key':key} : {'Content-Type':'application/json'}; }
-  function _geminiUrl(model, key){ return key.startsWith('AQ.') ? 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent' : 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+key; }
+  function _geminiHeaders(key){ return {'Content-Type':'application/json'}; }
+  function _geminiUrl(model, key){ return '/api/inspect'; }
   function fetchWithTimeout(url, opts, ms){
     var ctrl = new AbortController();
     var tid = setTimeout(function(){ ctrl.abort(); }, ms);
@@ -6641,29 +6633,30 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
   // 1단계 시도 — 그라운딩 없이 빠르게
   for(var i=0; i<fastModels.length; i++){
     var mc = fastModels[i];
-    var url = _geminiUrl(mc.model, apiKey);
     try{
       console.log('[AI AutoFill] 빠른 시도 (학습데이터):', mc.model);
-      var res = await fetchWithTimeout(url, {
+      var _token = localStorage.getItem('lca_token')||'';
+      var res = await fetchWithTimeout('/api/inspect', {
         method: 'POST',
-        headers: _geminiHeaders(apiKey),
+        headers: {'Content-Type':'application/json','x-access-token':_token},
         body: JSON.stringify({
-          system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
-          contents: [{parts: [{text: prompt}]}],
-          generationConfig: {temperature: 0.0, maxOutputTokens: 2000, response_mime_type: 'application/json'}
+          action: 'gemini_proxy', apiKey: apiKey, model: mc.model,
+          body: {
+            system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
+            contents: [{parts: [{text: prompt}]}],
+            generationConfig: {temperature: 0.0, maxOutputTokens: 2000, response_mime_type: 'application/json'}
+          }
         })
       }, mc.timeout);
 
       if(!res.ok){
-        var et = await res.text();
         lastErr = mc.model + ': HTTP ' + res.status;
-        if(res.status === 429){
-          await new Promise(function(r){ setTimeout(r, 2000); });
-        }
         continue;
       }
 
-      var data = await res.json();
+      var _proxyJ = await res.json();
+      if(!_proxyJ.success){ lastErr = mc.model + ': ' + (_proxyJ.error||'프록시 오류'); if((_proxyJ.data?.error?.code===429)) await new Promise(function(r){ setTimeout(r, 2000); }); continue; }
+      var data = _proxyJ.data;
       var rawText = ((data.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
       if(!rawText){ lastErr = mc.model + ': 빈 응답'; continue; }
 
@@ -6720,23 +6713,28 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
 
   for(var j=0; j<searchModels.length; j++){
     var mc2 = searchModels[j];
-    var url2 = _geminiUrl(mc2.model, apiKey);
     try{
       console.log('[AI AutoFill] 검색 시도:', mc2.model);
-      var res2 = await fetchWithTimeout(url2, {
+      var _token2 = localStorage.getItem('lca_token')||'';
+      var res2 = await fetchWithTimeout('/api/inspect', {
         method: 'POST',
-        headers: _geminiHeaders(apiKey),
+        headers: {'Content-Type':'application/json','x-access-token':_token2},
         body: JSON.stringify({
-          system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
-          contents: [{parts: [{text: prompt}]}],
-          tools: [{google_search: {}}],
-          generationConfig: {temperature: 0.0, maxOutputTokens: 2000}
+          action: 'gemini_proxy', apiKey: apiKey, model: mc2.model,
+          body: {
+            system_instruction: {parts: [{text: 'You are a luxury goods expert. Always respond with valid JSON only. No explanations, no markdown, no extra text.'}]},
+            contents: [{parts: [{text: prompt}]}],
+            tools: [{google_search: {}}],
+            generationConfig: {temperature: 0.0, maxOutputTokens: 2000}
+          }
         })
       }, mc2.timeout);
 
       if(!res2.ok){ lastErr = mc2.model + ': HTTP ' + res2.status; continue; }
 
-      var data2 = await res2.json();
+      var _proxyJ2 = await res2.json();
+      if(!_proxyJ2.success){ lastErr = mc2.model + ': ' + (_proxyJ2.error||'프록시 오류'); continue; }
+      var data2 = _proxyJ2.data;
       var raw2 = ((data2.candidates||[])[0]?.content?.parts||[]).map(function(p){ return p.text||''; }).join('');
       if(!raw2){ lastErr = mc2.model + ': 빈 응답'; continue; }
 
