@@ -1027,7 +1027,7 @@ sessionStorage.removeItem(_TOKEN_KEY);
 showScreen('login');
 
 window._appVer='1779855900';
-console.error('APP VERSION: 1780439000');
+console.error('APP VERSION: 1780439300');
 
 var ACC_MAP = window.ACC_MAP = {
   '가방': [
@@ -5482,10 +5482,7 @@ async function runSpecGoogleSearch(){
   try{
     var apiKey = _getGeminiKey();
     if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 구글 AI 검색으로 스펙 조회'; btn.disabled=false; return; }
-    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
+    var data = await _geminiGenerate(apiKey, {
         contents:[{parts:[{text:
           keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘 (불필요한 설명 없이):\n'
           +'• 실측 사이즈 (가로/세로/두께 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n'
@@ -5493,9 +5490,7 @@ async function runSpecGoogleSearch(){
         }]}],
         tools:[{google_search:{}}],
         generationConfig:{temperature:0.1, maxOutputTokens:1500}
-      })
-    });
-    var data = await res.json();
+      });
     var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
     raw.value = text || '검색 결과를 찾지 못했어요.';
   }catch(e){
@@ -6315,20 +6310,17 @@ async function runSkuListGoogleSearch(){
     var apiKey = _getGeminiKey();
     if(!apiKey){ raw.value = 'Gemini API 키가 없어요.'; btn.textContent='🔍 모델 정보 자동 조회'; btn.disabled=false; return; }
     var keyword = q + catHint + ' 공식 사이즈 스타일번호 소재 공식URL 스펙';
-    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
+    var data = await _geminiGenerate(apiKey, {
         contents:[{parts:[{text:
           keyword+'\n\n위 제품의 공식 스펙을 검색해서 아래 항목만 간결하게 정리해줘:\n'
           +'• 실측 사이즈 (가로/세로/너비 또는 체인길이, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항 (있을 때만)\n\n없는 항목은 "없음"으로. 간결하게.'
         }]}],
         tools:[{google_search:{}}],
         generationConfig:{temperature:0.1, maxOutputTokens:1500}
-      })
-    });
-    var data = await res.json();
+      });
     var text = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+    if(!text && data.error) text = '오류: '+data.error.message;
+    if(!text && data.candidates?.length === 0) text = 'Gemini 응답이 비어있어요. 잠시 후 다시 시도해주세요.';
     raw.value = text || '검색 결과를 찾지 못했어요.';
   }catch(e){
     raw.value = '검색 실패: '+e.message;
@@ -6435,16 +6427,11 @@ async function testImageSearch(){
   res.textContent='검색 중...';
   try{
     var k = _getGeminiKey();
-    var r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+k, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
+    var d = await _geminiGenerate(k, {
         contents:[{parts:[{text:'샤넬 클래식 미듐 가방 이미지 farfetch mytheresa 쇼핑몰에서 이미지 URL 찾아줘. 이미지 URL만 답해줘.'}]}],
         tools:[{google_search:{}}],
         generationConfig:{maxOutputTokens:500}
-      })
-    });
-    var d = await r.json();
+      });
     var allParts = (d.candidates||[])[0]?.content?.parts||[];
     var out = '<b>파트 수: '+allParts.length+'</b><br>';
     allParts.forEach(function(p,i){
@@ -6467,6 +6454,32 @@ function saveSerpApiKeyInline(){
   var row = document.getElementById('serpapi-key-row');
   if(row) row.style.display='none';
   toast('✅ SerpAPI 키 저장됐어요! 이제 대표사진 자동 검색이 가능해요.');
+}
+
+// ── Gemini API 공통 fetch (429 시 2.0-flash로 자동 fallback) ──
+async function _geminiGenerate(apiKey, body){
+  var models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  for(var mi=0; mi<models.length; mi++){
+    var model = models[mi];
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey;
+    try{
+      var r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+      if(r.status === 429){
+        if(mi < models.length-1){
+          console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도');
+          continue;
+        } else {
+          // 모든 모델 실패 - 10초 대기 후 첫 모델 재시도
+          console.warn('[Gemini] 모든 모델 429, 10초 대기 후 재시도...');
+          toast('⏳ API 사용량 초과 — 10초 후 자동 재시도...');
+          await new Promise(function(resolve){ setTimeout(resolve, 10000); });
+          mi = -1; // 처음부터 다시
+          continue;
+        }
+      }
+      return await r.json();
+    }catch(e){ if(mi === models.length-1) throw e; }
+  }
 }
 
 var _GEMINI_KEY_STORAGE = 'bungae_gemini_key_v2';
@@ -6949,20 +6962,14 @@ async function _fetchImageBySearch(query){
   try{
     const apiKey = _getGeminiKey();
     if(!apiKey) return;
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey;
-    const res = await fetch(url,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
+    const data = await _geminiGenerate(apiKey, {
         contents:[{parts:[{text:
           query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
         }]}],
         tools:[{google_search:{}}],
         generationConfig:{temperature:0.0, maxOutputTokens:200}
-      })
-    });
-    if(!res.ok) return;
-    const data = await res.json();
+      });
+    if(!data) return;
     const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
     const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
     if(m && m[1] && m[1].startsWith('http')){
@@ -6976,20 +6983,14 @@ async function _fetchImageBySearchTo(query, target){
   try{
     const apiKey = _getGeminiKey();
     if(!apiKey) return;
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey;
-    const res = await fetch(url,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
+    const data = await _geminiGenerate(apiKey, {
         contents:[{parts:[{text:
           query+' 공식 제품 대표 이미지 URL을 하나만 반환해. 반드시 실제로 접근 가능한 이미지 URL이어야 해. JSON으로만 응답: {"image_url":"URL"}'
         }]}],
         tools:[{google_search:{}}],
         generationConfig:{temperature:0.0, maxOutputTokens:200}
-      })
-    });
-    if(!res.ok) return;
-    const data = await res.json();
+      });
+    if(!data) return;
     const raw = ((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
     const m = raw.match(/"image_url"\s*:\s*"([^"]+)"/);
     if(m && m[1] && m[1].startsWith('http')){
