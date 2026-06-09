@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   const SERP_KEY     = process.env.SERP_KEY;
   const CLAUDE_KEY   = process.env.CLAUDE_KEY;
-  const GEMINI_KEY   = process.env.GEMINI_API_KEY;  // ✅ 추가
+  const GEMINI_KEY   = process.env.GEMINI_API_KEY;
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -30,7 +30,6 @@ export default async function handler(req, res) {
     }
   });
 
-  // ── Supabase Storage 업로드 ─────────────────────────────────
   const uploadImage = async (b64) => {
     const buffer = Buffer.from(b64, 'base64');
     const fileName = `sku-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
@@ -60,12 +59,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: password === ACCESS_PW });
   }
 
-  // ✅ Gemini API 키 상태 확인 (프론트에서 키 없이 동작하도록)
   if (action === 'check_gemini_key') {
     return res.status(200).json({ hasKey: !!GEMINI_KEY });
   }
 
-  // ✅ Gemini AI 스펙 검색 (서버에서 키 사용 - APIKey 또는 OAuth2 자동 감지)
   if (action === 'gemini_search') {
     try {
       if (!GEMINI_KEY) {
@@ -78,15 +75,11 @@ export default async function handler(req, res) {
 
       let geminiRes;
       if (isOAuth) {
-        // OAuth2 토큰 방식
         geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${GEMINI_KEY}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GEMINI_KEY}` },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
@@ -94,7 +87,6 @@ export default async function handler(req, res) {
           }
         );
       } else {
-        // API Key 방식
         geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
           {
@@ -110,7 +102,6 @@ export default async function handler(req, res) {
 
       if (!geminiRes.ok) {
         const errText = await geminiRes.text();
-        // OAuth 토큰 만료 시 Claude로 대체
         if (geminiRes.status === 401 || geminiRes.status === 403) {
           const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
@@ -130,6 +121,127 @@ export default async function handler(req, res) {
       const geminiData = await geminiRes.json();
       const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
       return res.status(200).json({ success: true, text });
+    } catch (e) {
+      return res.status(200).json({ success: false, error: e.message });
+    }
+  }
+
+  // ✅ 새로 추가: SerpAPI + Claude 기반 모델 스펙 자동 조회
+  if (action === 'serp_autofill') {
+    try {
+      const { brand, modelKo, modelEn, cat } = req.body;
+      const modelName = modelKo || modelEn || '';
+      if (!modelName) return res.status(400).json({ success: false, error: '모델명 없음' });
+
+      // 1단계: SerpAPI로 웹 검색
+      let searchContext = '';
+      try {
+        const queries = [
+          `${brand} ${modelName} specifications size dimensions`,
+          `${brand} ${modelName} 사이즈 스펙 공식`,
+        ];
+        const serpResults = [];
+        for (const q of queries) {
+          const encoded = encodeURIComponent(q);
+          const serpRes = await fetch(
+            `https://serpapi.com/search.json?q=${encoded}&api_key=${SERP_KEY}&num=5&hl=ko`,
+            { signal: AbortSignal.timeout(10000) }
+          );
+          if (!serpRes.ok) continue;
+          const serpData = await serpRes.json();
+          const results = serpData.organic_results || [];
+          for (const r of results.slice(0, 3)) {
+            if (r.title && r.snippet) {
+              serpResults.push(`[${r.title}] ${r.snippet}`);
+            }
+          }
+        }
+        if (serpResults.length > 0) {
+          searchContext = '\n\n[웹 검색 결과]\n' + serpResults.join('\n');
+        }
+      } catch (e) {
+        console.warn('[serp_autofill] SerpAPI 오류:', e.message);
+      }
+
+      // 2단계: Claude로 스펙 추출
+      const sizeRules = {
+        '가방': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
+        '지갑': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
+        '주얼리': 'size_d=체인길이(cm) 필수, size_w=펜던트가로(mm), size_unit=mm (반지: size_label=호수)',
+        '시계': 'size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm',
+        '의류': 'size_w=사이즈표기(S,M,L,95 등)',
+        '신발': 'size_w=사이즈표기(270 등)',
+        '벨트': 'size_w=폭(cm), size_unit=cm',
+      };
+      const sizeRule = sizeRules[cat] || 'size_w=사이즈';
+
+      const prompt = `당신은 명품 감정 전문가입니다. 아래 상품의 공식 스펙을 JSON으로만 답하세요.
+절대로 JSON 외 다른 텍스트를 출력하지 마세요. 마크다운 금지.
+
+브랜드: ${brand}
+모델명: ${modelName}
+카테고리: ${cat}
+
+[사이즈 입력 규칙]
+${sizeRule}
+값을 모를 경우 빈문자열('')로 입력. 절대로 0 입력 금지.
+${searchContext}
+
+출력 형식 (이 JSON 구조를 그대로 사용):
+{
+"style_number": "스타일번호",
+"model_ko": "한글 모델명",
+"category": "카테고리 (가방/지갑/주얼리/시계/의류/신발/벨트 중 하나)",
+"size_w": "숫자만",
+"size_h": "숫자만",
+"size_d": "숫자만",
+"size_unit": "cm 또는 mm",
+"size_label": "사이즈 명칭 (예: OS, Small, MM)",
+"material": "소재",
+"made_in": "제조국",
+"official_url": "공식 제품 페이지 URL (없으면 빈 문자열)",
+"image_url": "공식 대표 이미지 URL (없으면 빈 문자열)",
+"notes": "검수 참고 정보"
+}`;
+
+      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': CLAUDE_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const claudeData = await claudeRes.json();
+      if (claudeData.error) throw new Error('Claude 오류: ' + claudeData.error.message);
+
+      const rawText = claudeData.content?.[0]?.text?.trim() || '';
+      let parsed = null;
+      try {
+        const jm = rawText.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/) || rawText.match(/({[\s\S]*})/);
+        const jStr = (jm && jm[1]) || rawText;
+        const jStrFixed = jStr.trim().endsWith('}') ? jStr : jStr.replace(/,\s*$/, '') + '}';
+        parsed = JSON.parse(jStrFixed);
+      } catch (e) {
+        const partials = {};
+        for (const m of rawText.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g)) partials[m[1]] = m[2];
+        for (const m of rawText.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g)) partials[m[1]] = m[2];
+        if (Object.keys(partials).length > 0) parsed = partials;
+        else throw new Error('JSON 파싱 실패');
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: parsed,
+        source: searchContext ? 'serp+claude' : 'claude'
+      });
+
     } catch (e) {
       return res.status(200).json({ success: false, error: e.message });
     }
@@ -305,15 +417,11 @@ export default async function handler(req, res) {
       const { apiKey, model, body } = req.body;
       if (!apiKey || !body) return res.status(400).json({ success: false, error: '파라미터 없음' });
       const targetModel = model || 'gemini-2.5-flash';
-      // 서버에서 호출 — AQ. 키도 x-goog-api-key 헤더로 정상 작동
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: JSON.stringify(body)
         }
       );
@@ -342,7 +450,7 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── 메인 검수 ─────────────────────────────────────────────────
+  // ── 메인 검수 ──────────────────────────────────────────────
   if (!imageBase64) return res.status(400).json({ error: '이미지 없음' });
 
   try {
