@@ -358,7 +358,7 @@ input[type=file]{display:none}
     <div id="gemini-key-row-result" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:10px 12px;margin-bottom:8px">
       <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 검색을 사용할 수 있어요</div>
       <div style="display:flex;gap:6px">
-        <input id="gemini-key-inline-result" type="text" placeholder="AIza..." autocomplete="off"
+        <input id="gemini-key-inline-result" type="text" placeholder="API Key..." autocomplete="off"
           style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
         <button onclick="saveGeminiKeyResult()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
@@ -533,7 +533,7 @@ input[type=file]{display:none}
     <div id="gemini-key-row" style="display:none;background:#111;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:10px 12px;margin-bottom:10px">
       <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 기능을 사용할 수 있어요</div>
       <div style="display:flex;gap:6px">
-        <input id="gemini-key-inline" type="text" placeholder="AIza..." autocomplete="off"
+        <input id="gemini-key-inline" type="text" placeholder="API Key..." autocomplete="off"
           style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;min-width:0">
         <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
@@ -6469,12 +6469,8 @@ async function _geminiGenerate(apiKey, body){
           console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도');
           continue;
         }
-        // 마지막 모델도 429 — 60초 대기 후 1회 재시도
-        toast('⏳ API 사용량 초과 — 60초 후 자동 재시도...');
-        await new Promise(function(resolve){ setTimeout(resolve, 60000); });
-        var r2 = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+apiKey,
-          {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-        return await r2.json();
+        // 모든 모델 429 — 에러 반환
+        throw new Error('API 사용량 초과 (429). 잠시 후 다시 시도해주세요.');
       }
       return await r.json();
     }catch(e){ if(mi === models.length-1) throw e; }
@@ -6487,11 +6483,9 @@ function saveGeminiKeyInline(){
   var inp = document.getElementById('gemini-key-inline');
   var key = (inp.value||'').trim();
   if(!key){ toast('⚠ API 키를 입력해주세요'); return; }
-  if(!key.startsWith('AIza')){ toast('⚠ AIza...로 시작하는 키를 입력해주세요'); return; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   document.getElementById('gemini-key-row').style.display='none';
-  // 결과화면 입력창도 숨기기
   var r2=document.getElementById('gemini-key-row-result');
   if(r2) r2.style.display='none';
   toast('✅ Gemini API 키 저장됐어요!');
@@ -6501,7 +6495,6 @@ function saveGeminiKeyResult(){
   var inp = document.getElementById('gemini-key-inline-result');
   var key = (inp.value||'').trim();
   if(!key){ toast('⚠ API 키를 입력해주세요'); return; }
-  if(!key.startsWith('AIza')){ toast('⚠ AIza...로 시작하는 키를 입력해주세요'); return; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   document.getElementById('gemini-key-row-result').style.display='none';
@@ -6530,7 +6523,7 @@ function _getGeminiKey(){
 
 function _promptGeminiKey(){
   var key = prompt('Gemini API 키를 입력해주세요 (AIza...)\n\naistudio.google.com 에서 무료 발급 가능합니다.');
-  if(!key || !key.startsWith('AIza')){ toast('⚠ 올바른 Gemini API 키가 아닙니다'); return ''; }
+  if(!key || key.length < 10){ toast('⚠ API 키가 너무 짧아요'); return ''; }
   sessionStorage.setItem(_GEMINI_KEY_STORAGE, key);
   localStorage.setItem(_GEMINI_KEY_STORAGE, key);
   toast('✅ Gemini 키 저장됨');
