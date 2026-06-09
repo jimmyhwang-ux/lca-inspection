@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ hasKey: !!GEMINI_KEY });
   }
 
-  // ✅ Gemini AI 스펙 검색 (서버에서 키 사용)
+  // ✅ Gemini AI 스펙 검색 (서버에서 키 사용 - APIKey 또는 OAuth2 자동 감지)
   if (action === 'gemini_search') {
     try {
       if (!GEMINI_KEY) {
@@ -74,20 +74,56 @@ export default async function handler(req, res) {
       const { prompt } = req.body;
       if (!prompt) return res.status(400).json({ success: false, error: 'prompt 없음' });
 
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
-          })
-        }
-      );
+      const isOAuth = GEMINI_KEY.startsWith('AQ.') || GEMINI_KEY.startsWith('ya29.');
+
+      let geminiRes;
+      if (isOAuth) {
+        // OAuth2 토큰 방식
+        geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${GEMINI_KEY}`
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+            })
+          }
+        );
+      } else {
+        // API Key 방식
+        geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+            })
+          }
+        );
+      }
 
       if (!geminiRes.ok) {
         const errText = await geminiRes.text();
+        // OAuth 토큰 만료 시 Claude로 대체
+        if (geminiRes.status === 401 || geminiRes.status === 403) {
+          const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+          const cj = await claudeRes.json();
+          const text = cj.content?.[0]?.text || '';
+          return res.status(200).json({ success: true, text, source: 'claude' });
+        }
         return res.status(200).json({ success: false, error: 'Gemini 오류: ' + errText.slice(0, 200) });
       }
 
