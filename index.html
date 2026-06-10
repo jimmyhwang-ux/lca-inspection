@@ -5572,10 +5572,12 @@ async function runSpecGoogleSearch(){
   var brand   = (document.getElementById('r-brand')||{}).textContent||'';
   var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
   var modelEn = (document.getElementById('r-model')||{}).textContent||'';
-  var styleNo = ((document.getElementById('r-sku')||{}).textContent||'').replace('—','').trim();
   var cat     = (document.getElementById('r-cat-tag')?.textContent||'').replace(/[^\uAC00-\uD7A3]/g,'').trim()
                || (document.getElementById('sku-cat')?.value||'')
                || '가방';
+
+  var key = _getGeminiKey() || _promptGeminiKey();
+  if(!key) return;
 
   var btn  = document.getElementById('spec-google-btn');
   var resW = document.getElementById('spec-google-result');
@@ -5583,34 +5585,32 @@ async function runSpecGoogleSearch(){
   btn.textContent = '🔍 검색 중...';
   btn.disabled = true;
   resW.style.display = 'block';
-  raw.value = '공식 페이지 크롤링 중...';
+  raw.value = 'Gemini AI 스펙 검색 중...';
 
   try{
-    var _token = localStorage.getItem('lca_token')||'';
-    var res = await fetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({
-        action:'serp_deep_search',
-        brand: brand,
-        modelKo: modelKo,
-        modelEn: modelEn,
-        cat: cat,
-        styleNo: styleNo||''
-      })
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    var j = await res.json();
-    if(!j.success) throw new Error(j.error||'검색 실패');
-    raw.value = j.text || '검색 결과를 찾지 못했어요.';
+    var result = await _callGeminiAutoFill(key, brand, modelKo, modelEn, cat);
 
-    // JSON data가 있으면 _applySpecToForm으로 직접 주입 (파싱 오류 없음)
-    if(j.data && typeof j.data === 'object'){
-      var applyCat = cat || (document.getElementById('sku-cat')?.value||'가방');
-      _applySpecToForm(j.data, applyCat);
+    var lines = [];
+    if(result.size_w||result.size_h||result.size_d){
+      var u=result.size_unit||'cm';
+      var sp=[];
+      if(result.size_w) sp.push('가로 '+result.size_w+u);
+      if(result.size_h) sp.push('세로 '+result.size_h+u);
+      if(result.size_d) sp.push('너비 '+result.size_d+u);
+      lines.push('• 실측 사이즈: '+sp.join(' × '));
     }
+    if(result.material) lines.push('• 소재: '+result.material);
+    if(result.notes)    lines.push('• 특이사항: '+result.notes);
+    if(result.style_number) lines.push('• 스타일번호: '+result.style_number);
+    if(result.official_url) lines.push('• 공식 URL: '+result.official_url);
+    raw.value = lines.join('\n') || '검색 결과를 찾지 못했어요.';
+
+    var applyCat = cat || '가방';
+    _applySpecToForm(result, applyCat);
+    toast('✨ AI 스펙 검색 완료!');
   }catch(e){
     raw.value = '검색 실패: '+e.message;
+    toast('❌ '+e.message);
   }
   btn.textContent = '🔍 다시 검색';
   btn.disabled = false;
@@ -6504,16 +6504,14 @@ async function runSkuListGoogleSearch(){
   var selCat = catSel?.value||'전체';
   var cat = selCat!=='전체' ? selCat : '가방';
 
-  // 현재 신규 등록 폼의 값을 우선 사용 (검색어를 억지로 분리하지 않음)
   var brand   = (document.getElementById('sku-brand')?.value||'').trim();
   var modelKo = (document.getElementById('sku-model-ko')?.value||'').trim();
   var catForm = (document.getElementById('sku-cat')?.value||'').trim();
   if(catForm && catForm!=='전체') cat = catForm;
-  // 폼에 값이 없으면 검색어 전체를 모델명으로 사용
   if(!brand && !modelKo){ modelKo = q; }
-  var styleNo = '';
-  // 숫자/영문 조합만 있으면 스타일번호로 판단
-  if(/^[A-Za-z0-9]{6,}$/.test(q) && !brand){ styleNo = q; brand=''; modelKo=''; }
+
+  var key = _getGeminiKey() || _promptGeminiKey();
+  if(!key) return;
 
   var btn  = document.getElementById('sku-list-google-btn');
   var resW = document.getElementById('sku-list-google-result');
@@ -6521,29 +6519,36 @@ async function runSkuListGoogleSearch(){
   btn.textContent = '🔍 검색 중...';
   btn.disabled = true;
   resW.style.display = 'block';
-  raw.value = '공식 페이지 크롤링 중...';
+  raw.value = 'Gemini AI 스펙 검색 중...';
 
   try{
-    var _token = localStorage.getItem('lca_token')||'';
-    var res = await fetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'serp_deep_search', brand:brand, modelKo:modelKo, cat:cat, styleNo:styleNo})
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    var j = await res.json();
-    if(!j.success) throw new Error(j.error||'검색 실패');
-    raw.value = j.text || '검색 결과를 찾지 못했어요.';
+    var result = await _callGeminiAutoFill(key, brand, modelKo, '', cat);
 
-    // JSON data → 신규 등록 폼에 주입 (brand/model_ko는 이미 있으면 유지)
-    if(j.data && typeof j.data === 'object'){
-      var applyCat = cat || (document.getElementById('sku-cat')?.value||'가방');
-      _applySpecToForm(j.data, applyCat);
+    // 결과 원문 표시
+    var lines = [];
+    if(result.size_w||result.size_h||result.size_d){
+      var u=result.size_unit||'cm';
+      var sp=[];
+      if(result.size_w) sp.push('가로 '+result.size_w+u);
+      if(result.size_h) sp.push('세로 '+result.size_h+u);
+      if(result.size_d) sp.push('너비 '+result.size_d+u);
+      lines.push('• 실측 사이즈: '+sp.join(' × '));
     }
+    if(result.material) lines.push('• 소재: '+result.material);
+    if(result.notes)    lines.push('• 특이사항: '+result.notes);
+    if(result.style_number) lines.push('• 스타일번호: '+result.style_number);
+    if(result.official_url) lines.push('• 공식 URL: '+result.official_url);
+    raw.value = lines.join('\n') || '검색 결과를 찾지 못했어요.';
+
+    // 폼에 적용
+    var applyCat = cat || '가방';
+    _applySpecToForm(result, applyCat);
+    toast('✨ AI 스펙 검색 완료!');
   }catch(e){
     raw.value = '검색 실패: '+e.message;
+    toast('❌ '+e.message);
   }
-  btn.textContent = '🔍 다시 검색';
+  btn.textContent = '🔍 모델 정보 자동 조회';
   btn.disabled = false;
 }
 
