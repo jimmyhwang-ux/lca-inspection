@@ -6718,7 +6718,7 @@ function _applySpecToForm(data, cat){
     if(snEl && !snEl.value) snEl.value = data.size_label;
   }
 
-  // 실측 사이즈 — 단일 경로로 처리 (충돌 제거)
+  // 실측 사이즈 — editSkuSize/doSave 완전 우회, 직접 DOM 조립
   function _numOnly(v){ if(!v||v==='0'||v===0||v==='—') return ''; var m=String(v).match(/^([0-9.]+)/); return m?m[1]:''; }
   var w = _numOnly(data.size_w);
   var h = _numOnly(data.size_h);
@@ -6744,34 +6744,40 @@ function _applySpecToForm(data, cat){
     }
     var sizeStr = parts.join(' × ');
 
-    // 카테고리 먼저 세팅
-    var catEl2 = document.getElementById('sku-cat');
-    if(catEl2 && cat) catEl2.value = cat;
+    // 카테고리 세팅
+    var _catEl = document.getElementById('sku-cat');
+    if(_catEl && cat) _catEl.value = cat;
 
-    // hidden.value 세팅 (labelMap 파싱용 — 레이블+숫자 형식으로)
-    var hidEl = document.getElementById('sku-size-hidden');
-    if(!hidEl){
-      hidEl = document.createElement('input');
-      hidEl.type='hidden'; hidEl.id='sku-size-hidden';
-      document.getElementById('sku-size-wrap')?.parentNode?.appendChild(hidEl);
+    // hidden 세팅
+    var _hidEl = document.getElementById('sku-size-hidden');
+    if(!_hidEl){
+      _hidEl = document.createElement('input');
+      _hidEl.type = 'hidden'; _hidEl.id = 'sku-size-hidden';
+      var _sw = document.getElementById('sku-size-wrap');
+      if(_sw) _sw.parentNode.appendChild(_hidEl);
     }
-    hidEl.value = sizeStr;
+    _hidEl.value = sizeStr;
 
-    // editSkuSize 재렌더 (labelMap이 sizeStr 파싱해서 정확한 필드에 넣음)
-    var sizeWrap2 = document.getElementById('sku-size-wrap');
-    if(sizeWrap2) sizeWrap2.dataset.cat = '';
-    if(typeof editSkuSize === 'function') editSkuSize();
-
-    // 렌더 후 wrap을 텍스트로 확정 (doSave 간섭 차단)
-    setTimeout(function(){
-      var wrapFinal = document.getElementById('sku-size-wrap');
-      if(wrapFinal){
-        wrapFinal.dataset.cat = cat;
-        wrapFinal.innerHTML = '<span style="font-size:13px;font-weight:700;color:#fff">'+sizeStr+'</span>';
-      }
-      var hidFinal = document.getElementById('sku-size-hidden');
-      if(hidFinal) hidFinal.value = sizeStr;
-    }, 250);
+    // wrap을 직접 input으로 조립 (editSkuSize 호출 없음 → doSave 간섭 없음)
+    var _wrap = document.getElementById('sku-size-wrap');
+    if(_wrap){
+      var _cfg = (typeof SIZE_CONFIG !== 'undefined' && SIZE_CONFIG[cat]) || SIZE_CONFIG['가방'] || [];
+      var _valMap = {'가로':w,'세로':h,'너비':d,'체인':d,'직경':e,'폭':f,'두께':h};
+      // input 직접 생성
+      var _inputsHtml = '<span id="sz-sku-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">';
+      _cfg.forEach(function(fld, i){
+        var val = _valMap[fld.label] || '';
+        _inputsHtml += '<label style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:52px">'
+          + '<input type="number" id="ssku-'+fld.id+'" value="'+val+'" step="0.1" min="0"'
+          + ' style="width:52px;background:#111;border:1px solid '+(val?'#ff6b2b':'#333')+';border-radius:6px;padding:4px 6px;font-size:13px;font-weight:700;color:#fff;text-align:center"'
+          + ' onchange="saveSkuSize(typeof SIZE_CONFIG!=='undefined'&&SIZE_CONFIG[document.getElementById('sku-cat').value]||[])">'
+          + '<span style="font-size:10px;color:#666">'+fld.label+'('+fld.unit+')</span>'
+          + (i < _cfg.length-1 ? '</label><span style="color:#555;font-size:16px;padding-bottom:8px">×</span>' : '</label>');
+      });
+      _inputsHtml += '</span>';
+      _wrap.dataset.cat = cat;
+      _wrap.innerHTML = _inputsHtml;
+    }
   }
 
   // 특이사항 (소재·제조국·노트 합치기)
