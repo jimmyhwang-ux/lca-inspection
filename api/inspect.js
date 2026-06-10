@@ -196,20 +196,14 @@ ${context}
 출력 (이 JSON 구조 그대로):
 {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","notes":""}`;
 
-      const cr = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
-          })
-        }
-      );
+      const cr = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
+      });
       const cd = await cr.json();
-      if (cd.error) throw new Error(cd.error.message || 'Gemini 오류');
-      const rawText = cd.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      if (cd.error) throw new Error(cd.error.message);
+      const rawText = (cd.content || [])[0]?.text?.trim() || '';
 
       let parsed = null;
       try {
@@ -328,20 +322,14 @@ ${context}
 ${searchContext ? '[구글 검색결과]\n' + searchContext + '\n\n' : ''}출력 JSON (모르는 값은 빈 문자열):
 {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}`;
 
-      const cr = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
-          })
-        }
-      );
+      const cr = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+      });
       const cd = await cr.json();
-      if (cd.error) throw new Error(cd.error.message || 'Gemini 오류');
-      const rawText = cd.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      if (cd.error) throw new Error(cd.error.message);
+      const rawText = (cd.content||[])[0]?.text?.trim()||'';
       let parsed = null;
       try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim().match(/({[\s\S]*})/)?.[1] || rawText.replace(/```json|```/g,'').trim()); }
       catch(e) {
@@ -350,7 +338,7 @@ ${searchContext ? '[구글 검색결과]\n' + searchContext + '\n\n' : ''}출력
         if (Object.keys(p).length) parsed = p;
         else throw new Error('JSON 파싱 실패');
       }
-      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+gemini' : 'gemini' });
+      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+claude' : 'claude' });
     } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
   }
 
