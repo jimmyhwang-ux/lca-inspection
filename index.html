@@ -6768,7 +6768,13 @@ async function aiAutoFillSpec(){
   btn.disabled = false;
 }
 
+let _autoFillAbortCtrl = null;
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
+  // 이전 호출 취소
+  if(_autoFillAbortCtrl) _autoFillAbortCtrl.abort();
+  _autoFillAbortCtrl = new AbortController();
+  const signal = _autoFillAbortCtrl.signal;
+
   var statusEl = document.getElementById('ai-autofill-status');
   if(statusEl) statusEl.textContent = '공식 사이트에서 스펙 검색 중... (10~20초 소요)';
   var _token = localStorage.getItem('lca_token') || '';
@@ -6776,7 +6782,8 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     var res = await fetch('/api/inspect', {
       method: 'POST',
       headers: {'Content-Type':'application/json','x-access-token':_token},
-      body: JSON.stringify({action:'serp_autofill', brand:brand, modelKo:modelKo, modelEn:modelEn, cat:cat})
+      body: JSON.stringify({action:'serp_autofill', brand:brand, modelKo:modelKo, modelEn:modelEn, cat:cat}),
+      signal: signal
     });
     if(!res.ok) throw new Error('HTTP ' + res.status);
     var j = await res.json();
@@ -6785,6 +6792,7 @@ async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
     localStorage.setItem('_lastAutoFill', JSON.stringify(j.data));
     return j.data;
   } catch(e) {
+    if(e.name === 'AbortError') throw new Error('이전 검색 취소됨');
     console.warn('[AutoFill] 실패:', e.message);
     throw new Error(e.message || '모델 정보 조회 실패');
   }
