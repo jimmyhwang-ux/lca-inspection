@@ -5520,13 +5520,13 @@ function _parseSpecRawText(txt, cat){
     var sd=t.match(/(?:체인\s*길이|chain)[:\s→*,]*([0-9.]+)\s*(?:~[0-9.]+)?\s*(cm|mm)?/i);
     // 직경: "직경 N" / "diameter N"
     var se=t.match(/(?:직경|diameter|지름)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i);
-    // 폭: "폭 Nmm"
-    var sf=t.match(/(?:폭|width)[:\s→*,]*([0-9.]+)\s*(mm)?/i);
+    // 폭: "폭 Nmm" → size_f (SIZE_CONFIG 주얼리의 sz-f 필드)
+    var sf=t.match(/(?:폭)[:\s\u2192*,]*([0-9.]+)\s*(mm)?/i);
     if(sw){r.size_w=sw[1]; if(sw[2])r.size_unit=sw[2].toLowerCase();}
     if(sh) r.size_h=sh[1];
-    if(sd){r.size_d=sd[1]; } // 체인은 cm
+    if(sd){r.size_d=sd[1]; }
     if(se) r.size_e=se[1];
-    if(sf && !sw) r.size_f=sf[1];
+    if(sf){ r.size_f=sf[1]; r.size_unit='mm'; }
   } else if(cat==='시계'){
     r.size_unit='mm';
     var sw=t.match(/(?:케이스\s*(?:직경|지름|크기)|가로|width|diameter)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i)
@@ -5649,11 +5649,12 @@ async function applySpecGoogleResult(){
     var _cat = cat;
     var valMap={
       '가로': parsed.size_w, '세로': parsed.size_h,
-      '너비': parsed.size_d, '폭':   parsed.size_d||parsed.size_f,
+      '너비': parsed.size_d, '폭':   parsed.size_f||parsed.size_w,
       '체인': parsed.size_d, '직경': parsed.size_e,
-      '두께': parsed.size_h, '사이즈': parsed.size_w
+      '두께': parsed.size_h, '사이즈': parsed.size_w,
+      '펜던트': parsed.size_w
     };
-    var hasSize=parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_e;
+    var hasSize=parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_e||parsed.size_f;
     if(hasSize){
       if(!isUnreg){ var _sw=document.getElementById('sku-size-wrap'); if(_sw)_sw.dataset.cat=''; editSkuSize&&editSkuSize(); }
 
@@ -6635,15 +6636,17 @@ function _applySpecToForm(data, cat){
   var h = (data.size_h && data.size_h!=='0' && data.size_h!==0) ? data.size_h : '';
   var d = (data.size_d && data.size_d!=='0' && data.size_d!==0) ? data.size_d : '';
   var e = (data.size_e && data.size_e!=='0' && data.size_e!==0) ? data.size_e : '';
+  var f = (data.size_f && data.size_f!=='0' && data.size_f!==0) ? data.size_f : '';
   var unit = data.size_unit || 'cm';
   var isJewelry = (cat === '주얼리' || cat === '주얼리/액세서리');
-  if(w || h || d || e){
+  if(w || h || d || e || f){
     var parts = [];
     if(isJewelry){
-      if(w) parts.push('폭 ' + w + 'mm');
+      if(w) parts.push('가로 ' + w + 'mm');
       if(h) parts.push('세로 ' + h + 'mm');
       if(d) parts.push('체인 ' + d + 'cm');
       if(e) parts.push('직경 ' + e + 'cm');
+      if(f) parts.push('폭 ' + f + 'mm');
     } else {
       if(w) parts.push('가로 ' + w + (unit||'cm'));
       if(h) parts.push('세로 ' + h + (unit||'cm'));
