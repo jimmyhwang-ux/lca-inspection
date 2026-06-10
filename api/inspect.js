@@ -272,18 +272,22 @@ ${context}
       const modelName = modelKo || modelEn || '';
       if (!modelName) return res.status(400).json({ success: false, error: '모델명 없음' });
 
+      // 카테고리 정규화 (팔찌/반지/목걸이 등 → 주얼리)
+      const catNorm = ['팔찌','반지','목걸이','귀걸이','브로치','브레이슬릿'].some(k => (cat||'').includes(k)) ? '주얼리' : (cat || '가방');
+
       // 카테고리별 특화 검색 쿼리
       const catKw = {
-        '주얼리': ['폭 mm 스펙', 'width mm specifications'],
-        '시계':   ['직경 mm 스펙', 'diameter mm specifications'],
-        '가방':   ['사이즈 cm 스펙', 'dimensions cm specifications'],
+        '주얼리': ['폭 mm 스펙 공식', 'width mm specifications official'],
+        '시계':   ['직경 mm 두께 스펙', 'diameter mm thickness specifications'],
+        '가방':   ['사이즈 cm 공식 스펙', 'dimensions cm official specifications'],
         '지갑':   ['사이즈 cm', 'size cm'],
         '벨트':   ['폭 cm', 'width cm'],
       };
-      const kws = catKw[cat] || ['사이즈 스펙', 'size specifications'];
+      const kws = catKw[catNorm] || ['사이즈 스펙', 'size specifications'];
       const qs = [
         `"${brand}" "${modelName}" ${kws[0]}`,
         `"${brand}" "${modelName}" ${kws[1]}`,
+        `${brand} ${modelName} site:${brand.toLowerCase().replace(/\s/g,'')}.com`,
       ];
 
       const results = [];
@@ -292,7 +296,6 @@ ${context}
           const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(q) + '&api_key=' + SERP_KEY + '&num=5&hl=ko&gl=kr', { signal: AbortSignal.timeout(10000) });
           if (!sr.ok) continue;
           const sd = await sr.json();
-          // knowledge graph 우선
           if (sd.knowledge_graph?.description) results.push('[지식패널] ' + sd.knowledge_graph.description);
           if (sd.answer_box?.snippet) results.push('[직접답변] ' + sd.answer_box.snippet);
           for (const r of (sd.organic_results||[]).slice(0,3)) {
@@ -313,16 +316,17 @@ ${context}
         '벨트':   'size_w=폭(cm), size_unit=cm',
       };
 
-      const prompt = `명품 감정 전문가. 아래 제품의 공식 스펙을 JSON으로만 답하세요. 마크다운 금지.
-[중요] 반드시 브랜드="${brand}", 모델명="${modelName}" 에 해당하는 정보만 사용하세요. 다른 제품 정보 사용 금지.
+      const prompt = `당신은 명품 감정 전문가입니다. 아래 제품의 공식 스펙을 JSON으로만 답하세요. 마크다운 금지.
+[중요] 반드시 브랜드="${brand}", 모델명="${modelName}"에 해당하는 정보만 사용. 다른 제품 정보 절대 사용 금지.
+[중요] 검색 결과가 없어도 학습 데이터 기반으로 최대한 정확하게 답하세요.
 
 브랜드: ${brand}
 모델명: ${modelName}
-카테고리: ${cat}
-사이즈규칙: ${sizeRules[cat]||'size_w=사이즈'}
+카테고리: ${catNorm}
+사이즈규칙: ${sizeRules[catNorm]||'size_w=사이즈'}
 
-${searchContext ? '[검색결과]\n' + searchContext + '\n' : ''}
-출력: {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}`;
+${searchContext ? '[구글 검색결과]\n' + searchContext + '\n\n' : ''}출력 JSON (모르는 값은 빈 문자열):
+{"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}`;
 
       const cr = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
@@ -339,7 +343,7 @@ ${searchContext ? '[검색결과]\n' + searchContext + '\n' : ''}
       if (cd.error) throw new Error(cd.error.message || 'Gemini 오류');
       const rawText = cd.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
       let parsed = null;
-      try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim().match(/({[^]*})/)?.[1] || rawText.replace(/```json|```/g,'').trim()); }
+      try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim().match(/({[\s\S]*})/)?.[1] || rawText.replace(/```json|```/g,'').trim()); }
       catch(e) {
         const p = {};
         for (const m of rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2];
