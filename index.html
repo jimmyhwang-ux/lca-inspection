@@ -6366,10 +6366,16 @@ async function runSkuListGoogleSearch(){
   var selCat = catSel?.value||'전체';
   var cat = selCat!=='전체' ? selCat : '가방';
 
-  // 검색어에서 브랜드/모델 분리 시도
-  var parts = q.trim().split(/\s+/);
-  var brand = parts[0]||'';
-  var modelKo = parts.slice(1).join(' ')||q;
+  // 현재 신규 등록 폼의 값을 우선 사용 (검색어를 억지로 분리하지 않음)
+  var brand   = (document.getElementById('sku-brand')?.value||'').trim();
+  var modelKo = (document.getElementById('sku-model-ko')?.value||'').trim();
+  var catForm = (document.getElementById('sku-cat')?.value||'').trim();
+  if(catForm && catForm!=='전체') cat = catForm;
+  // 폼에 값이 없으면 검색어 전체를 모델명으로 사용
+  if(!brand && !modelKo){ modelKo = q; }
+  var styleNo = '';
+  // 숫자/영문 조합만 있으면 스타일번호로 판단
+  if(/^[A-Za-z0-9]{6,}$/.test(q) && !brand){ styleNo = q; brand=''; modelKo=''; }
 
   var btn  = document.getElementById('sku-list-google-btn');
   var resW = document.getElementById('sku-list-google-result');
@@ -6384,12 +6390,18 @@ async function runSkuListGoogleSearch(){
     var res = await fetch('/api/inspect',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'serp_deep_search', brand:brand, modelKo:modelKo, cat:cat, styleNo:''})
+      body:JSON.stringify({action:'serp_deep_search', brand:brand, modelKo:modelKo, cat:cat, styleNo:styleNo})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     var j = await res.json();
     if(!j.success) throw new Error(j.error||'검색 실패');
     raw.value = j.text || '검색 결과를 찾지 못했어요.';
+
+    // JSON data → 신규 등록 폼에 주입 (brand/model_ko는 이미 있으면 유지)
+    if(j.data && typeof j.data === 'object'){
+      var applyCat = cat || (document.getElementById('sku-cat')?.value||'가방');
+      _applySpecToForm(j.data, applyCat);
+    }
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
@@ -6660,12 +6672,14 @@ function _applySpecToForm(data, cat){
     }
   }
 
-  // 한글 모델명 (비어있을 때만)
+  // 한글 모델명 (비어있을 때만, 사이즈/소재 텍스트가 들어오는 경우 필터링)
   if(data.model_ko && data.model_ko !== '—' && data.model_ko !== 'N/A'){
     var koEl = document.getElementById('sku-model-ko');
-    if(koEl && (!koEl.value || koEl.value === koEl.getAttribute('data-ai-filled'))) {
-      koEl.value = data.model_ko;
-      koEl.setAttribute('data-ai-filled', data.model_ko);
+    var _mkVal = (data.model_ko||'').trim();
+    var _mkBad = /\d+\s*(mm|cm)|실측|사이즈|소재|스타일번호|공식/i.test(_mkVal);
+    if(koEl && !_mkBad && (!koEl.value || koEl.value === koEl.getAttribute('data-ai-filled'))) {
+      koEl.value = _mkVal;
+      koEl.setAttribute('data-ai-filled', _mkVal);
     }
   }
 
@@ -6704,7 +6718,7 @@ function _applySpecToForm(data, cat){
     if(snEl && !snEl.value) snEl.value = data.size_label;
   }
 
-  // 실측 사이즈 — 숫자만 추출 (Claude가 "30, Small model" 같이 반환하는 경우 대비)
+  // 실측 사이즈 — 단일 경로로 처리 (충돌 제거)
   function _numOnly(v){ if(!v||v==='0'||v===0||v==='—') return ''; var m=String(v).match(/^([0-9.]+)/); return m?m[1]:''; }
   var w = _numOnly(data.size_w);
   var h = _numOnly(data.size_h);
@@ -6713,89 +6727,51 @@ function _applySpecToForm(data, cat){
   var f = _numOnly(data.size_f);
   var unit = data.size_unit || 'cm';
   var isJewelry = (cat === '주얼리' || cat === '주얼리/액세서리');
+
   if(w || h || d || e || f){
+    // sizeStr 조립
     var parts = [];
     if(isJewelry){
-      if(w) parts.push('가로 ' + w + 'mm');
-      if(h) parts.push('세로 ' + h + 'mm');
-      if(d) parts.push('체인 ' + d + 'cm');
-      if(e) parts.push('직경 ' + e + 'cm');
-      if(f) parts.push('폭 ' + f + 'mm');
+      if(w) parts.push('가로 '+w+'mm');
+      if(h) parts.push('세로 '+h+'mm');
+      if(d) parts.push('체인 '+d+'cm');
+      if(e) parts.push('직경 '+e+'cm');
+      if(f) parts.push('폭 '+f+'mm');
     } else {
-      if(w) parts.push('가로 ' + w + (unit||'cm'));
-      if(h) parts.push('세로 ' + h + (unit||'cm'));
-      if(d) parts.push('너비 ' + d + (unit||'cm'));
+      if(w) parts.push('가로 '+w+(unit||'cm'));
+      if(h) parts.push('세로 '+h+(unit||'cm'));
+      if(d) parts.push('너비 '+d+(unit||'cm'));
     }
     var sizeStr = parts.join(' × ');
 
-    // hidden input 직접 세팅
-    var hidden = document.getElementById('sku-size-hidden');
-    if(!hidden){
-      hidden = document.createElement('input');
-      hidden.type = 'hidden'; hidden.id = 'sku-size-hidden';
-      var sw = document.getElementById('sku-size-wrap');
-      if(sw) sw.parentNode.appendChild(hidden);
-    }
-    hidden.value = sizeStr;
+    // 카테고리 먼저 세팅
+    var catEl2 = document.getElementById('sku-cat');
+    if(catEl2 && cat) catEl2.value = cat;
 
-    // 표시 업데이트
-    var wrap = document.getElementById('sku-size-wrap');
-    if(wrap){
-      wrap.innerHTML = '<span style="font-size:13px;font-weight:700;color:#fff">' + sizeStr + '</span>';
+    // hidden.value 세팅 (labelMap 파싱용 — 레이블+숫자 형식으로)
+    var hidEl = document.getElementById('sku-size-hidden');
+    if(!hidEl){
+      hidEl = document.createElement('input');
+      hidEl.type='hidden'; hidEl.id='sku-size-hidden';
+      document.getElementById('sku-size-wrap')?.parentNode?.appendChild(hidEl);
     }
+    hidEl.value = sizeStr;
 
-    // editSkuSize로 입력 필드도 채우기 — sku-cat 먼저 세팅 후 재렌더
-    var sizeWrap = document.getElementById('sku-size-wrap');
-    var catEl = document.getElementById('sku-cat');
-    if(catEl && cat) catEl.value = cat;  // 카테고리 먼저 확정
-    if(sizeWrap) delete sizeWrap.dataset.cat; // 강제 재렌더 트리거
-    // hidden 비우기: 기존 값이 있으면 editSkuSize가 잘못된 필드에 채움
-    var _hidPre = document.getElementById('sku-size-hidden');
-    if(_hidPre) _hidPre.value = '';
-    editSkuSize();
+    // editSkuSize 재렌더 (labelMap이 sizeStr 파싱해서 정확한 필드에 넣음)
+    var sizeWrap2 = document.getElementById('sku-size-wrap');
+    if(sizeWrap2) sizeWrap2.dataset.cat = '';
+    if(typeof editSkuSize === 'function') editSkuSize();
+
+    // 렌더 후 wrap을 텍스트로 확정 (doSave 간섭 차단)
     setTimeout(function(){
-      // editSkuSize가 렌더한 뒤 카테고리 한번 더 확인
-      var catElChk = document.getElementById('sku-cat');
-      if(catElChk && cat && catElChk.value !== cat){
-        catElChk.value = cat;
-        var sw2 = document.getElementById('sku-size-wrap');
-        if(sw2) delete sw2.dataset.cat;
-        editSkuSize();
+      var wrapFinal = document.getElementById('sku-size-wrap');
+      if(wrapFinal){
+        wrapFinal.dataset.cat = cat;
+        wrapFinal.innerHTML = '<span style="font-size:13px;font-weight:700;color:#fff">'+sizeStr+'</span>';
       }
-      var cfg2 = SIZE_CONFIG[cat] || SIZE_CONFIG['가방'];
-      // input에 값 세팅
-      var flds = {
-        'ssku-sz-w': w, 'ssku-sz-h': h, 'ssku-sz-d': d,
-        'ssku-sz-e': (data.size_e&&data.size_e!=='0'?data.size_e:''),
-        'ssku-sz-f': (data.size_f&&data.size_f!=='0'?data.size_f:'')
-      };
-      Object.entries(flds).forEach(function(kv){
-        var el=document.getElementById(kv[0]); if(el&&kv[1]) el.value=kv[1];
-      });
-      // valMap으로 sizeStr 직접 조립 (doSave 간섭 우회)
-      var isJewelry2=(cat==='주얼리'||cat==='주얼리/액세서리');
-      var parts3=[];
-      if(isJewelry2){
-        if(w) parts3.push('가로 '+w+'mm');
-        if(h) parts3.push('세로 '+h+'mm');
-        if(d) parts3.push('체인 '+d+'cm');
-        if(data.size_e&&data.size_e!=='0') parts3.push('직경 '+data.size_e+'cm');
-        if(data.size_f&&data.size_f!=='0') parts3.push('폭 '+data.size_f+'mm');
-      } else {
-        var unit2=data.size_unit||'cm';
-        if(w) parts3.push('가로 '+w+unit2);
-        if(h) parts3.push('세로 '+h+unit2);
-        if(d) parts3.push('너비 '+d+unit2);
-      }
-      var sizeStr3=parts3.join(' × ');
-      if(sizeStr3){
-        var hid3=document.getElementById('sku-size-hidden');
-        if(!hid3){hid3=document.createElement('input');hid3.type='hidden';hid3.id='sku-size-hidden';document.getElementById('sku-size-wrap')?.parentNode?.appendChild(hid3);}
-        hid3.value=sizeStr3;
-        var wrapEl3=document.getElementById('sku-size-wrap');
-        if(wrapEl3){wrapEl3.dataset.cat=cat;wrapEl3.innerHTML='<span style="font-size:13px;font-weight:700;color:#fff">'+sizeStr3+'</span>';}
-      }
-    }, 200);
+      var hidFinal = document.getElementById('sku-size-hidden');
+      if(hidFinal) hidFinal.value = sizeStr;
+    }, 250);
   }
 
   // 특이사항 (소재·제조국·노트 합치기)
