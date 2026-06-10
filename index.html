@@ -6634,12 +6634,21 @@ function _applySpecToForm(data, cat){
   var w = (data.size_w && data.size_w!=='0' && data.size_w!==0) ? data.size_w : '';
   var h = (data.size_h && data.size_h!=='0' && data.size_h!==0) ? data.size_h : '';
   var d = (data.size_d && data.size_d!=='0' && data.size_d!==0) ? data.size_d : '';
+  var e = (data.size_e && data.size_e!=='0' && data.size_e!==0) ? data.size_e : '';
   var unit = data.size_unit || 'cm';
-  if(w || h){
+  var isJewelry = (cat === '주얼리' || cat === '주얼리/액세서리');
+  if(w || h || d || e){
     var parts = [];
-    if(w) parts.push('가로 ' + w + (unit||'cm'));
-    if(h) parts.push('세로 ' + h + (unit||'cm'));
-    if(d) parts.push('너비 ' + d + (unit||'cm'));
+    if(isJewelry){
+      if(w) parts.push('폭 ' + w + 'mm');
+      if(h) parts.push('세로 ' + h + 'mm');
+      if(d) parts.push('체인 ' + d + 'cm');
+      if(e) parts.push('직경 ' + e + 'cm');
+    } else {
+      if(w) parts.push('가로 ' + w + (unit||'cm'));
+      if(h) parts.push('세로 ' + h + (unit||'cm'));
+      if(d) parts.push('너비 ' + d + (unit||'cm'));
+    }
     var sizeStr = parts.join(' × ');
 
     // hidden input 직접 세팅
