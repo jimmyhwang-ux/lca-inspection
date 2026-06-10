@@ -5663,49 +5663,77 @@ async function applySpecGoogleResult(){
     };
     var hasSize=parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_e||parsed.size_f;
     if(hasSize){
-      // 카테고리 먼저 세팅 → 그 다음 editSkuSize (순서 중요)
-      var catEl2=document.getElementById(prefix+'-cat');
-      if(catEl2){ catEl2.value=_cat; }
-      if(!isUnreg){ var _sw=document.getElementById('sku-size-wrap'); if(_sw)_sw.dataset.cat=''; editSkuSize&&editSkuSize(); }
+      // ── 사이즈 값 주입 헬퍼 ─────────────────────────────────
+      function _injectSizeValues(){
+        var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
+        var injected=0;
 
-      setTimeout(function(){
-        // 2) onUnregCatChange + editUnregSize
-        var catEl3=document.getElementById(prefix+'-cat');
-        if(catEl3){
-          catEl3.value=_cat;
-          if(isUnreg) onUnregCatChange&&onUnregCatChange(catEl3);
-          else catEl3.dispatchEvent(new Event('change'));
-        }
-        if(isUnreg) editUnregSize&&editUnregSize();
-        setTimeout(function(){
-          // 3) 카테고리 한번 더 확인 후 값 주입
-          var catEl4=document.getElementById(prefix+'-cat');
-          if(catEl4) catEl4.value=_cat;
-          var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
-          console.log('[SpecGoogle] 주입 _cat=['+_cat+'] fields='+cfg2.map(function(f){return f.label;}).join(','));
-          cfg2.forEach(function(f,i){
-            var val=valMap[f.label]||'';
-            if(!val) return;
-            var el=document.getElementById(isUnreg?'unreg-sf-'+i:'ssku-'+f.id);
-            if(!el){
-              var wrap=document.getElementById(prefix+'-size-wrap');
-              if(wrap){var inps=wrap.querySelectorAll('input[type="number"]');if(inps[i])el=inps[i];}
-            }
-            console.log('[SpecGoogle] 주입:', f.label, '->', val, 'el=', el&&el.id);
-            if(el) el.value=val;
-          });
-          if(isUnreg) _updateUnregSizeHidden&&_updateUnregSizeHidden();
-          else {
-            var hidden=document.getElementById('sku-size-hidden');
-            var disp=document.getElementById('sku-size-display');
-            var pts=cfg2.map(function(f){var v=valMap[f.label];return v?(f.label+' '+v):null;}).filter(Boolean);
-            var txt=pts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
-            if(hidden)hidden.value=txt;
-            if(disp)disp.textContent=txt||'탭하여 입력';
+        // 1) ssku- input에 값 세팅
+        cfg2.forEach(function(f,i){
+          var val=valMap[f.label]||'';
+          if(!val) return;
+          var el=document.getElementById(isUnreg?'unreg-sf-'+i:'ssku-'+f.id);
+          if(!el){
+            var wp=document.getElementById(prefix+'-size-wrap');
+            if(wp){var inps=wp.querySelectorAll('input[type="number"],input[type="text"]');if(inps[i])el=inps[i];}
           }
+          console.log('[SpecGoogle] 주입:', f.label, '->', val, 'el=', el&&el.id);
+          if(el){ el.value=val; injected++; }
+        });
+
+        if(isUnreg){ _updateUnregSizeHidden&&_updateUnregSizeHidden(); return injected; }
+
+        // 2) 주입된 값으로 sizeStr 직접 조립 → hidden + display 세팅
+        var parts2=cfg2.map(function(f){
+          var v=valMap[f.label]||'';
+          if(!v) return null;
+          return f.label+' '+v+(f.unit||'');
+        }).filter(Boolean);
+        var sizeStr2=parts2.join(' × ');
+        if(!sizeStr2) return injected;
+
+        // hidden input
+        var hid=document.getElementById('sku-size-hidden');
+        if(!hid){
+          hid=document.createElement('input'); hid.type='hidden';
+          hid.id='sku-size-hidden'; hid.name='sku-size';
+          document.getElementById('sku-size-wrap')?.parentNode?.appendChild(hid);
+        }
+        hid.value=sizeStr2;
+
+        // display span (wrap을 텍스트로 교체)
+        var wrapEl=document.getElementById('sku-size-wrap');
+        if(wrapEl){
+          wrapEl.innerHTML='<span style="font-size:13px;font-weight:700;color:#fff">'+sizeStr2+'</span>';
+          wrapEl.dataset.cat=_cat;
+        }
+        return injected;
+      }
+
+      // 1) 카테고리 세팅
+      var catEl2=document.getElementById(prefix+'-cat');
+      if(catEl2) catEl2.value=_cat;
+
+      // 2) 사이즈 필드 렌더 (dataset.cat 초기화 → 강제 재렌더)
+      if(!isUnreg){
+        var _sw=document.getElementById('sku-size-wrap');
+        if(_sw) _sw.dataset.cat='';
+        if(typeof editSkuSize==='function') editSkuSize();
+      } else {
+        var _ce=document.getElementById('unreg-cat');
+        if(_ce){ _ce.value=_cat; if(typeof onUnregCatChange==='function') onUnregCatChange(_ce); }
+        if(typeof editUnregSize==='function') editUnregSize();
+      }
+
+      // 3) 80ms 후 주입 시도, 실패시 230ms 후 재시도
+      setTimeout(function(){
+        var n=_injectSizeValues();
+        if(n===0){
+          setTimeout(function(){ _injectSizeValues(); toast('✅ 폼에 반영됐어요!'); },150);
+        } else {
           toast('✅ 폼에 반영됐어요!');
-        },100);
-      },100);
+        }
+      },80);
     } else {
       toast('✅ 폼에 반영됐어요!');
     }
