@@ -5465,15 +5465,13 @@ function _refreshDbCardPics(idx, itemId){
 }
 
 
-// ── 공식 스펙 Google AI 검색 ─────────────────────────────────
+// ── 공식 스펙 검색 (페이지 크롤링 기반) ─────────────────────────
 async function runSpecGoogleSearch(){
   var brand   = (document.getElementById('r-brand')||{}).textContent||'';
   var modelKo = (document.getElementById('r-model-ko')||{}).textContent||'';
   var modelEn = (document.getElementById('r-model')||{}).textContent||'';
   var styleNo = ((document.getElementById('r-sku')||{}).textContent||'').replace('—','').trim();
-  var keyword = styleNo
-    ? (brand+' '+styleNo+' 사이즈 소재 스타일번호 공식 스펙')
-    : (brand+' '+(modelKo||modelEn)+' 사이즈 소재 스타일번호 공식 스펙');
+  var cat     = (document.getElementById('r-cat-tag')?.textContent||'').replace(/[^\uAC00-\uD7A3]/g,'').trim() || '가방';
 
   var btn  = document.getElementById('spec-google-btn');
   var resW = document.getElementById('spec-google-result');
@@ -5481,26 +5479,35 @@ async function runSpecGoogleSearch(){
   btn.textContent = '🔍 검색 중...';
   btn.disabled = true;
   resW.style.display = 'block';
-  raw.value = '검색 중...';
+  raw.value = '공식 페이지 크롤링 중...';
 
   try{
     var _token = localStorage.getItem('lca_token')||'';
     var res = await fetch('/api/inspect',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'serp_text_search', keyword:keyword})
+      body:JSON.stringify({
+        action:'serp_deep_search',
+        brand: brand,
+        modelKo: modelKo,
+        modelEn: modelEn,
+        cat: cat,
+        styleNo: styleNo||''
+      })
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     var j = await res.json();
     if(!j.success) throw new Error(j.error||'검색 실패');
     raw.value = j.text || '검색 결과를 찾지 못했어요.';
+    if(j.crawledUrls && j.crawledUrls.length){
+      raw.value += '\n\n📎 출처: ' + j.crawledUrls.join(', ');
+    }
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
   btn.textContent = '🔍 다시 검색';
   btn.disabled = false;
 }
-
 function _parseSpecRawText(txt, cat){
   var r={size_w:'',size_h:'',size_d:'',size_e:'',size_f:'',size_unit:'cm',size_label:'',style_number:'',material:'',official_url:'',notes:''};
   var t = txt.replace(/\[cite:\s*\d+\]/g,'').replace(/\*\*/g,'');
@@ -6291,10 +6298,14 @@ async function runSkuListGoogleSearch(){
   var q = (document.getElementById('sku-search')?.value||'').trim();
   if(!q){ toast('⚠ 브랜드/모델명을 먼저 검색해주세요'); return; }
 
-  // 카테고리 드롭다운 값 반영
   var catSel = document.getElementById('sku-list-cat-select');
   var selCat = catSel?.value||'전체';
-  var catHint = selCat!=='전체' ? ' '+selCat : '';
+  var cat = selCat!=='전체' ? selCat : '가방';
+
+  // 검색어에서 브랜드/모델 분리 시도
+  var parts = q.trim().split(/\s+/);
+  var brand = parts[0]||'';
+  var modelKo = parts.slice(1).join(' ')||q;
 
   var btn  = document.getElementById('sku-list-google-btn');
   var resW = document.getElementById('sku-list-google-result');
@@ -6302,20 +6313,22 @@ async function runSkuListGoogleSearch(){
   btn.textContent = '🔍 검색 중...';
   btn.disabled = true;
   resW.style.display = 'block';
-  raw.value = '검색 중...';
+  raw.value = '공식 페이지 크롤링 중...';
 
   try{
-    var keyword = q + catHint + ' 공식 사이즈 스타일번호 소재 공식URL 스펙';
     var _token = localStorage.getItem('lca_token')||'';
     var res = await fetch('/api/inspect',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-access-token':_token},
-      body:JSON.stringify({action:'serp_text_search', keyword:keyword})
+      body:JSON.stringify({action:'serp_deep_search', brand:brand, modelKo:modelKo, cat:cat, styleNo:''})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     var j = await res.json();
     if(!j.success) throw new Error(j.error||'검색 실패');
     raw.value = j.text || '검색 결과를 찾지 못했어요.';
+    if(j.crawledUrls && j.crawledUrls.length){
+      raw.value += '\n\n📎 출처: ' + j.crawledUrls.join(', ');
+    }
   }catch(e){
     raw.value = '검색 실패: '+e.message;
   }
