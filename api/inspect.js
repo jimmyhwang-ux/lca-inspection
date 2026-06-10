@@ -103,31 +103,17 @@ async function handler(req, res) {
     }
   }
 
-  // ✅ serp_deep_search: SerpAPI 전체 필드 파싱 + Claude 정밀 추출
   if (action === 'serp_deep_search') {
     try {
       const { brand, modelKo, modelEn, cat, styleNo } = req.body;
       const modelName = modelKo || modelEn || '';
       if (!brand && !modelName) return res.status(400).json({ success: false, error: '브랜드/모델명 없음' });
 
-      const sizeGuide = {
-        '가방':   '가로(cm) × 세로(cm) × 너비(cm)',
-        '지갑':   '가로(cm) × 세로(cm)',
-        '주얼리': '반지/밴드: 폭(mm) / 목걸이: 체인길이(cm)+펜던트(mm) / 팔찌: 폭(mm)',
-        '시계':   '케이스직경(mm), 두께(mm)',
-        '벨트':   '폭(cm)',
-        '의류':   '사이즈 표기',
-        '신발':   '사이즈 표기',
-      };
-
-      // ── 검색 쿼리: 스타일번호 우선, 모델명 병행 ──────────────
       const queries = [];
       if (styleNo) {
-        // 스타일번호 검색이 가장 정확 (공식 제품 페이지 스니펫 직접 히트)
         queries.push(`${styleNo} ${brand} specifications`);
         queries.push(`${styleNo} 사이즈 스펙`);
       }
-      // 카테고리별 핵심 사이즈 키워드 추가
       const sizeKw = { '주얼리':'width mm 폭', '시계':'diameter mm 직경', '가방':'dimensions cm 사이즈', '벨트':'width cm 폭' };
       const kw = sizeKw[cat] || 'size dimensions';
       queries.push(`${brand} "${modelName}" ${kw}`);
@@ -136,7 +122,7 @@ async function handler(req, res) {
       const allSnippets = [];
       let knowledgeGraph = '';
       let answerBox = '';
-      let sizeHints = []; // mm/cm 수치가 포함된 줄만 추출
+      let sizeHints = [];
 
       const serpFetches = queries.slice(0, 3).map(q =>
         fetch(`https://serpapi.com/search.json?q=${encodeURIComponent(q)}&api_key=${SERP_KEY}&num=8&hl=ko&gl=kr`, {
@@ -147,8 +133,6 @@ async function handler(req, res) {
 
       for (const sd of serpResults) {
         if (!sd) continue;
-
-        // knowledge_graph
         if (sd.knowledge_graph) {
           const kg = sd.knowledge_graph;
           const kgText = [kg.title, kg.description, kg.type,
@@ -156,26 +140,17 @@ async function handler(req, res) {
           ].filter(Boolean).join(' | ');
           if (kgText) knowledgeGraph = kgText;
         }
-
-        // answer_box
         if (sd.answer_box) {
           const ab = sd.answer_box;
           const abText = [ab.title, ab.answer, ab.snippet].filter(Boolean).join(' | ');
           if (abText) answerBox = abText;
         }
-
-        // organic_results 스니펫
         for (const r of (sd.organic_results || []).slice(0, 6)) {
           const snippet = `[${r.title || ''}] ${r.snippet || ''}`;
           if (snippet.length > 5) allSnippets.push(snippet);
-          // mm/cm 수치 직접 추출
           const sizeMatches = snippet.match(/[\d.]+\s*(mm|cm)/gi) || [];
-          if (sizeMatches.length > 0) {
-            sizeHints.push({ text: snippet.slice(0, 200), sizes: sizeMatches });
-          }
+          if (sizeMatches.length > 0) sizeHints.push({ text: snippet.slice(0, 200), sizes: sizeMatches });
         }
-
-        // shopping_results (제목에 사이즈명 포함 경우 있음)
         for (const r of (sd.shopping_results || []).slice(0, 4)) {
           const t = `[쇼핑] ${r.title || ''} ${r.snippet || ''}`;
           allSnippets.push(t);
@@ -184,13 +159,9 @@ async function handler(req, res) {
         }
       }
 
-      // 중복 제거
       const uniqueSnippets = [...new Set(allSnippets)].slice(0, 10);
-      const uniqueSizeHints = sizeHints.filter((v, i, a) =>
-        a.findIndex(x => x.text === v.text) === i
-      ).slice(0, 8);
+      const uniqueSizeHints = sizeHints.filter((v, i, a) => a.findIndex(x => x.text === v.text) === i).slice(0, 8);
 
-      // ── Claude 프롬프트 구성 ──────────────────────────────────
       let context = '';
       if (knowledgeGraph) context += `[지식 패널]\n${knowledgeGraph}\n\n`;
       if (answerBox)      context += `[직접 답변]\n${answerBox}\n\n`;
@@ -199,15 +170,13 @@ async function handler(req, res) {
         context += uniqueSizeHints.map(h => `${h.text} → 수치: ${h.sizes.join(', ')}`).join('\n');
         context += '\n\n';
       }
-      if (uniqueSnippets.length > 0) {
-        context += `[검색 결과]\n${uniqueSnippets.join('\n')}`;
-      }
+      if (uniqueSnippets.length > 0) context += `[검색 결과]\n${uniqueSnippets.join('\n')}`;
       if (!context) context = '(검색 결과 없음)';
 
       const sizeRules = {
         '가방':   'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
         '지갑':   'size_w=가로(cm), size_h=세로(cm), size_unit=cm',
-        '주얼리': 'size_f=폭(mm) 필수 — 반지/밴드는 size_f에 폭(mm). 목걸이는 size_d=체인(cm), size_w=펜던트(mm)',
+        '주얼리': '팔찌=size_f에 폭(mm). 반지/밴드=size_f에 폭(mm). 목걸이=size_d에 체인길이(cm)+size_w에 펜던트(mm). size_unit=mm',
         '시계':   'size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm',
         '벨트':   'size_w=폭(cm), size_unit=cm',
         '의류':   'size_w=사이즈표기',
@@ -227,16 +196,21 @@ ${context}
 출력 (이 JSON 구조 그대로):
 {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","notes":""}`;
 
-      const cr = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
-      });
+      const cr = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+          })
+        }
+      );
       const cd = await cr.json();
-      if (cd.error) throw new Error(cd.error.message);
-      const rawText = (cd.content || [])[0]?.text?.trim() || '';
+      if (cd.error) throw new Error(cd.error.message || 'Gemini 오류');
+      const rawText = cd.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
-      // JSON 파싱
       let parsed = null;
       try {
         const jm = rawText.match(/({[\s\S]*})/);
@@ -247,12 +221,11 @@ ${context}
         if (Object.keys(p).length) parsed = p;
       }
 
-      // 텍스트 요약도 같이 반환 (textarea 표시용)
       const textSummary = parsed ? [
         parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_f ? '• 실측 사이즈: ' + [
-          parsed.size_w ? (cat==='주얼리'?'가로 ':'가로 ')+parsed.size_w+(parsed.size_unit||'') : '',
+          parsed.size_w ? '가로 '+parsed.size_w+(parsed.size_unit||'') : '',
           parsed.size_h ? '세로 '+parsed.size_h+(parsed.size_unit||'') : '',
-          parsed.size_d ? (cat==='주얼리'?'체인 ':'너비 ')+parsed.size_d+'cm' : '',
+          parsed.size_d ? (cat==='주얼리'?'체인 ':'너비 ')+parsed.size_d+(cat==='주얼리'?'cm':parsed.size_unit||'') : '',
           parsed.size_f ? '폭 '+parsed.size_f+'mm' : '',
         ].filter(Boolean).join(' × ') : '',
         parsed.material ? '• 소재: '+parsed.material : '',
@@ -261,14 +234,13 @@ ${context}
         parsed.notes ? '• 특이사항: '+parsed.notes : '',
       ].filter(Boolean).join('\n') : rawText;
 
-      const source = uniqueSizeHints.length > 0 ? `serp(사이즈${uniqueSizeHints.length}건)+claude`
-                   : uniqueSnippets.length > 0 ? 'serp+claude' : 'claude';
+      const source = uniqueSizeHints.length > 0 ? `serp(사이즈${uniqueSizeHints.length}건)+claude` : uniqueSnippets.length > 0 ? 'serp+claude' : 'claude';
       return res.status(200).json({ success: true, text: textSummary, data: parsed, source });
     } catch(e) {
       return res.status(200).json({ success: false, error: e.message });
     }
   }
-  // ✅ serp_text_search (기존 유지 — 단순 스니펫 검색)
+
   if (action === 'serp_text_search') {
     try {
       const { keyword } = req.body;
@@ -299,36 +271,82 @@ ${context}
       const { brand, modelKo, modelEn, cat } = req.body;
       const modelName = modelKo || modelEn || '';
       if (!modelName) return res.status(400).json({ success: false, error: '모델명 없음' });
-      let searchContext = '';
-      try {
-        const qs = [brand + ' ' + modelName + ' specifications size', brand + ' ' + modelName + ' 사이즈 스펙'];
-        const results = [];
-        for (const q of qs) {
-          const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(q) + '&api_key=' + SERP_KEY + '&num=5', { signal: AbortSignal.timeout(10000) });
+
+      // 카테고리별 특화 검색 쿼리
+      const catKw = {
+        '주얼리': ['폭 mm 스펙', 'width mm specifications'],
+        '시계':   ['직경 mm 스펙', 'diameter mm specifications'],
+        '가방':   ['사이즈 cm 스펙', 'dimensions cm specifications'],
+        '지갑':   ['사이즈 cm', 'size cm'],
+        '벨트':   ['폭 cm', 'width cm'],
+      };
+      const kws = catKw[cat] || ['사이즈 스펙', 'size specifications'];
+      const qs = [
+        `"${brand}" "${modelName}" ${kws[0]}`,
+        `"${brand}" "${modelName}" ${kws[1]}`,
+      ];
+
+      const results = [];
+      for (const q of qs) {
+        try {
+          const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(q) + '&api_key=' + SERP_KEY + '&num=5&hl=ko&gl=kr', { signal: AbortSignal.timeout(10000) });
           if (!sr.ok) continue;
           const sd = await sr.json();
-          for (const r of (sd.organic_results||[]).slice(0,3)) { if (r.title && r.snippet) results.push('[' + r.title + '] ' + r.snippet); }
-        }
-        if (results.length) searchContext = results.join('\n');
-      } catch(e) { console.warn('[serp_autofill]', e.message); }
+          // knowledge graph 우선
+          if (sd.knowledge_graph?.description) results.push('[지식패널] ' + sd.knowledge_graph.description);
+          if (sd.answer_box?.snippet) results.push('[직접답변] ' + sd.answer_box.snippet);
+          for (const r of (sd.organic_results||[]).slice(0,3)) {
+            if (r.title && r.snippet) results.push('[' + r.title + '] ' + r.snippet);
+          }
+        } catch(e) { console.warn('[serp_autofill]', e.message); }
+      }
+
+      const searchContext = [...new Set(results)].slice(0, 8).join('\n');
+
       const sizeRules = {
-        '가방': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm)',
-        '지갑': 'size_w=가로(cm), size_h=세로(cm)',
-        '주얼리': 'size_f=폭(mm) — 반지/밴드는 size_f에 폭(mm) 필수. 목걸이는 size_d=체인(cm), size_w=펜던트(mm)',
-        '시계': 'size_w=케이스직경(mm), size_h=두께(mm)',
-        '의류': 'size_w=사이즈표기',
-        '신발': 'size_w=사이즈표기',
-        '벨트': 'size_w=폭(cm)'
+        '가방':   'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
+        '지갑':   'size_w=가로(cm), size_h=세로(cm), size_unit=cm',
+        '주얼리': '팔찌/반지/밴드는 size_f=폭(mm) 필수. 목걸이는 size_d=체인길이(cm), size_w=펜던트크기(mm). size_unit=mm',
+        '시계':   'size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm',
+        '의류':   'size_w=사이즈표기',
+        '신발':   'size_w=사이즈표기',
+        '벨트':   'size_w=폭(cm), size_unit=cm',
       };
-      const prompt = '명품 감정 전문가. 공식 스펙 JSON만 답하세요. 마크다운 금지.\n브랜드: ' + brand + '\n모델명: ' + modelName + '\n카테고리: ' + cat + '\n사이즈규칙: ' + (sizeRules[cat]||'size_w=사이즈') + '\n' + (searchContext ? '[검색결과]\n' + searchContext + '\n' : '') + '\n출력: {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}';
-      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }) });
+
+      const prompt = `명품 감정 전문가. 아래 제품의 공식 스펙을 JSON으로만 답하세요. 마크다운 금지.
+[중요] 반드시 브랜드="${brand}", 모델명="${modelName}" 에 해당하는 정보만 사용하세요. 다른 제품 정보 사용 금지.
+
+브랜드: ${brand}
+모델명: ${modelName}
+카테고리: ${cat}
+사이즈규칙: ${sizeRules[cat]||'size_w=사이즈'}
+
+${searchContext ? '[검색결과]\n' + searchContext + '\n' : ''}
+출력: {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}`;
+
+      const cr = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+          })
+        }
+      );
       const cd = await cr.json();
-      if (cd.error) throw new Error(cd.error.message);
-      const rawText = (cd.content||[])[0]?.text?.trim()||'';
+      if (cd.error) throw new Error(cd.error.message || 'Gemini 오류');
+      const rawText = cd.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
       let parsed = null;
-      try { parsed = JSON.parse(rawText.match(/({[^]*})/)?.[1] || rawText); }
-      catch(e) { const p = {}; for (const m of rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2]; if (Object.keys(p).length) parsed = p; else throw new Error('JSON 파싱 실패'); }
-      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+claude' : 'claude' });
+      try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim().match(/({[^]*})/)?.[1] || rawText.replace(/```json|```/g,'').trim()); }
+      catch(e) {
+        const p = {};
+        for (const m of rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2];
+        if (Object.keys(p).length) parsed = p;
+        else throw new Error('JSON 파싱 실패');
+      }
+      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+gemini' : 'gemini' });
     } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
   }
 
@@ -528,7 +546,6 @@ ${context}
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  // ── 메인 검수 ──────────────────────────────────────────────
   if (!imageBase64) return res.status(400).json({ error: '이미지 없음' });
 
   try {
