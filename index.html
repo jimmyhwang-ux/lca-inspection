@@ -6657,26 +6657,25 @@ function saveSerpApiKeyInline(){
 
 // ── Gemini API 공통 fetch (429 시 2.0-flash로 자동 fallback) ──
 async function _geminiGenerate(apiKey, body){
-  var models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
-  var token = localStorage.getItem('lca_token')||'';
+  var models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
   for(var mi=0; mi<models.length; mi++){
     var model = models[mi];
     try{
-      var r = await fetch('/api/inspect', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'x-access-token': token},
-        body: JSON.stringify({action: 'gemini_proxy', apiKey: apiKey, model: model, body: body})
-      });
+      var r = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey,
+        {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}
+      );
       var j = await r.json();
-      if(!j.success){
-        var errMsg = (j.data?.error?.message||j.error||'');
-        if((j.data?.error?.code===429 || errMsg.includes('429') || errMsg.includes('quota')) && mi < models.length-1){
+      if(j.error){
+        var errCode = j.error.code || 0;
+        var errMsg  = j.error.message || '';
+        if((errCode===429 || errMsg.includes('quota') || errMsg.includes('429')) && mi < models.length-1){
           console.warn('[Gemini] 429 - '+model+' 할당량 초과, '+models[mi+1]+'로 재시도');
           continue;
         }
         throw new Error(errMsg || '서버 오류');
       }
-      return j.data;
+      return j;
     }catch(e){ if(mi === models.length-1) throw e; }
   }
 }
@@ -6776,21 +6775,50 @@ async function aiAutoFillSpec(){
 
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
   var statusEl = document.getElementById('ai-autofill-status');
-  if(statusEl) statusEl.textContent = '공식 사이트에서 스펙 검색 중... (10~20초 소요)';
-  var _token = localStorage.getItem('lca_token') || '';
-  try {
-    var res = await fetch('/api/inspect', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','x-access-token':_token},
-      body: JSON.stringify({action:'serp_autofill', brand:brand, modelKo:modelKo, modelEn:modelEn, cat:cat})
+  if(statusEl) statusEl.textContent = 'Gemini AI로 공식 스펙 검색 중... (10~20초 소요)';
+
+  var query = [brand, modelKo||modelEn].filter(Boolean).join(' ');
+  var prompt = `당신은 명품/패션 브랜드 전문가입니다.
+아래 제품의 공식 스펙 정보를 JSON으로 반환하세요.
+
+브랜드: ${brand}
+모델명(한글): ${modelKo||''}
+모델명(영문): ${modelEn||''}
+카테고리: ${cat||'가방'}
+
+다음 JSON 형식으로만 응답하세요 (마크다운 코드블록 없이):
+{
+  "model_ko": "한글 모델명",
+  "model_en": "영문 모델명",
+  "category": "카테고리",
+  "color": "컬러",
+  "style_number": "스타일번호",
+  "size_w": "가로 숫자만",
+  "size_h": "세로 숫자만",
+  "size_d": "너비/깊이 숫자만",
+  "size_unit": "cm 또는 mm",
+  "size_label": "사이즈 명칭(예:미니,MM,PM)",
+  "official_url": "공식 브랜드 사이트 URL",
+  "material": "소재",
+  "notes": "특이사항"
+}
+모르는 값은 빈 문자열("")로 두세요.`;
+
+  try{
+    var geminiRes = await _geminiGenerate(apiKey, {
+      contents: [{parts: [{text: prompt}]}],
+      generationConfig: {temperature: 0.1, maxOutputTokens: 1024}
     });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    var j = await res.json();
-    if(!j.success) throw new Error(j.error || '조회 실패');
-    console.log('[AutoFill] 성공 source=' + j.source, j.data);
-    localStorage.setItem('_lastAutoFill', JSON.stringify(j.data));
-    return j.data;
-  } catch(e) {
+
+    // 응답 텍스트 추출
+    var text = geminiRes?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // JSON 파싱
+    var cleaned = text.replace(/```json|```/g,'').trim();
+    var data = JSON.parse(cleaned);
+    console.log('[AutoFill] Gemini 직접 호출 성공', data);
+    localStorage.setItem('_lastAutoFill', JSON.stringify(data));
+    return data;
+  } catch(e){
     console.warn('[AutoFill] 실패:', e.message);
     throw new Error(e.message || '모델 정보 조회 실패');
   }
