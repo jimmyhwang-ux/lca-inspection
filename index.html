@@ -6770,57 +6770,20 @@ async function aiAutoFillSpec(){
 
 async function _callGeminiAutoFill(apiKey, brand, modelKo, modelEn, cat){
   var statusEl = document.getElementById('ai-autofill-status');
-  if(statusEl) statusEl.textContent = 'Gemini AI로 공식 스펙 검색 중... (10~20초 소요)';
-
-  var prompt = `당신은 명품/패션 브랜드 전문가입니다.
-아래 제품의 공식 스펙 정보를 JSON으로만 반환하세요. 마크다운 코드블록 없이.
-
-브랜드: ${brand}
-모델명(한글): ${modelKo||''}
-모델명(영문): ${modelEn||''}
-카테고리: ${cat||'가방'}
-
-JSON 형식:
-{"model_ko":"한글모델명","model_en":"영문모델명","category":"카테고리","color":"컬러","style_number":"스타일번호","size_w":"가로숫자","size_h":"세로숫자","size_d":"너비숫자","size_unit":"cm또는mm","size_label":"사이즈명칭","official_url":"공식URL","material":"소재","notes":"특이사항"}
-
-모르는 값은 빈 문자열로 두세요.`;
-
+  if(statusEl) statusEl.textContent = '공식 사이트에서 스펙 검색 중... (10~20초 소요)';
+  var _token = localStorage.getItem('lca_token') || '';
   try {
-    var _token = localStorage.getItem('lca_token') || '';
     var res = await fetch('/api/inspect', {
       method: 'POST',
       headers: {'Content-Type':'application/json','x-access-token':_token},
-      body: JSON.stringify({
-        action: 'gemini_proxy',
-        apiKey: apiKey,
-        model: 'gemini-2.5-flash',
-        body: {
-          contents: [{parts: [{text: prompt}]}],
-          generationConfig: {temperature: 0.1, maxOutputTokens: 2048}
-        }
-      })
+      body: JSON.stringify({action:'serp_autofill', brand:brand, modelKo:modelKo, modelEn:modelEn, cat:cat})
     });
     if(!res.ok) throw new Error('HTTP ' + res.status);
     var j = await res.json();
     if(!j.success) throw new Error(j.error || '조회 실패');
-
-    var text = j.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    var cleaned = text.replace(/```json|```/g,'').trim();
-    // JSON 불완전한 경우 복구 시도
-    if(!cleaned.endsWith('}')) cleaned = cleaned + '}';
-    var data;
-    try {
-      data = JSON.parse(cleaned);
-    } catch(pe) {
-      // 키-값 패턴으로 fallback 파싱
-      var p = {};
-      for(var m of (cleaned.matchAll(/"([\w_]+)"\s*:\s*"([^"]*)"/g)||[])) p[m[1]] = m[2];
-      if(Object.keys(p).length === 0) throw new Error('JSON 파싱 실패: ' + cleaned.slice(0,100));
-      data = p;
-    }
-    console.log('[AutoFill] Gemini proxy 성공', data);
-    localStorage.setItem('_lastAutoFill', JSON.stringify(data));
-    return data;
+    console.log('[AutoFill] 성공 source=' + j.source, j.data);
+    localStorage.setItem('_lastAutoFill', JSON.stringify(j.data));
+    return j.data;
   } catch(e) {
     console.warn('[AutoFill] 실패:', e.message);
     throw new Error(e.message || '모델 정보 조회 실패');
