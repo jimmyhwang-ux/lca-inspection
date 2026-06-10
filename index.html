@@ -977,7 +977,7 @@ input[type=file]{display:none}
 var _settingsPrevScreen='shoot';
 function openSettings(){
   _settingsPrevScreen=document.querySelector('.screen.active')?.id?.replace('screen-','')||'shoot';
-  _updateKeyStatus('gemini', localStorage.getItem('lca_gemini_key')||'');
+  _updateKeyStatus('gemini', localStorage.getItem('bungae_gemini_key_v2')||'');
   _updateKeyStatus('serp',   localStorage.getItem('lca_serp_key')||'');
   document.getElementById('gemini-key-input').value='';
   document.getElementById('serp-key-input').value='';
@@ -990,17 +990,19 @@ function _updateKeyStatus(type, val){
   else   { el.textContent='미설정';    el.style.background='#1a1a1a'; el.style.color='#888'; }
 }
 function saveApiKey(type){
-  const storageKey=type==='gemini'?'lca_gemini_key':'lca_serp_key';
+  const storageKey=type==='gemini'?'bungae_gemini_key_v2':'lca_serp_key';
   const val=(document.getElementById(type+'-key-input')?.value||'').trim();
   if(!val){ toast('❌ 키를 입력해주세요'); return; }
   localStorage.setItem(storageKey, val);
+  sessionStorage.setItem(storageKey, val);
   document.getElementById(type+'-key-input').value='';
   _updateKeyStatus(type, val);
   toast('✅ '+(type==='gemini'?'Gemini':'SerpAPI')+' 키가 저장되었습니다');
 }
 function clearApiKey(type){
-  const storageKey=type==='gemini'?'lca_gemini_key':'lca_serp_key';
+  const storageKey=type==='gemini'?'bungae_gemini_key_v2':'lca_serp_key';
   localStorage.removeItem(storageKey);
+  sessionStorage.removeItem(storageKey);
   _updateKeyStatus(type, '');
   toast('🗑 '+(type==='gemini'?'Gemini':'SerpAPI')+' 키가 삭제되었습니다');
 }
@@ -1105,7 +1107,7 @@ async function doLogin(){
 const _origFetch = window.fetch;
 window.fetch = function(url, opts={}){
   if(typeof url==='string' && url.includes('/api/inspect')){
-    const geminiKey = localStorage.getItem('lca_gemini_key')||'';
+    const geminiKey = sessionStorage.getItem('bungae_gemini_key_v2')||localStorage.getItem('bungae_gemini_key_v2')||'';
     const serpKey   = localStorage.getItem('lca_serp_key')||'';
     opts.headers = {
       ...(opts.headers||{}),
