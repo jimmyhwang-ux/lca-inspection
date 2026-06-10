@@ -103,115 +103,129 @@ async function handler(req, res) {
     }
   }
 
-  // ✅ serp_deep_search: 공식 페이지 직접 크롤링 → Claude 스펙 추출
+  // ✅ serp_deep_search: SerpAPI 전체 필드 파싱 + Claude 정밀 추출
   if (action === 'serp_deep_search') {
     try {
       const { brand, modelKo, modelEn, cat, styleNo } = req.body;
       const modelName = modelKo || modelEn || '';
       if (!brand && !modelName) return res.status(400).json({ success: false, error: '브랜드/모델명 없음' });
 
-      // 공식 도메인 우선순위
-      const OFFICIAL_DOMAINS = [
-        'cartier.com', 'louisvuitton.com', 'chanel.com', 'hermes.com',
-        'bulgari.com', 'bvlgari.com', 'tiffany.com', 'rolex.com', 'omega.com',
-        'gucci.com', 'prada.com', 'dior.com', 'saintlaurent.com', 'ysl.com',
-        'bottegaveneta.com', 'celine.com', 'loewe.com', 'fendi.com',
-        'valentino.com', 'balenciaga.com', 'burberry.com', 'moncler.com',
-        'vancleefarpels.com', 'chaumet.com', 'fred.com',
-      ];
-
-      // 1단계: SerpAPI 검색 — 공식 사이트 URL 확보
-      const query = styleNo
-        ? `${brand} ${styleNo} official specifications`
-        : `${brand} ${modelName} official size specifications`;
-      const queryKo = `${brand} ${modelName} 공식 사이즈 스펙`;
-
-      let urls = [];
-      let serpSnippets = '';
-      for (const q of [query, queryKo]) {
-        try {
-          const sr = await fetch(
-            `https://serpapi.com/search.json?q=${encodeURIComponent(q)}&api_key=${SERP_KEY}&num=8&hl=ko`,
-            { signal: AbortSignal.timeout(10000) }
-          );
-          if (!sr.ok) continue;
-          const sd = await sr.json();
-          const organic = sd.organic_results || [];
-          if (!serpSnippets) {
-            serpSnippets = organic.slice(0, 5).map(r => `[${r.title}] ${r.snippet||''}`).join('\n');
-          }
-          const allLinks = organic.map(r => r.link).filter(Boolean);
-          const official = allLinks.filter(u => OFFICIAL_DOMAINS.some(d => u.includes(d)));
-          const others = allLinks.filter(u => !OFFICIAL_DOMAINS.some(d => u.includes(d)));
-          urls.push(...official, ...others);
-        } catch(e) { continue; }
-      }
-      // 중복 제거, 최대 5개
-      urls = [...new Set(urls)].slice(0, 5);
-
-      // 2단계: URL 직접 fetch → 텍스트 추출
-      const pageTexts = [];
-      for (const url of urls) {
-        try {
-          const r = await fetch(url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-            },
-            signal: AbortSignal.timeout(8000)
-          });
-          if (!r.ok) continue;
-          const html = await r.text();
-          const text = html
-            .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[\s\S]*?<\/style>/gi, '')
-            .replace(/<nav[\s\S]*?<\/nav>/gi, '')
-            .replace(/<header[\s\S]*?<\/header>/gi, '')
-            .replace(/<footer[\s\S]*?<\/footer>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/\s{3,}/g, '\n')
-            .trim()
-            .slice(0, 4000);
-          if (text.length > 200) {
-            pageTexts.push(`[출처: ${url}]\n${text}`);
-            if (pageTexts.length >= 2) break; // 2페이지면 충분
-          }
-        } catch(e) { continue; }
-      }
-
-      // 3단계: Claude에게 크롤링 결과 넘겨서 스펙 추출
       const sizeGuide = {
         '가방':   '가로(cm) × 세로(cm) × 너비(cm)',
         '지갑':   '가로(cm) × 세로(cm)',
-        '주얼리': '반지/밴드: 폭(mm) / 목걸이: 체인길이(cm), 펜던트(mm) / 귀걸이·팔찌: 직경 또는 폭(mm)',
-        '시계':   '케이스 직경(mm), 두께(mm)',
+        '주얼리': '반지/밴드: 폭(mm) / 목걸이: 체인길이(cm)+펜던트(mm) / 팔찌: 폭(mm)',
+        '시계':   '케이스직경(mm), 두께(mm)',
         '벨트':   '폭(cm)',
         '의류':   '사이즈 표기',
         '신발':   '사이즈 표기',
       };
-      const context = pageTexts.length > 0
-        ? pageTexts.join('\n\n---\n\n')
-        : (serpSnippets || '(검색 결과 없음)');
 
-      const prompt = `명품 감정 전문가. 아래 페이지에서 공식 스펙을 정확히 추출하세요.
-페이지에 명시된 수치만 사용. 없으면 "—".
+      // ── 검색 쿼리: 스타일번호 우선, 모델명 병행 ──────────────
+      const queries = [];
+      if (styleNo) {
+        // 스타일번호 검색이 가장 정확 (공식 제품 페이지 스니펫 직접 히트)
+        queries.push(`${styleNo} ${brand} specifications`);
+        queries.push(`${styleNo} 사이즈 스펙`);
+      }
+      // 카테고리별 핵심 사이즈 키워드 추가
+      const sizeKw = { '주얼리':'width mm 폭', '시계':'diameter mm 직경', '가방':'dimensions cm 사이즈', '벨트':'width cm 폭' };
+      const kw = sizeKw[cat] || 'size dimensions';
+      queries.push(`${brand} "${modelName}" ${kw}`);
+      queries.push(`${brand} ${modelName} 사이즈 공식 스펙`);
+
+      const allSnippets = [];
+      let knowledgeGraph = '';
+      let answerBox = '';
+      let sizeHints = []; // mm/cm 수치가 포함된 줄만 추출
+
+      const serpFetches = queries.slice(0, 3).map(q =>
+        fetch(`https://serpapi.com/search.json?q=${encodeURIComponent(q)}&api_key=${SERP_KEY}&num=8&hl=ko&gl=kr`, {
+          signal: AbortSignal.timeout(10000)
+        }).then(r => r.ok ? r.json() : null).catch(() => null)
+      );
+      const serpResults = await Promise.all(serpFetches);
+
+      for (const sd of serpResults) {
+        if (!sd) continue;
+
+        // knowledge_graph
+        if (sd.knowledge_graph) {
+          const kg = sd.knowledge_graph;
+          const kgText = [kg.title, kg.description, kg.type,
+            ...Object.entries(kg).filter(([k]) => !['title','description','type','image','website','extensions'].includes(k)).map(([k,v]) => `${k}: ${v}`)
+          ].filter(Boolean).join(' | ');
+          if (kgText) knowledgeGraph = kgText;
+        }
+
+        // answer_box
+        if (sd.answer_box) {
+          const ab = sd.answer_box;
+          const abText = [ab.title, ab.answer, ab.snippet].filter(Boolean).join(' | ');
+          if (abText) answerBox = abText;
+        }
+
+        // organic_results 스니펫
+        for (const r of (sd.organic_results || []).slice(0, 6)) {
+          const snippet = `[${r.title || ''}] ${r.snippet || ''}`;
+          if (snippet.length > 5) allSnippets.push(snippet);
+          // mm/cm 수치 직접 추출
+          const sizeMatches = snippet.match(/[\d.]+\s*(mm|cm)/gi) || [];
+          if (sizeMatches.length > 0) {
+            sizeHints.push({ text: snippet.slice(0, 200), sizes: sizeMatches });
+          }
+        }
+
+        // shopping_results (제목에 사이즈명 포함 경우 있음)
+        for (const r of (sd.shopping_results || []).slice(0, 4)) {
+          const t = `[쇼핑] ${r.title || ''} ${r.snippet || ''}`;
+          allSnippets.push(t);
+          const sm = t.match(/[\d.]+\s*(mm|cm)/gi) || [];
+          if (sm.length) sizeHints.push({ text: t.slice(0, 150), sizes: sm });
+        }
+      }
+
+      // 중복 제거
+      const uniqueSnippets = [...new Set(allSnippets)].slice(0, 10);
+      const uniqueSizeHints = sizeHints.filter((v, i, a) =>
+        a.findIndex(x => x.text === v.text) === i
+      ).slice(0, 8);
+
+      // ── Claude 프롬프트 구성 ──────────────────────────────────
+      let context = '';
+      if (knowledgeGraph) context += `[지식 패널]\n${knowledgeGraph}\n\n`;
+      if (answerBox)      context += `[직접 답변]\n${answerBox}\n\n`;
+      if (uniqueSizeHints.length > 0) {
+        context += `[사이즈 수치 포함 결과]\n`;
+        context += uniqueSizeHints.map(h => `${h.text} → 수치: ${h.sizes.join(', ')}`).join('\n');
+        context += '\n\n';
+      }
+      if (uniqueSnippets.length > 0) {
+        context += `[검색 결과]\n${uniqueSnippets.join('\n')}`;
+      }
+      if (!context) context = '(검색 결과 없음)';
+
+      const sizeRules = {
+        '가방':   'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
+        '지갑':   'size_w=가로(cm), size_h=세로(cm), size_unit=cm',
+        '주얼리': 'size_f=폭(mm) 필수 — 반지/밴드는 size_f에 폭(mm). 목걸이는 size_d=체인(cm), size_w=펜던트(mm)',
+        '시계':   'size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm',
+        '벨트':   'size_w=폭(cm), size_unit=cm',
+        '의류':   'size_w=사이즈표기',
+        '신발':   'size_w=사이즈표기',
+      };
+
+      const prompt = `명품 감정 전문가. 아래 검색 결과에서 공식 스펙을 추출해 JSON으로만 답하세요. 마크다운 금지.
+[중요] 검색 결과에 수치(mm, cm)가 있으면 반드시 그대로 사용. 없으면 빈문자열.
 
 브랜드: ${brand}
 모델명: ${modelName}${styleNo ? '\n스타일번호: ' + styleNo : ''}
 카테고리: ${cat}
-사이즈 형식: ${sizeGuide[cat] || '해당 형식'}
+사이즈 규칙: ${sizeRules[cat] || 'size_w=사이즈'}
 
-[페이지 내용]
 ${context}
 
-아래 형식으로 답하세요:
-• 실측 사이즈: 
-• 소재: 
-• 스타일번호: 
-• 공식 URL: 
-• 특이사항: `;
+출력 (이 JSON 구조 그대로):
+{"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","notes":""}`;
 
       const cr = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -220,14 +234,40 @@ ${context}
       });
       const cd = await cr.json();
       if (cd.error) throw new Error(cd.error.message);
-      const text = (cd.content||[])[0]?.text?.trim() || '';
-      const source = pageTexts.length > 0 ? `crawl+claude (${pageTexts.length}페이지)` : (serpSnippets ? 'serp+claude' : 'claude');
-      return res.status(200).json({ success: true, text, source, crawledUrls: urls.slice(0, 2) });
+      const rawText = (cd.content || [])[0]?.text?.trim() || '';
+
+      // JSON 파싱
+      let parsed = null;
+      try {
+        const jm = rawText.match(/({[\s\S]*})/);
+        parsed = JSON.parse(jm ? jm[1] : rawText);
+      } catch(e) {
+        const p = {};
+        for (const m of rawText.matchAll(/"([\w_]+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2];
+        if (Object.keys(p).length) parsed = p;
+      }
+
+      // 텍스트 요약도 같이 반환 (textarea 표시용)
+      const textSummary = parsed ? [
+        parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_f ? '• 실측 사이즈: ' + [
+          parsed.size_w ? (cat==='주얼리'?'가로 ':'가로 ')+parsed.size_w+(parsed.size_unit||'') : '',
+          parsed.size_h ? '세로 '+parsed.size_h+(parsed.size_unit||'') : '',
+          parsed.size_d ? (cat==='주얼리'?'체인 ':'너비 ')+parsed.size_d+'cm' : '',
+          parsed.size_f ? '폭 '+parsed.size_f+'mm' : '',
+        ].filter(Boolean).join(' × ') : '',
+        parsed.material ? '• 소재: '+parsed.material : '',
+        parsed.style_number ? '• 스타일번호: '+parsed.style_number : '',
+        parsed.official_url ? '• 공식 URL: '+parsed.official_url : '',
+        parsed.notes ? '• 특이사항: '+parsed.notes : '',
+      ].filter(Boolean).join('\n') : rawText;
+
+      const source = uniqueSizeHints.length > 0 ? `serp(사이즈${uniqueSizeHints.length}건)+claude`
+                   : uniqueSnippets.length > 0 ? 'serp+claude' : 'claude';
+      return res.status(200).json({ success: true, text: textSummary, data: parsed, source });
     } catch(e) {
       return res.status(200).json({ success: false, error: e.message });
     }
   }
-
   // ✅ serp_text_search (기존 유지 — 단순 스니펫 검색)
   if (action === 'serp_text_search') {
     try {
