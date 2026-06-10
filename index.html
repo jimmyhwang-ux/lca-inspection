@@ -6141,28 +6141,69 @@ function _showDuplicateNotice(notice, msg, count){
   notice.style.display = 'block';
 }
 
-function _noticeStartGoogleSearch(skuQ){
-  // 구글 AI 검색 버튼 클릭 유도 — 검색창에 SKU 입력 후 자동 실행
-  var googleBtn = document.getElementById('sku-list-google-btn');
-  var resW = document.getElementById('sku-list-google-result');
-  var raw = document.getElementById('sku-list-google-raw');
-  if(resW) resW.style.display = 'block';
-  if(raw) raw.value = '검색 중...';
-  if(googleBtn){
-    googleBtn.textContent = '🔍 검색 중...';
-    googleBtn.disabled = true;
+async function _noticeStartGoogleSearch(skuQ){
+  // 검색어에서 브랜드/모델 분리
+  var brands = _getBrandList ? _getBrandList() : [];
+  var brand = '', modelKo = skuQ, modelEn = '';
+  for(var i=0;i<brands.length;i++){
+    if(skuQ.toLowerCase().startsWith(brands[i].toLowerCase())){
+      brand=brands[i]; modelKo=skuQ.slice(brands[i].length).trim(); break;
+    }
   }
-  // 검색창 값을 스타일번호로 세팅 후 구글 AI 검색 실행
-  var searchInp = document.getElementById('sku-search');
-  if(searchInp && !searchInp.value.trim()) searchInp.value = skuQ;
-  // 구글 AI 검색 실행
-  runSkuListGoogleSearch().then(function(){
-    // 검색 완료 후 신규 등록 폼 자동 열기 유도
-    var newBtn = document.getElementById('sku-list-google-result')?.querySelector('button[onclick*="openSkuListNewForm"]');
-    if(newBtn) newBtn.style.animation = 'pulse 1s infinite';
-  });
-  // 스크롤
-  if(googleBtn) googleBtn.scrollIntoView({behavior:'smooth', block:'center'});
+  if(!brand){ var qp=skuQ.split(/\s+/); brand=qp[0]; modelKo=qp.slice(1).join(' '); }
+
+  var key = _getGeminiKey() || _promptGeminiKey();
+  if(!key) return;
+
+  // 버튼 로딩 상태
+  var notice = document.querySelector('[id*="notice"]') || document.querySelector('.sku-notice');
+  var regBtn = notice ? notice.querySelector('button') : null;
+  if(regBtn){ regBtn.disabled=true; regBtn.textContent='⏳ AI 스펙 검색 중...'; }
+
+  try{
+    var cat = '가방';
+    var result = await _callGeminiAutoFill(key, brand, modelKo, modelEn, cat);
+
+    // 신규 등록 폼 열기 후 결과 적용
+    openSkuListNewFormFromNotice();
+    setTimeout(function(){
+      // nl 폼 필드에 적용
+      if(result.model_ko) document.getElementById('nl-model-ko').value = result.model_ko;
+      if(result.model_en) document.getElementById('nl-model-en').value = result.model_en;
+      if(result.color)    document.getElementById('nl-color').value    = result.color;
+      if(result.style_number) document.getElementById('nl-sku').value  = result.style_number;
+      if(result.official_url) document.getElementById('nl-url').value  = result.official_url;
+      if(result.category){
+        var catEl = document.getElementById('nl-cat');
+        if(catEl){ catEl.value = result.category; catEl.dispatchEvent(new Event('change')); }
+      }
+      // 사이즈 적용
+      if(result.size_w || result.size_h){
+        var _n=function(v){if(!v||v==='—')return'';var m=String(v).match(/^([0-9.]+)/);return m?m[1]:'';}
+        var w=_n(result.size_w), h=_n(result.size_h), d=_n(result.size_d);
+        var unit=result.size_unit||'cm';
+        var parts=[];
+        if(w) parts.push('가로 '+w+unit);
+        if(h) parts.push('세로 '+h+unit);
+        if(d) parts.push('너비 '+d+unit);
+        var sizeStr=parts.join(' × ');
+        var hidden=document.getElementById('nl-size');
+        var disp=document.getElementById('nl-size-display');
+        if(hidden) hidden.value=sizeStr;
+        if(disp)   disp.textContent=sizeStr||'탭하여 입력';
+      }
+      // 특이사항에 소재 기입
+      if(result.notes || result.material){
+        var notesEl = document.getElementById('nl-notes');
+        if(notesEl) notesEl.value = [result.material, result.notes].filter(Boolean).join(' | ');
+      }
+      toast('✨ AI 스펙 자동완성 완료!');
+      if(regBtn){ regBtn.disabled=false; regBtn.textContent='✅ AI 완료 — 폼 확인 후 저장'; }
+    }, 300);
+  } catch(err){
+    toast('❌ AI 조회 실패: ' + (err.message||''));
+    if(regBtn){ regBtn.disabled=false; regBtn.textContent='🤖 AI 모델 검색·등록'; }
+  }
 }
 
 function closeNlForm(){
