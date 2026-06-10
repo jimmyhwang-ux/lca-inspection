@@ -5656,11 +5656,10 @@ async function applySpecGoogleResult(){
     };
     var hasSize=parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_e||parsed.size_f;
     if(hasSize){
-      if(!isUnreg){ var _sw=document.getElementById('sku-size-wrap'); if(_sw)_sw.dataset.cat=''; editSkuSize&&editSkuSize(); }
-
-      // 1) 카테고리 세팅
+      // 카테고리 먼저 세팅 → 그 다음 editSkuSize (순서 중요)
       var catEl2=document.getElementById(prefix+'-cat');
       if(catEl2){ catEl2.value=_cat; }
+      if(!isUnreg){ var _sw=document.getElementById('sku-size-wrap'); if(_sw)_sw.dataset.cat=''; editSkuSize&&editSkuSize(); }
 
       setTimeout(function(){
         // 2) onUnregCatChange + editUnregSize
@@ -6670,11 +6669,21 @@ function _applySpecToForm(data, cat){
       wrap.innerHTML = '<span style="font-size:13px;font-weight:700;color:#fff">' + sizeStr + '</span>';
     }
 
-    // editSkuSize로 입력 필드도 채우기 (이미 열려있어도 강제 재렌더)
+    // editSkuSize로 입력 필드도 채우기 — sku-cat 먼저 세팅 후 재렌더
     var sizeWrap = document.getElementById('sku-size-wrap');
+    var catEl = document.getElementById('sku-cat');
+    if(catEl && cat) catEl.value = cat;  // 카테고리 먼저 확정
     if(sizeWrap) delete sizeWrap.dataset.cat; // 강제 재렌더 트리거
     editSkuSize();
     setTimeout(function(){
+      // editSkuSize가 렌더한 뒤 카테고리 한번 더 확인
+      var catElChk = document.getElementById('sku-cat');
+      if(catElChk && cat && catElChk.value !== cat){
+        catElChk.value = cat;
+        var sw2 = document.getElementById('sku-size-wrap');
+        if(sw2) delete sw2.dataset.cat;
+        editSkuSize();
+      }
       var wInp = document.getElementById('ssku-sz-w');
       var hInp = document.getElementById('ssku-sz-h');
       var dInp = document.getElementById('ssku-sz-d');
