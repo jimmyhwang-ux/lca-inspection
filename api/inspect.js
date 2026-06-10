@@ -68,114 +68,190 @@ async function handler(req, res) {
       }
       const { prompt } = req.body;
       if (!prompt) return res.status(400).json({ success: false, error: 'prompt 없음' });
-
       const isOAuth = GEMINI_KEY.startsWith('AQ.') || GEMINI_KEY.startsWith('ya29.');
-
       let geminiRes;
       if (isOAuth) {
-        geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GEMINI_KEY}` },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
-            })
-          }
-        );
+        geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GEMINI_KEY}` },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 1000 } })
+        });
       } else {
-        geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
-            })
-          }
-        );
+        geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 1000 } })
+        });
       }
-
       if (!geminiRes.ok) {
         const errText = await geminiRes.text();
         if (geminiRes.status === 401 || geminiRes.status === 403) {
           const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-            body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001', max_tokens: 500,
-              messages: [{ role: 'user', content: prompt }]
-            })
+            body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
           });
           const cj = await claudeRes.json();
-          const text = cj.content?.[0]?.text || '';
-          return res.status(200).json({ success: true, text, source: 'claude' });
+          return res.status(200).json({ success: true, text: cj.content?.[0]?.text || '', source: 'claude' });
         }
         return res.status(200).json({ success: false, error: 'Gemini 오류: ' + errText.slice(0, 200) });
       }
-
       const geminiData = await geminiRes.json();
-      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return res.status(200).json({ success: true, text });
+      return res.status(200).json({ success: true, text: geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '' });
     } catch (e) {
       return res.status(200).json({ success: false, error: e.message });
     }
   }
 
-  // ✅ serp_text_search: 키워드로 SerpAPI 검색 후 Claude가 텍스트로 요약
+  // ✅ serp_deep_search: 공식 페이지 직접 크롤링 → Claude 스펙 추출
+  if (action === 'serp_deep_search') {
+    try {
+      const { brand, modelKo, modelEn, cat, styleNo } = req.body;
+      const modelName = modelKo || modelEn || '';
+      if (!brand && !modelName) return res.status(400).json({ success: false, error: '브랜드/모델명 없음' });
+
+      // 공식 도메인 우선순위
+      const OFFICIAL_DOMAINS = [
+        'cartier.com', 'louisvuitton.com', 'chanel.com', 'hermes.com',
+        'bulgari.com', 'bvlgari.com', 'tiffany.com', 'rolex.com', 'omega.com',
+        'gucci.com', 'prada.com', 'dior.com', 'saintlaurent.com', 'ysl.com',
+        'bottegaveneta.com', 'celine.com', 'loewe.com', 'fendi.com',
+        'valentino.com', 'balenciaga.com', 'burberry.com', 'moncler.com',
+        'vancleefarpels.com', 'chaumet.com', 'fred.com',
+      ];
+
+      // 1단계: SerpAPI 검색 — 공식 사이트 URL 확보
+      const query = styleNo
+        ? `${brand} ${styleNo} official specifications`
+        : `${brand} ${modelName} official size specifications`;
+      const queryKo = `${brand} ${modelName} 공식 사이즈 스펙`;
+
+      let urls = [];
+      let serpSnippets = '';
+      for (const q of [query, queryKo]) {
+        try {
+          const sr = await fetch(
+            `https://serpapi.com/search.json?q=${encodeURIComponent(q)}&api_key=${SERP_KEY}&num=8&hl=ko`,
+            { signal: AbortSignal.timeout(10000) }
+          );
+          if (!sr.ok) continue;
+          const sd = await sr.json();
+          const organic = sd.organic_results || [];
+          if (!serpSnippets) {
+            serpSnippets = organic.slice(0, 5).map(r => `[${r.title}] ${r.snippet||''}`).join('\n');
+          }
+          const allLinks = organic.map(r => r.link).filter(Boolean);
+          const official = allLinks.filter(u => OFFICIAL_DOMAINS.some(d => u.includes(d)));
+          const others = allLinks.filter(u => !OFFICIAL_DOMAINS.some(d => u.includes(d)));
+          urls.push(...official, ...others);
+        } catch(e) { continue; }
+      }
+      // 중복 제거, 최대 5개
+      urls = [...new Set(urls)].slice(0, 5);
+
+      // 2단계: URL 직접 fetch → 텍스트 추출
+      const pageTexts = [];
+      for (const url of urls) {
+        try {
+          const r = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            },
+            signal: AbortSignal.timeout(8000)
+          });
+          if (!r.ok) continue;
+          const html = await r.text();
+          const text = html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+            .replace(/<header[\s\S]*?<\/header>/gi, '')
+            .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/\s{3,}/g, '\n')
+            .trim()
+            .slice(0, 4000);
+          if (text.length > 200) {
+            pageTexts.push(`[출처: ${url}]\n${text}`);
+            if (pageTexts.length >= 2) break; // 2페이지면 충분
+          }
+        } catch(e) { continue; }
+      }
+
+      // 3단계: Claude에게 크롤링 결과 넘겨서 스펙 추출
+      const sizeGuide = {
+        '가방':   '가로(cm) × 세로(cm) × 너비(cm)',
+        '지갑':   '가로(cm) × 세로(cm)',
+        '주얼리': '반지/밴드: 폭(mm) / 목걸이: 체인길이(cm), 펜던트(mm) / 귀걸이·팔찌: 직경 또는 폭(mm)',
+        '시계':   '케이스 직경(mm), 두께(mm)',
+        '벨트':   '폭(cm)',
+        '의류':   '사이즈 표기',
+        '신발':   '사이즈 표기',
+      };
+      const context = pageTexts.length > 0
+        ? pageTexts.join('\n\n---\n\n')
+        : (serpSnippets || '(검색 결과 없음)');
+
+      const prompt = `명품 감정 전문가. 아래 페이지에서 공식 스펙을 정확히 추출하세요.
+페이지에 명시된 수치만 사용. 없으면 "—".
+
+브랜드: ${brand}
+모델명: ${modelName}${styleNo ? '\n스타일번호: ' + styleNo : ''}
+카테고리: ${cat}
+사이즈 형식: ${sizeGuide[cat] || '해당 형식'}
+
+[페이지 내용]
+${context}
+
+아래 형식으로 답하세요:
+• 실측 사이즈: 
+• 소재: 
+• 스타일번호: 
+• 공식 URL: 
+• 특이사항: `;
+
+      const cr = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
+      });
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.error.message);
+      const text = (cd.content||[])[0]?.text?.trim() || '';
+      const source = pageTexts.length > 0 ? `crawl+claude (${pageTexts.length}페이지)` : (serpSnippets ? 'serp+claude' : 'claude');
+      return res.status(200).json({ success: true, text, source, crawledUrls: urls.slice(0, 2) });
+    } catch(e) {
+      return res.status(200).json({ success: false, error: e.message });
+    }
+  }
+
+  // ✅ serp_text_search (기존 유지 — 단순 스니펫 검색)
   if (action === 'serp_text_search') {
     try {
       const { keyword } = req.body;
       if (!keyword) return res.status(400).json({ success: false, error: 'keyword 없음' });
-
-      // SerpAPI 검색
       let searchContext = '';
       try {
-        const encoded = encodeURIComponent(keyword);
-        const serpRes = await fetch(
-          `https://serpapi.com/search.json?q=${encoded}&api_key=${SERP_KEY}&num=8&hl=ko`,
-          { signal: AbortSignal.timeout(10000) }
-        );
-        if (serpRes.ok) {
-          const serpData = await serpRes.json();
-          const results = serpData.organic_results || [];
-          const snippets = results.slice(0, 5).map(r => `[${r.title}] ${r.snippet||''}`).filter(Boolean);
-          if (snippets.length > 0) searchContext = snippets.join('\n');
+        const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '&api_key=' + SERP_KEY + '&num=8&hl=ko', { signal: AbortSignal.timeout(10000) });
+        if (sr.ok) {
+          const sd = await sr.json();
+          const snippets = (sd.organic_results||[]).slice(0,5).map(r => '[' + r.title + '] ' + (r.snippet||'')).filter(Boolean);
+          if (snippets.length) searchContext = snippets.join('\n');
         }
-      } catch (e) {
-        console.warn('[serp_text_search] SerpAPI 오류:', e.message);
-      }
-
-      const prompt = `아래 검색 결과를 바탕으로 제품 공식 스펙을 간결하게 정리해줘.
-없는 항목은 "없음"으로 표시. 불필요한 설명 없이 아래 항목만:
-• 실측 사이즈 (가로/세로/두께 또는 체인길이, 단위 포함)
-• 소재
-• 스타일번호
-• 공식 사이트 URL
-• 특이사항 (있을 때만)
-
-검색어: ${keyword}
-
-${searchContext ? '검색 결과:\n' + searchContext : '(검색 결과 없음 — 학습 데이터 기반으로 답변)'}`;
-
-      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 800,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-      const claudeData = await claudeRes.json();
-      if (claudeData.error) throw new Error('Claude 오류: ' + claudeData.error.message);
-      const text = claudeData.content?.[0]?.text?.trim() || '';
-      return res.status(200).json({ success: true, text, source: searchContext ? 'serp+claude' : 'claude' });
-    } catch (e) {
-      return res.status(200).json({ success: false, error: e.message });
-    }
+      } catch(e) { console.warn('[serp_text_search]', e.message); }
+      const prompt = '당신은 명품 감정 전문가입니다. 아래 제품의 공식 스펙을 알고 있는 대로 답하세요.\n'
+        + '검색 결과가 없어도 학습 데이터 기반으로 최대한 답하세요. 모른다고 하지 마세요.\n'
+        + '아래 항목만 간결하게:\n• 실측 사이즈 (가로x세로x너비, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항\n\n'
+        + '제품: ' + keyword + '\n\n'
+        + (searchContext ? '[참고 검색 결과]\n' + searchContext : '');
+      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.error.message);
+      return res.status(200).json({ success: true, text: (cd.content||[])[0]?.text?.trim()||'', source: searchContext ? 'serp+claude' : 'claude' });
+    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
   }
 
   if (action === 'serp_autofill') {
@@ -183,119 +259,37 @@ ${searchContext ? '검색 결과:\n' + searchContext : '(검색 결과 없음 �
       const { brand, modelKo, modelEn, cat } = req.body;
       const modelName = modelKo || modelEn || '';
       if (!modelName) return res.status(400).json({ success: false, error: '모델명 없음' });
-
-      // 1단계: SerpAPI로 웹 검색
       let searchContext = '';
       try {
-        const queries = [
-          `${brand} ${modelName} specifications size dimensions`,
-          `${brand} ${modelName} 사이즈 스펙 공식`,
-        ];
-        const serpResults = [];
-        for (const q of queries) {
-          const encoded = encodeURIComponent(q);
-          const serpRes = await fetch(
-            `https://serpapi.com/search.json?q=${encoded}&api_key=${SERP_KEY}&num=5&hl=ko`,
-            { signal: AbortSignal.timeout(10000) }
-          );
-          if (!serpRes.ok) continue;
-          const serpData = await serpRes.json();
-          const results = serpData.organic_results || [];
-          for (const r of results.slice(0, 3)) {
-            if (r.title && r.snippet) {
-              serpResults.push(`[${r.title}] ${r.snippet}`);
-            }
-          }
+        const qs = [brand + ' ' + modelName + ' specifications size', brand + ' ' + modelName + ' 사이즈 스펙'];
+        const results = [];
+        for (const q of qs) {
+          const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(q) + '&api_key=' + SERP_KEY + '&num=5', { signal: AbortSignal.timeout(10000) });
+          if (!sr.ok) continue;
+          const sd = await sr.json();
+          for (const r of (sd.organic_results||[]).slice(0,3)) { if (r.title && r.snippet) results.push('[' + r.title + '] ' + r.snippet); }
         }
-        if (serpResults.length > 0) {
-          searchContext = '\n\n[웹 검색 결과]\n' + serpResults.join('\n');
-        }
-      } catch (e) {
-        console.warn('[serp_autofill] SerpAPI 오류:', e.message);
-      }
-
-      // 2단계: Claude로 스펙 추출
+        if (results.length) searchContext = results.join('\n');
+      } catch(e) { console.warn('[serp_autofill]', e.message); }
       const sizeRules = {
-        '가방': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
-        '지갑': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm), size_unit=cm',
-        '주얼리': 'size_d=체인길이(cm) 필수, size_w=펜던트가로(mm), size_unit=mm (반지: size_label=호수)',
-        '시계': 'size_w=케이스직경(mm), size_h=두께(mm), size_unit=mm',
-        '의류': 'size_w=사이즈표기(S,M,L,95 등)',
-        '신발': 'size_w=사이즈표기(270 등)',
-        '벨트': 'size_w=폭(cm), size_unit=cm',
+        '가방': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm)',
+        '지갑': 'size_w=가로(cm), size_h=세로(cm)',
+        '주얼리': 'size_f=폭(mm) — 반지/밴드는 size_f에 폭(mm) 필수. 목걸이는 size_d=체인(cm), size_w=펜던트(mm)',
+        '시계': 'size_w=케이스직경(mm), size_h=두께(mm)',
+        '의류': 'size_w=사이즈표기',
+        '신발': 'size_w=사이즈표기',
+        '벨트': 'size_w=폭(cm)'
       };
-      const sizeRule = sizeRules[cat] || 'size_w=사이즈';
-
-      const prompt = `당신은 명품 감정 전문가입니다. 아래 상품의 공식 스펙을 JSON으로만 답하세요.
-절대로 JSON 외 다른 텍스트를 출력하지 마세요. 마크다운 금지.
-
-브랜드: ${brand}
-모델명: ${modelName}
-카테고리: ${cat}
-
-[사이즈 입력 규칙]
-${sizeRule}
-값을 모를 경우 빈문자열('')로 입력. 절대로 0 입력 금지.
-${searchContext}
-
-출력 형식 (이 JSON 구조를 그대로 사용):
-{
-"style_number": "스타일번호",
-"model_ko": "한글 모델명",
-"category": "카테고리 (가방/지갑/주얼리/시계/의류/신발/벨트 중 하나)",
-"size_w": "숫자만",
-"size_h": "숫자만",
-"size_d": "숫자만",
-"size_unit": "cm 또는 mm",
-"size_label": "사이즈 명칭 (예: OS, Small, MM)",
-"material": "소재",
-"made_in": "제조국",
-"official_url": "공식 제품 페이지 URL (없으면 빈 문자열)",
-"image_url": "공식 대표 이미지 URL (없으면 빈 문자열)",
-"notes": "검수 참고 정보"
-}`;
-
-      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': CLAUDE_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-
-      const claudeData = await claudeRes.json();
-      if (claudeData.error) throw new Error('Claude 오류: ' + claudeData.error.message);
-
-      const rawText = claudeData.content?.[0]?.text?.trim() || '';
+      const prompt = '명품 감정 전문가. 공식 스펙 JSON만 답하세요. 마크다운 금지.\n브랜드: ' + brand + '\n모델명: ' + modelName + '\n카테고리: ' + cat + '\n사이즈규칙: ' + (sizeRules[cat]||'size_w=사이즈') + '\n' + (searchContext ? '[검색결과]\n' + searchContext + '\n' : '') + '\n출력: {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_f":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}';
+      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }) });
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.error.message);
+      const rawText = (cd.content||[])[0]?.text?.trim()||'';
       let parsed = null;
-      try {
-        const jm = rawText.match(/```json[\s\S]*?({[\s\S]*?})[\s\S]*?```/) || rawText.match(/({[\s\S]*})/);
-        const jStr = (jm && jm[1]) || rawText;
-        const jStrFixed = jStr.trim().endsWith('}') ? jStr : jStr.replace(/,\s*$/, '') + '}';
-        parsed = JSON.parse(jStrFixed);
-      } catch (e) {
-        const partials = {};
-        for (const m of rawText.matchAll(/"([\w_]+)"\s*:\s*"([^"]*?)"/g)) partials[m[1]] = m[2];
-        for (const m of rawText.matchAll(/"([\w_]+)"\s*:\s*([\d.]+)/g)) partials[m[1]] = m[2];
-        if (Object.keys(partials).length > 0) parsed = partials;
-        else throw new Error('JSON 파싱 실패');
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: parsed,
-        source: searchContext ? 'serp+claude' : 'claude'
-      });
-
-    } catch (e) {
-      return res.status(200).json({ success: false, error: e.message });
-    }
+      try { parsed = JSON.parse(rawText.match(/({[^]*})/)?.[1] || rawText); }
+      catch(e) { const p = {}; for (const m of rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2]; if (Object.keys(p).length) parsed = p; else throw new Error('JSON 파싱 실패'); }
+      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+claude' : 'claude' });
+    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
   }
 
   if (action === 'save_sku') {
@@ -334,21 +328,13 @@ ${searchContext}
         fields.extra_images = [...(fields.extra_images || []), url];
         if (!fields.ref_image_url) fields.ref_image_url = url;
       }
-      if (Array.isArray(fields.extra_images) && fields.extra_images.length === 0) {
-        fields.ref_image_url = null;
-      }
-      if (!fields.ref_image_url && fields.extra_images?.length > 0) {
-        fields.ref_image_url = fields.extra_images[0];
-      }
+      if (Array.isArray(fields.extra_images) && fields.extra_images.length === 0) fields.ref_image_url = null;
+      if (!fields.ref_image_url && fields.extra_images?.length > 0) fields.ref_image_url = fields.extra_images[0];
       if (fields.accessories && !Array.isArray(fields.accessories)) fields.accessories = [];
       fields.updated_at = new Date().toISOString();
       fields.verified = true;
       fields.verified_at = new Date().toISOString();
-      const r = await sb(`sku_items?id=eq.${id}`, {
-        method: 'PATCH',
-        prefer: 'return=minimal',
-        body: JSON.stringify(fields)
-      });
+      const r = await sb(`sku_items?id=eq.${id}`, { method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(fields) });
       if (r.status === 204 || r.status === 200) return res.status(200).json({ success: true });
       const d = await r.json();
       if (d.code || d.message) return res.status(200).json({ success: false, error: d.message || JSON.stringify(d) });
@@ -393,10 +379,7 @@ ${searchContext}
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 60,
-          messages: [{ role: 'user', content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}` }]
-        })
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 60, messages: [{ role: 'user', content: `Translate this Korean luxury product model name to English. Output the English translation only, one line, no explanation.\nKorean: ${modelNameKo}` }] })
       });
       const j = await r.json();
       return res.status(200).json({ model_name_en: (j.content?.[0]?.text||'').trim().split('\n')[0] });
@@ -423,9 +406,7 @@ ${searchContext}
                 if (!ir.ok) continue;
                 const buf = Buffer.from(await ir.arrayBuffer());
                 if (buf.length < 2000) continue;
-                const b64 = buf.toString('base64');
-                const ct = ir.headers.get('content-type') || 'image/jpeg';
-                return res.status(200).json({ success: true, base64: b64, mime: ct, sourceUrl: imgUrl });
+                return res.status(200).json({ success: true, base64: buf.toString('base64'), mime: ir.headers.get('content-type') || 'image/jpeg', sourceUrl: imgUrl });
               } catch (e) { continue; }
             }
           }
@@ -442,10 +423,7 @@ ${searchContext}
           const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', 'Accept-Language': 'ko-KR,ko;q=0.9' } });
           if (!r.ok) continue;
           const html = await r.text();
-          const patterns = [
-            /cdn-images\.farfetch-contents\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi,
-            /media\.mytheresa\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi,
-          ];
+          const patterns = [/cdn-images\.farfetch-contents\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi, /media\.mytheresa\.com\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/gi];
           for (const pat of patterns) {
             const matches = html.match(pat);
             if (matches && matches.length > 0) {
@@ -454,9 +432,7 @@ ${searchContext}
               if (!imgR.ok) continue;
               const buf = Buffer.from(await imgR.arrayBuffer());
               if (buf.length < 1000) continue;
-              const b64 = buf.toString('base64');
-              const ct = imgR.headers.get('content-type') || 'image/jpeg';
-              return res.status(200).json({ success: true, base64: b64, mime: ct, sourceUrl: imgUrl });
+              return res.status(200).json({ success: true, base64: buf.toString('base64'), mime: imgR.headers.get('content-type') || 'image/jpeg', sourceUrl: imgUrl });
             }
           }
         } catch (e) { continue; }
@@ -465,67 +441,10 @@ ${searchContext}
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
-  if (action === 'serp_text_search') {
-    try {
-      const { keyword } = req.body;
-      if (!keyword) return res.status(400).json({ success: false, error: 'keyword 없음' });
-      let searchContext = '';
-      try {
-        const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(keyword) + '&api_key=' + SERP_KEY + '&num=8&hl=ko', { signal: AbortSignal.timeout(10000) });
-        if (sr.ok) {
-          const sd = await sr.json();
-          const snippets = (sd.organic_results||[]).slice(0,5).map(r => '[' + r.title + '] ' + (r.snippet||'')).filter(Boolean);
-          if (snippets.length) searchContext = snippets.join('\n');
-        }
-      } catch(e) { console.warn('[serp_text_search]', e.message); }
-      const prompt = '당신은 명품 감정 전문가입니다. 아래 제품의 공식 스펙을 알고 있는 대로 답하세요.\n'
-        + '검색 결과가 없어도 학습 데이터 기반으로 최대한 답하세요. 모른다고 하지 마세요.\n'
-        + '아래 항목만 간결하게:\n• 실측 사이즈 (가로x세로x너비, 단위 포함)\n• 소재\n• 스타일번호\n• 공식 사이트 URL\n• 특이사항\n\n'
-        + '제품: ' + keyword + '\n\n'
-        + (searchContext ? '[참고 검색 결과]\n' + searchContext : '');
-      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
-      const cd = await cr.json();
-      if (cd.error) throw new Error(cd.error.message);
-      return res.status(200).json({ success: true, text: (cd.content||[])[0]?.text?.trim()||'', source: searchContext ? 'serp+claude' : 'claude' });
-    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
-  }
-
-  if (action === 'serp_autofill') {
-    try {
-      const { brand, modelKo, modelEn, cat } = req.body;
-      const modelName = modelKo || modelEn || '';
-      if (!modelName) return res.status(400).json({ success: false, error: '모델명 없음' });
-      let searchContext = '';
-      try {
-        const qs = [brand + ' ' + modelName + ' specifications size', brand + ' ' + modelName + ' 사이즈 스펙'];
-        const results = [];
-        for (const q of qs) {
-          const sr = await fetch('https://serpapi.com/search.json?q=' + encodeURIComponent(q) + '&api_key=' + SERP_KEY + '&num=5', { signal: AbortSignal.timeout(10000) });
-          if (!sr.ok) continue;
-          const sd = await sr.json();
-          for (const r of (sd.organic_results||[]).slice(0,3)) { if (r.title && r.snippet) results.push('[' + r.title + '] ' + r.snippet); }
-        }
-        if (results.length) searchContext = results.join('\n');
-      } catch(e) { console.warn('[serp_autofill]', e.message); }
-      const sizeRules = { '가방': 'size_w=가로(cm), size_h=세로(cm), size_d=너비(cm)', '지갑': 'size_w=가로(cm), size_h=세로(cm)', '주얼리': 'size_d=체인길이(cm), size_w=펜던트가로(mm)', '시계': 'size_w=케이스직경(mm), size_h=두께(mm)', '의류': 'size_w=사이즈표기', '신발': 'size_w=사이즈표기', '벨트': 'size_w=폭(cm)' };
-      const prompt = '명품 감정 전문가. 공식 스펙 JSON만 답하세요. 마크다운 금지.\n브랜드: ' + brand + '\n모델명: ' + modelName + '\n카테고리: ' + cat + '\n사이즈규칙: ' + (sizeRules[cat]||'size_w=사이즈') + '\n' + (searchContext ? '[검색결과]\n' + searchContext + '\n' : '') + '\n출력: {"style_number":"","model_ko":"","category":"","size_w":"","size_h":"","size_d":"","size_unit":"","size_label":"","material":"","made_in":"","official_url":"","image_url":"","notes":""}';
-      const cr = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }) });
-      const cd = await cr.json();
-      if (cd.error) throw new Error(cd.error.message);
-      const rawText = (cd.content||[])[0]?.text?.trim()||'';
-      let parsed = null;
-      try { parsed = JSON.parse(rawText.match(/({[^]*})/)?.[1] || rawText); }
-      catch(e) { const p = {}; for (const m of rawText.matchAll(/"(\w+)"\s*:\s*"([^"]*)"/g)) p[m[1]] = m[2]; if (Object.keys(p).length) parsed = p; else throw new Error('JSON 파싱 실패'); }
-      return res.status(200).json({ success: true, data: parsed, source: searchContext ? 'serp+claude' : 'claude' });
-    } catch(e) { return res.status(200).json({ success: false, error: e.message }); }
-  }
-
   if (action === 'gemini_proxy') {
     try {
       const { apiKey, model, body } = req.body;
       if (!body) return res.status(400).json({ success: false, error: '파라미터 없음' });
-
-      // AQ. 키(OAuth)면 Claude로 우회
       const isOAuth = !apiKey || apiKey.startsWith('AQ.') || apiKey.startsWith('ya29.');
       if (isOAuth) {
         const parts = (body.contents||[]).flatMap(c => c.parts||[]);
@@ -546,18 +465,13 @@ ${searchContext}
           body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: finalPrompt }] })
         });
         const cd = await cr.json();
-        const text = (cd.content||[])[0]?.text || '';
-        return res.status(200).json({ success: true, data: { candidates: [{ content: { parts: [{ text }] } }] } });
+        return res.status(200).json({ success: true, data: { candidates: [{ content: { parts: [{ text: (cd.content||[])[0]?.text || '' }] } }] } });
       }
-
-      // 정상 AIzaSy 키면 Gemini 직접 호출
-      const targetModel = model || 'gemini-2.5-flash';
       const geminiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/' + targetModel + ':generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/' + (model||'gemini-2.5-flash') + ':generateContent',
         { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) }
       );
-      const data = await geminiRes.json();
-      return res.status(200).json({ success: true, data });
+      return res.status(200).json({ success: true, data: await geminiRes.json() });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
@@ -566,18 +480,11 @@ ${searchContext}
       const { imageUrl } = req.body;
       if (!imageUrl) return res.status(400).json({ success: false, error: 'URL 없음' });
       const r = await fetch(imageUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'image/*,*/*',
-          'Referer': new URL(imageUrl).origin
-        }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'image/*,*/*', 'Referer': new URL(imageUrl).origin }
       });
       if (!r.ok) return res.status(400).json({ success: false, error: 'fetch 실패: '+r.status });
-      const arrayBuf = await r.arrayBuffer();
-      const buf = Buffer.from(arrayBuf);
-      const b64 = buf.toString('base64');
-      const ct = r.headers.get('content-type') || 'image/jpeg';
-      return res.status(200).json({ success: true, base64: b64, mime: ct });
+      const buf = Buffer.from(await r.arrayBuffer());
+      return res.status(200).json({ success: true, base64: buf.toString('base64'), mime: r.headers.get('content-type') || 'image/jpeg' });
     } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
   }
 
@@ -610,15 +517,9 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       })
     }).then(r => r.json());
 
-    const imageUrlPromise = uploadImage(imageBase64).catch(e => {
-      console.warn('[Storage 업로드 실패]', e.message); return '';
-    });
-
+    const imageUrlPromise = uploadImage(imageBase64).catch(e => { console.warn('[Storage 업로드 실패]', e.message); return ''; });
     const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
-      .then(async r => {
-        const data = await r.json();
-        return Array.isArray(data) ? data : [];
-      })
+      .then(async r => { const data = await r.json(); return Array.isArray(data) ? data : []; })
       .catch(e => { console.error('[DB fetch error]', e.message); return []; });
 
     const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imageUrlPromise, dbPromise]);
@@ -718,13 +619,9 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       if (imageUrl) {
         const lensController = new AbortController();
         const lensTimeout = setTimeout(() => lensController.abort(), 15000);
-        const s = await fetch(
-          `https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`,
-          { signal: lensController.signal }
-        );
+        const s = await fetch(`https://serpapi.com/search?engine=google_lens&url=${encodeURIComponent(imageUrl)}&api_key=${SERP_KEY}`, { signal: lensController.signal });
         clearTimeout(lensTimeout);
-        const j = await s.json();
-        visualMatches = j.visual_matches || [];
+        visualMatches = (await s.json()).visual_matches || [];
       }
     } catch (e) { console.warn('Lens skip:', e.message); }
 
@@ -734,12 +631,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       ref_image_url: m.ref_image_url || null,
     }));
 
-    return res.status(200).json({
-      success: true, imageUrl, analysis,
-      dbMatch: dbMatches[0] || null,
-      dbMatches,
-      visualMatches: visualMatches.slice(0, 12)
-    });
+    return res.status(200).json({ success: true, imageUrl, analysis, dbMatch: dbMatches[0] || null, dbMatches, visualMatches: visualMatches.slice(0, 12) });
 
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
