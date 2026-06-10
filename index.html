@@ -2870,9 +2870,16 @@ function editSkuSize(){
   const cfg=SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
   const curRenderedCat=wrap.dataset.cat;
   if(wrap.querySelector('input') && curRenderedCat===cat) return; // 같은 카테고리면 유지
-  // 기존 값 파싱
+  // 기존 값 파싱 — 레이블+숫자 쌍으로 매핑 (순서 의존 제거)
   const curText=(document.getElementById('sku-size-hidden')?.value||wrap.textContent||'').replace('탭하여 입력','');
-  const nums=curText.match(/\d+(\.\d+)?/g)||[];
+  // "가로 31cm × 세로 28cm × 폭 6.4mm" → {가로:'31', 세로:'28', 폭:'6.4'}
+  const labelMap={};
+  for(const seg of curText.split(/[×x]/)){
+    const m=seg.trim().match(/^([가-힣a-zA-Z]+)\s*([\d.]+)/);
+    if(m) labelMap[m[1].trim()]=m[2];
+  }
+  // cfg 순서대로 nums 배열 구성 (레이블 매핑 우선, fallback 순서)
+  const nums=cfg.map(f=>labelMap[f.label]||'');
   wrap.dataset.cat=cat;
   wrap.innerHTML=`<span id="sz-sku-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">${buildSkuSizeInput(cfg,nums)}</span>`;
   const sizeInputIds=cfg.map(f=>'ssku-'+f.id);
@@ -5715,9 +5722,12 @@ async function applySpecGoogleResult(){
       if(catEl2) catEl2.value=_cat;
 
       // 2) 사이즈 필드 렌더 (dataset.cat 초기화 → 강제 재렌더)
+      // hidden.value를 먼저 비워야 editSkuSize가 기존 숫자를 잘못된 필드에 채우지 않음
       if(!isUnreg){
         var _sw=document.getElementById('sku-size-wrap');
         if(_sw) _sw.dataset.cat='';
+        var _hid=document.getElementById('sku-size-hidden');
+        if(_hid) _hid.value='';  // ← 핵심: nums=[] 강제
         if(typeof editSkuSize==='function') editSkuSize();
       } else {
         var _ce=document.getElementById('unreg-cat');
@@ -6715,6 +6725,9 @@ function _applySpecToForm(data, cat){
     var catEl = document.getElementById('sku-cat');
     if(catEl && cat) catEl.value = cat;  // 카테고리 먼저 확정
     if(sizeWrap) delete sizeWrap.dataset.cat; // 강제 재렌더 트리거
+    // hidden 비우기: 기존 값이 있으면 editSkuSize가 잘못된 필드에 채움
+    var _hidPre = document.getElementById('sku-size-hidden');
+    if(_hidPre) _hidPre.value = '';
     editSkuSize();
     setTimeout(function(){
       // editSkuSize가 렌더한 뒤 카테고리 한번 더 확인
