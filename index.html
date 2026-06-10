@@ -6497,7 +6497,8 @@ async function runSkuListGoogleSearch(){
   var q = (document.getElementById('sku-search')?.value||'').trim();
   if(!q){ toast('⚠ 브랜드/모델명을 먼저 검색해주세요'); return; }
 
-  var cat = (document.getElementById('sku-cat')?.value||'가방').trim();
+  var catSel = (document.getElementById('sku-list-cat-select')?.value||'전체').trim();
+  var cat = (catSel !== '전체') ? catSel : (document.getElementById('sku-cat')?.value||'가방').trim();
   var brand   = (document.getElementById('sku-brand')?.value||'').trim();
   var modelKo = (document.getElementById('sku-model-ko')?.value||'').trim();
   if(!brand && !modelKo){ modelKo = q; }
