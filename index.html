@@ -6796,7 +6796,7 @@ JSON 형식:
         model: 'gemini-2.5-flash',
         body: {
           contents: [{parts: [{text: prompt}]}],
-          generationConfig: {temperature: 0.1, maxOutputTokens: 1024}
+          generationConfig: {temperature: 0.1, maxOutputTokens: 2048}
         }
       })
     });
@@ -6806,7 +6806,18 @@ JSON 형식:
 
     var text = j.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     var cleaned = text.replace(/```json|```/g,'').trim();
-    var data = JSON.parse(cleaned);
+    // JSON 불완전한 경우 복구 시도
+    if(!cleaned.endsWith('}')) cleaned = cleaned + '}';
+    var data;
+    try {
+      data = JSON.parse(cleaned);
+    } catch(pe) {
+      // 키-값 패턴으로 fallback 파싱
+      var p = {};
+      for(var m of (cleaned.matchAll(/"([\w_]+)"\s*:\s*"([^"]*)"/g)||[])) p[m[1]] = m[2];
+      if(Object.keys(p).length === 0) throw new Error('JSON 파싱 실패: ' + cleaned.slice(0,100));
+      data = p;
+    }
     console.log('[AutoFill] Gemini proxy 성공', data);
     localStorage.setItem('_lastAutoFill', JSON.stringify(data));
     return data;
