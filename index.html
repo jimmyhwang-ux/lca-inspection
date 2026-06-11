@@ -99,6 +99,22 @@ input[type=file]{display:none}
 .lens-price{font-size:12px;font-weight:800;color:#ff6b2b}
 .lens-src{font-size:10px;color:#ddd;margin-top:2px}
 .acc-wrap{background:#111;border-radius:14px;overflow:hidden}
+.chk-wrap{background:#111;border-radius:14px;overflow:hidden;margin:0 16px 10px}
+.chk-header{padding:10px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.chk-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid #1a1a1a}
+.chk-item:last-child{border-bottom:none}
+.chk-box{width:20px;height:20px;border-radius:6px;border:1.5px solid #333;flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk-box.done{background:#1D9E75;border-color:#1D9E75}
+.chk-text{flex:1}
+.chk-name{font-size:13px;color:#f0f0f0;line-height:1.4}
+.chk-name.done{color:#555;text-decoration:line-through}
+.chk-desc{font-size:11px;color:#555;margin-top:2px}
+.chk-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px}
+.chk-req{background:rgba(239,68,68,.15);color:#ef4444}
+.chk-warn{background:rgba(245,158,11,.15);color:#f59e0b}
+.chk-prog{height:3px;background:#1a1a1a;margin:0 14px 10px;border-radius:2px}
+.chk-prog-fill{height:3px;background:#1D9E75;border-radius:2px;transition:width .3s}
+
 .acc-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1a1a1a;gap:10px}
 .acc-item:last-child{border-bottom:none}
 .acc-name{font-size:13px;font-weight:600;color:#f0f0f0;flex:1;min-width:0}
@@ -493,6 +509,32 @@ input[type=file]{display:none}
 
   </div><!-- end unreg-content -->
   </div><!-- end 주황 테두리 -->
+
+
+  <!-- 검수 체크리스트 -->
+  <div id="checklist-wrap" style="display:none;margin:4px 0 0">
+    <div class="chk-wrap">
+      <div class="chk-header" onclick="toggleChecklist()">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;font-weight:700;color:#f0f0f0">✅ 검수 체크리스트</span>
+          <span id="chk-ai-badge" style="font-size:10px;background:rgba(66,133,244,.15);color:#4285f4;padding:2px 7px;border-radius:4px;font-weight:700">AI 자동생성</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="chk-count" style="font-size:12px;color:#555">0/0</span>
+          <span id="chk-toggle-icon" style="color:#555;font-size:14px">▼</span>
+        </div>
+      </div>
+      <div id="chk-content" style="display:none">
+        <div class="chk-prog"><div class="chk-prog-fill" id="chk-prog-fill" style="width:0%"></div></div>
+        <div id="chk-list"></div>
+        <div style="padding:10px 14px;border-top:1px solid #1a1a1a">
+          <input type="text" id="chk-add-input" placeholder="체크포인트 직접 추가..."
+            style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;color:#f0f0f0;font-size:12px;outline:none;box-sizing:border-box"
+            onkeydown="if(event.key==='Enter')addCheckItem()">
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div style="padding:0 16px">
   <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px">
@@ -2224,6 +2266,10 @@ async function renderResult(){
   // 카테고리 탭 자동 동기화
   if(analysis.category) syncCatTab(analysis.category);
   showScreen('result');
+  // 체크리스트 초기화
+  var _rBrand=(document.getElementById('r-brand')||{}).textContent||'';
+  var _rCat=document.querySelector('#r-cats .cat-tag')?.textContent?.replace('✎','').trim()||'';
+  initChecklist(_rBrand, _rCat);
   // 구글 검색 버튼 노출
   var _sgw = document.getElementById('spec-google-wrap');
   if(_sgw) { _sgw.style.display = 'block'; _checkGeminiKeyRow && _checkGeminiKeyRow(); }
@@ -7103,6 +7149,126 @@ async function saveSpecToSupabaseById(id, specs){
   } catch(e){ console.warn('[Supabase saveSpecById]',e); }
 }
 
+
+
+// ── 검수 체크리스트 ──────────────────────────────────────────
+var _CHECKLIST_DB = {
+  '까르띠에': {
+    '주얼리': [
+      {name:'내부 CARTIER 각인 확인', desc:'반지 내부 각인 위치·깊이', req:true},
+      {name:'나사 6개 여부 확인', desc:'좌우 3개씩 총 6개, 일정한 간격', req:true},
+      {name:'클러치 각인 확인', desc:'금속 클러치에 750 각인 존재', req:true},
+      {name:'폭 실측 확인', desc:'DB 스펙과 ±0.1mm 이내', req:false},
+      {name:'18K 소재·광택 확인', desc:'도금 여부, 색상 균일성', req:false},
+    ],
+    '시계': [
+      {name:'크라운 각인 확인', desc:'용두에 CARTIER 각인', req:true},
+      {name:'케이스백 각인 확인', desc:'시리얼·모델번호 일치', req:true},
+      {name:'다이얼 인덱스 확인', desc:'인덱스 균일성, 야광 상태', req:false},
+    ]
+  },
+  '샤넬': {
+    '가방': [
+      {name:'스티칭 간격 확인', desc:'10cm당 8~10땀, 균일한 간격', req:true},
+      {name:'CC 로고 정렬 확인', desc:'좌측 C가 우측 C 위에 위치', req:true},
+      {name:'시리얼 스티커 확인', desc:'내부 시리얼 스티커 위치·형식', req:true},
+      {name:'홀로그램 스티커 확인', desc:'빛 반사 시 패턴 확인', req:false},
+    ],
+    '주얼리': [
+      {name:'18K 각인 확인', desc:'750 또는 18K 각인', req:true},
+      {name:'로고 각인 위치 확인', desc:'CHANEL 각인 선명도', req:true},
+    ]
+  },
+  '루이비통': {
+    '가방': [
+      {name:'LV 모노그램 정렬 확인', desc:'패턴이 솔기에서 잘리지 않게', req:true},
+      {name:'데이트코드 확인', desc:'내부 데이트코드 위치·형식', req:true},
+      {name:'지퍼 탭 각인 확인', desc:'LV 각인 선명도', req:true},
+      {name:'스티칭 색상 확인', desc:'캔버스는 노란 실, 에피는 흰 실', req:false},
+    ]
+  },
+  '롤렉스': {
+    '시계': [
+      {name:'크라운 각인 확인', desc:'용두에 롤렉스 왕관 각인', req:true},
+      {name:'케이스백 시리얼 확인', desc:'케이스백 시리얼·모델번호 일치', req:true},
+      {name:'다이얼 확인', desc:'ROLEX OYSTER 텍스트 선명도', req:true},
+      {name:'브레이슬릿 각인 확인', desc:'클라스프 내부 각인', req:false},
+    ]
+  }
+};
+
+var _chkItems = [];
+var _chkOpen = false;
+
+function _generateChecklist(brand, category){
+  var b = Object.keys(_CHECKLIST_DB).find(function(k){ return brand.includes(k) || k.includes(brand); });
+  if(!b) return [];
+  var catMap = _CHECKLIST_DB[b];
+  if(!catMap) return [];
+  var c = Object.keys(catMap).find(function(k){ return category.includes(k) || k.includes(category); });
+  if(!c) return [];
+  return catMap[c] || [];
+}
+
+function _renderChecklist(){
+  var list = document.getElementById('chk-list');
+  if(!list) return;
+  list.innerHTML = _chkItems.map(function(item, i){
+    return '<div class="chk-item">'
+      + '<div class="chk-box'+(item.done?' done':'') +'" onclick="_toggleChk('+i+')">'
+      + (item.done ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '')
+      + '</div>'
+      + '<div class="chk-text">'
+      + '<div class="chk-name'+(item.done?' done':'')+'">'+item.name+'</div>'
+      + (item.desc ? '<div class="chk-desc">'+item.desc+'</div>' : '')
+      + '</div>'
+      + (item.req ? '<span class="chk-badge chk-req">필수</span>' : '<span class="chk-badge chk-warn">참고</span>')
+      + '</div>';
+  }).join('');
+  var done = _chkItems.filter(function(i){ return i.done; }).length;
+  var total = _chkItems.length;
+  document.getElementById('chk-count').textContent = done+'/'+total;
+  document.getElementById('chk-prog-fill').style.width = (total ? Math.round(done/total*100) : 0)+'%';
+}
+
+function _toggleChk(idx){
+  _chkItems[idx].done = !_chkItems[idx].done;
+  _renderChecklist();
+}
+
+function addCheckItem(){
+  var inp = document.getElementById('chk-add-input');
+  var val = (inp.value||'').trim();
+  if(!val) return;
+  _chkItems.push({name:val, desc:'', req:false, done:false});
+  inp.value = '';
+  _renderChecklist();
+}
+
+function toggleChecklist(){
+  _chkOpen = !_chkOpen;
+  var content = document.getElementById('chk-content');
+  var icon = document.getElementById('chk-toggle-icon');
+  if(content) content.style.display = _chkOpen ? 'block' : 'none';
+  if(icon) icon.style.transform = _chkOpen ? 'rotate(180deg)' : '';
+}
+
+function initChecklist(brand, category){
+  _chkItems = _generateChecklist(brand, category).map(function(item){
+    return {name:item.name, desc:item.desc, req:item.req, done:false};
+  });
+  var wrap = document.getElementById('checklist-wrap');
+  if(!wrap) return;
+  if(_chkItems.length > 0){
+    wrap.style.display = 'block';
+    _chkOpen = true;
+    var content = document.getElementById('chk-content');
+    if(content) content.style.display = 'block';
+    _renderChecklist();
+  } else {
+    wrap.style.display = 'none';
+  }
+}
 
 </script>
 
