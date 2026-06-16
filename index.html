@@ -173,14 +173,14 @@ input[type=file]{display:none}
 .lightbox.open{opacity:1;pointer-events:all}#lightbox{overflow:hidden}
 .lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px}
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#ffffff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+.edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
 .edit-modal.open{opacity:1;pointer-events:all}
 .edit-sheet{background:#ffffff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;overflow-x:visible;transform:translateY(100%);transition:transform .25s}
 .edit-modal.open .edit-sheet{transform:translateY(0)}
 .edit-sheet-handle{width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 16px}
 .edit-field-row{margin-bottom:12px;overflow:visible}
 .edit-field-label{font-size:11px;color:#555;margin-bottom:5px}
-.edit-field-input{width:100%;background:#1a1a1a;border:1px solid #e0e0e0;border-radius:10px;padding:10px 13px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit}
+.edit-field-input{width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:10px;padding:10px 13px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit}
 .edit-field-input:focus{border-color:#ff6b2b}
 
 @media(min-width:960px){
@@ -361,7 +361,7 @@ input[type=file]{display:none}
       <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 검색을 사용할 수 있어요</div>
       <div style="display:flex;gap:6px">
         <input id="gemini-key-inline-result" type="text" placeholder="API Key..." autocomplete="off"
-          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#1a1a1a;font-size:12px;outline:none;min-width:0">
+          style="flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;color:#1a1a1a;font-size:12px;outline:none;min-width:0">
         <button onclick="saveGeminiKeyResult()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
@@ -536,7 +536,7 @@ input[type=file]{display:none}
       <div style="font-size:11px;color:#ff6b2b;margin-bottom:6px">🔑 Gemini API 키를 입력하면 AI 기능을 사용할 수 있어요</div>
       <div style="display:flex;gap:6px">
         <input id="gemini-key-inline" type="text" placeholder="API Key..." autocomplete="off"
-          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#1a1a1a;font-size:12px;outline:none;min-width:0">
+          style="flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;color:#1a1a1a;font-size:12px;outline:none;min-width:0">
         <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
@@ -628,7 +628,7 @@ input[type=file]{display:none}
       <div style="font-size:11px;color:#4285f4;margin-bottom:6px">🔍 SerpAPI 키 입력 시 신규 등록 폼에서 대표사진 자동 검색이 가능해요</div>
       <div style="display:flex;gap:6px">
         <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
-          style="flex:1;background:#000;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#1a1a1a;font-size:12px;outline:none;min-width:0">
+          style="flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;color:#1a1a1a;font-size:12px;outline:none;min-width:0">
         <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
@@ -696,11 +696,11 @@ input[type=file]{display:none}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
             <div>
               <div style="font-size:10px;color:#888;margin-bottom:3px">브랜드 *</div>
-              <input id="nl-brand" type="text" placeholder="브랜드명" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <input id="nl-brand" type="text" placeholder="브랜드명" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div>
               <div style="font-size:10px;color:#888;margin-bottom:3px">카테고리 *</div>
-              <select id="nl-cat" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <select id="nl-cat" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
                 <option value="가방">가방</option>
                 <option value="지갑">지갑</option>
                 <option value="주얼리">주얼리</option>
@@ -712,19 +712,19 @@ input[type=file]{display:none}
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">모델명 (한글) *</div>
-              <input id="nl-model-ko" type="text" placeholder="한글 모델명" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <input id="nl-model-ko" type="text" placeholder="한글 모델명" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">모델명 (영문)</div>
-              <input id="nl-model-en" type="text" placeholder="영문 모델명" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <input id="nl-model-en" type="text" placeholder="영문 모델명" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div>
               <div style="font-size:10px;color:#888;margin-bottom:3px">컬러</div>
-              <input id="nl-color" type="text" placeholder="컬러" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <input id="nl-color" type="text" placeholder="컬러" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div>
               <div style="font-size:10px;color:#888;margin-bottom:3px">스타일번호</div>
-              <input id="nl-sku" type="text" placeholder="SKU" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <input id="nl-sku" type="text" placeholder="SKU" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div>
@@ -735,7 +735,7 @@ input[type=file]{display:none}
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div>
-              <input id="nl-url" type="text" placeholder="https://..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
+              <input id="nl-url" type="text" placeholder="https://..." style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box">
             </div>
           <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
@@ -763,11 +763,11 @@ input[type=file]{display:none}
               <div style="font-size:10px;color:#888;margin-bottom:3px">부속품</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px" id="nl-acc-tabs">
                 <button onclick="setNlAccCat('가방',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #ff6b2b;background:rgba(255,107,43,.2);color:#ff6b2b;font-size:11px;cursor:pointer">가방</button>
-                <button onclick="setNlAccCat('지갑',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">지갑</button>
-                <button onclick="setNlAccCat('주얼리',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">주얼리</button>
-                <button onclick="setNlAccCat('의류',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">의류</button>
-                <button onclick="setNlAccCat('신발',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">신발</button>
-                <button onclick="setNlAccCat('시계',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #333;background:transparent;color:#888;font-size:11px;cursor:pointer">시계</button>
+                <button onclick="setNlAccCat('지갑',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #e0e0e0;background:#f0f0f0;color:#666;font-size:11px;cursor:pointer">지갑</button>
+                <button onclick="setNlAccCat('주얼리',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #e0e0e0;background:#f0f0f0;color:#666;font-size:11px;cursor:pointer">주얼리</button>
+                <button onclick="setNlAccCat('의류',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #e0e0e0;background:#f0f0f0;color:#666;font-size:11px;cursor:pointer">의류</button>
+                <button onclick="setNlAccCat('신발',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #e0e0e0;background:#f0f0f0;color:#666;font-size:11px;cursor:pointer">신발</button>
+                <button onclick="setNlAccCat('시계',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #e0e0e0;background:#f0f0f0;color:#666;font-size:11px;cursor:pointer">시계</button>
               </div>
               <div style="display:flex;gap:6px;margin-bottom:6px">
                 <select id="nl-acc-select" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none">
@@ -778,7 +778,7 @@ input[type=file]{display:none}
               </div>
               <div id="nl-acc-list" style="font-size:12px;color:#555;padding:4px 0">부속품 없음</div>
             </div>
-              <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
+              <textarea id="nl-notes" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;outline:none;resize:none;box-sizing:border-box"></textarea>
             </div>
           </div>
         </div>
@@ -848,7 +848,7 @@ input[type=file]{display:none}
     <div class="edit-field-row"><div class="edit-field-label">모델명 (한글)</div><input class="edit-field-input" id="ef-model-ko" type="text" oninput="onEfModelKoInput(this)"></div>
     <div class="edit-field-row"><div class="edit-field-label">모델명 (영문)</div><input class="edit-field-input" id="ef-model" type="text"></div>
     <div class="edit-field-row"><div class="edit-field-label">카테고리</div>
-    <select class="edit-field-input" id="ef-cat" onchange="onEfCatInput(this)" style="background:#1a1a1a;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:10px;padding:10px 14px;font-family:inherit;font-size:14px;cursor:pointer;width:100%">
+    <select class="edit-field-input" id="ef-cat" onchange="onEfCatInput(this)" style="background:#f8f8f8;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:10px;padding:10px 14px;font-family:inherit;font-size:14px;cursor:pointer;width:100%">
       <option value="">—</option>
       <option value="가방">가방</option>
       <option value="지갑">지갑</option>
@@ -880,7 +880,7 @@ input[type=file]{display:none}
         <button class="cat-btn" onclick="setEfAccCat('신발',this)">신발</button>
         <button class="cat-btn" onclick="setEfAccCat('시계',this)">시계</button>
       </div>
-      <select id="ef-acc-select" onchange="addEditAccFromDrop(this)" style="width:100%;background:#1a1a1a;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;color:#1a1a1a;outline:none;margin-bottom:6px;font-family:inherit">
+      <select id="ef-acc-select" onchange="addEditAccFromDrop(this)" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:13px;color:#1a1a1a;outline:none;margin-bottom:6px;font-family:inherit">
         <option value="">-- 드롭다운에서 선택 --</option>
         <option>열쇠 1개</option><option>열쇠 2개</option><option>자물쇠</option>
         <option>자물쇠 커버 (키벨)</option><option>네임택</option><option>연장 스트랩</option>
@@ -1528,7 +1528,7 @@ function _switchDbTab(tab){
       bar.innerHTML = `<div style="position:relative;display:flex;align-items:center">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:8px;pointer-events:none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input id="db-card-search-input" type="text" placeholder="모델명 · SKU 검색..." oninput="searchInDbCards(this.value)" oncompositionend="searchInDbCards(this.value)"
-          style="width:100%;background:#1a1a1a;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 10px 6px 26px;color:#1a1a1a;font-size:12px;outline:none">
+          style="width:100%;background:#f8f8f8;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 10px 6px 26px;color:#1a1a1a;font-size:12px;outline:none">
       </div>`;
       content.insertBefore(bar, content.firstChild);
     }
@@ -1840,7 +1840,7 @@ function initDbCardActualInputs(mId, cat, curVal){
       }
     }
   });
-  var iStyle = 'text-align:center;background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#eee;font-size:11px;outline:none;width:44px';
+  var iStyle = 'text-align:center;background:#f0faf5;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#1a1a1a;font-size:11px;outline:none;width:44px';
   var sepStyle = 'color:#444;font-size:9px;flex-shrink:0';
   wrap.innerHTML = cfg.map(function(f, idx){
     var val = nums[idx]||'';
@@ -3351,7 +3351,7 @@ function renderSkuAccList(){
     addRow.id='sku-acc-add-row';
     addRow.style.cssText='padding:10px 14px;border-top:1px solid #f0f0f0';
     addRow.innerHTML=`<div style="display:flex;gap:8px">
-      <input id="sku-acc-input" type="text" placeholder="부속품 직접 입력" style="flex:1;background:#1a1a1a;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit">
+      <input id="sku-acc-input" type="text" placeholder="부속품 직접 입력" style="flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit">
       <button onclick="addSkuAcc()" style="background:#ff6b2b;color:#ffffff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">추가</button>
     </div>`;
     accList.parentNode.insertBefore(addRow, accList.nextSibling);
@@ -3765,9 +3765,9 @@ function renderSkuPage(wrapId){
           <div id="sku-quickedit-${item.id}" style="display:none;background:#ffffff;border:1px solid rgba(255,107,43,.3);border-radius:10px;padding:12px;margin-bottom:8px">
             <div style="font-size:11px;color:#ff6b2b;margin-bottom:8px;font-weight:700">✏️ 빠른 수정</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-              <div><div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div><input id="qe-size-${item.id}" type="text" value="${item.size_actual||''}" placeholder="가로 × 세로 × 너비" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
-              <div><div style="font-size:10px;color:#888;margin-bottom:3px">스타일번호</div><input id="qe-sku-${item.id}" type="text" value="${item.sku_code||''}" placeholder="SKU" style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
-              <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div><input id="qe-url-${item.id}" type="text" value="${item.site_url||''}" placeholder="https://..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
+              <div><div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div><input id="qe-size-${item.id}" type="text" value="${item.size_actual||''}" placeholder="가로 × 세로 × 너비" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
+              <div><div style="font-size:10px;color:#888;margin-bottom:3px">스타일번호</div><input id="qe-sku-${item.id}" type="text" value="${item.sku_code||''}" placeholder="SKU" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
+              <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div><input id="qe-url-${item.id}" type="text" value="${item.site_url||''}" placeholder="https://..." style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
               <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div><textarea id="qe-notes-${item.id}" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;resize:none;box-sizing:border-box">${item.notes||''}</textarea></div>
             </div>
             <button onclick="saveQuickEdit('${item.id}')" style="width:100%;background:#ff6b2b;border:none;border-radius:8px;padding:9px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer">💾 저장</button>
@@ -5099,12 +5099,12 @@ function editUnregSize(){
   const memoMatch=cur.match(/\[([^\]]*)\]/);
   wrap.innerHTML=cfg.map((f,i)=>{
     if(f.memo){
-      return `<input id="unreg-sf-${i}" type="text" value="${memoMatch?memoMatch[1]:''}" placeholder="상단/하단/지퍼..." onclick="event.stopPropagation()" style="width:88px;background:#1a1a1a;border:1px solid #555;border-radius:6px;padding:4px 6px;color:#888;font-size:11px;outline:none;margin-right:6px" oninput="_updateUnregSizeHidden()">
+      return `<input id="unreg-sf-${i}" type="text" value="${memoMatch?memoMatch[1]:''}" placeholder="상단/하단/지퍼..." onclick="event.stopPropagation()" style="width:88px;background:#f8f8f8;border:1px solid #555;border-radius:6px;padding:4px 6px;color:#888;font-size:11px;outline:none;margin-right:6px" oninput="_updateUnregSizeHidden()">
       ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}`;
     }
     return `
     <span style="font-size:10px;color:#555;margin-right:2px">${f.label}</span>
-    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" onclick="event.stopPropagation()" style="width:52px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#1a1a1a;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
+    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" onclick="event.stopPropagation()" style="width:52px;background:#f8f8f8;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#1a1a1a;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
     <span style="font-size:10px;color:#555;margin-right:6px">${f.unit||''}</span>
     ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}
   `;
