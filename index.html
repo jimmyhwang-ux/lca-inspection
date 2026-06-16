@@ -852,7 +852,7 @@ input[type=file]{display:none}
     <div id="lmp-results" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
     <div id="lmp-new-btn" style="display:none">
       <div style="text-align:center;font-size:12px;color:#A8A29E;margin-bottom:8px">매칭된 SKU가 없어요</div>
-      <button onclick="closeLensPopup();openSkuListNewFormFromNotice()" style="width:100%;padding:12px;border-radius:12px;border:1px solid #EA580C;background:#FFF7ED;color:#EA580C;font-size:13px;font-weight:700;cursor:pointer">+ 신규 SKU 등록</button>
+      <button onclick="openLensNewSkuForm()" style="width:100%;padding:12px;border-radius:12px;border:1px solid #EA580C;background:#FFF7ED;color:#EA580C;font-size:13px;font-weight:700;cursor:pointer">+ 신규 SKU 등록</button>
     </div>
     <button onclick="closeLensPopup()" style="width:100%;padding:12px;border-radius:12px;border:1px solid #E8E5E0;background:#F5F2EE;color:#57534E;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">닫기</button>
   </div>
@@ -7480,7 +7480,7 @@ function openLensMatchPopup(idx){
       var imgH=it.ref_image_url?'<img src="'+it.ref_image_url+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #E8E5E0">':'<div style="width:48px;height:48px;border-radius:8px;background:#F0EDE8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">👜</div>';
       var card=document.createElement('div');
       card.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FFFFFF;border:1.5px solid #E8E5E0;border-radius:12px;cursor:pointer;margin-bottom:2px';
-      card.innerHTML=imgH+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div><div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div><span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span></div></div><div style="font-size:11px;font-weight:700;color:#EA580C;flex-shrink:0">적용</div>';
+      card.innerHTML=imgH+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div><div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div><span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span></div></div><div style="font-size:11px;font-weight:700;color:#22c55e;flex-shrink:0">✓ DB 적용</div>';
       card.onclick=function(){
         if(!window._cardMatches) window._cardMatches=[];
         var ei=window._cardMatches.findIndex(function(x){return String(x.id)===String(it.id);});
@@ -7497,6 +7497,57 @@ function openLensMatchPopup(idx){
     });
   },50);
 }
+function openLensNewSkuForm(){
+  // 현재 팝업에서 열려있는 Lens 이미지 정보 가져오기
+  var thumbSrc = document.getElementById('lmp-thumb')?.src || '';
+  var titleTxt = document.getElementById('lmp-title')?.textContent || '';
+  closeLensPopup();
+
+  // 신규 등록 폼 열기
+  showScreen('sku');
+  setTimeout(function(){
+    // 탭 전환
+    switchSkuTab && switchSkuTab('save');
+
+    // 검수 사진 추가 (메인 사진)
+    if(thumbSrc && thumbSrc.startsWith('http')){
+      // 프록시로 base64 변환
+      var token2 = localStorage.getItem('lca_access_token')||'';
+      fetch('/api/inspect',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-access-token':token2},
+        body:JSON.stringify({action:'proxy_image', imageUrl:thumbSrc})
+      }).then(function(r){return r.json();})
+        .then(function(j){
+          if(j.success&&j.base64){
+            var dataUrl='data:'+j.mime+';base64,'+j.base64;
+            _unregPhotos = _unregPhotos||[];
+            _unregPhotos.push(dataUrl);
+            _renderUnregPhotos && _renderUnregPhotos();
+            toast('📷 유사 이미지 추가됨');
+          }
+        }).catch(function(){});
+    }
+
+    // 검수 사진(메인)도 추가
+    if(photos && photos.main && photos.main.dataUrl){
+      _unregPhotos = _unregPhotos||[];
+      if(!_unregPhotos.includes(photos.main.dataUrl)){
+        _unregPhotos.unshift(photos.main.dataUrl);
+        _renderUnregPhotos && _renderUnregPhotos();
+      }
+    }
+
+    // Lens 텍스트에서 브랜드 추출해서 폼에 자동 입력
+    if(titleTxt){
+      var brandEl = document.getElementById('unreg-brand');
+      if(brandEl && !brandEl.value) brandEl.value = titleTxt.split(' ')[0]||'';
+    }
+
+    toast('📝 신규 등록 폼으로 이동했어요. 정보를 확인 후 저장하세요.');
+  }, 300);
+}
+
 function closeLensPopup(){
   var p=document.getElementById('lens-match-popup');
   if(p) p.style.display='none';
