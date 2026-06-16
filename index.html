@@ -6475,24 +6475,36 @@ function openSkuListNewForm(){
   document.getElementById('nl-sku').value = parsed.style_number||'';
   document.getElementById('nl-url').value = parsed.official_url||'';
   document.getElementById('nl-color').value = '';
-  if(parsed.size_w || parsed.size_h){
+  // 사이즈 값이 하나라도 있으면 주입 (폭/체인만 있는 경우도 포함)
+  var _hasSize = parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_e||parsed.size_f;
+  if(_hasSize){
     var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-    var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_f,
-      '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
-    // editNlSize 렌더 후 바로 값 주입 (두 단계 setTimeout으로 DOM 확실히 렌더된 후)
-    // editNlSize 렌더 후 nlsz- prefix로 값 주입
-    setTimeout(function(){
-      editNlSize();
-      setTimeout(function(){
+    var valMap={
+      '가로':parsed.size_w, '세로':parsed.size_h,
+      '너비':parsed.size_d, '폭':parsed.size_f,
+      '체인':parsed.size_d, '직경':parsed.size_e,
+      '두께':parsed.size_h, '사이즈':parsed.size_w
+    };
+    // nl-size-wrap 강제 초기화 후 editNlSize 렌더 → 값 직접 주입
+    var _nlWrap = document.getElementById('nl-size-wrap');
+    if(_nlWrap) _nlWrap.dataset.cat = ''; // 강제 재렌더 트리거
+    editNlSize();
+    // rAF으로 DOM 렌더 완료 후 값 주입 (setTimeout 타이밍 문제 해결)
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
         cfg.forEach(function(f){
           var el = document.getElementById('nlsz-'+f.id);
-          if(el && valMap[f.label] !== undefined && valMap[f.label] !== '') {
-            el.value = valMap[f.label];
-          }
+          if(!el) return;
+          var val = valMap[f.label];
+          if(val !== undefined && val !== '') el.value = val;
         });
         _updateNlSizeHidden(cfg);
-      }, 100);
-    }, 50);
+        // 표시 확인
+        var _disp = document.getElementById('nl-size-display');
+        var _hidden = document.getElementById('nl-size');
+        if(_disp && _hidden && _hidden.value) _disp.textContent = _hidden.value;
+      });
+    });
   }
   var notes='';
   if(parsed.material) notes+='소재: '+parsed.material;
