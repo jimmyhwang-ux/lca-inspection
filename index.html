@@ -851,7 +851,8 @@ input[type=file]{display:none}
           📋 클릭 후 Ctrl+V
         </div>
       </div>
-      <button onclick="fetchEfOfficialImage()" style="width:100%;margin-bottom:6px;background:#FFFFFF;border:1px solid rgba(234,88,12,.3);border-radius:8px;padding:8px;color:#EA580C;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+      <button id="ef-img-btn" onclick="fetchEfOfficialImage()" style="width:100%;margin-bottom:6px;background:#FFFFFF;border:1px solid rgba(234,88,12,.3);border-radius:8px;padding:8px;color:#EA580C;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span id="ef-img-spinner" style="display:none;width:13px;height:13px;border:2px solid rgba(234,88,12,.25);border-top-color:#EA580C;border-radius:50%;animation:spin .7s linear infinite"></span>
         📸 대표사진 원클릭 등록
       </button>
       <div style="font-size:10px;color:#A8A29E;margin-bottom:6px;line-height:1.5">
@@ -5934,6 +5935,11 @@ async function fetchNlOfficialImage(){
   var q    = [brand, modelKo].filter(Boolean).join(' ');
   var qSku = [brand, skuCode].filter(Boolean).join(' ');
   if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
+
+  var nlBtn = document.querySelector('button[onclick="fetchNlOfficialImage()"]');
+  var nlSpinner = document.getElementById('nl-img-spinner');
+  if(nlBtn){ nlBtn.disabled=true; }
+  if(nlSpinner){ nlSpinner.style.display='inline-block'; }
   toast('🔍 이미지 검색 중...');
 
   var token2 = localStorage.getItem('lca_token')||'';
@@ -5970,6 +5976,8 @@ async function fetchNlOfficialImage(){
     if(ok) break;
   }
   if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
+  if(nlBtn){ nlBtn.disabled=false; }
+  if(nlSpinner){ nlSpinner.style.display='none'; }
 }
 
 // ── 수정 모달 대표사진 원클릭 등록 ──────────────────────────────
@@ -5980,6 +5988,11 @@ async function fetchEfOfficialImage(){
   var q = [brand, modelKo].filter(Boolean).join(' ');
   var qSku = [brand, skuCode].filter(Boolean).join(' ');
   if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
+
+  var efBtn = document.getElementById('ef-img-btn');
+  var efSpinner = document.getElementById('ef-img-spinner');
+  if(efBtn){ efBtn.disabled=true; }
+  if(efSpinner){ efSpinner.style.display='inline-block'; }
   toast('🔍 이미지 검색 중...');
 
   async function _tryImg(query){
@@ -6021,6 +6034,8 @@ async function fetchEfOfficialImage(){
     if(ok) break;
   }
   if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
+  if(efBtn){ efBtn.disabled=false; }
+  if(efSpinner){ efSpinner.style.display='none'; }
 }
 
 // 수정 모달 붙여넣기
