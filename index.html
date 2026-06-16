@@ -857,6 +857,21 @@ input[type=file]{display:none}
     <button onclick="closeLensPopup()" style="width:100%;padding:12px;border-radius:12px;border:1px solid #E8E5E0;background:#F5F2EE;color:#57534E;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">닫기</button>
   </div>
 </div>
+
+<!-- Lens SKU 확인 팝업 -->
+<div id="lens-confirm-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200;align-items:flex-end;justify-content:center">
+  <div style="background:#FAFAF8;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:16px 16px 32px">
+    <div style="width:36px;height:4px;background:#E8E5E0;border-radius:2px;margin:0 auto 14px"></div>
+    <div style="font-size:15px;font-weight:700;color:#1C1917;margin-bottom:14px">SKU 정보 확인</div>
+    <!-- SKU 이미지 -->
+    <img id="lcp-img" src="" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;background:#F0EDE8;margin-bottom:14px" onerror="this.style.display='none'">
+    <!-- SKU 정보 -->
+    <div id="lcp-info" style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E5E0;overflow:hidden;margin-bottom:14px"></div>
+    <!-- 버튼 -->
+    <button id="lcp-apply-btn" onclick="confirmLensSkuApply()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#22c55e;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">✅ 이 SKU로 적용</button>
+    <button onclick="closeLensConfirm()" style="width:100%;padding:12px;border-radius:12px;border:1px solid #E8E5E0;background:#F5F2EE;color:#57534E;font-size:13px;font-weight:600;cursor:pointer">← 뒤로</button>
+  </div>
+</div>
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()" style="position:absolute;top:16px;right:16px;z-index:10">✕</button>
   <button id="lb-prev" onclick="lbNav(-1)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#ffffff;font-size:32px;width:44px;height:60px;border-radius:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center">&#8249;</button>
@@ -7481,22 +7496,64 @@ function openLensMatchPopup(idx){
       var card=document.createElement('div');
       card.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FFFFFF;border:1.5px solid #E8E5E0;border-radius:12px;cursor:pointer;margin-bottom:2px';
       card.innerHTML=imgH+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div><div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div><span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span></div></div><div style="font-size:11px;font-weight:700;color:#22c55e;flex-shrink:0">✓ DB 적용</div>';
-      card.onclick=function(){
-        if(!window._cardMatches) window._cardMatches=[];
-        var ei=window._cardMatches.findIndex(function(x){return String(x.id)===String(it.id);});
-        var ai=ei>=0?ei:(window._cardMatches.push(it)-1);
-        applyCardMatch(ai,'db-card-'+ai);
-        var rb=document.getElementById('r-brand'),rmk=document.getElementById('r-model-ko'),rm=document.getElementById('r-model');
-        if(rb&&it.brand) rb.textContent=it.brand;
-        if(rmk&&it.model_name_ko) rmk.textContent=it.model_name_ko;
-        if(rm&&it.model_name) rm.textContent=it.model_name;
-        toast('✅ '+(it.model_name_ko||it.model_name||it.brand||'SKU')+' 적용됐어요');
-        closeLensPopup();
-      };
+      card.onclick=function(){openLensSkuConfirm(it);};
       rsEl.appendChild(card);
     });
   },50);
 }
+var _lensConfirmItem = null;
+
+function openLensSkuConfirm(item){
+  _lensConfirmItem = item;
+  var popup = document.getElementById('lens-confirm-popup');
+  // 이미지
+  var img = document.getElementById('lcp-img');
+  if(img){
+    img.src = item.ref_image_url || '';
+    img.style.display = item.ref_image_url ? 'block' : 'none';
+  }
+  // 정보 rows
+  var info = document.getElementById('lcp-info');
+  var rows = [
+    ['브랜드', item.brand||'—'],
+    ['모델명(한글)', item.model_name_ko||'—'],
+    ['모델명(영문)', item.model_name||'—'],
+    ['스타일번호', item.sku_code||'—'],
+    ['카테고리', item.category||'—'],
+    ['실측 사이즈', item.size_actual||'—'],
+    ['사이즈 명칭', item.size_label||'—'],
+    ['컬러', item.color||'—'],
+  ];
+  info.innerHTML = rows.map(function(r,i){
+    return '<div style="display:flex;padding:10px 14px;border-bottom:'+(i<rows.length-1?'1px solid #F0EDE8':'none')+'">'
+      +'<div style="font-size:11px;color:#78716C;width:90px;flex-shrink:0">'+r[0]+'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:#1C1917;flex:1">'+r[1]+'</div>'
+      +'</div>';
+  }).join('');
+  popup.style.display = 'flex';
+}
+
+function closeLensConfirm(){
+  var popup = document.getElementById('lens-confirm-popup');
+  if(popup) popup.style.display = 'none';
+}
+
+function confirmLensSkuApply(){
+  var it = _lensConfirmItem;
+  if(!it) return;
+  if(!window._cardMatches) window._cardMatches=[];
+  var ei = window._cardMatches.findIndex(function(x){return String(x.id)===String(it.id);});
+  var ai = ei>=0 ? ei : (window._cardMatches.push(it)-1);
+  applyCardMatch(ai,'db-card-'+ai);
+  var rb=document.getElementById('r-brand'),rmk=document.getElementById('r-model-ko'),rm=document.getElementById('r-model');
+  if(rb&&it.brand) rb.textContent=it.brand;
+  if(rmk&&it.model_name_ko) rmk.textContent=it.model_name_ko;
+  if(rm&&it.model_name) rm.textContent=it.model_name;
+  toast('✅ '+(it.model_name_ko||it.model_name||it.brand||'SKU')+' 적용됐어요');
+  closeLensConfirm();
+  closeLensPopup();
+}
+
 function openLensNewSkuForm(){
   // 현재 팝업에서 열려있는 Lens 이미지 정보 가져오기
   var thumbSrc = document.getElementById('lmp-thumb')?.src || '';
