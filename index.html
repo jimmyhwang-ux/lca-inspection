@@ -838,10 +838,25 @@ input[type=file]{display:none}
     <div class="edit-field-row">
       <div class="edit-field-label">사진</div>
       <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:16px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
-      <label style="display:flex;align-items:center;gap:6px;background:#FAFAF8;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#57534E;width:fit-content">
-        + 사진 추가
-        <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none">
-      </label>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <label style="display:flex;align-items:center;gap:6px;background:#F5F2EE;border:1px dashed #DDD8D2;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#57534E;flex:1;justify-content:center">
+          📁 파일 선택
+          <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none">
+        </label>
+        <div id="ef-paste-zone" style="flex:1;background:#F5F2EE;border:1px dashed #DDD8D2;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#57534E;display:flex;align-items:center;justify-content:center;gap:4px"
+          onclick="this.focus()" tabindex="0"
+          onpaste="handleEfPaste(event)"
+          onfocus="this.style.borderColor='#EA580C';this.style.color='#EA580C'"
+          onblur="this.style.borderColor='#DDD8D2';this.style.color='#57534E'">
+          📋 클릭 후 Ctrl+V
+        </div>
+      </div>
+      <button onclick="fetchEfOfficialImage()" style="width:100%;margin-bottom:6px;background:#FFFFFF;border:1px solid rgba(234,88,12,.3);border-radius:8px;padding:8px;color:#EA580C;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        📸 대표사진 원클릭 등록
+      </button>
+      <div style="font-size:10px;color:#A8A29E;margin-bottom:6px;line-height:1.5">
+        💡 안 될 경우 공홈에서 이미지 우클릭 → <b style="color:#78716C">복사</b> 후 📋 Ctrl+V
+      </div>
       <div id="ef-new-photo-preview" style="margin-top:6px"></div>
     </div>
     <div class="edit-field-row"><div class="edit-field-label">브랜드</div><input class="edit-field-input" id="ef-brand" type="text" list="brand-list" autocomplete="off"></div>
@@ -5913,10 +5928,12 @@ function handleNlPaste(e){
 }
 
 async function fetchNlOfficialImage(){
-  var brand = (document.getElementById('nl-brand')?.value||'').trim();
+  var brand   = (document.getElementById('nl-brand')?.value||'').trim();
   var modelKo = (document.getElementById('nl-model-ko')?.value||'').trim();
-  var q = [brand, modelKo].filter(Boolean).join(' ');
-  if(!q){ toast('⚠ 브랜드/모델명을 먼저 입력해주세요'); return; }
+  var skuCode = (document.getElementById('nl-sku')?.value||'').trim();
+  var q    = [brand, modelKo].filter(Boolean).join(' ');
+  var qSku = [brand, skuCode].filter(Boolean).join(' ');
+  if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
   toast('🔍 이미지 검색 중...');
 
   var token2 = localStorage.getItem('lca_token')||'';
@@ -5942,9 +5959,93 @@ async function fetchNlOfficialImage(){
     }catch(e){ console.warn('[ImgSearch]',e); return false; }
   }
 
-  var ok = await _tryImg(q);
-  if(!ok) ok = await _tryImg(q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  var queries = [];
+  if(q) queries.push(q, q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(qSku) queries.push(qSku, qSku+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(skuCode) queries.push(skuCode);
+
+  var ok = false;
+  for(var qi=0; qi<queries.length; qi++){
+    ok = await _tryImg(queries[qi]);
+    if(ok) break;
+  }
   if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
+}
+
+// ── 수정 모달 대표사진 원클릭 등록 ──────────────────────────────
+async function fetchEfOfficialImage(){
+  var brand   = (document.getElementById('ef-brand')?.value||'').trim();
+  var modelKo = (document.getElementById('ef-model-ko')?.value||'').trim();
+  var skuCode = (document.getElementById('ef-sku')?.value||'').trim();
+  var q = [brand, modelKo].filter(Boolean).join(' ');
+  var qSku = [brand, skuCode].filter(Boolean).join(' ');
+  if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
+  toast('🔍 이미지 검색 중...');
+
+  async function _tryImg(query){
+    try{
+      var token2 = localStorage.getItem('lca_token')||'';
+      var serpKey = localStorage.getItem('bungae_serpapi_key')||'';
+      var res = await fetch('/api/inspect',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-access-token':token2},
+        body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey})
+      });
+      if(!res.ok) return false;
+      var j = await res.json();
+      if(j.success && j.base64 && j.base64.length > 1000){
+        var dataUrl = 'data:'+j.mime+';base64,'+j.base64;
+        // ef-extra-images에 추가
+        var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+        stored.unshift(dataUrl);
+        document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+        var efInp = document.getElementById('ef-new-photo');
+        if(efInp) efInp._dataUrls = [dataUrl, ...(efInp._dataUrls||[])];
+        renderEditPhotos(stored);
+        toast('✅ 대표사진 추가됐어요!');
+        return true;
+      }
+      return false;
+    }catch(e){ console.warn('[EfImgSearch]',e); return false; }
+  }
+
+  // 브랜드+모델명, 브랜드+스타일번호 둘 다 병렬 시도
+  var queries = [];
+  if(q) queries.push(q, q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(qSku) queries.push(qSku, qSku+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(skuCode) queries.push(skuCode);
+
+  var ok = false;
+  for(var qi=0; qi<queries.length; qi++){
+    ok = await _tryImg(queries[qi]);
+    if(ok) break;
+  }
+  if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
+}
+
+// 수정 모달 붙여넣기
+function handleEfPaste(e){
+  var items = (e.clipboardData||e.originalEvent?.clipboardData)?.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image')){
+      var file = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        var dataUrl = ev.target.result;
+        var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+        stored.push(dataUrl);
+        document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+        var efInp = document.getElementById('ef-new-photo');
+        if(efInp) efInp._dataUrls = [...(efInp._dataUrls||[]), dataUrl];
+        renderEditPhotos(stored);
+        toast('📋 사진 붙여넣기 완료!');
+      };
+      reader.readAsDataURL(file);
+      e.preventDefault();
+      break;
+    }
+  }
 }
 
 function _showUnregisteredNotice(notice, msg, raw, type){
