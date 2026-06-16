@@ -5544,26 +5544,31 @@ function _parseSpecRawText(txt, cat){
   if(cat==='주얼리'){
     r.size_unit='mm';
     // 가로(펜던트 너비): "너비 10.5mm" / "가로 10.5mm" / "width 10.5"
-    var sw=t.match(/(?:너비|가로|width|w)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i);
-    // 세로(펜던트 높이): "높이 8.1mm" / "세로 8.1mm"
-    var sh=t.match(/(?:높이|세로|height|h)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i);
-    // 체인: "체인 길이[: ]*38" / "chain 38cm"
-    var sd=t.match(/(?:체인\s*길이|chain)[:\s→*,]*([0-9.]+)\s*(?:~[0-9.]+)?\s*(cm|mm)?/i);
-    // 직경: "직경 N" / "diameter N"
-    var se=t.match(/(?:직경|diameter|지름)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i);
-    // 폭: "폭 Nmm"
-    var sf=t.match(/(?:폭|width)[:\s→*,]*([0-9.]+)\s*(mm)?/i);
+    var sw=t.match(/(?:너비|가로|width)\s*[:\s→*,]+([0-9.]+)\s*(mm|cm)?/i);
+    var sh=t.match(/(?:높이|세로|height)\s*[:\s→*,]+([0-9.]+)\s*(mm|cm)?/i);
+    // 체인: "체인 길이: 42cm" / "42cm (체인 길이)" / 체인 언급 있는 단독 숫자
+    var sd=t.match(/(?:체인\s*길이|chain)\s*[:\s→*,]+([0-9.]+)/i)
+          ||t.match(/([0-9.]+)\s*(?:cm|mm)\s*\(체인\s*길이/i);
+    if(!sd && /체인|chain|necklace|목걸이/i.test(t)){
+      sd=t.match(/[:\s→*,]+([0-9.]+)\s*(?:cm|mm)/i);
+    }
+    var se=t.match(/(?:직경|diameter|지름)\s*[:\s→*,]+([0-9.]+)/i);
+    // 폭: "폭 5.5mm" — sw와 독립적으로 항상 잡기
+    var sf=t.match(/폭\s*[:\s→*,]+([0-9.]+)/i);
     if(sw){r.size_w=sw[1]; if(sw[2])r.size_unit=sw[2].toLowerCase();}
     if(sh) r.size_h=sh[1];
-    if(sd){r.size_d=sd[1]; } // 체인은 cm
+    if(sd) r.size_d=sd[1];
     if(se) r.size_e=se[1];
-    if(sf && !sw) r.size_f=sf[1];
+    if(sf) r.size_f=sf[1];
   } else if(cat==='시계'){
     r.size_unit='mm';
-    var sw=t.match(/(?:케이스\s*(?:직경|지름|크기)|가로|width|diameter)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i)
-          ||t.match(/([0-9.]+)\s*mm\s*[x×]/i);
-    var sh=t.match(/(?:두께|세로|height|thickness)[:\s→*,]*([0-9.]+)\s*(mm|cm)?/i);
-    if(sw){r.size_w=sw[1]; if(sw[2])r.size_unit=sw[2].toLowerCase();}
+    // "43mm(케이스 직경)" or "케이스 직경: 43mm" or "직경 43mm × 두께"
+    var sw=t.match(/([0-9.]+)\s*mm\s*[\(（]케이스/i)
+          ||t.match(/(?:케이스\s*(?:직경|지름|크기|사이즈)|직경|diameter)\s*[:\s→*,]+([0-9.]+)/i)
+          ||t.match(/([0-9.]+)\s*mm\s*[×x\(（]/i);
+    var sh=t.match(/(?:두께|thickness)\s*[:\s→*,]*([0-9.]+)/i)
+          ||t.match(/두께\s*약?\s*([0-9.]+)/i);
+    if(sw){r.size_w=sw[1]||sw[2]||''; if(sw[sw.length-1] && /mm|cm/i.test(sw[sw.length-1]))r.size_unit=sw[sw.length-1].toLowerCase();}
     if(sh) r.size_h=sh[1];
   } else if(cat==='벨트'){
     r.size_unit='cm';
@@ -6451,7 +6456,7 @@ function openSkuListNewForm(){
   document.getElementById('nl-color').value = '';
   if(parsed.size_w || parsed.size_h){
     var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-    var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_d,
+    var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_f,
       '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
     // editNlSize 렌더 후 바로 값 주입 (두 단계 setTimeout으로 DOM 확실히 렌더된 후)
     // editNlSize 렌더 후 nlsz- prefix로 값 주입
