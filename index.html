@@ -5595,6 +5595,10 @@ function _parseSpecRawText(txt, cat){
     if(!swA) swA=t.match(/([0-9.]+)\s*(cm|mm)\s*\(가로\)/i);
     if(!shA) shA=t.match(/([0-9.]+)\s*(cm|mm)\s*\(세로\)/i);
     if(!sdA) sdA=t.match(/([0-9.]+)\s*(cm|mm)\s*\((?:너비|폭|깊이|두께)\)/i);
+    // 패턴3: W/H 표기 (10.5cm(W) × 7cm(H))
+    if(!swA) swA=t.match(/([0-9.]+)\s*(?:cm|mm)\s*[\(（]\s*[Ww][\s\)）]/);
+    if(!shA) shA=t.match(/([0-9.]+)\s*(?:cm|mm)\s*[\(（]\s*[Hh][\s\)）]/);
+    if(!sdA) sdA=t.match(/([0-9.]+)\s*(?:cm|mm)\s*[\(（]\s*[Dd][\s\)）]/);
     // 패턴3: 숫자 x 숫자 x 숫자 (가로 x 세로 x 너비) — 레이블이 뒤에 묶여서 오는 경우
     if(!swA && !shA){
       var mRev=t.match(/([0-9.]+)\s*[x×]\s*([0-9.]+)(?:\s*[x×]\s*([0-9.]+))?\s*(cm|mm)[^)]*\(가로[^)]*세로/i);
@@ -6478,7 +6482,8 @@ function openSkuListNewForm(){
   // 사이즈 값이 하나라도 있으면 주입 (폭/체인만 있는 경우도 포함)
   var _hasSize = parsed.size_w||parsed.size_h||parsed.size_d||parsed.size_e||parsed.size_f;
   if(_hasSize){
-    var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+    var _parsedSnap = parsed; // 클로저용 스냅샷
+    var _catSnap = cat;
     var valMap={
       '가로':parsed.size_w, '세로':parsed.size_h,
       '너비':parsed.size_d, '폭':parsed.size_f,
@@ -6487,22 +6492,19 @@ function openSkuListNewForm(){
     };
     // nl-size-wrap 강제 초기화 후 editNlSize 렌더 → 값 직접 주입
     var _nlWrap = document.getElementById('nl-size-wrap');
-    if(_nlWrap) _nlWrap.dataset.cat = ''; // 강제 재렌더 트리거
+    if(_nlWrap) _nlWrap.dataset.cat = '';
     editNlSize();
-    // rAF으로 DOM 렌더 완료 후 값 주입 (setTimeout 타이밍 문제 해결)
+    // rAF 안에서 cfg를 다시 읽어서 DOM과 일치시킴
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
-        cfg.forEach(function(f){
+        var _cfg = SIZE_CONFIG[_catSnap]||SIZE_CONFIG['가방'];
+        _cfg.forEach(function(f){
           var el = document.getElementById('nlsz-'+f.id);
           if(!el) return;
           var val = valMap[f.label];
           if(val !== undefined && val !== '') el.value = val;
         });
-        _updateNlSizeHidden(cfg);
-        // 표시 확인
-        var _disp = document.getElementById('nl-size-display');
-        var _hidden = document.getElementById('nl-size');
-        if(_disp && _hidden && _hidden.value) _disp.textContent = _hidden.value;
+        _updateNlSizeHidden(_cfg);
       });
     });
   }
