@@ -5833,7 +5833,30 @@ function editNlSize(){
   var hidden = document.getElementById('nl-size');
   var curNums = (hidden?.value||'').replace(/[^0-9.\s]/g,'').trim().split(/\s*[×x]\s*/).map(function(v){return v.trim();});
 
-  wrap.innerHTML = '<span id="sz-wrap" style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">'+buildSizeInput(cfg, curNums)+'</span>';
+  // nl 전용 prefix 'nlsz-' 사용 (sz- 와 충돌 방지)
+  wrap.innerHTML = '<span style="display:inline-flex;align-items:flex-end;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px">'
+    + cfg.map(function(f,i){
+        var val = curNums[i]||'';
+        var sep = i<cfg.length-1 ? '<span style="color:#57534E;font-size:10px;margin:0 3px">×</span>' : '';
+        var inputId = 'nlsz-'+f.id;
+        if(f.memo){
+          return '<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">'
+            +'<span style="font-size:8px;color:#78716C">메모</span>'
+            +'<input id="'+inputId+'" type="text" value="'+val+'" placeholder="상단/하단..." onclick="event.stopPropagation()" style="width:88px;background:transparent;border:none;border-bottom:1.5px solid #aaa;color:#57534E;font-size:11px;outline:none;padding:0 2px">'
+            +'</span>'+sep;
+        }
+        if(f.text){
+          return '<span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px">'
+            +'<span style="font-size:8px;color:#78716C">'+(f.unit?f.label+'('+f.unit+')':f.label)+'</span>'
+            +'<input id="'+inputId+'" type="text" value="'+val+'" placeholder="30, Small..." onclick="event.stopPropagation()" style="width:72px;background:transparent;border:none;border-bottom:1.5px solid #EA580C;color:#1C1917;font-size:13px;font-weight:700;outline:none;padding:0 2px">'
+            +'</span>'+sep;
+        }
+        return '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:1px">'
+          +'<span style="font-size:8px;color:#78716C">'+f.label+'('+f.unit+')</span>'
+          +'<input id="'+inputId+'" type="number" inputmode="decimal" value="'+val+'" placeholder="0" onclick="event.stopPropagation()" style="width:34px;text-align:center;background:transparent;border:none;border-bottom:1.5px solid #EA580C;color:#1C1917;font-size:13px;font-weight:700;outline:none;padding:0 1px">'
+          +'</span>'+sep;
+      }).join('')
+    + '</span>';
   wrap.querySelectorAll('input').forEach(function(inp){
     inp.addEventListener('input', function(){ _updateNlSizeHidden(cfg); });
     inp.addEventListener('click', function(e){ e.stopPropagation(); });
@@ -5842,17 +5865,14 @@ function editNlSize(){
 
 function _updateNlSizeHidden(cfg){
   if(!cfg) cfg = SIZE_CONFIG[document.getElementById('nl-cat')?.value||'가방']||SIZE_CONFIG['가방'];
-  var nums = cfg.map(function(f){ return (document.getElementById(f.id)?.value||'').trim(); });
+  var nums = cfg.map(function(f){ return (document.getElementById('nlsz-'+f.id)?.value||'').trim(); });
   var unit = cfg[0]?.unit||'cm';
-  var parts = cfg.map(function(f,i){
-    var v=nums[i]; if(!v) return null;
-    return f.label+(f.unit?'('+f.unit+')':'')+': '+v;
-  }).filter(Boolean);
   var display = cfg.map(function(f,i){
     var v=nums[i]; if(!v) return null;
-    return (f.label==='가로'?'가로 ':f.label==='세로'?'세로 ':f.label+' ')+v;
+    if(f.memo) return '['+v+']';
+    if(f.text && !f.unit) return f.label+': '+v;
+    return f.label+' '+v+(f.unit||'');
   }).filter(Boolean).join(' × ');
-  if(display) display += ' '+unit;
   var hidden = document.getElementById('nl-size');
   var disp = document.getElementById('nl-size-display');
   if(hidden) hidden.value = display||'';
@@ -6434,15 +6454,18 @@ function openSkuListNewForm(){
     var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_d,
       '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
     // editNlSize 렌더 후 바로 값 주입 (두 단계 setTimeout으로 DOM 확실히 렌더된 후)
+    // editNlSize 렌더 후 nlsz- prefix로 값 주입
     setTimeout(function(){
       editNlSize();
       setTimeout(function(){
         cfg.forEach(function(f){
-          var el = document.getElementById(f.id);
-          if(el && valMap[f.label]) el.value = valMap[f.label];
+          var el = document.getElementById('nlsz-'+f.id);
+          if(el && valMap[f.label] !== undefined && valMap[f.label] !== '') {
+            el.value = valMap[f.label];
+          }
         });
         _updateNlSizeHidden(cfg);
-      }, 80);
+      }, 100);
     }, 50);
   }
   var notes='';
