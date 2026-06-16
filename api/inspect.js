@@ -573,10 +573,38 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
     const analysis = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // ── DB 매칭은 클라이언트(Lens 텍스트 기반)에서 수행 ──
-    // 서버는 visualMatches 텍스트만 내려주고, 매칭은 사람이 선택
+    const BRAND_MAP = {
+      'gucci':'구찌','louisvuitton':'루이비통','hermes':'에르메스','chanel':'샤넬',
+      'dior':'디올','prada':'프라다','balenciaga':'발렌시아가','saintlaurent':'생로랑',
+      'ysl':'생로랑','bottegaveneta':'보테가베네타','celine':'셀린느','loewe':'로에베',
+      'fendi':'펜디','valentino':'발렌티노','givenchy':'지방시','burberry':'버버리',
+      'moncler':'몽클레어','thombrowne':'톰브라운','miumiu':'미우미우',
+      'maisonmargiela':'메종마르지엘라','goyard':'고야드','delvaux':'델보',
+      'cartier':'까르띠에','rolex':'롤렉스','omega':'오메가','tagheuer':'태그호이어',
+      'patekphilippe':'파텍필립','audemarspiguet':'오데마피게','iwc':'아이더블유씨',
+      'breitling':'브라이틀링','bulgari':'불가리','bvlgari':'불가리','tiffany':'티파니',
+      'vancleefarpe':'반클리프','chaumet':'쇼메','fred':'프레드',
+      '반클리프앤아펠':'반클리프아펠','반클리프 앤 아펠':'반클리프아펠',
+      'van cleef & arpels':'반클리프아펠','van cleef arpels':'반클리프아펠',
+      'ferragamo':'페라가모','mulberry':'멀버리','coach':'코치',
+      'hamilton':'해밀턴','tissot':'티쏘','longines':'론진',
+      'vancleefarpels':'반클리프아펠',
+    };
+
+    function normBrand(b) { return b.toLowerCase().replace(/[\s\-&·]/g, ''); }
+    function brandMatches(aiBrand, dbBrand) {
+      if (!aiBrand || !dbBrand) return false;
+      const ai = normBrand(aiBrand), db = normBrand(dbBrand);
+      if (db.includes(ai) || ai.includes(db)) return true;
+      const aiEn = BRAND_MAP[ai] ? normBrand(BRAND_MAP[ai]) : ai;
+      const dbEn = BRAND_MAP[db] ? normBrand(BRAND_MAP[db]) : db;
+      if (aiEn && dbEn && (aiEn.includes(dbEn) || dbEn.includes(aiEn))) return true;
+      const aiFromDb = Object.entries(BRAND_MAP).find(([k,v]) => normBrand(v) === db)?.[0];
+      if (aiFromDb && (ai.includes(aiFromDb) || aiFromDb.includes(ai))) return true;
+      return false;
+    }
+
     const dbMatches = [];
-    // dbData는 클라이언트가 list_sku로 이미 보유 중
 
     let visualMatches = [];
     try {
@@ -589,11 +617,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       }
     } catch (e) { console.warn('Lens skip:', e.message); }
 
-    dbMatches = dbMatches.map(m => ({
-      ...m,
-      extra_images: Array.isArray(m.extra_images) ? m.extra_images : [],
-      ref_image_url: m.ref_image_url || null,
-    }));
+
 
     return res.status(200).json({ success: true, imageUrl, analysis, dbMatch: null, dbMatches: [], visualMatches: visualMatches.slice(0, 15) });
 
