@@ -2093,147 +2093,89 @@ function renderDbMatchCards(matches){
 }
 
 
-// ── Lens 카드 클릭 → SKU 매칭 팝업 ─────────────────────────────
+async 
+// ── Lens SKU 매칭 ────────────────────────────────────────────────
+function _matchSkuFromLens(lensItems,db){
+  if(!db||!db.length||!lensItems||!lensItems.length) return [];
+  var all={};
+  lensItems.forEach(function(m){
+    var raw=((m.title||'')+' '+(m.source||'')+' '+(m.snippet||'')).toLowerCase();
+    var skuC=raw.match(/[a-z][0-9a-z]{4,}/gi)||[];
+    var toks=raw.replace(/[^a-z0-9가-힣\s]/g,' ').split(/\s+/).filter(function(t){return t.length>1;});
+    db.forEach(function(item){
+      var br=(item.brand||'').toLowerCase();
+      var nk=(item.model_name_ko||'').toLowerCase();
+      var ne=(item.model_name||'').toLowerCase();
+      var sk=(item.sku_code||'').toLowerCase();
+      var key=String(item.id);
+      if(!all[key]) all[key]={item:item,score:0,src:''};
+      var sc=0;
+      if(sk){
+        if(skuC.some(function(s){return sk===s;})) sc+=120;
+        else if(skuC.some(function(s){return sk.includes(s)||s.includes(sk.substring(0,5));})) sc+=60;
+      }
+      if(br&&br.length>1){
+        if(raw.includes(br)) sc+=50;
+        else{var bt=br.split(/\s+/);if(bt.some(function(b){return b.length>3&&raw.includes(b);})) sc+=20;}
+      }
+      var nt=(nk+' '+ne).split(/\s+/).filter(function(t){return t.length>1;});
+      nt.forEach(function(n){if(n.length>2&&(toks.indexOf(n)>=0||raw.includes(n))) sc+=12;});
+      var cb=br+' '+nk+' '+ne+' '+sk;
+      toks.forEach(function(t){if(t.length>3&&cb.includes(t)) sc+=6;});
+      if(sc>all[key].score){all[key].score=sc;all[key].src=m.title||m.source||'';}
+    });
+  });
+  return Object.values(all).filter(function(c){return c.score>20;}).sort(function(a,b){return b.score-a.score;}).slice(0,8);
+}
+
 function openLensMatchPopup(idx){
-  const cache = window._lensCache || [];
-  const m = cache[idx];
-  if(!m) return;
-
-  const popup = document.getElementById('lens-match-popup');
-  const thumb = document.getElementById('lmp-thumb');
-  const title = document.getElementById('lmp-title');
-  const src   = document.getElementById('lmp-src');
-  const status= document.getElementById('lmp-status');
-  const results=document.getElementById('lmp-results');
-  const newBtn= document.getElementById('lmp-new-btn');
-
-  thumb.src = m.thumbnail||m.image||m.img||'';
-  title.textContent = m.title||m.name||'';
-  src.textContent   = m.source||m.site||'';
-  status.textContent= '🔍 SKU 매칭 중...';
-  status.style.display='block';
-  results.innerHTML = '';
-  newBtn.style.display='none';
+  var cache=window._lensCache||[];
+  var m=cache[idx]; if(!m) return;
+  var popup=document.getElementById('lens-match-popup');
+  document.getElementById('lmp-thumb').src=m.thumbnail||m.image||m.img||'';
+  document.getElementById('lmp-title').textContent=m.title||m.name||'';
+  document.getElementById('lmp-src').textContent=m.source||m.site||'';
+  document.getElementById('lmp-status').textContent='🔍 SKU 매칭 중...';
+  document.getElementById('lmp-status').style.display='block';
+  document.getElementById('lmp-results').innerHTML='';
+  document.getElementById('lmp-new-btn').style.display='none';
   popup.style.display='flex';
-
-  // 비동기 매칭
-  setTimeout(async function(){
-    if(!skuListAll||!skuListAll.length){
-      try{
-        const r=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
-        const j=await r.json();
-        if(j.success&&j.data) skuListAll=j.data;
-      }catch(_){}
-    }
-
-    const scored = _matchSkuFromLens([m], skuListAll);
-
-    if(!scored.length){
-      status.style.display='none';
-      newBtn.style.display='block';
-      return;
-    }
-
-    status.style.display='none';
-    const countEl = document.createElement('div');
-    countEl.style.cssText='font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:3px 10px;border-radius:100px;margin-bottom:8px;display:inline-block';
-    countEl.textContent='매칭 결과 '+scored.length+'건';
-    results.appendChild(countEl);
-
-    scored.forEach(function(s,i){
-      const it=s.item;
-      const sc=s.score;
-      const col=sc>=80?'#22c55e':sc>=50?'#f59e0b':'#94a3b8';
-      const lbl=sc>=80?'높음':sc>=50?'보통':'낮음';
-      const img=it.ref_image_url
-        ?'<img src="'+it.ref_image_url+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #E8E5E0">'
-        :'<div style="width:48px;height:48px;border-radius:8px;background:#F0EDE8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">👜</div>';
-      const card=document.createElement('div');
+  setTimeout(function(){
+    var scored=_matchSkuFromLens([m],skuListAll||[]);
+    var statusEl=document.getElementById('lmp-status');
+    var resultsEl=document.getElementById('lmp-results');
+    var newBtnEl=document.getElementById('lmp-new-btn');
+    if(!scored.length){statusEl.style.display='none';newBtnEl.style.display='block';return;}
+    statusEl.style.display='none';
+    var cnt=document.createElement('div');
+    cnt.style.cssText='font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:3px 10px;border-radius:100px;margin-bottom:8px;display:inline-block';
+    cnt.textContent='매칭 결과 '+scored.length+'건';
+    resultsEl.appendChild(cnt);
+    scored.forEach(function(s){
+      var it=s.item,sc=s.score;
+      var col=sc>=80?'#22c55e':sc>=50?'#f59e0b':'#94a3b8';
+      var lbl=sc>=80?'높음':sc>=50?'보통':'낮음';
+      var imgH=it.ref_image_url?'<img src="'+it.ref_image_url+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #E8E5E0">':'<div style="width:48px;height:48px;border-radius:8px;background:#F0EDE8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">👜</div>';
+      var card=document.createElement('div');
       card.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FFFFFF;border:1.5px solid #E8E5E0;border-radius:12px;cursor:pointer';
-      card.innerHTML=img
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div>'
-        +'<div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div>'
-        +'<div style="display:flex;align-items:center;gap:5px">'
-        +'<div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div>'
-        +'<span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span>'
-        +'</div></div>'
-        +'<div style="font-size:11px;font-weight:700;color:#EA580C;flex-shrink:0">적용 →</div>';
+      card.innerHTML=imgH+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div><div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div><span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span></div></div><div style="font-size:11px;font-weight:700;color:#EA580C;flex-shrink:0">적용 →</div>';
       card.onclick=function(){
-        // SKU 적용
-        applyCardMatch(i, 'db-card-'+i);
-        // 상단 브랜드/모델명도 채움
-        const rBrand=document.getElementById('r-brand');
-        const rModelKo=document.getElementById('r-model-ko');
-        const rModel=document.getElementById('r-model');
-        if(rBrand&&it.brand) rBrand.textContent=it.brand;
-        if(rModelKo&&it.model_name_ko) rModelKo.textContent=it.model_name_ko;
-        if(rModel&&it.model_name) rModel.textContent=it.model_name;
+        if(!window._cardMatches) window._cardMatches=[];
+        var ei=window._cardMatches.findIndex(function(x){return String(x.id)===String(it.id);});
+        var ai=ei>=0?ei:(window._cardMatches.push(it)-1);
+        applyCardMatch(ai,'db-card-'+ai);
+        var rb=document.getElementById('r-brand'),rmk=document.getElementById('r-model-ko'),rm=document.getElementById('r-model');
+        if(rb&&it.brand) rb.textContent=it.brand;
+        if(rmk&&it.model_name_ko) rmk.textContent=it.model_name_ko;
+        if(rm&&it.model_name) rm.textContent=it.model_name;
         toast('✅ '+(it.model_name_ko||it.model_name||it.brand||'SKU')+' 적용됐어요');
         closeLensPopup();
       };
-      results.appendChild(card);
+      resultsEl.appendChild(card);
     });
-  }, 50);
+  },50);
 }
-
-function closeLensPopup(){
-  const popup=document.getElementById('lens-match-popup');
-  if(popup) popup.style.display='none';
-}
-
-
-// ── Lens 텍스트 → 내부 SKU 매칭 엔진 ────────────────────────────
-function _matchSkuFromLens(lensItems, db){
-  if(!db||!db.length||!lensItems||!lensItems.length) return [];
-  const allCandidates = {};
-  lensItems.forEach(function(m){
-    const raw = ((m.title||'')+' '+(m.source||'')+' '+(m.snippet||'')).toLowerCase();
-    const skuCands = raw.match(/[a-z][0-9a-z]{4,}/gi)||[];
-    const tokens = raw.replace(/[^a-z0-9가-힣\s]/g,' ').split(/\s+/).filter(function(t){return t.length>1;});
-    db.forEach(function(item){
-      const brand   = (item.brand||'').toLowerCase();
-      const nameKo  = (item.model_name_ko||'').toLowerCase();
-      const nameEn  = (item.model_name||'').toLowerCase();
-      const skuCode = (item.sku_code||'').toLowerCase();
-      const key     = String(item.id);
-      if(!allCandidates[key]) allCandidates[key]={item:item,score:0,sourceTitle:''};
-      let score = 0;
-      // 스타일번호 일치
-      if(skuCode){
-        if(skuCands.some(function(s){return skuCode===s;})) score+=120;
-        else if(skuCands.some(function(s){return skuCode.includes(s)||s.includes(skuCode.substring(0,5));})) score+=60;
-      }
-      // 브랜드 일치
-      if(brand&&brand.length>1){
-        if(raw.includes(brand)) score+=50;
-        else {
-          const bTokens=brand.split(/\s+/);
-          if(bTokens.length>1&&bTokens.every(function(bt){return raw.includes(bt);})) score+=40;
-          else if(bTokens.some(function(bt){return bt.length>3&&raw.includes(bt);})) score+=20;
-        }
-      }
-      // 모델명 토큰
-      const nameTokens=(nameKo+' '+nameEn).split(/\s+/).filter(function(t){return t.length>1;});
-      nameTokens.forEach(function(nt){
-        if(nt.length>2&&(tokens.indexOf(nt)>=0||raw.includes(nt))) score+=12;
-      });
-      // 역방향
-      const combined=brand+' '+nameKo+' '+nameEn+' '+skuCode;
-      tokens.forEach(function(tk){
-        if(tk.length>3&&combined.includes(tk)) score+=6;
-      });
-      if(score>allCandidates[key].score){
-        allCandidates[key].score=score;
-        allCandidates[key].sourceTitle=m.title||m.source||'';
-      }
-    });
-  });
-  return Object.values(allCandidates)
-    .filter(function(c){return c.score>20;})
-    .sort(function(a,b){return b.score-a.score;})
-    .slice(0,8);
-}
+function closeLensPopup(){var p=document.getElementById('lens-match-popup');if(p) p.style.display='none';}
 
 function renderResult(){
   // 새 검수 시작 시 이전 카드 데이터 완전 초기화
@@ -2250,7 +2192,6 @@ function renderResult(){
   if(photos.main){
     document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="_openMainPhoto()">`;
   }
-  // 브랜드/모델명은 SKU 선택 후 채워짐 (AI 강제 기재 제거)
   document.getElementById('r-brand').textContent='—';
   document.getElementById('r-model-ko').textContent='—';
   document.getElementById('r-model').textContent='—';
@@ -2279,73 +2220,21 @@ function renderResult(){
   }
 
   const dbWrap=document.getElementById('db-match-wrap');
-  // ── SKU 매칭은 Lens 카드 클릭 시 팝업으로 수행 ─────────────────
-  // db-match-wrap: 사용자가 Lens 카드 클릭 후 팝업에서 선택하면 채워짐
+  // ── SKU 매칭: Lens 카드 클릭 시 팝업에서 수행 ──────────────
   document.getElementById('db-match-wrap').innerHTML =
-    '<div style="padding:12px;text-align:center;font-size:12px;color:#78716C">👆 아래 유사 이미지를 탭하면 내부 SKU와 매칭해드려요</div>';
-
-  (async () => {
-    const dbWrapLens = document.getElementById('db-match-wrap');
-    if(!dbWrapLens) return;
-    // skuListAll 미리 로드 (팝업 반응속도 개선)
-
-    // skuListAll 없으면 로드
-    if (!skuListAll || !skuListAll.length) {
-      try {
-        const r = await fetch('/api/inspect', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'list_sku'})});
-        const j = await r.json();
-        if (j.success && j.data) skuListAll = j.data;
-      } catch(_) {}
+    '<div style="padding:10px 12px;font-size:12px;color:#78716C;text-align:center">👆 아래 유사 이미지를 탭하면 내부 SKU와 매칭해드려요</div>';
+  (function(){
+    if(!skuListAll||!skuListAll.length){
+      fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})})
+        .then(function(r){return r.json();})
+        .then(function(j){if(j.success&&j.data) skuListAll=j.data;})
+        .catch(function(){});
     }
-
-    const scored = _matchSkuFromLens(visualMatches.slice(0,15), skuListAll);
-
-    if (!scored.length) {
-      dbWrapLens.innerHTML = '<div style="border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);margin-bottom:8px">'
-        + '<div style="font-size:12px;color:#B45309;font-weight:600">🔍 내부 SKU 매칭 결과 없음</div>'
-        + '<div style="font-size:11px;color:#78716C;margin-top:4px">유사 이미지 텍스트로 매칭된 SKU가 없어요. 직접 검색하거나 신규 등록해주세요.</div>'
-        + '</div>';
-      return;
-    }
-
-    window._cardMatches = scored.map(function(s){ return s.item; });
-
-    const badge = document.createElement('div');
-    badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;margin-bottom:10px';
-    badge.textContent = '🔍 이미지 텍스트 매칭 ' + scored.length + '건';
-    dbWrapLens.innerHTML = '';
-    dbWrapLens.appendChild(badge);
-
-    scored.forEach(function(s, i) {
-      const item = s.item;
-      const score = s.score;
-      const scoreColor = score >= 80 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#94a3b8';
-      const scoreLabel = score >= 80 ? '높음' : score >= 50 ? '보통' : '낮음';
-      const imgEl = item.ref_image_url
-        ? '<img src="'+item.ref_image_url+'" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #E8E5E0">'
-        : '<div style="width:52px;height:52px;border-radius:8px;background:#F0EDE8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px">👜</div>';
-      const cardId = 'db-card-' + i;
-      const card = document.createElement('div');
-      card.className = 'db-match-card';
-      card.id = cardId;
-      card.style.cssText = 'margin:0 0 8px;border-radius:12px;overflow:hidden;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.04)';
-      card.innerHTML = '<div onclick="applyCardMatch('+i+',\''+cardId+'\')" style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer">'
-        + imgEl
-        + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(item.brand||'')+' '+(item.model_name_ko||item.model_name||'')+'</div>'
-        + '<div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(item.sku_code||'')+(item.size_actual?' · '+item.size_actual:'')+'</div>'
-        + '<div style="display:flex;align-items:center;gap:6px">'
-        + '<div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,score)+'%;background:'+scoreColor+';border-radius:2px"></div></div>'
-        + '<span style="font-size:10px;color:'+scoreColor+';font-weight:700;flex-shrink:0">'+scoreLabel+'</span>'
-        + '</div>'
-        + '<div style="font-size:10px;color:#A8A29E;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📌 '+(s.sourceTitle||'')+'</div>'
-        + '</div>'
-        + '<div id="'+cardId+'-chk" style="width:24px;height:24px;border-radius:50%;border:2px solid #E8E5E0;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>'
-        + '</div>';
-      dbWrapLens.appendChild(card);
-    });
   })();
 
+  // 백엔드 키명 정규화 — 다양한 필드명 커버
+  const _aiSize=analysis.size_actual||analysis.size||analysis.dimensions||analysis.size_mm||'';
+  const _aiSizeName=analysis.size_label||analysis.sizeName||analysis.size_name||analysis.model_size||'';
   // 렌즈 파싱 결과 (백엔드에서 직접 추출)
   const _lensSize=resultData.lensSize||'';
   const _lensSizeName=resultData.lensSizeName||'';
@@ -2414,11 +2303,11 @@ function renderResult(){
   const _lensResults = visualMatches.length ? visualMatches
     : (resultData.visual_matches||resultData.lens_results||resultData.images_results||[]);
   if(_lensResults.length){
-    window._lensCache = _lensResults; // 팝업에서 사용
+    window._lensCache=_lensResults;
     lensEl.innerHTML=_lensResults.slice(0,15).map((m,i)=>{
       const price=m.price?(typeof m.price==='object'?m.price.extracted_price||m.price.raw||'':m.price):'';
       const thumb=m.thumbnail||m.image||m.img||'';
-      return`<div class="lens-card" onclick="openLensMatchPopup(${i})" style="position:relative">
+      return`<div class="lens-card" onclick="openLensMatchPopup(${i})">
         <img src="${thumb}" alt="" onerror="this.style.display='none'">
         <div class="lens-info">
           <div class="lens-title">${m.title||m.name||'—'}</div>
