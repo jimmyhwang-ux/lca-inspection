@@ -2107,7 +2107,6 @@ async function renderResult(){
   if(photos.main){
     document.getElementById('res-thumb').innerHTML=`<img src="${photos.main.dataUrl}" style="width:100%;height:auto;display:block;object-fit:cover;cursor:zoom-in;border-radius:12px" onclick="_openMainPhoto()">`;
   }
-  // 브랜드/모델명은 Lens SKU 선택 후 채워짐
   document.getElementById('r-brand').textContent='—';
   document.getElementById('r-model-ko').textContent='—';
   document.getElementById('r-model').textContent='—';
@@ -2136,9 +2135,27 @@ async function renderResult(){
   }
 
   const dbWrap=document.getElementById('db-match-wrap');
-  // SKU 매칭은 Lens 카드 클릭 시 팝업에서 수행
+  // Lens 기반 매칭 - dbMatches는 항상 빈 배열 (서버에서 매칭 안 함)
+  const dbMatches=[];
+  // 미등록 섹션 표시 + 빈 탭 UI
+  window._dbSkuItems = [];
+  window._dbGearItems = [];
+  _buildDbTabUI();
+  const _unregHdr=document.getElementById('unregistered-header');
+  if(_unregHdr) _unregHdr.style.display='block';
+  accessories=[];renderAcc();
+  // skuListAll 미리 로드 (Lens 팝업 빠른 응답용)
+  if(!skuListAll||!skuListAll.length){
+    fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})})
+      .then(function(r){return r.json();})
+      .then(function(j){if(j.success&&j.data) skuListAll=j.data;})
+      .catch(function(){});
+  }
   document.getElementById('db-match-wrap').innerHTML='<div style="padding:10px 12px;font-size:12px;color:#78716C;text-align:center">👆 아래 유사 이미지를 탭하면 내부 SKU와 매칭해드려요</div>';
 
+  const sizeEl=document.getElementById('r-size');
+  const sizeNameEl2=document.getElementById('r-size-name');
+  const skuEl=document.getElementById('r-sku');
   // 백엔드 키명 정규화 — 다양한 필드명 커버
   const _aiSize=analysis.size_actual||analysis.size||analysis.dimensions||analysis.size_mm||'';
   const _aiSizeName=analysis.size_label||analysis.sizeName||analysis.size_name||analysis.model_size||'';
@@ -7402,8 +7419,8 @@ async function saveSpecToSupabaseById(id, specs){
 }
 
 
-// ── Lens SKU 매칭 엔진 ──────────────────────────────────────────
-function _matchSkuFromLens(lensItems, db){
+// ── Lens SKU 매칭 ───────────────────────────────────────────────
+function _matchSkuFromLens(lensItems,db){
   if(!db||!db.length||!lensItems||!lensItems.length) return [];
   var all={};
   lensItems.forEach(function(m){
@@ -7416,7 +7433,7 @@ function _matchSkuFromLens(lensItems, db){
       var ne=(item.model_name||'').toLowerCase();
       var sk=(item.sku_code||'').toLowerCase();
       var key=String(item.id);
-      if(!all[key]) all[key]={item:item,score:0,src:''};
+      if(!all[key]) all[key]={item:item,score:0};
       var sc=0;
       if(sk){
         if(skuC.some(function(s){return sk===s;})) sc+=120;
@@ -7424,22 +7441,18 @@ function _matchSkuFromLens(lensItems, db){
       }
       if(br&&br.length>1){
         if(raw.includes(br)) sc+=50;
-        else{
-          var bt=br.split(/\s+/);
-          if(bt.some(function(b){return b.length>3&&raw.includes(b);})) sc+=20;
-        }
+        else{var bt=br.split(/\s+/);if(bt.some(function(b){return b.length>3&&raw.includes(b);})) sc+=20;}
       }
       var nt=(nk+' '+ne).split(/\s+/).filter(function(t){return t.length>1;});
       nt.forEach(function(n){if(n.length>2&&(toks.indexOf(n)>=0||raw.includes(n))) sc+=12;});
       var cb=br+' '+nk+' '+ne+' '+sk;
       toks.forEach(function(t){if(t.length>3&&cb.includes(t)) sc+=6;});
-      if(sc>all[key].score){all[key].score=sc;all[key].src=m.title||m.source||'';}
+      if(sc>all[key].score) all[key].score=sc;
     });
   });
   return Object.values(all).filter(function(c){return c.score>20;})
     .sort(function(a,b){return b.score-a.score;}).slice(0,8);
 }
-
 function openLensMatchPopup(idx){
   var cache=window._lensCache||[];
   var m=cache[idx]; if(!m) return;
@@ -7447,63 +7460,43 @@ function openLensMatchPopup(idx){
   document.getElementById('lmp-thumb').src=m.thumbnail||m.image||m.img||'';
   document.getElementById('lmp-title').textContent=m.title||m.name||'';
   document.getElementById('lmp-src').textContent=m.source||m.site||'';
-  var statusEl=document.getElementById('lmp-status');
-  var resultsEl=document.getElementById('lmp-results');
-  var newBtnEl=document.getElementById('lmp-new-btn');
-  statusEl.textContent='🔍 SKU 매칭 중...';
-  statusEl.style.display='block';
-  resultsEl.innerHTML='';
-  newBtnEl.style.display='none';
+  var stEl=document.getElementById('lmp-status');
+  var rsEl=document.getElementById('lmp-results');
+  var nbEl=document.getElementById('lmp-new-btn');
+  stEl.textContent='🔍 SKU 매칭 중...'; stEl.style.display='block';
+  rsEl.innerHTML=''; nbEl.style.display='none';
   popup.style.display='flex';
   setTimeout(function(){
-    var scored=_matchSkuFromLens([m], skuListAll||[]);
-    if(!scored.length){
-      statusEl.style.display='none';
-      newBtnEl.style.display='block';
-      return;
-    }
-    statusEl.style.display='none';
+    var scored=_matchSkuFromLens([m],skuListAll||[]);
+    if(!scored.length){stEl.style.display='none';nbEl.style.display='block';return;}
+    stEl.style.display='none';
     var cnt=document.createElement('div');
     cnt.style.cssText='font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:3px 10px;border-radius:100px;margin-bottom:8px;display:inline-block';
-    cnt.textContent='매칭 결과 '+scored.length+'건';
-    resultsEl.appendChild(cnt);
+    cnt.textContent='매칭 결과 '+scored.length+'건'; rsEl.appendChild(cnt);
     scored.forEach(function(s){
-      var it=s.item, sc=s.score;
+      var it=s.item,sc=s.score;
       var col=sc>=80?'#22c55e':sc>=50?'#f59e0b':'#94a3b8';
       var lbl=sc>=80?'높음':sc>=50?'보통':'낮음';
-      var imgH=it.ref_image_url
-        ?'<img src="'+it.ref_image_url+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #E8E5E0">'
-        :'<div style="width:48px;height:48px;border-radius:8px;background:#F0EDE8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">👜</div>';
+      var imgH=it.ref_image_url?'<img src="'+it.ref_image_url+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid #E8E5E0">':'<div style="width:48px;height:48px;border-radius:8px;background:#F0EDE8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">👜</div>';
       var card=document.createElement('div');
       card.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FFFFFF;border:1.5px solid #E8E5E0;border-radius:12px;cursor:pointer;margin-bottom:2px';
-      card.innerHTML=imgH
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div>'
-        +'<div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div>'
-        +'<div style="display:flex;align-items:center;gap:5px">'
-        +'<div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div>'
-        +'<span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span>'
-        +'</div></div>'
-        +'<div style="font-size:11px;font-weight:700;color:#EA580C;flex-shrink:0">적용</div>';
+      card.innerHTML=imgH+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#1C1917;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.brand||'')+' '+(it.model_name_ko||it.model_name||'')+'</div><div style="font-size:11px;color:#78716C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.sku_code||'')+(it.size_actual?' · '+it.size_actual:'')+'</div><div style="display:flex;align-items:center;gap:5px"><div style="flex:1;height:3px;background:#E8E5E0;border-radius:2px"><div style="height:100%;width:'+Math.min(100,sc)+'%;background:'+col+';border-radius:2px"></div></div><span style="font-size:10px;font-weight:700;color:'+col+'">'+lbl+'</span></div></div><div style="font-size:11px;font-weight:700;color:#EA580C;flex-shrink:0">적용</div>';
       card.onclick=function(){
         if(!window._cardMatches) window._cardMatches=[];
         var ei=window._cardMatches.findIndex(function(x){return String(x.id)===String(it.id);});
         var ai=ei>=0?ei:(window._cardMatches.push(it)-1);
         applyCardMatch(ai,'db-card-'+ai);
-        var rb=document.getElementById('r-brand');
-        var rmk=document.getElementById('r-model-ko');
-        var rm=document.getElementById('r-model');
+        var rb=document.getElementById('r-brand'),rmk=document.getElementById('r-model-ko'),rm=document.getElementById('r-model');
         if(rb&&it.brand) rb.textContent=it.brand;
         if(rmk&&it.model_name_ko) rmk.textContent=it.model_name_ko;
         if(rm&&it.model_name) rm.textContent=it.model_name;
         toast('✅ '+(it.model_name_ko||it.model_name||it.brand||'SKU')+' 적용됐어요');
         closeLensPopup();
       };
-      resultsEl.appendChild(card);
+      rsEl.appendChild(card);
     });
-  }, 50);
+  },50);
 }
-
 function closeLensPopup(){
   var p=document.getElementById('lens-match-popup');
   if(p) p.style.display='none';
