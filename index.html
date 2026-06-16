@@ -6429,19 +6429,21 @@ function openSkuListNewForm(){
   document.getElementById('nl-sku').value = parsed.style_number||'';
   document.getElementById('nl-url').value = parsed.official_url||'';
   document.getElementById('nl-color').value = '';
-  var sizeText='';
-  if(parsed.size_w){
-    // 동적 필드에 값 주입
+  if(parsed.size_w || parsed.size_h){
+    var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
+    var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_d,
+      '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
+    // editNlSize 렌더 후 바로 값 주입 (두 단계 setTimeout으로 DOM 확실히 렌더된 후)
     setTimeout(function(){
-      var cfg = SIZE_CONFIG[cat]||SIZE_CONFIG['가방'];
-      var valMap={'가로':parsed.size_w,'세로':parsed.size_h,'너비':parsed.size_d,'폭':parsed.size_d,
-        '체인':parsed.size_d,'직경':parsed.size_e,'두께':parsed.size_h,'사이즈':parsed.size_w};
-      cfg.forEach(function(f){
-        var el=document.getElementById(f.id);
-        if(el && valMap[f.label]) el.value=valMap[f.label];
-      });
-      _updateNlSizeHidden(cfg);
-    }, 100);
+      editNlSize();
+      setTimeout(function(){
+        cfg.forEach(function(f){
+          var el = document.getElementById(f.id);
+          if(el && valMap[f.label]) el.value = valMap[f.label];
+        });
+        _updateNlSizeHidden(cfg);
+      }, 80);
+    }, 50);
   }
   var notes='';
   if(parsed.material) notes+='소재: '+parsed.material;
