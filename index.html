@@ -5040,7 +5040,7 @@ function copyResult(){
 // ── Lens 카드 Bottom Sheet ──────────────────────────────────
 var _lensSheetData = null; // 현재 열린 lens card 데이터
 
-function openLensSheet(idx){
+async function openLensSheet(idx){
   const m = (window._lensResultsData||[])[idx];
   if(!m) return;
   _lensSheetData = m;
@@ -5055,9 +5055,49 @@ function openLensSheet(idx){
   document.getElementById('lens-sheet-title').textContent = title || '—';
   document.getElementById('lens-sheet-brand').textContent = brand || '';
 
-  // DB 매칭 — 브랜드 + 모델 키워드 둘 다 일치해야 표시
+  // 시트 먼저 노출 (번역 기다리지 않고)
+  document.getElementById('lens-sheet-overlay').style.display = 'block';
+  document.getElementById('lens-sheet').style.display = 'block';
+
+  // 매칭 로딩 표시
   const matchWrap = document.getElementById('lens-sheet-matches');
-  const dbMatches = _findDbMatchForLens(title, brand);
+  matchWrap.innerHTML = '<div style="font-size:11px;color:#78716C;text-align:center;padding:10px 0;display:flex;align-items:center;justify-content:center;gap:6px"><span style="display:inline-block;width:12px;height:12px;border:2px solid #E8E5E0;border-top-color:#ff6b2b;border-radius:50%;animation:spin .7s linear infinite"></span>DB 매칭 중...</div>';
+
+  // 1차: 정적 키워드 매칭 (즉시)
+  let dbMatches = _findDbMatchForLens(title, brand, null);
+
+  // 2차: 영→한 번역 후 재매칭 (한글 DB와 정밀 비교)
+  // 한글이 아닌 제목에만 번역 시도
+  if(!/[가-힣]/.test(title)){
+    try{
+      const res = await fetch('/api/inspect',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          action:'translate_title',
+          title,
+          prompt:`다음 명품 상품명(영문)을 한국어로 번역해줘. 브랜드명 제거하고 모델명만. 40자 이내. 원문: "${title}". 한국어만 출력.`
+        })
+      });
+      const j = await res.json();
+      const translated = (j.translated||'').trim().split('\n')[0];
+      if(translated){
+        // 번역 결과로 재매칭 (기존 결과와 합산, 중복 제거)
+        const matches2 = _findDbMatchForLens(title, brand, translated);
+        // 중복 제거 후 병합
+        const seen = new Set(dbMatches.map(s=>s.id));
+        matches2.forEach(s=>{ if(!seen.has(s.id)){ dbMatches.push(s); seen.add(s.id); } });
+        // 번역 키워드 기준으로 점수 재정렬
+        const tKo = translated.toLowerCase();
+        const tKoWords = tKo.replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+        dbMatches = _scoreAndSort(dbMatches, title.toLowerCase(), tKo, null, tKoWords, null).slice(0,5);
+      }
+    }catch(e){ console.warn('[lens translate]', e); }
+  }
+
+  _renderLensMatches(matchWrap, dbMatches);
+}
+
+function _renderLensMatches(matchWrap, dbMatches){
   if(dbMatches.length){
     matchWrap.innerHTML = `<div style="font-size:11px;color:#22c55e;font-weight:700;margin-bottom:6px">✅ 매칭 결과 ${dbMatches.length}건</div>`
       + dbMatches.map((s,i)=>{
@@ -5077,10 +5117,6 @@ function openLensSheet(idx){
     matchWrap.innerHTML = '<div style="font-size:11px;color:#A8A29E;text-align:center;padding:8px 0">DB에 일치하는 상품이 없어요</div>';
     window._lensDbMatches = [];
   }
-
-  document.getElementById('lens-sheet-overlay').style.display = 'block';
-  const sheet = document.getElementById('lens-sheet');
-  sheet.style.display = 'block';
 }
 
 function openLensMatchDetail(idx){
@@ -5308,32 +5344,116 @@ function _extractBrandFromAnalysis(title){
 }
 
 // 브랜드 + 모델 핵심 키워드가 모두 일치할 때만 매칭 반환
-function _findDbMatchForLens(title, brand){
+// translatedKo: Claude 번역 한글 (null이면 정적 테이블만 사용)
+function _findDbMatchForLens(title, brand, translatedKo){
   if(!skuListAll||!skuListAll.length) return [];
   const q = title.toLowerCase();
-  const qClean = q.replace(/[^\w가-힣\s]/g,' ');
+  const qKo = (translatedKo||'').toLowerCase();
 
-  // 브랜드 정규화
-  const brandNorm = (brand||'').toLowerCase().replace(/[\s\-]/g,'');
+  // 브랜드 별칭 테이블
+  const BRAND_ALIAS = {
+    'dior':['dior','디올','christian dior','크리스챤디올'],
+    'louis vuitton':['louis vuitton','루이비통','lv'],
+    'chanel':['chanel','샤넬'],
+    'gucci':['gucci','구찌'],
+    'prada':['prada','프라다'],
+    'hermes':['hermes','hermès','에르메스'],
+    'balenciaga':['balenciaga','발렌시아가'],
+    'saint laurent':['saint laurent','ysl','생로랑'],
+    'bottega veneta':['bottega veneta','보테가베네타','보테가'],
+    'celine':['celine','céline','셀린느','셀린'],
+    'loewe':['loewe','로에베'],
+    'fendi':['fendi','펜디'],
+    'givenchy':['givenchy','지방시'],
+    'valentino':['valentino','발렌티노'],
+    'burberry':['burberry','버버리'],
+    'moncler':['moncler','몽클레어','몽클레르'],
+    'rolex':['rolex','롤렉스'],
+    'omega':['omega','오메가'],
+    'cartier':['cartier','까르띠에'],
+    'van cleef':['van cleef','반클리프'],
+    'tiffany':['tiffany','티파니'],
+    'bvlgari':['bvlgari','bulgari','불가리'],
+    'nike':['nike','나이키'],
+    'adidas':['adidas','아디다스'],
+    'new balance':['new balance','뉴발란스'],
+  };
+  const brandLow = (brand||'').toLowerCase();
+  let brandAliases = [];
+  for(const [,aliases] of Object.entries(BRAND_ALIAS)){
+    if(aliases.some(a=>brandLow.includes(a)||a.includes(brandLow))){ brandAliases=aliases; break; }
+  }
+  if(!brandAliases.length && brandLow) brandAliases=[brandLow];
 
-  return skuListAll.filter(s=>{
-    const sBrand = (s.brand||'').toLowerCase().replace(/[\s\-]/g,'');
-    const sKo    = (s.model_name_ko||'').toLowerCase();
-    const sEn    = (s.model_name||'').toLowerCase();
+  // 영문 stop words (모델 식별에 무의미한 단어)
+  const STOP_EN = new Set(['and','the','with','for','from','dior','louis','vuitton','chanel','gucci',
+    'prada','women','mens','womens','new','bag','handbag','purse','fabric','color',
+    'classic','vintage','luxury','authentic','original','brand','size','style']);
+  const lensEnWords = q.replace(/[^\w\s]/g,' ').split(/\s+/).filter(w=>w.length>=3&&!STOP_EN.has(w));
 
-    // 1) 브랜드 일치 필수
-    if(brandNorm && sBrand && !sBrand.includes(brandNorm) && !brandNorm.includes(sBrand)) return false;
+  // 한글 stop words
+  const STOP_KO = new Set(['가방','숄더','클러치','지갑','백','블랙','화이트','베이지','블루','네이비','그레이','레드','브라운','핑크','그린']);
+  // 번역 한글 키워드
+  const lensKoWords = qKo
+    ? qKo.replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2&&!STOP_KO.has(w))
+    : [];
 
-    // 2) 모델 키워드 — 영문 단어 3글자 이상 or 한글 2글자 이상이 제목에 포함
-    const enWords = sEn.split(/\s+/).filter(w=>w.length>=3);
-    const koWords = sKo.split(/\s+/).filter(w=>w.length>=2);
-    const enHit = enWords.length >= 2
-      ? enWords.filter(w=>qClean.includes(w)).length >= Math.min(2, enWords.length)
-      : enWords.some(w=>q.includes(w));
-    const koHit = koWords.some(w=>q.includes(w));
+  // 정적 EN→KO 보조
+  const EN_TO_KO = {
+    'book':'북','tote':'토트','oblique':'오블리크','embroidery':'자수',
+    'leather':'레더','canvas':'캔버스','large':'라지','small':'스몰',
+    'medium':'미디엄','mini':'미니','micro':'마이크로','nano':'나노',
+    'ecru':'에크루','shoulder':'숄더','clutch':'클러치','hobo':'호보',
+    'bucket':'버킷','flap':'플랩','chain':'체인','saddle':'새들',
+    'speedy':'스피디','neverfull':'네버풀','keepall':'키폴',
+    'birkin':'버킨','kelly':'켈리','constance':'콘스탄스',
+    'quilted':'퀼팅','caviar':'캐비어','jumbo':'점보','maxi':'맥시',
+    'boy':'보이','slim':'슬림','compact':'컴팩트','pochette':'포쉐트',
+    'alma':'알마','onthego':'온더고','trapeze':'트라페즈',
+    'luggage':'러기지','trio':'트리오',
+  };
+  const staticKoWords = lensEnWords.map(w=>EN_TO_KO[w]).filter(Boolean);
 
-    return enHit || koHit;
-  }).slice(0,5);
+  function koW(str){
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+  }
+
+  const matched = skuListAll.filter(s=>{
+    const sBrand = (s.brand||'').toLowerCase();
+    const sKoW   = koW(s.model_name_ko||'');
+    const sEnW   = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
+
+    // 1) 브랜드 필터
+    if(brandAliases.length && !brandAliases.some(a=>sBrand.includes(a)||a.includes(sBrand))) return false;
+
+    // 2) 모델 키워드 매칭 (어느 경로든 하나 hit)
+    return (
+      lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)))  // EN↔EN
+      || lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))) // 번역 KO↔DB KO
+      || staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))) // 정적 EN→KO↔DB KO
+    );
+  });
+
+  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords).slice(0,5);
+}
+
+// 키워드 겹침 수 기준 정렬
+function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords){
+  if(!lensEnWords) lensEnWords=[];
+  if(!lensKoWords) lensKoWords=[];
+  if(!staticKoWords) staticKoWords=[];
+  function koW(str){
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+  }
+  return items.map(s=>{
+    const sKoW = koW(s.model_name_ko||'');
+    const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
+    const score =
+      lensEnWords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
+      + lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
+      + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2;
+    return {s, score};
+  }).sort((a,b)=>b.score-a.score).map(({s})=>s);
 }
 
 function closeLensSheet(){
