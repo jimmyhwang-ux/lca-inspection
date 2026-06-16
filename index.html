@@ -2159,7 +2159,7 @@ async function renderResult(){
       const lbl=sizeEl.closest('.info-cell')?.querySelector('.info-cell-label');
       if(lbl&&!lbl.querySelector('.ai-badge')){
         sizeEl.title='AI 이미지 분석 — 탭하여 수정';
-        lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+        lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#dbeafe;color:#2563eb;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
       }
     } else {
       sizeEl.textContent='—';sizeEl.className='info-cell-val muted';
@@ -2171,8 +2171,8 @@ async function renderResult(){
       if(lbl2&&!lbl2.querySelector('.ai-badge')){
         const isWebSN=!_aiSizeName&&!!_lensSizeName;
         lbl2.insertAdjacentHTML('beforeend',isWebSN
-          ?'<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>'
-          :'<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+          ?'<span class="ai-badge" style="background:#dcfce7;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>'
+          :'<span class="ai-badge" style="background:#dbeafe;color:#2563eb;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
       }
     } else {
       sizeNameEl2.textContent='—';sizeNameEl2.className='info-cell-val muted';
@@ -2189,8 +2189,8 @@ async function renderResult(){
       if(skuLbl&&!skuLbl.querySelector('.ai-badge')){
         const isWeb=!analysis.sku&&!!_lensSku;
         skuLbl.insertAdjacentHTML('beforeend',isWeb
-          ?'<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>'
-          :'<span class="ai-badge" style="background:#1a2a3a;color:#007aff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
+          ?'<span class="ai-badge" style="background:#dcfce7;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>'
+          :'<span class="ai-badge" style="background:#dbeafe;color:#2563eb;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">AI</span>');
       }
     }
   }
@@ -2544,7 +2544,7 @@ async function reSearchByModel(brand, modelName){
           sEl.textContent=j.lensSize; sEl.className='info-cell-val';
           const lbl=sEl.closest('.info-cell')?.querySelector('.info-cell-label');
           if(lbl&&!lbl.querySelector('.ai-badge'))
-            lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
+            lbl.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#dcfce7;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
         }
       }
       if(j.lensSizeName){
@@ -2553,7 +2553,7 @@ async function reSearchByModel(brand, modelName){
           snEl.textContent=j.lensSizeName; snEl.className='info-cell-val';
           const lbl2=snEl.closest('.info-cell')?.querySelector('.info-cell-label');
           if(lbl2&&!lbl2.querySelector('.ai-badge'))
-            lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#001a0d;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
+            lbl2.insertAdjacentHTML('beforeend','<span class="ai-badge" style="background:#dcfce7;color:#22c55e;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">WEB</span>');
         }
       }
     }catch(e){
@@ -3192,7 +3192,7 @@ function applyDbMatchMulti(items){
             ${m.size_actual?`실측: ${m.size_actual}`:''}${m.size_label?` / 명칭: ${m.size_label}`:''}<br>
             ${accList?'부속품: '+accList+'<br>':''}
             ${m.notes?`<span style="color:#f59e0b;font-size:11px;display:block;margin-top:4px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b">📝 특이사항: ${m.notes}</span>`:''}
-            ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 7px;text-decoration:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 사이트</a>`:''}
+            ${m.site_url?`<a href="${m.site_url}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10px;color:#ffffff;background:#2563eb;border:1px solid #2563eb;border-radius:6px;padding:2px 7px;text-decoration:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 사이트</a>`:''}
           </div>
         </div>
       </div>
@@ -3756,7 +3756,7 @@ function renderSkuPage(wrapId){
             ${item.sku_code?`<span class="sku-meta-tag">SKU: ${item.sku_code}</span><button onclick="event.stopPropagation();window.open('https://www.google.com/search?q='+encodeURIComponent('${(item.brand||'').replace(/'/g,"\\'")} ${(item.sku_code||'').replace(/'/g,"\\'")}'),'_blank')" title="구글 검색" style="background:none;border:none;cursor:pointer;padding:0 2px;vertical-align:middle;opacity:.7;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>`:''}
             ${item.size_actual?`<span class="sku-meta-tag">실측: ${item.size_actual}</span>`:''}
             ${(item.official_specs && Object.keys(typeof item.official_specs==='string'?JSON.parse(item.official_specs||'{}'):item.official_specs||{}).length > 0) || _aiBadgeIds.has(String(item.id)) ?`<span class="sku-meta-tag ai-badge-tag" style="background:rgba(255,107,43,.15);color:#ff6b2b;border:1px solid rgba(255,107,43,.3)">✨ AI기입</span>`:''}
-            ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#007aff;background:#001a33;border:1px solid rgba(0,122,255,.3);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
+            ${item.site_url?`<a href="${item.site_url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:#ffffff;background:#2563eb;border:1px solid #2563eb;border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap">🔗 사이트</a>`:''}
           </div>
           ${(()=>{const _a=safeAccArr(item.accessories);return _a.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${_a.map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('')}</div>`:'';})()}
           ${item.notes?`<div style="margin-top:6px;padding:5px 8px;background:rgba(245,158,11,.08);border-radius:6px;border-left:2px solid #f59e0b;font-size:11px;color:#f59e0b"><span style="color:#555;margin-right:4px">특이사항:</span>${item.notes}</div>`:''}
