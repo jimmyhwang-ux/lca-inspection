@@ -2646,6 +2646,25 @@ var _BRAND_ALIAS = {
   '반클리프아펠':'vancleefarpels','반클리프':'vancleefarpe',
   '쇼메':'chaumet','프레드':'fred','페라가모':'ferragamo',
   '해밀턴':'hamilton','티쏘':'tissot','론진':'longines',
+  // 추가 브랜드 KO→EN
+  '꼴로에':'chloe','다미아니':'damiani','라도':'rado',
+  '르메르':'lemaire','마르니':'marni','멀버리':'mulberry',
+  '몽블랑':'montblanc','무스너클':'mooseknuckles','미도':'mido',
+  '부쉐론':'boucheron','쇼파드':'chopard','스톤아일랜드':'stoneisland',
+  '아이더블유씨':'iwc','오데마피게':'audemarspiguet','오리스':'oris',
+  '제니스':'zenith','질샌더':'jilsander','튜더':'tudor',
+  '프랑크뮬러':'franckmuller','프레드릭콘스탄트':'frederiqueconstant','피아제':'piaget',
+  // 추가 브랜드 EN→KO
+  'chloe':'꼴로에','chloé':'꼴로에','damiani':'다미아니','rado':'라도',
+  'lemaire':'르메르','marni':'마르니','mulberry':'멀버리',
+  'montblanc':'몽블랑','mooseknuckles':'무스너클','moose knuckles':'무스너클',
+  'mido':'미도','boucheron':'부쉐론','chopard':'쇼파드',
+  'stoneisland':'스톤아일랜드','stone island':'스톤아일랜드',
+  'iwc':'아이더블유씨','audemarspiguet':'오데마피게','audemars piguet':'오데마피게',
+  'oris':'오리스','zenith':'제니스','jilsander':'질샌더','jil sander':'질샌더',
+  'tudor':'튜더','franckmuller':'프랑크뮬러','franck muller':'프랑크뮬러',
+  'frederiqueconstant':'프레드릭콘스탄트','frederique constant':'프레드릭 콘스탄트',
+  'piaget':'피아제',
 };
 function _normBrand(b){
   return (b||'').toLowerCase().replace(/[\s\-&·'']/g,'');
@@ -5069,7 +5088,8 @@ async function openLensSheet(idx){
     }catch(e){}
   }
 
-  // ── 1단계: 브랜드 필터로 후보군 좁히기 ──
+  // ── 1단계: 모델 키워드로 전체 DB 검색 (브랜드는 점수 가산만) ──
+  // 브랜드 매칭 SKU 우선 + 전체에서 모델 키워드 매칭
   const candidates = _filterByBrand(skuListAll, brand);
 
   // ── 2단계: Claude에게 매칭 요청 ──
@@ -5117,46 +5137,15 @@ ${candidateList}
   _renderLensMatches(matchWrap, dbMatches);
 }
 
-// 브랜드 별칭으로 후보군만 추출
+// 브랜드 매칭 SKU를 앞에, 나머지 전체를 뒤에 붙여서 반환
+// Claude 후보 30개 안에 브랜드 일치가 우선 들어오도록
 function _filterByBrand(list, brand){
-  const BRAND_ALIAS = {
-    'dior':['dior','디올','christian dior','크리스챤디올'],
-    'louis vuitton':['louis vuitton','루이비통','lv'],
-    'chanel':['chanel','샤넬'],
-    'gucci':['gucci','구찌'],
-    'prada':['prada','프라다'],
-    'hermes':['hermes','hermès','에르메스'],
-    'balenciaga':['balenciaga','발렌시아가'],
-    'saint laurent':['saint laurent','ysl','생로랑'],
-    'bottega veneta':['bottega veneta','보테가베네타','보테가'],
-    'celine':['celine','céline','셀린느','셀린'],
-    'loewe':['loewe','로에베'],
-    'fendi':['fendi','펜디'],
-    'givenchy':['givenchy','지방시'],
-    'valentino':['valentino','발렌티노'],
-    'burberry':['burberry','버버리'],
-    'moncler':['moncler','몽클레어','몽클레르'],
-    'rolex':['rolex','롤렉스'],
-    'omega':['omega','오메가'],
-    'cartier':['cartier','까르띠에'],
-    'van cleef':['van cleef','반클리프'],
-    'tiffany':['tiffany','티파니'],
-    'bvlgari':['bvlgari','bulgari','불가리'],
-    'nike':['nike','나이키'],
-    'adidas':['adidas','아디다스'],
-    'new balance':['new balance','뉴발란스'],
-  };
-  if(!brand) return list.slice(0,30);
-  const brandLow = brand.toLowerCase();
-  let aliases = [brandLow];
-  for(const [,al] of Object.entries(BRAND_ALIAS)){
-    if(al.some(a=>brandLow.includes(a)||a.includes(brandLow))){ aliases=al; break; }
-  }
-  const filtered = list.filter(s=>{
-    const sb = (s.brand||'').toLowerCase();
-    return aliases.some(a=>sb.includes(a)||a.includes(sb));
-  });
-  return filtered.length ? filtered : list.slice(0,30);
+  if(!brand) return list;
+  const brandMatched = list.filter(s => _brandMatch(s.brand, brand));
+  if(!brandMatched.length) return list; // 브랜드 매칭 없으면 전체 반환
+  // 브랜드 매칭을 앞에, 나머지를 뒤에
+  const others = list.filter(s => !_brandMatch(s.brand, brand));
+  return [...brandMatched, ...others];
 }
 
 function _renderLensMatches(matchWrap, dbMatches){
@@ -5399,7 +5388,7 @@ function applyLensMatchAndGo(){
 function _extractBrandFromAnalysis(title){
   const a = resultData&&resultData.analysis ? resultData.analysis : {};
   if(a.brand) return a.brand;
-  const luxBrands=['Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès','Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry','Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega','Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara','Nike','Adidas','New Balance'];
+  const luxBrands=['Dior','Christian Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès','Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry','Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega','Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara','Nike','Adidas','New Balance','Goyard','Chloe','Chloé','Damiani','Rado','Lemaire','Marni','Mulberry','Montblanc','Moose Knuckles','Mido','Boucheron','Chopard','Stone Island','Audemars Piguet','Oris','Zenith','Jil Sander','Tudor','Franck Muller','Frederique Constant','Piaget','Miu Miu','Maison Margiela','Tom Browne','Tag Heuer','Ferragamo','Delvaux'];
   for(const b of luxBrands){
     if(title.toLowerCase().includes(b.toLowerCase())) return b;
   }
@@ -5409,48 +5398,23 @@ function _extractBrandFromAnalysis(title){
 // 브랜드 + 모델 핵심 키워드가 모두 일치할 때만 매칭 반환
 function _findDbMatchForLens(title, brand, translatedKo){
   if(!skuListAll||!skuListAll.length) return [];
-  const q = title.toLowerCase();
-  const qKo = (translatedKo||'').toLowerCase();
 
-  // 브랜드 별칭 테이블
-  const BRAND_ALIAS = {
-    'dior':['dior','디올','christian dior','크리스챤디올'],
-    'louis vuitton':['louis vuitton','루이비통','lv'],
-    'chanel':['chanel','샤넬'],
-    'gucci':['gucci','구찌'],
-    'prada':['prada','프라다'],
-    'hermes':['hermes','hermès','에르메스'],
-    'balenciaga':['balenciaga','발렌시아가'],
-    'saint laurent':['saint laurent','ysl','생로랑'],
-    'bottega veneta':['bottega veneta','보테가베네타','보테가'],
-    'celine':['celine','céline','셀린느','셀린'],
-    'loewe':['loewe','로에베'],
-    'fendi':['fendi','펜디'],
-    'givenchy':['givenchy','지방시'],
-    'valentino':['valentino','발렌티노'],
-    'burberry':['burberry','버버리'],
-    'moncler':['moncler','몽클레어','몽클레르'],
-    'rolex':['rolex','롤렉스'],
-    'omega':['omega','오메가'],
-    'cartier':['cartier','까르띠에'],
-    'van cleef':['van cleef','반클리프'],
-    'tiffany':['tiffany','티파니'],
-    'bvlgari':['bvlgari','bulgari','불가리'],
-    'nike':['nike','나이키'],
-    'adidas':['adidas','아디다스'],
-    'new balance':['new balance','뉴발란스'],
-  };
-  const brandLow = (brand||'').toLowerCase();
-  let brandAliases = [];
-  for(const [,aliases] of Object.entries(BRAND_ALIAS)){
-    if(aliases.some(a=>brandLow.includes(a)||a.includes(brandLow))){ brandAliases=aliases; break; }
+  // 유니코드 악센트 제거 (bonbonnière→bonbonniere 등)
+  function normEn(str){
+    return (str||'').toLowerCase()
+      .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+      .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o')
+      .replace(/[ùúûü]/g,'u').replace(/[ñ]/g,'n').replace(/[ç]/g,'c')
+      .replace(/[^\w\s]/g,' ');
   }
-  if(!brandAliases.length && brandLow) brandAliases=[brandLow];
+
+  const q = normEn(title);
+  const qKo = (translatedKo||'').toLowerCase();
 
   const STOP_EN = new Set(['and','the','with','for','from','dior','louis','vuitton','chanel','gucci',
     'prada','women','mens','womens','new','bag','handbag','purse','fabric','color',
     'classic','vintage','luxury','authentic','original','brand','size','style']);
-  const lensEnWords = q.replace(/[^\w\s]/g,' ').split(/\s+/).filter(w=>w.length>=3&&!STOP_EN.has(w));
+  const lensEnWords = q.split(/\s+/).filter(w=>w.length>=3&&!STOP_EN.has(w));
 
   const STOP_KO = new Set(['가방','숄더','클러치','지갑','백','블랙','화이트','베이지','블루','네이비','그레이','레드','브라운','핑크','그린']);
   const lensKoWords = qKo
@@ -5469,55 +5433,36 @@ function _findDbMatchForLens(title, brand, translatedKo){
     'boy':'보이','slim':'슬림','compact':'컴팩트','pochette':'포쉐트',
     'alma':'알마','onthego':'온더고','trapeze':'트라페즈',
     'luggage':'러기지','trio':'트리오',
+    'bonbonniere':'봉보니에르','goyardine':'고야딘','artois':'아르투아',
+    'saint':'생','chevron':'쉐브론','anjou':'앙주',
+    'marcie':'마르시','pixie':'픽시','drew':'드루',
+    'triomphe':'트리옹프','cyme':'심','ava':'아바',
+    'nano':'나노','mini':'미니','micro':'마이크로',
   };
   const staticKoWords = lensEnWords.map(w=>EN_TO_KO[w]).filter(Boolean);
-
-  // ── 디버그 ──
-  console.log('[_findDb] q:', q.slice(0,60));
-  console.log('[_findDb] brand:', brand, '→ aliases:', brandAliases);
-  console.log('[_findDb] lensEnWords:', lensEnWords);
-  console.log('[_findDb] staticKoWords:', staticKoWords);
-  console.log('[_findDb] lensKoWords(번역):', lensKoWords);
 
   function koW(str){
     return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
   }
+  function enW(str){
+    return normEn(str).split(/\s+/).filter(w=>w.length>=3);
+  }
 
-  // 브랜드 필터 통과 여부 별도 체크
-  const brandPassed = skuListAll.filter(s=>{
-    const sBrand = (s.brand||'').toLowerCase();
-    return !brandAliases.length || brandAliases.some(a=>sBrand.includes(a)||a.includes(sBrand));
-  });
-  console.log('[_findDb] 브랜드 통과:', brandPassed.length, '건 / 샘플:', brandPassed.slice(0,3).map(s=>s.brand+'|'+s.model_name_ko));
-
-  const matched = brandPassed.filter(s=>{
+  // 전체 DB에서 모델 키워드 매칭 (브랜드는 점수 가산)
+  const matched = skuListAll.filter(s=>{
     const sKoW = koW(s.model_name_ko||'');
-    const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
+    const sEnW = enW(s.model_name||'');
     const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
     const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
     const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    if(!enHit&&!koHit&&!stHit){
-      // 첫 3개만 왜 탈락했는지 출력
-    }
     return enHit || koHit || stHit;
   });
 
-  console.log('[_findDb] 모델 매칭 결과:', matched.length, '건');
-  // 브랜드 통과했지만 모델 매칭 실패한 첫 3개 디버그
-  if(!matched.length && brandPassed.length){
-    brandPassed.slice(0,5).forEach(s=>{
-      const sKoW = koW(s.model_name_ko||'');
-      const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
-      console.log('[_findDb] 탈락 샘플 →', s.model_name_ko, '/ koW:', sKoW, '/ enW:', sEnW);
-      console.log('  staticKo vs sKoW:', staticKoWords, 'vs', sKoW);
-    });
-  }
-
-  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords).slice(0,5);
+  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand).slice(0,5);
 }
 
 // 키워드 겹침 수 기준 정렬
-function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords){
+function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand){
   if(!lensEnWords) lensEnWords=[];
   if(!lensKoWords) lensKoWords=[];
   if(!staticKoWords) staticKoWords=[];
@@ -5527,10 +5472,12 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords){
   return items.map(s=>{
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
+    const brandBonus = (brand && _brandMatch(s.brand, brand)) ? 5 : 0;
     const score =
       lensEnWords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
       + lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
-      + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2;
+      + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2
+      + brandBonus;
     return {s, score};
   }).sort((a,b)=>b.score-a.score).map(({s})=>s);
 }
