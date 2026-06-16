@@ -523,8 +523,16 @@ input[type=file]{display:none}
   <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
     <img id="lens-sheet-img" src="" alt="" onerror="this.style.display='none'" style="width:72px;height:72px;object-fit:cover;border-radius:10px;background:#F0EDE8;flex-shrink:0">
     <div style="flex:1;min-width:0">
-      <div id="lens-sheet-title" style="font-size:14px;font-weight:700;color:#1C1917;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden"></div>
-      <div id="lens-sheet-brand" style="font-size:12px;color:#ff6b2b;font-weight:600"></div>
+      <div id="lens-sheet-title" style="font-size:14px;font-weight:700;color:#1C1917;line-height:1.5;margin-bottom:6px;word-break:break-word"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="lens-sheet-brand" style="font-size:12px;color:#ff6b2b;font-weight:600"></div>
+        <a id="lens-sheet-link" href="#" target="_blank" rel="noopener"
+          style="display:none;align-items:center;gap:3px;font-size:11px;color:#57534E;text-decoration:none;padding:3px 8px;background:#F0EDE8;border-radius:20px;flex-shrink:0"
+          onmouseover="this.style.background='#E8E5E0'" onmouseout="this.style.background='#F0EDE8'">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          원본 보기
+        </a>
+      </div>
     </div>
   </div>
   <div id="lens-sheet-matches" style="margin-bottom:12px"></div>
@@ -5072,6 +5080,18 @@ async function openLensSheet(idx){
   if(imgEl){ imgEl.src = thumb; imgEl.style.display = thumb ? 'block' : 'none'; }
   document.getElementById('lens-sheet-title').textContent = title || '—';
   document.getElementById('lens-sheet-brand').textContent = brand || '';
+
+  // 원본 링크 버튼
+  const linkEl = document.getElementById('lens-sheet-link');
+  const link = m.link||m.url||'';
+  if(linkEl){
+    if(link && link !== '#'){
+      linkEl.href = link;
+      linkEl.style.display = 'inline-flex';
+    } else {
+      linkEl.style.display = 'none';
+    }
+  }
 
   document.getElementById('lens-sheet-overlay').style.display = 'block';
   document.getElementById('lens-sheet').style.display = 'block';
