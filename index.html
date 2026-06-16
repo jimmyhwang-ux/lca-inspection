@@ -2093,7 +2093,6 @@ function renderDbMatchCards(matches){
 }
 
 
-async 
 // ── Lens 카드 클릭 → SKU 매칭 팝업 ─────────────────────────────
 function openLensMatchPopup(idx){
   const cache = window._lensCache || [];
@@ -3194,7 +3193,7 @@ function onResultFieldInput(input,id,forceSearch){
   }
 }
 
-let _searchDbRunning=false;
+var _searchDbRunning=false;
 async function searchDbFromField(fieldId,val){
 if(_searchDbRunning) return;
 _searchDbRunning=true;
