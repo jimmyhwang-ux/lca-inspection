@@ -5544,8 +5544,9 @@ function _parseSpecRawText(txt, cat){
   if(cat==='주얼리'){
     r.size_unit='mm';
     // 가로(펜던트 너비): "너비 10.5mm" / "가로 10.5mm" / "width 10.5"
-    // NxN mm 패턴 우선 (펜던트: "15mm × 15mm")
-    var mNxN=t.match(/([0-9.]+)\s*mm\s*[×x]\s*([0-9.]+)\s*mm/i);
+    // NxN 패턴 우선 (펜던트: "15mm×15mm" or "15 x 12 x 5mm")
+    var mNxN=t.match(/([0-9.]+)\s*mm\s*[×x]\s*([0-9.]+)\s*mm/i)
+          ||t.match(/([0-9.]+)\s*[×x]\s*([0-9.]+)(?:\s*[×x]\s*[0-9.]+)?\s*mm/i);
     var sw=mNxN ? [null, mNxN[1]] : (t.match(/(?:가로|너비|width)[×x\s→*,:]+([0-9.]+)/i));
     var sh=mNxN ? [null, mNxN[2]] : (t.match(/(?:세로|높이|height)[×x\s→*,:]+([0-9.]+)/i));
     // 체인 길이: "체인 길이 약 400mm" / "체인 길이: 42cm" / "42cm (체인 길이)"
