@@ -5048,59 +5048,292 @@ function openLensSheet(idx){
   const title = m.title||m.name||'';
   const brand = _extractBrandFromAnalysis(title);
   const thumb = m.thumbnail||m.image||m.img||'';
-  const link  = m.link||m.url||'#';
 
-  // 시트 내용 채우기
+  // 시트 헤더
   const imgEl = document.getElementById('lens-sheet-img');
   if(imgEl){ imgEl.src = thumb; imgEl.style.display = thumb ? 'block' : 'none'; }
   document.getElementById('lens-sheet-title').textContent = title || '—';
   document.getElementById('lens-sheet-brand').textContent = brand || '';
 
-  // DB 매칭 검색
+  // DB 매칭 — 브랜드 + 모델 키워드 둘 다 일치해야 표시
   const matchWrap = document.getElementById('lens-sheet-matches');
-  matchWrap.innerHTML = '<div style="font-size:12px;color:#78716C;text-align:center;padding:8px">DB 검색 중...</div>';
-
-  const dbMatches = _findDbMatchForLens(title);
+  const dbMatches = _findDbMatchForLens(title, brand);
   if(dbMatches.length){
     matchWrap.innerHTML = `<div style="font-size:11px;color:#22c55e;font-weight:700;margin-bottom:6px">✅ 매칭 결과 ${dbMatches.length}건</div>`
-      + dbMatches.slice(0,3).map(s=>{
+      + dbMatches.map((s,i)=>{
           const dims = s.size_actual ? ` • ${s.size_actual}` : '';
-          return `<div style="background:#FFFFFF;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 12px;margin-bottom:6px;font-size:12px;color:#1C1917">
-            <div style="font-weight:700;margin-bottom:2px">${s.model_name_ko||s.model_name||'—'}</div>
-            <div style="font-size:11px;color:#57534E">${s.sku_code||''}${dims}</div>
+          const skuCode = s.sku_code ? `<span style="color:#78716C">${s.sku_code}</span>` : '';
+          return `<div onclick="openLensMatchDetail(${i})" style="cursor:pointer;background:#FFFFFF;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+            ${s.ref_image_url ? `<img src="${s.ref_image_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">` : ''}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:#1C1917;margin-bottom:2px">${s.model_name_ko||s.model_name||'—'}</div>
+              <div style="font-size:11px;color:#57534E">${skuCode}${dims}</div>
+            </div>
+            <span style="color:#DDD8D2;font-size:16px">›</span>
           </div>`;
         }).join('');
+    window._lensDbMatches = dbMatches;
   } else {
-    matchWrap.innerHTML = '<div style="font-size:11px;color:#78716C;text-align:center;padding:4px">매칭이 정확하지 않을 수 있어요</div>';
+    matchWrap.innerHTML = '<div style="font-size:11px;color:#A8A29E;text-align:center;padding:8px 0">DB에 일치하는 상품이 없어요</div>';
+    window._lensDbMatches = [];
   }
 
-  // 시트 표시
   document.getElementById('lens-sheet-overlay').style.display = 'block';
   const sheet = document.getElementById('lens-sheet');
   sheet.style.display = 'block';
-  sheet.style.transform = 'translateY(0)';
+}
+
+function openLensMatchDetail(idx){
+  const s = (window._lensDbMatches||[])[idx];
+  if(!s) return;
+
+  // 기존 상세 팝업 제거
+  document.getElementById('lens-match-detail-overlay')?.remove();
+  document.getElementById('lens-match-detail')?.remove();
+
+  const imgs = [s.ref_image_url,...(Array.isArray(s.extra_images)?s.extra_images:[])].filter(Boolean);
+  const accList = (Array.isArray(s.accessories)?s.accessories:[]).map(a=>typeof a==='string'?a:(a.name||'')).filter(Boolean);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'lens-match-detail-overlay';
+  overlay.onclick = closeLensMatchDetail;
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900';
+
+  const sheet = document.createElement('div');
+  sheet.id = 'lens-match-detail';
+  sheet.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#FAFAF8;border-radius:20px 20px 0 0;z-index:901;padding:20px 20px 40px;max-height:88vh;overflow-y:auto';
+  sheet.onclick = e => e.stopPropagation();
+
+  sheet.innerHTML = `
+    <div style="width:36px;height:4px;background:#DDD8D2;border-radius:2px;margin:0 auto 16px"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="closeLensMatchDetail()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#57534E;padding:0;line-height:1">←</button>
+      <span style="font-size:15px;font-weight:800;flex:1">DB 매칭 상세</span>
+    </div>
+    ${imgs.length ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none">
+      ${imgs.map(u=>`<img src="${u}" onerror="this.style.display='none'" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #E8E5E0">`).join('')}
+    </div>` : ''}
+    <div style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E5E0;overflow:hidden;margin-bottom:12px">
+      ${_lmdRow('브랜드',     'lmd-brand',    s.brand||'')}
+      ${_lmdRow('모델명(한글)','lmd-model-ko', s.model_name_ko||'')}
+      ${_lmdRow('모델명(영문)','lmd-model-en', s.model_name||'')}
+      ${_lmdRow('카테고리',   'lmd-cat',      s.category||'', true)}
+      ${_lmdRow('컬러',       'lmd-color',    s.color||'')}
+      ${_lmdRow('스타일번호', 'lmd-sku',      s.sku_code||'')}
+      ${_lmdRow('사이즈 명칭','lmd-size-name',s.size_label||'')}
+      ${_lmdRow('실측 사이즈','lmd-size',     s.size_actual||'')}
+      ${_lmdRow('사이트 URL', 'lmd-url',      s.site_url||'')}
+      ${_lmdRow('특이사항',   'lmd-notes',    s.notes||'', false, true)}
+    </div>
+    ${accList.length ? `<div style="font-size:11px;color:#57534E;margin-bottom:6px">부속품: ${accList.join(', ')}</div>` : ''}
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:#57534E;margin-bottom:6px;font-weight:600">사진 추가</div>
+      <div id="lmd-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <label style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#F5F2EE;border:1px dashed #DDD8D2;border-radius:8px;padding:10px;font-size:12px;color:#57534E;cursor:pointer;box-sizing:border-box">
+        📁 파일 선택
+        <input type="file" accept="image/*" multiple style="display:none" onchange="addLmdPhotos(this.files)">
+      </label>
+    </div>
+    <button onclick="applyLensMatchAndGo()" style="width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px">+ 신규 SKU 등록하기</button>
+    <button onclick="closeLensMatchDetail()" style="width:100%;background:none;border:1px solid #E8E5E0;color:#57534E;border-radius:12px;padding:12px;font-size:13px;cursor:pointer">닫기</button>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(sheet);
+
+  // 검수 이미지 자동 추가 → lmd-photo-preview
+  window._lmdExtraPhotos = [];
+  const keys = ['main','label1','label2','label3','logo','origin','back'];
+  keys.forEach(k=>{
+    if(photos[k]&&photos[k].dataUrl) _addLmdPhoto(photos[k].dataUrl);
+  });
+
+  window._lmdSkuData = s;
+}
+
+function _lmdRow(label, id, val, isCat, isTextarea){
+  const border = 'border-bottom:1px solid #F0EDE8;';
+  if(isTextarea) return `<div style="${border}display:flex;align-items:flex-start;padding:10px 14px;gap:8px">
+    <span style="font-size:11px;color:#78716C;width:80px;flex-shrink:0;padding-top:2px">${label}</span>
+    <textarea id="${id}" rows="2" style="flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:13px;color:#1C1917;resize:none;line-height:1.5">${val}</textarea>
+  </div>`;
+  if(isCat){
+    const cats = ['가방','지갑','의류','시계','주얼리','신발','모자','스카프','벨트'];
+    return `<div style="${border}display:flex;align-items:center;padding:10px 14px;gap:8px">
+      <span style="font-size:11px;color:#78716C;width:80px;flex-shrink:0">${label}</span>
+      <select id="${id}" style="flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:13px;color:#1C1917;cursor:pointer">
+        ${cats.map(c=>`<option value="${c}"${c===val?' selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>`;
+  }
+  return `<div style="${border}display:flex;align-items:center;padding:10px 14px;gap:8px">
+    <span style="font-size:11px;color:#78716C;width:80px;flex-shrink:0">${label}</span>
+    <input id="${id}" type="text" value="${val.replace(/"/g,'&quot;')}" style="flex:1;background:transparent;border:none;outline:none;font-family:inherit;font-size:13px;color:#1C1917">
+  </div>`;
+}
+
+function _addLmdPhoto(dataUrl){
+  if(!window._lmdExtraPhotos) window._lmdExtraPhotos = [];
+  if(window._lmdExtraPhotos.includes(dataUrl)) return;
+  window._lmdExtraPhotos.push(dataUrl);
+  const preview = document.getElementById('lmd-photo-preview');
+  if(!preview) return;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative';
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0;display:block';
+  const del = document.createElement('button');
+  del.textContent = '×';
+  del.style.cssText = 'position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#1C1917;color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1';
+  del.onclick = ()=>{ window._lmdExtraPhotos = window._lmdExtraPhotos.filter(p=>p!==dataUrl); wrap.remove(); };
+  wrap.appendChild(img); wrap.appendChild(del);
+  preview.appendChild(wrap);
+}
+
+function addLmdPhotos(files){
+  [...files].forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e => _addLmdPhoto(e.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+function closeLensMatchDetail(){
+  document.getElementById('lens-match-detail-overlay')?.remove();
+  document.getElementById('lens-match-detail')?.remove();
+}
+
+function applyLensMatchAndGo(){
+  const s = window._lmdSkuData || {};
+  const brand    = document.getElementById('lmd-brand')?.value    || s.brand || '';
+  const modelKo  = document.getElementById('lmd-model-ko')?.value || s.model_name_ko || '';
+  const modelEn  = document.getElementById('lmd-model-en')?.value || s.model_name || '';
+  const cat      = document.getElementById('lmd-cat')?.value      || s.category || '가방';
+  const color    = document.getElementById('lmd-color')?.value    || s.color || '';
+  const skuCode  = document.getElementById('lmd-sku')?.value      || s.sku_code || '';
+  const sizeName = document.getElementById('lmd-size-name')?.value|| s.size_label || '';
+  const sizeAct  = document.getElementById('lmd-size')?.value     || s.size_actual || '';
+  const siteUrl  = document.getElementById('lmd-url')?.value      || s.site_url || '';
+  const notes    = document.getElementById('lmd-notes')?.value    || s.notes || '';
+  const extraPhotos = window._lmdExtraPhotos || [];
+
+  closeLensMatchDetail();
+  closeLensSheet();
+
+  // SKU 탭 필드 주입
+  _skuPrevScreen = 'result';
+  document.getElementById('sku-brand').value     = brand;
+  document.getElementById('sku-model-ko').value  = modelKo;
+  document.getElementById('sku-model').value     = modelEn;
+  document.getElementById('sku-sku').value       = skuCode;
+  document.getElementById('sku-color').value     = color;
+  document.getElementById('sku-size-name').value = sizeName;
+  document.getElementById('sku-url').value       = siteUrl;
+  const skuNotesEl = document.getElementById('sku-notes');
+  if(skuNotesEl) skuNotesEl.value = notes;
+
+  const catEl = document.getElementById('sku-cat');
+  if(catEl) catEl.value = cat;
+
+  const skuSizeHidden = document.getElementById('sku-size-hidden');
+  if(skuSizeHidden) skuSizeHidden.value = sizeAct;
+
+  accessories = [];
+
+  // 사진: sku-new-photo-preview + _dataUrls 에만 주입
+  const skuNewInp = document.getElementById('sku-new-photo');
+  const skuNewPreview = document.getElementById('sku-new-photo-preview');
+  if(skuNewInp) skuNewInp._dataUrls = [];
+  if(skuNewPreview) skuNewPreview.innerHTML = '';
+
+  extraPhotos.forEach(dataUrl => {
+    if(!skuNewInp) return;
+    if(!skuNewInp._dataUrls) skuNewInp._dataUrls = [];
+    if(skuNewInp._dataUrls.includes(dataUrl)) return;
+    skuNewInp._dataUrls.push(dataUrl);
+    if(skuNewPreview){
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0';
+      wrap.appendChild(img);
+      skuNewPreview.appendChild(wrap);
+    }
+  });
+
+  // sku-photo-wrap 초기화
+  const photoWrap = document.getElementById('sku-photo-wrap');
+  if(photoWrap) photoWrap.innerHTML = '';
+
+  renderSkuAccList();
+  const tabSaveBtn = document.getElementById('tab-save');
+  if(tabSaveBtn) tabSaveBtn.style.display = 'block';
+  switchSkuTab('save');
+  showScreen('sku');
+
+  // 실측 필드 주입 — 화면 렌더 완료 후
+  setTimeout(function(){
+    if(!sizeAct) return;
+    const cat2 = (document.getElementById('sku-cat')?.value||'가방');
+    const cfg = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
+    const sw = document.getElementById('sku-size-wrap');
+    if(sw) sw.dataset.cat = '';
+    editSkuSize();
+    setTimeout(function(){
+      cfg.forEach(function(f,i){
+        const inp = document.getElementById('ssku-'+f.id);
+        if(!inp) return;
+        const re = new RegExp(f.label+'\\s*([\\d\\.]+)');
+        const hit = sizeAct.match(re);
+        if(hit){ inp.value = hit[1]; }
+        else { const nums = sizeAct.match(/[\d.]+/g)||[]; if(nums[i]) inp.value = nums[i]; }
+      });
+      if(skuSizeHidden) skuSizeHidden.value = sizeAct;
+    }, 80);
+  }, 150);
+
+  toast('🗂 신규 등록 폼으로 이동했어요. 확인 후 저장하세요.');
 }
 
 function _extractBrandFromAnalysis(title){
   const a = resultData&&resultData.analysis ? resultData.analysis : {};
   if(a.brand) return a.brand;
-  const luxBrands=['Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès','Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry','Saint Laurent','YSL','Versace','Bvlgari','Cartier','Van Cleef','Tiffany','Rolex','Omega','Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara','Nike','Adidas','New Balance'];
+  const luxBrands=['Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès','Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry','Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega','Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara','Nike','Adidas','New Balance'];
   for(const b of luxBrands){
     if(title.toLowerCase().includes(b.toLowerCase())) return b;
   }
   return '';
 }
 
-function _findDbMatchForLens(title){
+// 브랜드 + 모델 핵심 키워드가 모두 일치할 때만 매칭 반환
+function _findDbMatchForLens(title, brand){
   if(!skuListAll||!skuListAll.length) return [];
-  const q = title.toLowerCase().replace(/[^\w가-힣\s]/g,'');
+  const q = title.toLowerCase();
+  const qClean = q.replace(/[^\w가-힣\s]/g,' ');
+
+  // 브랜드 정규화
+  const brandNorm = (brand||'').toLowerCase().replace(/[\s\-]/g,'');
+
   return skuListAll.filter(s=>{
-    const ko = (s.model_name_ko||'').toLowerCase();
-    const en = (s.model_name||'').toLowerCase();
-    const br = (s.brand||'').toLowerCase();
-    return q.includes(br) || ko.split(' ').some(w=>w.length>1&&q.includes(w))
-        || en.split(' ').some(w=>w.length>2&&q.includes(w));
-  }).slice(0,3);
+    const sBrand = (s.brand||'').toLowerCase().replace(/[\s\-]/g,'');
+    const sKo    = (s.model_name_ko||'').toLowerCase();
+    const sEn    = (s.model_name||'').toLowerCase();
+
+    // 1) 브랜드 일치 필수
+    if(brandNorm && sBrand && !sBrand.includes(brandNorm) && !brandNorm.includes(sBrand)) return false;
+
+    // 2) 모델 키워드 — 영문 단어 3글자 이상 or 한글 2글자 이상이 제목에 포함
+    const enWords = sEn.split(/\s+/).filter(w=>w.length>=3);
+    const koWords = sKo.split(/\s+/).filter(w=>w.length>=2);
+    const enHit = enWords.length >= 2
+      ? enWords.filter(w=>qClean.includes(w)).length >= Math.min(2, enWords.length)
+      : enWords.some(w=>q.includes(w));
+    const koHit = koWords.some(w=>q.includes(w));
+
+    return enHit || koHit;
+  }).slice(0,5);
 }
 
 function closeLensSheet(){
@@ -5115,43 +5348,30 @@ async function openUnregFromLensSheet(){
   closeLensSheet();
 
   const title  = m.title || m.name || '';
-  const thumb  = m.thumbnail || m.image || m.img || '';
   const link   = m.link || m.url || '';
 
-  // ── 1. AI 분석값으로 SKU 탭 기본 세팅 (goToSku와 동일 경로) ──
   _skuPrevScreen = 'result';
-
   const a = resultData && resultData.analysis ? resultData.analysis : {};
 
-  // 브랜드: AI 우선 → lens title에서 추출
-  const aiBrand = (document.getElementById('r-brand')?.textContent||'').replace('—','').trim() || a.brand || '';
+  const aiBrand   = (document.getElementById('r-brand')?.textContent||'').replace('—','').trim() || a.brand || '';
   const lensBrand = _extractBrandFromAnalysis(title);
   const finalBrand = aiBrand || lensBrand;
 
-  // 모델명 영문: AI 우선 → lens title 원문
   const aiModelEn = (document.getElementById('r-model')?.textContent||'').replace('—','').trim() || a.model_name || '';
   const finalModelEn = aiModelEn || title;
 
-  // 모델명 한글: AI 우선 → lens title (한글 있으면 그대로, 없으면 일단 영문으로 채우고 나중에 번역)
   const aiModelKo = (document.getElementById('r-model-ko')?.textContent||'').replace('—','').trim() || a.model_name_ko || '';
   const hasKoreanInTitle = /[가-힣]/.test(title);
   const finalModelKo = aiModelKo || (hasKoreanInTitle ? title : finalModelEn);
 
-  // 컬러
-  const aiColor = (document.getElementById('sku-color')?.value||'') || a.color || '';
-
-  // 카테고리
-  const aiCat = a.category || (document.querySelector('#cat-tabs .cat-btn.active')?.textContent.trim()) || '';
-
-  // 스타일번호
-  const aiSku = (document.getElementById('r-sku')?.textContent||'').replace('—','').trim() || '';
-
-  // 사이즈
+  const aiColor     = a.color || '';
+  const aiCat       = a.category || (document.querySelector('#cat-tabs .cat-btn.active')?.textContent.trim()) || '';
+  const aiSku       = (document.getElementById('r-sku')?.textContent||'').replace('—','').trim() || '';
   const aiSizeLabel = (document.getElementById('r-size-name')?.textContent||'').replace('—','').trim() || '';
-  const rSizeEl = document.getElementById('r-size');
+  const rSizeEl     = document.getElementById('r-size');
   const aiSizeActual = _sizeVal || ((rSizeEl?.textContent||'').replace('—','').trim());
 
-  // ── 2. SKU 탭 필드 직접 주입 ──
+  // 필드 주입
   document.getElementById('sku-brand').value     = finalBrand;
   document.getElementById('sku-model-ko').value  = finalModelKo;
   document.getElementById('sku-model').value     = finalModelEn;
@@ -5162,7 +5382,6 @@ async function openUnregFromLensSheet(){
   const skuNotesEl = document.getElementById('sku-notes');
   if(skuNotesEl) skuNotesEl.value = '';
 
-  // 카테고리 select
   const catEl = document.getElementById('sku-cat');
   if(catEl && aiCat){
     const catMap = {'가방':'가방','지갑':'지갑','의류':'의류','시계':'시계','주얼리':'주얼리','신발':'신발','벨트':'벨트','bag':'가방','wallet':'지갑','watch':'시계','jewelry':'주얼리'};
@@ -5170,77 +5389,68 @@ async function openUnregFromLensSheet(){
     catEl.value = mapped ? mapped[1] : (aiCat || '가방');
   }
 
-  // 실측 hidden
   const skuSizeHidden = document.getElementById('sku-size-hidden');
   if(skuSizeHidden) skuSizeHidden.value = aiSizeActual;
 
-  // 부속품 초기화
   accessories = [];
 
-  // ── 3. 검수 이미지 → sku-photo-wrap ──
+  // 사진: sku-photo-wrap 초기화, sku-new-photo-preview에만 주입
   const photoWrap = document.getElementById('sku-photo-wrap');
-  if(photoWrap){
-    const inspKeys = ['main','label1','label2','label3','logo','origin','back'];
-    photoWrap.innerHTML = inspKeys
-      .filter(k => photos[k] && photos[k].dataUrl)
-      .map(k => `<img src="${photos[k].dataUrl}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0">`)
-      .join('');
-  }
+  if(photoWrap) photoWrap.innerHTML = '';
 
-  // sku-new-photo-preview 초기화 및 검수 이미지 주입
+  const skuNewInp     = document.getElementById('sku-new-photo');
   const skuNewPreview = document.getElementById('sku-new-photo-preview');
-  if(skuNewPreview) skuNewPreview.innerHTML = '';
-  const skuNewInp = document.getElementById('sku-new-photo');
   if(skuNewInp) skuNewInp._dataUrls = [];
-  const inspKeys2 = ['main','label1','label2','label3','logo','origin','back'];
-  inspKeys2.forEach(k=>{
-    if(photos[k]&&photos[k].dataUrl){
-      if(!skuNewInp._dataUrls) skuNewInp._dataUrls = [];
-      if(!skuNewInp._dataUrls.includes(photos[k].dataUrl)){
-        skuNewInp._dataUrls.push(photos[k].dataUrl);
-        // 썸네일 미리보기
-        if(skuNewPreview){
-          const wrap = document.createElement('div');
-          wrap.style.cssText = 'position:relative;display:inline-block';
-          const img = document.createElement('img');
-          img.src = photos[k].dataUrl;
-          img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0';
-          wrap.appendChild(img);
-          skuNewPreview.appendChild(wrap);
-        }
-      }
+  if(skuNewPreview) skuNewPreview.innerHTML = '';
+
+  const inspKeys = ['main','label1','label2','label3','logo','origin','back'];
+  inspKeys.forEach(k=>{
+    if(!photos[k]||!photos[k].dataUrl) return;
+    const dataUrl = photos[k].dataUrl;
+    if(!skuNewInp) return;
+    if(!skuNewInp._dataUrls) skuNewInp._dataUrls = [];
+    if(skuNewInp._dataUrls.includes(dataUrl)) return;
+    skuNewInp._dataUrls.push(dataUrl);
+    if(skuNewPreview){
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative';
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0';
+      wrap.appendChild(img);
+      skuNewPreview.appendChild(wrap);
     }
   });
 
-  // ── 4. SKU 탭으로 이동 (등록 탭 열기) ──
   renderSkuAccList();
-  // tab-save 버튼 노출
   const tabSaveBtn = document.getElementById('tab-save');
   if(tabSaveBtn) tabSaveBtn.style.display = 'block';
   switchSkuTab('save');
   showScreen('sku');
 
-  // 실측 필드 주입 (editSkuSize 렌더 후)
-  if(aiSizeActual){
-    const cat = catEl?.value || '가방';
-    const cfg = SIZE_CONFIG[cat] || SIZE_CONFIG['가방'];
-    const _sw = document.getElementById('sku-size-wrap');
-    if(_sw) _sw.dataset.cat = '';
+  // 실측 필드 주입 — 화면 렌더 완료 후
+  setTimeout(function(){
+    if(!aiSizeActual) return;
+    const cat2 = (document.getElementById('sku-cat')?.value||'가방');
+    const cfg = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
+    const sw = document.getElementById('sku-size-wrap');
+    if(sw) sw.dataset.cat = '';
     editSkuSize();
-    cfg.forEach(function(f,i){
-      const inp = document.getElementById('ssku-'+f.id);
-      if(!inp) return;
-      const re = new RegExp(f.label+'\\s*([\\d\\.]+)');
-      const hit = aiSizeActual.match(re);
-      if(hit){ inp.value = hit[1]; }
-      else { const nums = aiSizeActual.match(/[\d.]+/g)||[]; if(nums[i]) inp.value = nums[i]; }
-    });
-    if(skuSizeHidden) skuSizeHidden.value = aiSizeActual;
-  }
+    setTimeout(function(){
+      cfg.forEach(function(f,i){
+        const inp = document.getElementById('ssku-'+f.id);
+        if(!inp) return;
+        const re = new RegExp(f.label+'\\s*([\\d\\.]+)');
+        const hit = aiSizeActual.match(re);
+        if(hit){ inp.value = hit[1]; }
+        else { const nums = aiSizeActual.match(/[\d.]+/g)||[]; if(nums[i]) inp.value = nums[i]; }
+      });
+      if(skuSizeHidden) skuSizeHidden.value = aiSizeActual;
+    }, 80);
+  }, 150);
 
   toast('🗂 신규 등록 홈으로 이동했어요. 정보를 확인 후 저장하세요.');
 
-  // ── 5. 영문 타이틀이면 비동기로 한글 번역 후 모델명(한글) 업데이트 ──
   if(!aiModelKo && title && !hasKoreanInTitle){
     _translateAndFillSkuModelKo(title, finalBrand);
   }
