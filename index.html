@@ -129,7 +129,7 @@ input[type=file]{display:none}
 .btn-move{flex:2;background:#ff6b2b;color:#ffffff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;cursor:pointer}
 .btn-move:hover{background:#ff8c55}
 .editing-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;padding:2px 0;font-size:13px;font-weight:700;color:#1C1917;outline:none;font-family:inherit}
-.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#333333;border:1px solid #555;color:#ffffff;color:#ffffff;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#1C1917;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
+.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#1C1917;border:1px solid #44403C;color:#ffffff;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #screen-sku{padding:0 16px}
 .sku-topbar{display:flex;align-items:center;gap:10px;padding:16px 0 12px;border-bottom:1px solid #e0e0e0;margin-bottom:14px}
@@ -5950,29 +5950,29 @@ async function fetchNlOfficialImage(){
   var q    = [brand, modelKo].filter(Boolean).join(' ');
   var qSku = [brand, skuCode].filter(Boolean).join(' ');
   if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
+
+  var nlBtn = document.querySelector('button[onclick="fetchNlOfficialImage()"]');
+  var nlSpinner = document.getElementById('nl-img-spinner');
+  if(nlBtn) nlBtn.disabled = true;
+  if(nlSpinner) nlSpinner.style.display = 'inline-block';
   toast('🔍 이미지 검색 중...');
 
-  var token2 = localStorage.getItem('lca_token')||'';
-
-  async function _tryImg(query){
+  async function _searchImgs(query){
     try{
       var token2 = localStorage.getItem('lca_token')||'';
       var serpKey = localStorage.getItem('bungae_serpapi_key')||'';
       var res = await fetch('/api/inspect',{
         method:'POST',
         headers:{'Content-Type':'application/json','x-access-token':token2},
-        body:JSON.stringify({action:'search_image', query: query, serpApiKey: serpKey})
+        body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey, multi:true})
       });
-      if(!res.ok) return false;
+      if(!res.ok) return null;
       var j = await res.json();
-      if(j.success && j.base64 && j.base64.length > 1000){
-        _nlPhotos.unshift('data:'+j.mime+';base64,'+j.base64);
-        _nlRenderPhotos();
-        toast('✅ 대표사진 추가됐어요!');
-        return true;
-      }
-      return false;
-    }catch(e){ console.warn('[ImgSearch]',e); return false; }
+      if(!j.success) return null;
+      if(j.images && j.images.length) return j.images;
+      if(j.base64 && j.base64.length > 1000) return [{thumb:'data:'+j.mime+';base64,'+j.base64, base64:j.base64, mime:j.mime, original:''}];
+      return null;
+    }catch(e){ console.warn('[ImgSearch]',e); return null; }
   }
 
   var queries = [];
@@ -5980,12 +5980,24 @@ async function fetchNlOfficialImage(){
   if(qSku) queries.push(qSku, qSku+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
   if(skuCode) queries.push(skuCode);
 
-  var ok = false;
-  for(var qi=0; qi<queries.length; qi++){
-    ok = await _tryImg(queries[qi]);
-    if(ok) break;
+  var allImages = [];
+  for(var qi=0; qi<queries.length && allImages.length<9; qi++){
+    var imgs = await _searchImgs(queries[qi]);
+    if(imgs && imgs.length) imgs.forEach(function(img){ if(allImages.length<9) allImages.push(img); });
   }
-  if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
+
+  if(nlBtn) nlBtn.disabled = false;
+  if(nlSpinner) nlSpinner.style.display = 'none';
+
+  if(!allImages.length){ toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.'); return; }
+  if(allImages.length === 1){
+    var img = allImages[0];
+    _nlPhotos.unshift(img.base64 ? 'data:'+img.mime+';base64,'+img.base64 : img.thumb);
+    _nlRenderPhotos();
+    toast('✅ 대표사진 추가됐어요!');
+  } else {
+    openImgPickModal(allImages, 'nl');
+  }
 }
 
 // ── 수정 모달 대표사진 원클릭 등록 ──────────────────────────────
