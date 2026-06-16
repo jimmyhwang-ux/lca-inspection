@@ -1494,7 +1494,7 @@ function applyDbMatch(item, cardId){
   toast('✅ 적용됨: ' + _applyModel);
 }
 
-let _dbMultiItems = [];
+var _dbMultiItems = [];
 
 
 // ── SKU 매칭 탭 UI ──────────────────────────────────────────
@@ -2096,7 +2096,6 @@ function renderDbMatchCards(matches){
 }
 
 
-async 
 // ── Lens SKU 매칭 ────────────────────────────────────────────────
 function _matchSkuFromLens(lensItems,db){
   if(!db||!db.length||!lensItems||!lensItems.length) return [];
@@ -2385,7 +2384,7 @@ function editField(id){
   inp.select();
 }
 
-let _sizeVal='';
+var _sizeVal='';
 // 카테고리별 사이즈 입력 설정
 var SIZE_CONFIG = window.SIZE_CONFIG = {
   '가방':    [{id:'sz-w',label:'가로',unit:'cm',text:true},{id:'sz-h',label:'세로',unit:'cm'},{id:'sz-d',label:'너비',unit:'cm',opt:true}],
@@ -2400,7 +2399,7 @@ var SIZE_CONFIG = window.SIZE_CONFIG = {
 
 // 카테고리 탭 자동 활성화 (renderResult 호출)
 // ── 참고자료 섹션 ──────────────────────────────────────────
-let _refDataAll = []; // 전체 DB+검기어 데이터 캐시
+var _refDataAll = []; // 전체 DB+검기어 데이터 캐시
 
 async function loadRefData(modelName){
   // 모델명으로 전체 SKU + 검기어에서 참고자료 검색
@@ -2597,7 +2596,7 @@ function saveField(id,input){
 }
 
 // ── 모델명 변경 시 Google Images 재검색 ─────────────────────────────
-let _reSearchTimer=null;
+var _reSearchTimer=null;
 async function reSearchByModel(brand, modelName){
   clearTimeout(_reSearchTimer);
   _reSearchTimer=setTimeout(async()=>{
@@ -2833,9 +2832,9 @@ async function autoTranslateModelName(koName){
   toast('⚠️ 영문 변환 실패 — 직접 입력해 주세요');
 }
 
-let _dbSearchTimer=null;
+var _dbSearchTimer=null;
 // 적재 화면 한글 모델명 입력 → 영문 자동 번역
-let _skuTransTimer=null;
+var _skuTransTimer=null;
 // 적재탭 사진 미리보기
 async function previewSkuPhotos(input){
   const files=[...input.files];
@@ -2887,7 +2886,7 @@ function addSkuPhotoThumb(wrap,dataUrl,inp){
 
 // 적재탭 카테고리 입력 → 사이즈 필드 초기화
 // 수정탭 카테고리 디바운스
-let _efCatTimer=null;
+var _efCatTimer=null;
 function onEfCatInput(input){
   clearTimeout(_efCatTimer);
   _efCatTimer=setTimeout(()=>{
@@ -2951,7 +2950,7 @@ function saveEfSize(cfg){
     :`<span id="ef-size-display" style="color:#57534E;font-size:12px">탭하여 입력</span>`;
 }
 
-let _skuCatTimer=null;
+var _skuCatTimer=null;
 function onSkuCatInput(input){
   clearTimeout(_skuCatTimer);
   _skuCatTimer=setTimeout(()=>{
@@ -3051,7 +3050,7 @@ function onSkuModelKoInput(input){
 }
 
 // 수정 화면 한글 모델명 입력 → 영문 자동 번역
-let _efTransTimer=null;
+var _efTransTimer=null;
 function onEfModelKoInput(input){
   clearTimeout(_efTransTimer);
   const val=input.value.trim();
