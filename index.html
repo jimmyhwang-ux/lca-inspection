@@ -51,7 +51,7 @@ input[type=file]{display:none}
 .btn-main{width:100%;background:#ff6b2b;color:#ffffff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:800;cursor:pointer;transition:background .15s,transform .1s}
 .btn-main:hover{background:#ff8c55}
 .btn-main:active{transform:scale(.98)}
-.btn-main:disabled{background:#1a1a1a;color:#555;cursor:not-allowed;transform:none}
+.btn-main:disabled{background:#e0e0e0;color:#aaa;cursor:not-allowed;transform:none}
 #screen-loading{padding:0 20px}
 .loading-center{display:flex;flex-direction:column;align-items:center;padding:52px 0 40px;gap:14px}
 .spinner{width:44px;height:44px;border:3px solid #e0e0e0;border-top-color:#ff6b2b;border-radius:50%;animation:spin 1s linear infinite}
@@ -79,7 +79,7 @@ input[type=file]{display:none}
 .result-brand{font-size:12px;color:#ff6b2b;font-weight:600;margin-bottom:3px}
 .result-reason{font-size:12px;color:#555;margin-bottom:8px}
 .result-cats{display:flex;gap:6px;flex-wrap:wrap}
-.cat-tag{background:#1a1a1a;border:1px solid #e0e0e0;border-radius:100px;padding:3px 10px;font-size:11px;color:#ffffff}
+.cat-tag{background:#f0f0f0;border:1px solid #ddd;border-radius:100px;padding:3px 10px;font-size:11px;color:#333}
 .info-row-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#e0e0e0;border-radius:12px;overflow:visible}
 .info-cell{background:#ffffff;padding:12px 10px}
 .info-cell-label{font-size:10px;color:#555;margin-bottom:4px}
@@ -102,7 +102,7 @@ input[type=file]{display:none}
 .acc-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #f0f0f0;gap:10px}
 .acc-item:last-child{border-bottom:none}
 .acc-name{font-size:13px;font-weight:600;color:#1a1a1a;flex:1;min-width:0}
-.acc-select{background:#1a1a1a;border:1px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:12px;color:#1a1a1a;outline:none;cursor:pointer;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
+.acc-select{background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:12px;color:#1a1a1a;outline:none;cursor:pointer;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
 .acc-select.status-y{border-color:rgba(34,197,94,.4);color:#22c55e;background-color:#0a2a0a}
 .acc-select.status-n{border-color:rgba(239,68,68,.4);color:#ef4444;background-color:#2a0a0a}
 .acc-select.status-u{border-color:rgba(245,158,11,.4);color:#f59e0b;background-color:#2a1a00}
@@ -110,15 +110,15 @@ input[type=file]{display:none}
 .acc-del:hover{color:#ef4444}
 .acc-add-row{padding:12px 14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid #f0f0f0}
 .cat-tabs{display:flex;gap:6px;flex-wrap:wrap}
-.cat-btn{background:#1a1a1a;border:1px solid #e0e0e0;border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap}
+.cat-btn{background:#f0f0f0;border:1px solid #e0e0e0;border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap}
 .cat-btn.active{background:#ff6b2b;border-color:#ff6b2b;color:#ffffff}
 .acc-bottom-row{display:flex;gap:8px}
-.acc-input{flex:1;background:#1a1a1a;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.acc-input{flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 .acc-add-btn{background:#ff6b2b;color:#ffffff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .db-match-card{margin:0 16px 4px;border-radius:12px;overflow:hidden;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.06)}
 .db-match-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(34,197,94,.2);background:#f8fffe}
 .db-match-badge{background:rgba(34,197,94,.2);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px}
-.db-match-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.db-match-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px;background:#ffffff}
 .db-match-info{flex:1;font-size:12px;color:#555;line-height:1.7}
 .db-match-info strong{color:#1a1a1a;font-size:13px}
 .db-new-badge{border-radius:12px;padding:10px 14px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px}
@@ -129,7 +129,7 @@ input[type=file]{display:none}
 .btn-move{flex:2;background:#ff6b2b;color:#ffffff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;cursor:pointer}
 .btn-move:hover{background:#ff8c55}
 .editing-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid #ff6b2b;padding:2px 0;font-size:13px;font-weight:700;color:#1a1a1a;outline:none;font-family:inherit}
-.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#333333;border:1px solid #555;color:#ffffff;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#1a1a1a;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
+.toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(16px);background:#333333;border:1px solid #555;color:#ffffff;color:#ffffff;border-radius:100px;padding:10px 20px;font-size:13px;font-weight:600;color:#1a1a1a;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:300;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #screen-sku{padding:0 16px}
 .sku-topbar{display:flex;align-items:center;gap:10px;padding:16px 0 12px;border-bottom:1px solid #e0e0e0;margin-bottom:14px}
@@ -156,7 +156,7 @@ input[type=file]{display:none}
 .sku-list-model{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:2px}
 .sku-list-model-en{font-size:11px;color:#555;margin-bottom:6px}
 .sku-list-meta{display:flex;gap:8px;flex-wrap:wrap}
-.sku-meta-tag{font-size:10px;color:#555;background:#1a1a1a;border:1px solid #e0e0e0;border-radius:6px;padding:2px 8px}
+.sku-meta-tag{font-size:10px;color:#555;background:#f0f0f0;border:1px solid #e0e0e0;border-radius:6px;padding:2px 8px}
 .sku-list-del{float:right;background:none;border:none;color:#555;font-size:14px;cursor:pointer;margin-top:-2px}
 .sku-list-del:hover{color:#ef4444}
 .sku-empty{text-align:center;padding:40px 20px;color:#555;font-size:14px}
@@ -296,7 +296,7 @@ input[type=file]{display:none}
   <div class="cta-wrap">
     <div style="display:flex;gap:8px">
       <button class="btn-main" id="btn-start" onclick="startInspection()" disabled style="flex:3">분석 시작</button>
-      <button onclick="openSkuOnly()" style="flex:1;background:#1a1a1a;color:#ff6b2b;border:1px solid rgba(255,107,43,.3);border-radius:14px;padding:17px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">SKU 관리</button>
+      <button onclick="openSkuOnly()" style="flex:1;background:#f5f5f5;color:#ff6b2b;border:1px solid rgba(255,107,43,.3);border-radius:14px;padding:17px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">SKU 관리</button>
     </div>
   </div>
 </div>
@@ -373,7 +373,7 @@ input[type=file]{display:none}
     <div id="spec-google-result" style="display:none;margin-top:8px">
       <div style="font-size:11px;color:#888;margin-bottom:4px">검색 결과 원문</div>
       <textarea id="spec-google-raw" rows="6"
-        style="width:100%;background:#f8f8f8;border:1px solid #222;border-radius:8px;color:#555;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box"
+        style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;color:#555;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box"
         placeholder="검색 중..."></textarea>
       <button onclick="applySpecGoogleResult()"
         style="width:100%;margin-top:6px;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">
@@ -386,7 +386,7 @@ input[type=file]{display:none}
   <div style="margin:0 16px;border:1px solid rgba(255,107,43,.3);border-radius:14px;overflow:hidden;background:#ffffff" id="result-body">
 
   <!-- 미등록 SKU 헤더 — 토글 -->
-  <div id="unregistered-header" style="display:block;padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none" onclick="toggleUnregisteredSection()">
+  <div id="unregistered-header" style="display:block;padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;user-select:none;background:#fff8f0" onclick="toggleUnregisteredSection()">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <span style="color:#f59e0b;font-size:12px;font-weight:700">⚠️ 미등록 SKU — 신규 등록</span>
       <span id="unreg-toggle-icon" style="color:#f59e0b;font-size:16px;transition:transform .2s">▼</span>
@@ -401,7 +401,7 @@ input[type=file]{display:none}
     style="width:100%;background:linear-gradient(135deg,rgba(255,107,43,.15),rgba(255,107,43,.08));color:#ff6b2b;border:1px solid rgba(255,107,43,.4);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px">
     ✨ AI 스펙 자동완성 (공식 사이즈·스타일번호·소재)
   </button>
-  <div id="spec-ai-status" style="display:none;font-size:11px;color:#888;text-align:center;padding:6px;background:#f8f8f8;border-radius:6px;border:1px solid #1a1a1a;margin-bottom:8px"></div>
+  <div id="spec-ai-status" style="display:none;font-size:11px;color:#888;text-align:center;padding:6px;background:#f8f8f8;border-radius:6px;border:1px solid #e0e0e0;margin-bottom:8px"></div>
 
   <!-- 사진 추가 -->
   <div style="margin-bottom:10px">
@@ -412,7 +412,7 @@ input[type=file]{display:none}
       ondragover="event.preventDefault();this.style.borderColor='#ff6b2b'"
       ondragleave="this.style.borderColor='#333'"
       ondrop="event.preventDefault();this.style.borderColor='#333';handleUnregDrop(event)"
-      style="width:100%;background:#1a1a1a;border:1.5px dashed #333;color:#555;border-radius:10px;padding:14px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;transition:border-color .2s">
+      style="width:100%;background:#f5f5f5;border:1.5px dashed #ccc;color:#555;border-radius:10px;padding:14px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;transition:border-color .2s">
       <span style="font-size:18px">📷</span>
       <span>사진 추가 · 탭하거나 드래그앤드롭 · 붙여넣기</span>
     </div>
@@ -426,7 +426,7 @@ input[type=file]{display:none}
           oninput="showBrandDropdown(this,'unreg-brand-drop')"
           onblur="setTimeout(function(){hideBrandDropdown('unreg-brand-drop')},150)"
           onkeydown="brandDropdownKey(event,'unreg-brand-drop')">
-        <div id="unreg-brand-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #333;border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+        <div id="unreg-brand-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;margin-top:2px"></div>
       </div>
     </div>
     <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="unreg-model-ko" type="text" placeholder="—" oninput="onUnregModelKoInput(this)"></div>
@@ -498,8 +498,8 @@ input[type=file]{display:none}
   <div class="section-hd" style="display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px">
     <span>🔍 Google Lens 유사 상품</span>
     <div style="display:flex;gap:6px">
-      <button onclick="slideLens(-1)" style="background:#1a1a1a;border:1px solid #e0e0e0;color:#555;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
-      <button onclick="slideLens(1)"  style="background:#1a1a1a;border:1px solid #e0e0e0;color:#555;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+      <button onclick="slideLens(-1)" style="background:#f5f5f5;border:1px solid #e0e0e0;color:#555;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <button onclick="slideLens(1)"  style="background:#f5f5f5;border:1px solid #e0e0e0;color:#555;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
     </div>
   </div>
   <div class="lens-scroll" id="lens-results" style="scroll-behavior:smooth">
@@ -551,7 +551,7 @@ input[type=file]{display:none}
     <div style="margin-bottom:10px">
       <div id="sku-new-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
       <input type="file" id="sku-new-photo" accept="image/*" multiple style="display:none" onchange="previewSkuPhotos(this)">
-      <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#1a1a1a;border:1px dashed #333;color:#555;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">📷</span><span>사진 추가 <span style="font-size:11px;color:#555">· 탭하거나 붙여넣기</span></span></button>
+      <button onclick="document.getElementById('sku-new-photo').click()" style="width:100%;background:#f5f5f5;border:1px dashed #333;color:#555;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">📷</span><span>사진 추가 <span style="font-size:11px;color:#555">· 탭하거나 붙여넣기</span></span></button>
     </div>
     <div class="sku-card">
       <div class="sku-row"><div class="sku-key">브랜드</div>
@@ -560,7 +560,7 @@ input[type=file]{display:none}
             oninput="showBrandDropdown(this,'sku-brand-drop')"
             onblur="setTimeout(function(){hideBrandDropdown('sku-brand-drop')},150)"
             onkeydown="brandDropdownKey(event,'sku-brand-drop')">
-          <div id="sku-brand-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #333;border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+          <div id="sku-brand-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;margin-top:2px"></div>
         </div>
       </div>
       <div class="sku-row"><div class="sku-key">모델명 (한글)</div><input class="sku-input" id="sku-model-ko" type="text" placeholder="—" oninput="onSkuModelKoInput(this)"></div>
@@ -667,7 +667,7 @@ input[type=file]{display:none}
       <div id="sku-list-google-result" style="display:none;margin-top:8px">
         <div style="font-size:11px;color:#888;margin-bottom:4px">검색 결과 원문</div>
         <textarea id="sku-list-google-raw" rows="4"
-          style="width:100%;background:#f8f8f8;border:1px solid #222;border-radius:8px;color:#555;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box;max-height:160px"
+          style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;color:#555;font-size:11px;line-height:1.6;padding:8px;resize:vertical;box-sizing:border-box;max-height:160px"
           placeholder="검색 중..."></textarea>
         <div style="display:flex;gap:6px;margin-top:6px">
           <button onclick="applySkuListGoogleResult()"
@@ -686,7 +686,7 @@ input[type=file]{display:none}
             💾 저장
           </button>
           <button onclick="closeNlForm()"
-            style="flex:1;background:#222;border:1px solid #333;border-radius:8px;padding:9px;color:#555;font-size:12px;cursor:pointer">
+            style="flex:1;background:#222;border:1px solid #e0e0e0;border-radius:8px;padding:9px;color:#555;font-size:12px;cursor:pointer">
             취소
           </button>
         </div>
@@ -728,8 +728,8 @@ input[type=file]{display:none}
             </div>
             <div style="grid-column:1/-1">
               <div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div>
-              <div id="nl-size-wrap" onclick="editNlSize()" style="background:#000;border:1px solid #333;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;cursor:pointer;min-height:36px;display:flex;align-items:center">
-                <span id="nl-size-display" style="color:#555">탭하여 입력</span>
+              <div id="nl-size-wrap" onclick="editNlSize()" style="background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:8px;color:#1a1a1a;font-size:12px;cursor:pointer;min-height:36px;display:flex;align-items:center">
+                <span id="nl-size-display" style="color:#aaa">탭하여 입력</span>
               </div>
               <input type="hidden" id="nl-size">
             </div>
@@ -741,11 +741,11 @@ input[type=file]{display:none}
               <div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div>
               <div id="nl-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
               <div style="display:flex;gap:6px">
-                <label style="flex:1;background:#000;border:1px dashed #444;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
+                <label style="flex:1;background:#f8f8f8;border:1px dashed #ccc;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
                   📁 파일 선택
                   <input type="file" accept="image/*" multiple style="display:none" onchange="addNlPhotos(this.files)">
                 </label>
-                <div id="nl-paste-zone" style="flex:1;background:#000;border:1px dashed #444;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px" 
+                <div id="nl-paste-zone" style="flex:1;background:#f8f8f8;border:1px dashed #ccc;border-radius:6px;padding:8px;color:#888;font-size:11px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px" 
                   onclick="this.focus()" tabindex="0"
                   onpaste="handleNlPaste(event)"
                   onkeydown=""
@@ -770,10 +770,10 @@ input[type=file]{display:none}
                 <button onclick="setNlAccCat('시계',this)" style="padding:5px 10px;border-radius:20px;border:1px solid #e0e0e0;background:#f0f0f0;color:#666;font-size:11px;cursor:pointer">시계</button>
               </div>
               <div style="display:flex;gap:6px;margin-bottom:6px">
-                <select id="nl-acc-select" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none">
+                <select id="nl-acc-select" style="flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none">
                   <option value="">-- 드롭다운에서 선택 --</option>
                 </select>
-                <input id="nl-acc-input" type="text" placeholder="직접 입력" style="flex:1;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none">
+                <input id="nl-acc-input" type="text" placeholder="직접 입력" style="flex:1;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none">
                 <button onclick="addNlAcc()" style="background:#ff6b2b;border:none;border-radius:6px;padding:7px 12px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer">추가</button>
               </div>
               <div id="nl-acc-list" style="font-size:12px;color:#555;padding:4px 0">부속품 없음</div>
@@ -838,7 +838,7 @@ input[type=file]{display:none}
     <div class="edit-field-row">
       <div class="edit-field-label">사진</div>
       <div style="display:flex;gap:6px;overflow-x:auto;overflow-y:visible;padding:16px 4px 4px 4px;margin-bottom:6px;scrollbar-width:none" id="ef-photos-wrap"></div>
-      <label style="display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#555;width:fit-content">
+      <label style="display:flex;align-items:center;gap:6px;background:#f5f5f5;border:1px dashed #2a2a2a;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:#555;width:fit-content">
         + 사진 추가
         <input type="file" id="ef-new-photo" accept="image/*" multiple style="display:none">
       </label>
@@ -935,7 +935,7 @@ function showScreen(id){
 function _thumbErr(img){
   img.style.display='none';
   var ph=document.createElement('div');
-  ph.style.cssText='width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #e0e0e0';
+  ph.style.cssText='width:52px;height:52px;border-radius:8px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #e0e0e0';
   ph.textContent='📦';
   img.parentNode.insertBefore(ph, img.nextSibling);
 }
@@ -1570,12 +1570,12 @@ function _renderDbCardList(items){
 
     // ── 메인 행 ──
     const mainRow = document.createElement('div');
-    mainRow.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer';
+    mainRow.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;background:#ffffff';
     mainRow.onclick = function(){ toggleDbCardEdit(mId); };
 
     // 썸네일
     const thumbWrap = document.createElement('div');
-    thumbWrap.style.cssText = 'position:relative;width:52px;height:52px;border-radius:8px;overflow:hidden;background:#1a1a1a;flex-shrink:0;border:0.5px solid #e0e0e0';
+    thumbWrap.style.cssText = 'position:relative;width:52px;height:52px;border-radius:8px;overflow:hidden;background:#f5f5f5;flex-shrink:0;border:0.5px solid #e0e0e0';
     if(allImgs[0]){
       const tImg = document.createElement('img');
       tImg.src = allImgs[0];
@@ -1620,7 +1620,7 @@ function _renderDbCardList(items){
     // ── 편집 패널 ──
     const panel = document.createElement('div');
     panel.id = mId+'-edit';
-    panel.style.cssText = 'display:none;padding:0 14px 12px;border-top:0.5px solid rgba(255,255,255,.06)';
+    panel.style.cssText = 'display:none;padding:0 14px 12px;border-top:0.5px solid #e0e0e0;background:#fafafa';
 
     // 모델명+SKU+브랜드 편집
     const editRow = document.createElement('div');
@@ -1628,15 +1628,15 @@ function _renderDbCardList(items){
     const inpBrand = document.createElement('input');
     inpBrand.id = mId+'-brand'; inpBrand.placeholder = '브랜드';
     inpBrand.value = (m.brand||'').replace(/"/g,'"');
-    inpBrand.style.cssText = 'width:90px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 8px;color:#eee;font-size:12px;outline:none';
+    inpBrand.style.cssText = 'width:90px;background:#f0faf5;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 8px;color:#1a1a1a;font-size:12px;outline:none';
     const inpModel = document.createElement('input');
     inpModel.id = mId+'-model-ko'; inpModel.placeholder = '모델명';
     inpModel.value = (m.model_name_ko||m.model_name||'').replace(/"/g,'"');
-    inpModel.style.cssText = 'flex:1;min-width:120px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 10px;color:#1a1a1a;font-size:13px;font-weight:600;outline:none';
+    inpModel.style.cssText = 'flex:1;min-width:120px;background:#f0faf5;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 10px;color:#1a1a1a;font-size:13px;font-weight:600;outline:none';
     const inpSku = document.createElement('input');
     inpSku.id = mId+'-sku'; inpSku.placeholder = 'SKU';
     inpSku.value = (m.sku_code||'').replace(/"/g,'"');
-    inpSku.style.cssText = 'width:110px;background:#0d1f0d;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 10px;color:#22c55e;font-size:12px;font-weight:700;outline:none';
+    inpSku.style.cssText = 'width:110px;background:#f0faf5;border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:6px 10px;color:#22c55e;font-size:12px;font-weight:700;outline:none';
     const saveBtn = document.createElement('button');
     saveBtn.textContent = '💾 저장';
     saveBtn.style.cssText = 'background:#22c55e;border:none;color:#000;font-size:12px;font-weight:800;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap';
@@ -1847,7 +1847,7 @@ function initDbCardActualInputs(mId, cat, curVal){
     var isMemo = !!f.memo;
     var isText = !!f.text;
     var inp = isMemo
-      ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="상단/하단..." style="background:#0d1f0d;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#888;font-size:10px;outline:none;width:72px">'
+      ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="상단/하단..." style="background:#f0faf5;border:1px solid rgba(34,197,94,.2);border-radius:4px;padding:3px;color:#888;font-size:10px;outline:none;width:72px">'
       : isText
         ? '<input id="'+mId+'-sf-'+idx+'" type="text" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+';width:60px">'
         : '<input id="'+mId+'-sf-'+idx+'" type="number" value="'+val+'" placeholder="'+f.label+'" style="'+iStyle+'">';
@@ -1971,7 +1971,7 @@ async function _searchDbExtra(q, alreadyShown){
       const er = document.createElement('div');
       er.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer';
       const et = document.createElement('div');
-      et.style.cssText = 'width:36px;height:36px;border-radius:6px;overflow:hidden;background:#1a1a1a;flex-shrink:0;border:0.5px solid #e0e0e0';
+      et.style.cssText = 'width:36px;height:36px;border-radius:6px;overflow:hidden;background:#f5f5f5;flex-shrink:0;border:0.5px solid #e0e0e0';
       if(allImgs[0]){ const img=document.createElement('img'); img.src=allImgs[0]; img.style.cssText='width:100%;height:100%;object-fit:cover'; et.appendChild(img); }
       else { et.innerHTML='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:.3">📷</div>'; }
       er.appendChild(et);
@@ -2366,7 +2366,7 @@ function renderRefList(wrapId, items, type){
       return `<div style="background:${bg};border:0.5px solid ${border};border-radius:8px;padding:8px;margin-bottom:6px;display:flex;gap:8px;align-items:flex-start">
         <div style="position:relative;flex-shrink:0">
         ${thumb?`<img src="${thumb}" onclick="openLightboxRef(this)" data-urls="${photos.join(',')}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block">`:
-          `<div style="width:48px;height:48px;border-radius:6px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
+          `<div style="width:48px;height:48px;border-radius:6px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`}
         ${photos.length>=2?`<span style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#ffffff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px">${photos.length}</span>`:''}
       </div>
         <div style="flex:1;min-width:0">
@@ -2386,7 +2386,7 @@ function showCatPicker(tagEl){
   const cats=['가방','지갑','주얼리','의류','신발','시계','벨트','기타'];
   const popup=document.createElement('div');
   popup.id='cat-picker-popup';
-  popup.style.cssText='position:absolute;z-index:999;background:#1a1a1a;border:1px solid #e0e0e0;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.6);min-width:130px';
+  popup.style.cssText='position:absolute;z-index:999;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.6);min-width:130px';
   cats.forEach(cat=>{
     const btn=document.createElement('button');
     btn.textContent=cat;
@@ -3715,9 +3715,9 @@ function renderSkuPage(wrapId){
   const totalPages = Math.ceil(list.length/PAGE_SIZE);
   const pagerHtml = totalPages>1 ? `
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0;flex-wrap:wrap">
-      <button onclick="skuGoPage('${wrapId}',${page-1})" ${page<=1?'disabled':''} style="background:#1a1a1a;border:1px solid #e0e0e0;color:${page<=1?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">‹ 이전</button>
+      <button onclick="skuGoPage('${wrapId}',${page-1})" ${page<=1?'disabled':''} style="background:#f5f5f5;border:1px solid #e0e0e0;color:${page<=1?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">‹ 이전</button>
       <span style="font-size:12px;color:#555">${page} / ${totalPages}페이지 <span style="color:#1a1a1a">(${list.length}건)</span></span>
-      <button onclick="skuGoPage('${wrapId}',${page+1})" ${page>=totalPages?'disabled':''} style="background:#1a1a1a;border:1px solid #e0e0e0;color:${page>=totalPages?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">다음 ›</button>
+      <button onclick="skuGoPage('${wrapId}',${page+1})" ${page>=totalPages?'disabled':''} style="background:#f5f5f5;border:1px solid #e0e0e0;color:${page>=totalPages?'#444':'#ff6b2b'};border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600">다음 ›</button>
     </div>` : '';
   wrap.innerHTML = pageList.map((item,i)=>{
     const accText=safeAccArr(item.accessories).map(a=>`<span class="sku-meta-tag" style="color:#22c55e">${a.name}</span>`).join('');
@@ -3732,7 +3732,7 @@ function renderSkuPage(wrapId){
             const thumbUrl=_all[0]||'';
             const imgHtml=thumbUrl
               ?`<img id="th-${item.id}-img" src="${thumbUrl}" draggable="true" data-skuid="${item.id}" data-pi="0" ondragstart="lbDragStart(event)" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0;cursor:zoom-in;display:block" data-thumb-open="1" data-thumb-skuid="${item.id}" onerror="_thumbErr(this)">`
-              :'<div style="width:52px;height:52px;border-radius:8px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #e0e0e0">📦</div>';
+              :'<div style="width:52px;height:52px;border-radius:8px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;border:1px solid #e0e0e0">📦</div>';
             const cntHtml=_all.length>=2?`<span id="th-${item.id}-cnt" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.75);color:#ffffff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px">+${_all.length}</span>`:'';
             return imgHtml+cntHtml;
           })()}
@@ -3768,7 +3768,7 @@ function renderSkuPage(wrapId){
               <div><div style="font-size:10px;color:#888;margin-bottom:3px">실측 사이즈</div><input id="qe-size-${item.id}" type="text" value="${item.size_actual||''}" placeholder="가로 × 세로 × 너비" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
               <div><div style="font-size:10px;color:#888;margin-bottom:3px">스타일번호</div><input id="qe-sku-${item.id}" type="text" value="${item.sku_code||''}" placeholder="SKU" style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
               <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">공식 URL</div><input id="qe-url-${item.id}" type="text" value="${item.site_url||''}" placeholder="https://..." style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;box-sizing:border-box"></div>
-              <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div><textarea id="qe-notes-${item.id}" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#000;border:1px solid #333;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;resize:none;box-sizing:border-box">${item.notes||''}</textarea></div>
+              <div style="grid-column:1/-1"><div style="font-size:10px;color:#888;margin-bottom:3px">특이사항</div><textarea id="qe-notes-${item.id}" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:7px 8px;color:#1a1a1a;font-size:12px;outline:none;resize:none;box-sizing:border-box">${item.notes||''}</textarea></div>
             </div>
             <button onclick="saveQuickEdit('${item.id}')" style="width:100%;background:#ff6b2b;border:none;border-radius:8px;padding:9px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer">💾 저장</button>
           </div>
@@ -3790,13 +3790,13 @@ function renderSkuPage(wrapId){
                 const thumbChecks=allImgs.map((url,pi)=>'<div draggable="true" data-skuid="' + item.id + '" data-pi="' + pi + '" ondragstart="lbDragStart(event)" ondragover="event.preventDefault()" ondrop="lbDropTo(event,\''+item.id+'\','+ pi +')" style="position:relative;flex-shrink:0;transition:opacity .2s"><img src="' + url + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1.5px solid #2a2a2a;cursor:pointer;display:block" onclick="event.stopPropagation();togglePhotoCheck(this,\''+item.id+'\','+ pi +')"><div id="pchk-'+item.id+'-'+pi+'" style="display:none;position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ff6b2b;color:#ffffff;font-size:11px;font-weight:700;align-items:center;justify-content:center;pointer-events:none">✓</div></div>').join('');
                 const photoGrid='<div style="display:none;gap:6px;margin-bottom:6px">' + moveBtns + '</div>'
                   + (thumbChecks ? '<div id="tgrid-'+item.id+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">' + thumbChecks + '</div>' : '<div id="tgrid-'+item.id+'"></div>');
-                return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#1a1a1a;cursor:pointer">
+                return photoGrid+`<div id="${slId}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#f5f5f5;cursor:pointer">
                   <img id="${slId}-img" src="${allImgs[0]}"
                     draggable="true"
                     data-skuid="${item.id}"
                     data-pi="${_sliders[slId]?.cur||0}"
                     ondragstart="lbDragStart(event)"
-                    style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#1a1a1a;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}', _sliders['${slId}']?.cur||0)">
+                    style="width:100%;height:auto;max-height:220px;object-fit:contain;display:block;background:#f5f5f5;cursor:zoom-in" onclick="event.stopPropagation();openLightboxSlider('${slId}', _sliders['${slId}']?.cur||0)">
                   ${total>1?`<button onclick="event.stopPropagation();slideImg('${slId}',-1)" style="position:absolute;top:0;bottom:0;left:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#ffffff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8249;</button>
                   <button onclick="event.stopPropagation();slideImg('${slId}',1)" style="position:absolute;top:0;bottom:0;right:0;width:32px;background:rgba(0,0,0,.5);border:none;color:#ffffff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3">&#8250;</button>
                   <span id="${slId}-cnt" style="position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.75);color:#ffffff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;z-index:3">1/${total}</span>`
@@ -4485,7 +4485,7 @@ function renderEditPhotos(urls){
       style="position:relative;flex-shrink:0;transition:opacity .15s;margin-top:16px">
       <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0;cursor:zoom-in;display:block"
         onclick="openLightbox(window._efPhotoUrls[${idx}], window._efPhotoUrls)" alt=""
-        onerror="this.style.background='#2a2a2a';this.style.display='flex';this.removeAttribute('src');this.insertAdjacentHTML('afterend','<div style=\\'width:72px;height:72px;border-radius:8px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;border:1px dashed #444\\'>오류</div>');this.remove()">
+        onerror="this.style.background='#2a2a2a';this.style.display='flex';this.removeAttribute('src');this.insertAdjacentHTML('afterend','<div style=\\'width:72px;height:72px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;border:1px dashed #ccc\\'>오류</div>');this.remove()">
       <button onclick="deleteEditPhoto(${idx})"
         style="position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:#ef4444;border:2px solid #0d0d0d;color:#1a1a1a;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;z-index:10">✕</button>
     </div>`).join('');
@@ -5104,7 +5104,7 @@ function editUnregSize(){
     }
     return `
     <span style="font-size:10px;color:#555;margin-right:2px">${f.label}</span>
-    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" onclick="event.stopPropagation()" style="width:52px;background:#f8f8f8;border:1px solid #333;border-radius:6px;padding:4px 6px;color:#1a1a1a;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
+    <input id="unreg-sf-${i}" type="number" value="${nums[i-(cfg[0].memo?1:0)]||''}" placeholder="0" onclick="event.stopPropagation()" style="width:52px;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:6px;padding:4px 6px;color:#1a1a1a;font-size:13px;text-align:center;outline:none" oninput="_updateUnregSizeHidden()">
     <span style="font-size:10px;color:#555;margin-right:6px">${f.unit||''}</span>
     ${i<cfg.length-1?'<span style="color:#555;margin-right:6px">×</span>':''}
   `;
@@ -5857,7 +5857,7 @@ function _renderNlAccList(){
   if(!wrap) return;
   if(!_nlAccList.length){ wrap.innerHTML='<span style="color:#555">부속품 없음</span>'; return; }
   wrap.innerHTML = _nlAccList.map(function(a,i){
-    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:3px 8px;margin:2px;font-size:11px">'
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:6px;padding:3px 8px;margin:2px;font-size:11px">'
       +a.name+'<button onclick="_nlRemoveAcc('+i+')" style="background:none;border:none;color:#888;cursor:pointer;font-size:10px;padding:0">✕</button></span>';
   }).join('');
 }
@@ -5872,7 +5872,7 @@ function _nlRenderPhotos(){
   if(!wrap) return;
   if(!_nlPhotos.length){ wrap.innerHTML=''; return; }
   wrap.innerHTML = _nlPhotos.map(function(url,i){
-    return '<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid #333;flex-shrink:0">'
+    return '<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid #e0e0e0;flex-shrink:0">'
       +'<img src="'+url+'" onclick="_nlZoomPhoto('+i+')" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in">'
       +'<button onclick="event.stopPropagation();_nlRemovePhoto('+i+')" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.75);border:none;color:#1a1a1a;font-size:10px;cursor:pointer;border-radius:50%;width:18px;height:18px;line-height:18px;padding:0;z-index:2">✕</button>'
       +'</div>';
@@ -7195,7 +7195,7 @@ async function saveSpecToSupabaseById(id, specs){
 </datalist>
 
   <!-- 임시 이미지 테스트 버튼 -->
-  <div id="img-test-result" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;background:#1a1a1a;border:1px solid #ff6b2b;border-radius:10px;padding:14px;z-index:9999;font-size:11px;color:#555;max-height:200px;overflow-y:auto"></div>
+  <div id="img-test-result" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;background:#f5f5f5;border:1px solid #ff6b2b;border-radius:10px;padding:14px;z-index:9999;font-size:11px;color:#555;max-height:200px;overflow-y:auto"></div>
 
 </body>
 </html>
