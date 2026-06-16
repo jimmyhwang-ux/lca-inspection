@@ -362,7 +362,7 @@ input[type=file]{display:none}
       <div style="display:flex;gap:6px">
         <input id="gemini-key-inline-result" type="text" placeholder="API Key..." autocomplete="off"
           style="flex:1;background:#F5F2EE;border:1px solid #E8E5E0;border-radius:8px;padding:8px 10px;color:#1C1917;font-size:12px;outline:none;min-width:0">
-        <button onclick="saveGeminiKeyResult()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#1C1917;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+        <button onclick="saveGeminiKeyResult()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
     <button id="spec-google-btn" onclick="runSpecGoogleSearch()"
@@ -537,7 +537,7 @@ input[type=file]{display:none}
       <div style="display:flex;gap:6px">
         <input id="gemini-key-inline" type="text" placeholder="API Key..." autocomplete="off"
           style="flex:1;background:#F5F2EE;border:1px solid #E8E5E0;border-radius:8px;padding:8px 10px;color:#1C1917;font-size:12px;outline:none;min-width:0">
-        <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#1C1917;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+        <button onclick="saveGeminiKeyInline()" style="background:#ff6b2b;border:none;border-radius:8px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
     <!-- ✨ AI 스펙 자동완성 버튼 -->
@@ -617,7 +617,7 @@ input[type=file]{display:none}
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="saveToSupabase('model',this)" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ff6b2b;color:#ffffff;font-size:13px;font-weight:700;cursor:pointer">💾 SKU</button>
-      <button onclick="saveToSupabase('gear',this)" style="display:none;flex:1;padding:13px;border-radius:12px;border:none;background:#1a1200;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
+      <button onclick="saveToSupabase('gear',this)" style="display:none;flex:1;padding:13px;border-radius:12px;border:none;background:#FFF8E6;color:#BA7517;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(186,117,23,.4)">💾 검기어</button>
     </div>
     <button onclick="clearSkuForm()" style="width:100%;background:none;border:1px solid #E8E5E0;color:#57534E;border-radius:12px;padding:13px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px">🗑 입력 초기화</button>
   </div>
@@ -629,7 +629,7 @@ input[type=file]{display:none}
       <div style="display:flex;gap:6px">
         <input id="serpapi-key-inline" type="text" placeholder="serpapi.com API Key..." autocomplete="off"
           style="flex:1;background:#F5F2EE;border:1px solid #E8E5E0;border-radius:8px;padding:8px 10px;color:#1C1917;font-size:12px;outline:none;min-width:0">
-        <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#1C1917;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+        <button onclick="saveSerpApiKeyInline()" style="background:#4285f4;border:none;border-radius:8px;padding:8px 14px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer">저장</button>
       </div>
     </div>
     <div style="margin-bottom:10px">
@@ -657,7 +657,7 @@ input[type=file]{display:none}
     <div id="sku-unregistered-notice" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none">
       <div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:6px">⚠️ 미등록 SKU입니다</div>
       <div id="sku-unregistered-msg" style="font-size:11px;color:#57534E;margin-bottom:8px"></div>
-      <button onclick="openSkuListNewFormFromNotice()" style="width:100%;background:#f59e0b;border:none;border-radius:8px;padding:8px;color:#000;font-size:12px;font-weight:700;cursor:pointer">➕ 지금 등록하기</button>
+      <button onclick="openSkuListNewFormFromNotice()" style="width:100%;background:#f59e0b;border:none;border-radius:8px;padding:8px;color:#1C1917;font-size:12px;font-weight:700;cursor:pointer">➕ 지금 등록하기</button>
     </div>
     <div style="margin-bottom:10px">
       <button id="sku-list-google-btn" onclick="runSkuListGoogleSearch()"
@@ -682,11 +682,11 @@ input[type=file]{display:none}
         <!-- 저장/취소 — 신규 등록 폼 열릴 때만 노출 -->
         <div id="nl-save-row" style="display:none;gap:6px;margin-top:6px">
           <button onclick="saveSkuListNewForm()"
-            style="flex:1;background:#22c55e;border:none;border-radius:8px;padding:9px;color:#1C1917;font-size:12px;font-weight:700;cursor:pointer">
+            style="flex:1;background:#22c55e;border:none;border-radius:8px;padding:9px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer">
             💾 저장
           </button>
           <button onclick="closeNlForm()"
-            style="flex:1;background:#222;border:1px solid #E8E5E0;border-radius:8px;padding:9px;color:#57534E;font-size:12px;cursor:pointer">
+            style="flex:1;background:#F5F2EE;border:1px solid #E8E5E0;border-radius:8px;padding:9px;color:#57534E;font-size:12px;cursor:pointer">
             취소
           </button>
         </div>
@@ -754,7 +754,7 @@ input[type=file]{display:none}
                   📋 클릭 후 Ctrl+V
                 </div>
               </div>
-              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#FFFFFF;border:1px solid rgba(66,133,244,.3);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer">📸 대표사진 원클릭 등록</button>
+              <button onclick="fetchNlOfficialImage()" style="width:100%;margin-top:4px;background:#FFFFFF;border:1px solid rgba(66,133,244,.3);border-radius:6px;padding:7px;color:#4285f4;font-size:11px;cursor:pointer"><span id="nl-img-spinner" style="display:none;width:13px;height:13px;border:2px solid rgba(66,133,244,.25);border-top-color:#4285f4;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px"></span>📸 대표사진 원클릭 등록</button>
               <div style="font-size:10px;color:#57534E;margin-top:4px;line-height:1.5">
                 💡 안 될 경우 공홈에서 이미지 우클릭 → <b style="color:#78716C">복사</b> 후 📋 Ctrl+V
               </div>
@@ -3801,7 +3801,7 @@ function renderSkuPage(wrapId){
               <div style="grid-column:1/-1"><div style="font-size:10px;color:#78716C;margin-bottom:3px">공식 URL</div><input id="qe-url-${item.id}" type="text" value="${item.site_url||''}" placeholder="https://..." style="width:100%;background:#F5F2EE;border:1px solid #E8E5E0;border-radius:6px;padding:7px 8px;color:#1C1917;font-size:12px;outline:none;box-sizing:border-box"></div>
               <div style="grid-column:1/-1"><div style="font-size:10px;color:#78716C;margin-bottom:3px">특이사항</div><textarea id="qe-notes-${item.id}" rows="2" placeholder="소재, 제조국 등..." style="width:100%;background:#F5F2EE;border:1px solid #E8E5E0;border-radius:6px;padding:7px 8px;color:#1C1917;font-size:12px;outline:none;resize:none;box-sizing:border-box">${item.notes||''}</textarea></div>
             </div>
-            <button onclick="saveQuickEdit('${item.id}')" style="width:100%;background:#ff6b2b;border:none;border-radius:8px;padding:9px;color:#1C1917;font-size:12px;font-weight:700;cursor:pointer">💾 저장</button>
+            <button onclick="saveQuickEdit('${item.id}')" style="width:100%;background:#ff6b2b;border:none;border-radius:8px;padding:9px;color:#ffffff;font-size:12px;font-weight:700;cursor:pointer">💾 저장</button>
           </div>
             ${(()=>{
               const allImgs=[...(item.ref_image_url?[item.ref_image_url]:[]),...(item.extra_images||[])].filter(Boolean).filter((v,j,a)=>a.indexOf(v)===j);
@@ -5988,103 +5988,6 @@ async function fetchNlOfficialImage(){
   if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
 }
 
-
-// ── 이미지 선택 모달 ────────────────────────────────────────────
-var _imgPickTarget = 'ef'; // 'ef' | 'nl'
-var _imgPickSelected = new Set();
-var _imgPickImages = []; // {thumb, original, base64, mime}
-
-function openImgPickModal(images, target){
-  _imgPickTarget = target || 'ef';
-  _imgPickSelected = new Set();
-  _imgPickImages = images;
-  var grid = document.getElementById('img-pick-grid');
-  if(!grid) return;
-  grid.innerHTML = images.map(function(img, i){
-    return '<div id="ipk-'+i+'" onclick="toggleImgPick('+i+')" style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:2px solid #E8E5E0;cursor:pointer;background:#F0EDE8;transition:border-color .15s">'
-      var image = document.createElement('img'); image.src=img.thumb; image.onerror=function(){this.style.display='none';};
-      + '<div id="ipk-chk-'+i+'" style="display:none;position:absolute;inset:0;background:rgba(234,88,12,.18);border:2px solid #EA580C;border-radius:6px;align-items:center;justify-content:center">'
-      + '<div style="width:22px;height:22px;border-radius:50%;background:#EA580C;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700">✓</div>'
-      + '</div>'
-      + '</div>';
-  }).join('');
-  document.getElementById('img-pick-count').textContent = '0';
-  var modal = document.getElementById('img-pick-modal');
-  if(modal){ modal.style.display='flex'; }
-}
-
-function toggleImgPick(idx){
-  var chk = document.getElementById('ipk-chk-'+idx);
-  var card = document.getElementById('ipk-'+idx);
-  if(_imgPickSelected.has(idx)){
-    _imgPickSelected.delete(idx);
-    if(chk) chk.style.display='none';
-    if(card) card.style.borderColor='#E8E5E0';
-  } else {
-    _imgPickSelected.add(idx);
-    if(chk) chk.style.display='flex';
-    if(card) card.style.borderColor='#EA580C';
-  }
-  document.getElementById('img-pick-count').textContent = _imgPickSelected.size;
-}
-
-function closeImgPickModal(){
-  var modal = document.getElementById('img-pick-modal');
-  if(modal) modal.style.display='none';
-  _imgPickSelected = new Set();
-  _imgPickImages = [];
-}
-
-async function confirmImgPick(){
-  if(!_imgPickSelected.size){ toast('⚠ 사진을 선택해주세요'); return; }
-  var btn = document.getElementById('img-pick-confirm');
-  if(btn){ btn.disabled=true; btn.textContent='추가 중...'; }
-  toast('⏳ 선택한 사진 추가 중...');
-
-  var selected = Array.from(_imgPickSelected).sort();
-  for(var i=0; i<selected.length; i++){
-    var img = _imgPickImages[selected[i]];
-    if(!img) continue;
-    var dataUrl = null;
-    // base64가 이미 있으면 바로 사용
-    if(img.base64){
-      dataUrl = 'data:'+img.mime+';base64,'+img.base64;
-    } else {
-      // thumb URL로 프록시 시도
-      try{
-        var token = localStorage.getItem('lca_token')||'';
-        var res = await fetch('/api/inspect',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','x-access-token':token},
-          body:JSON.stringify({action:'proxy_image', imageUrl: img.original||img.thumb})
-        });
-        var j = await res.json();
-        if(j.success && j.base64) dataUrl = 'data:'+j.mime+';base64,'+j.base64;
-      }catch(e){ console.warn('[ImgPick proxy]', e); }
-      // 프록시 실패시 thumb 직접 사용
-      if(!dataUrl) dataUrl = img.thumb;
-    }
-    if(!dataUrl) continue;
-
-    if(_imgPickTarget === 'nl'){
-      _nlPhotos.push(dataUrl);
-      _nlRenderPhotos();
-    } else {
-      // ef (수정모달)
-      var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
-      stored.push(dataUrl);
-      document.getElementById('ef-extra-images').value = JSON.stringify(stored);
-      var efInp = document.getElementById('ef-new-photo');
-      if(efInp) efInp._dataUrls = [...(efInp._dataUrls||[]), dataUrl];
-      renderEditPhotos(stored);
-    }
-  }
-
-  toast('✅ '+_imgPickSelected.size+'장 추가됐어요!');
-  closeImgPickModal();
-  if(btn){ btn.disabled=false; btn.innerHTML='선택한 사진 추가 (<span id="img-pick-count">0</span>장)'; }
-}
-
 // ── 수정 모달 대표사진 원클릭 등록 ──────────────────────────────
 async function fetchEfOfficialImage(){
   var brand   = (document.getElementById('ef-brand')?.value||'').trim();
@@ -6137,6 +6040,197 @@ async function fetchEfOfficialImage(){
 }
 
 // 수정 모달 붙여넣기
+function handleEfPaste(e){
+  var items = (e.clipboardData||e.originalEvent?.clipboardData)?.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image')){
+      var file = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        var dataUrl = ev.target.result;
+        var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+        stored.push(dataUrl);
+        document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+        var efInp = document.getElementById('ef-new-photo');
+        if(efInp) efInp._dataUrls = [...(efInp._dataUrls||[]), dataUrl];
+        renderEditPhotos(stored);
+        toast('📋 사진 붙여넣기 완료!');
+      };
+      reader.readAsDataURL(file);
+      e.preventDefault();
+      break;
+    }
+  }
+}
+
+
+// ── 이미지 선택 모달 ────────────────────────────────────────────
+var _imgPickTarget = 'ef';
+var _imgPickSelected = new Set();
+var _imgPickImages = [];
+
+function openImgPickModal(images, target){
+  _imgPickTarget = target || 'ef';
+  _imgPickSelected = new Set();
+  _imgPickImages = images;
+  var grid = document.getElementById('img-pick-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  images.forEach(function(img, i){
+    var wrap = document.createElement('div');
+    wrap.id = 'ipk-'+i;
+    wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:2px solid #E8E5E0;cursor:pointer;background:#F0EDE8;transition:border-color .15s';
+    wrap.onclick = (function(idx){ return function(){ toggleImgPick(idx); }; })(i);
+    var image = document.createElement('img');
+    image.src = img.thumb;
+    image.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    image.onerror = function(){ this.style.display='none'; };
+    var chk = document.createElement('div');
+    chk.id = 'ipk-chk-'+i;
+    chk.style.cssText = 'display:none;position:absolute;inset:0;background:rgba(234,88,12,.18);border:2px solid #EA580C;border-radius:6px;align-items:center;justify-content:center';
+    var tick = document.createElement('div');
+    tick.style.cssText = 'width:22px;height:22px;border-radius:50%;background:#EA580C;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700';
+    tick.textContent = '✓';
+    chk.appendChild(tick);
+    wrap.appendChild(image);
+    wrap.appendChild(chk);
+    grid.appendChild(wrap);
+  });
+  document.getElementById('img-pick-count').textContent = '0';
+  var modal = document.getElementById('img-pick-modal');
+  if(modal){ modal.style.display='flex'; }
+}
+
+function toggleImgPick(idx){
+  var chk = document.getElementById('ipk-chk-'+idx);
+  var card = document.getElementById('ipk-'+idx);
+  if(_imgPickSelected.has(idx)){
+    _imgPickSelected.delete(idx);
+    if(chk) chk.style.display='none';
+    if(card) card.style.borderColor='#E8E5E0';
+  } else {
+    _imgPickSelected.add(idx);
+    if(chk) chk.style.display='flex';
+    if(card) card.style.borderColor='#EA580C';
+  }
+  document.getElementById('img-pick-count').textContent = _imgPickSelected.size;
+}
+
+function closeImgPickModal(){
+  var modal = document.getElementById('img-pick-modal');
+  if(modal) modal.style.display='none';
+  _imgPickSelected = new Set();
+  _imgPickImages = [];
+}
+
+async function confirmImgPick(){
+  if(!_imgPickSelected.size){ toast('⚠ 사진을 선택해주세요'); return; }
+  var btn = document.getElementById('img-pick-confirm');
+  var origText = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled=true; btn.textContent='추가 중...'; }
+  toast('⏳ 선택한 사진 추가 중...');
+  var selected = Array.from(_imgPickSelected).sort();
+  for(var i=0; i<selected.length; i++){
+    var img = _imgPickImages[selected[i]];
+    if(!img) continue;
+    var dataUrl = null;
+    if(img.base64){
+      dataUrl = 'data:'+img.mime+';base64,'+img.base64;
+    } else {
+      try{
+        var token = localStorage.getItem('lca_token')||'';
+        var res = await fetch('/api/inspect',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-access-token':token},
+          body:JSON.stringify({action:'proxy_image', imageUrl: img.original||img.thumb})
+        });
+        var j = await res.json();
+        if(j.success && j.base64) dataUrl = 'data:'+j.mime+';base64,'+j.base64;
+      }catch(e){ console.warn('[ImgPick]', e); }
+      if(!dataUrl) dataUrl = img.thumb;
+    }
+    if(!dataUrl) continue;
+    if(_imgPickTarget === 'nl'){
+      _nlPhotos.push(dataUrl);
+      _nlRenderPhotos();
+    } else {
+      var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+      stored.push(dataUrl);
+      document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+      var efInp = document.getElementById('ef-new-photo');
+      if(efInp) efInp._dataUrls = [...(efInp._dataUrls||[]), dataUrl];
+      renderEditPhotos(stored);
+    }
+  }
+  toast('✅ '+_imgPickSelected.size+'장 추가됐어요!');
+  closeImgPickModal();
+  if(btn){ btn.disabled=false; btn.innerHTML=origText; }
+}
+
+// ── 수정 모달 대표사진 원클릭 등록 ──────────────────────────────
+async function fetchEfOfficialImage(){
+  var brand   = (document.getElementById('ef-brand')?.value||'').trim();
+  var modelKo = (document.getElementById('ef-model-ko')?.value||'').trim();
+  var skuCode = (document.getElementById('ef-sku')?.value||'').trim();
+  var q    = [brand, modelKo].filter(Boolean).join(' ');
+  var qSku = [brand, skuCode].filter(Boolean).join(' ');
+  if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
+
+  var efBtn = document.getElementById('ef-img-btn');
+  var efSpinner = document.getElementById('ef-img-spinner');
+  if(efBtn) efBtn.disabled = true;
+  if(efSpinner) efSpinner.style.display = 'inline-block';
+  toast('🔍 이미지 검색 중...');
+
+  async function _searchImgs(query){
+    try{
+      var token2 = localStorage.getItem('lca_token')||'';
+      var serpKey = localStorage.getItem('bungae_serpapi_key')||'';
+      var res = await fetch('/api/inspect',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-access-token':token2},
+        body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey, multi:true})
+      });
+      if(!res.ok) return null;
+      var j = await res.json();
+      if(!j.success) return null;
+      if(j.images && j.images.length) return j.images;
+      if(j.base64 && j.base64.length > 1000) return [{thumb:'data:'+j.mime+';base64,'+j.base64, base64:j.base64, mime:j.mime, original:''}];
+      return null;
+    }catch(e){ console.warn('[EfImgSearch]',e); return null; }
+  }
+
+  var queries = [];
+  if(q) queries.push(q, q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(qSku) queries.push(qSku, qSku+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
+  if(skuCode) queries.push(skuCode);
+
+  var allImages = [];
+  for(var qi=0; qi<queries.length && allImages.length<9; qi++){
+    var imgs = await _searchImgs(queries[qi]);
+    if(imgs && imgs.length) imgs.forEach(function(img){ if(allImages.length<9) allImages.push(img); });
+  }
+
+  if(efBtn) efBtn.disabled = false;
+  if(efSpinner) efSpinner.style.display = 'none';
+
+  if(!allImages.length){ toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.'); return; }
+  if(allImages.length === 1){
+    var img = allImages[0];
+    var dataUrl = img.base64 ? 'data:'+img.mime+';base64,'+img.base64 : img.thumb;
+    var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+    stored.unshift(dataUrl);
+    document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+    var efInp = document.getElementById('ef-new-photo');
+    if(efInp) efInp._dataUrls = [dataUrl, ...(efInp._dataUrls||[])];
+    renderEditPhotos(stored);
+    toast('✅ 대표사진 추가됐어요!');
+  } else {
+    openImgPickModal(allImages, 'ef');
+  }
+}
+
 function handleEfPaste(e){
   var items = (e.clipboardData||e.originalEvent?.clipboardData)?.items;
   if(!items) return;
