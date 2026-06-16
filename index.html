@@ -5544,17 +5544,27 @@ function _parseSpecRawText(txt, cat){
   if(cat==='주얼리'){
     r.size_unit='mm';
     // 가로(펜던트 너비): "너비 10.5mm" / "가로 10.5mm" / "width 10.5"
-    var sw=t.match(/(?:너비|가로|width)\s*[:\s→*,]+([0-9.]+)\s*(mm|cm)?/i);
-    var sh=t.match(/(?:높이|세로|height)\s*[:\s→*,]+([0-9.]+)\s*(mm|cm)?/i);
-    // 체인: "체인 길이: 42cm" / "42cm (체인 길이)" / 체인 언급 있는 단독 숫자
-    var sd=t.match(/(?:체인\s*길이|chain)\s*[:\s→*,]+([0-9.]+)/i)
-          ||t.match(/([0-9.]+)\s*(?:cm|mm)\s*\(체인\s*길이/i);
-    if(!sd && /체인|chain|necklace|목걸이/i.test(t)){
-      sd=t.match(/[:\s→*,]+([0-9.]+)\s*(?:cm|mm)/i);
+    // 가로: "가로×세로 약 15×15mm" / "가로: 15mm" / "너비 10mm"
+    var sw=t.match(/(?:가로|너비|width)[×x\s→*,:]+([0-9.]+)/i)
+          ||t.match(/펜던트[^0-9]*([0-9.]+)\s*[×x]/i);
+    // 세로: "×세로 약 15mm" / "×15mm"
+    var sh=t.match(/(?:세로|높이|height)[×x\s→*,:]+([0-9.]+)/i)
+          ||(!sw ? null : t.match(new RegExp(sw[1].replace('.','\\.')+'\\s*[×x]\\s*([0-9.]+)')));
+    if(!sh && sw){
+      // "15×15mm" 패턴 — sw 값 뒤의 × 다음 숫자
+      sh=t.match(new RegExp(sw[1].replace(/\./, '\\.')+'\\s*[×x]\\s*([0-9.]+)'));
     }
-    var se=t.match(/(?:직경|diameter|지름)\s*[:\s→*,]+([0-9.]+)/i);
-    // 폭: "폭 5.5mm" — sw와 독립적으로 항상 잡기
-    var sf=t.match(/폭\s*[:\s→*,]+([0-9.]+)/i);
+    // 체인: "42cm (체인 길이)" / "체인 길이: 42" / "42cm" 단독 (체인 언급 있을 때)
+    var sd=t.match(/([0-9.]+)\s*(?:cm|mm)\s*[\(（][^)]*체인\s*길이/i)
+          ||t.match(/(?:체인\s*길이|chain)[:\s→*,]+([0-9.]+)/i);
+    if(!sd && /체인|chain|목걸이|necklace/i.test(t)){
+      // "실측 사이즈: 42cm" 패턴
+      sd=t.match(/(?:실측|사이즈)[\s:→*,]+([0-9.]+)\s*(?:cm|mm)/i)
+        ||t.match(/^[^0-9]*([0-9.]+)\s*(?:cm|mm)/im);
+    }
+    var se=t.match(/(?:직경|diameter|지름)[:\s→*,]+([0-9.]+)/i);
+    // 폭: "폭 5.5mm" / "폭: 3.6mm"
+    var sf=t.match(/폭[:\s→*,]+([0-9.]+)/i);
     if(sw){r.size_w=sw[1]; if(sw[2])r.size_unit=sw[2].toLowerCase();}
     if(sh) r.size_h=sh[1];
     if(sd) r.size_d=sd[1];
