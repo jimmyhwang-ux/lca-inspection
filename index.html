@@ -3140,7 +3140,7 @@ async function saveDbCardEditById(itemId, mId){
         _saveAiBadgeIds();
         window._pendingAiBadgeCardId = null;
       }
-      const isApplied = window._appliedCardId === 'db-card-'+mIdxStr;
+      const isApplied = window._appliedCardId === 'db-card-'+mId;
       // 적용된 카드면 상단 결과 영역도 업데이트
       if(isApplied){
         if(brand)   document.getElementById('r-brand').textContent = brand;
@@ -3148,7 +3148,7 @@ async function saveDbCardEditById(itemId, mId){
         if(skuCode) document.getElementById('r-sku').textContent = skuCode;
       }
       // _cardMatches 캐시 업데이트 (항상)
-      const mIdx = parseInt(mIdxStr);
+      const mIdx = parseInt(mId.replace('db-card-',''));
       const cached = (window._cardMatches||[])[mIdx];
       if(cached){
         cached.brand       = brand || cached.brand;
