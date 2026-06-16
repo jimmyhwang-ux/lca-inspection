@@ -6040,63 +6040,188 @@ async function fetchEfOfficialImage(){
   var brand   = (document.getElementById('ef-brand')?.value||'').trim();
   var modelKo = (document.getElementById('ef-model-ko')?.value||'').trim();
   var skuCode = (document.getElementById('ef-sku')?.value||'').trim();
-  var q    = [brand, modelKo].filter(Boolean).join(' ');
+  var q = [brand, modelKo].filter(Boolean).join(' ');
   var qSku = [brand, skuCode].filter(Boolean).join(' ');
   if(!q && !qSku){ toast('⚠ 브랜드/모델명 또는 스타일번호를 먼저 입력해주세요'); return; }
-
   var efBtn = document.getElementById('ef-img-btn');
   var efSpinner = document.getElementById('ef-img-spinner');
   if(efBtn) efBtn.disabled = true;
   if(efSpinner) efSpinner.style.display = 'inline-block';
   toast('🔍 이미지 검색 중...');
 
-  async function _searchImgs(query){
+  async function _tryImg(query){
     try{
       var token2 = localStorage.getItem('lca_token')||'';
       var serpKey = localStorage.getItem('bungae_serpapi_key')||'';
       var res = await fetch('/api/inspect',{
         method:'POST',
         headers:{'Content-Type':'application/json','x-access-token':token2},
-        body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey, multi:true})
+        body:JSON.stringify({action:'search_image', query:query, serpApiKey:serpKey})
       });
-      if(!res.ok) return null;
+      if(!res.ok) return false;
       var j = await res.json();
-      if(!j.success) return null;
-      if(j.images && j.images.length) return j.images;
-      if(j.base64 && j.base64.length > 1000) return [{thumb:'data:'+j.mime+';base64,'+j.base64, base64:j.base64, mime:j.mime, original:''}];
-      return null;
-    }catch(e){ console.warn('[EfImgSearch]',e); return null; }
+      if(j.success && j.base64 && j.base64.length > 1000){
+        var dataUrl = 'data:'+j.mime+';base64,'+j.base64;
+        // ef-extra-images에 추가
+        var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+        stored.unshift(dataUrl);
+        document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+        var efInp = document.getElementById('ef-new-photo');
+        if(efInp) efInp._dataUrls = [dataUrl, ...(efInp._dataUrls||[])];
+        renderEditPhotos(stored);
+        toast('✅ 대표사진 추가됐어요!');
+        return true;
+      }
+      return false;
+    }catch(e){ console.warn('[EfImgSearch]',e); return false; }
   }
 
+  // 브랜드+모델명, 브랜드+스타일번호 둘 다 병렬 시도
   var queries = [];
   if(q) queries.push(q, q+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
   if(qSku) queries.push(qSku, qSku+' site:farfetch.com OR site:mytheresa.com OR site:ssense.com');
   if(skuCode) queries.push(skuCode);
 
-  var allImages = [];
-  for(var qi=0; qi<queries.length && allImages.length<9; qi++){
-    var imgs = await _searchImgs(queries[qi]);
-    if(imgs && imgs.length) imgs.forEach(function(img){ if(allImages.length<9) allImages.push(img); });
+  var ok = false;
+  for(var qi=0; qi<queries.length; qi++){
+    ok = await _tryImg(queries[qi]);
+    if(ok) break;
   }
-
+  if(!ok) toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.');
   if(efBtn) efBtn.disabled = false;
   if(efSpinner) efSpinner.style.display = 'none';
+}
 
-  if(!allImages.length){ toast('⚠ 이미지를 찾지 못했어요. 📋 붙여넣기나 📁 파일로 직접 추가해주세요.'); return; }
-  if(allImages.length === 1){
-    var img = allImages[0];
-    var dataUrl = img.base64 ? 'data:'+img.mime+';base64,'+img.base64 : img.thumb;
-    var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
-    stored.unshift(dataUrl);
-    document.getElementById('ef-extra-images').value = JSON.stringify(stored);
-    var efInp = document.getElementById('ef-new-photo');
-    if(efInp) efInp._dataUrls = [dataUrl, ...(efInp._dataUrls||[])];
-    renderEditPhotos(stored);
-    toast('✅ 대표사진 추가됐어요!');
-  } else {
-    openImgPickModal(allImages, 'ef');
+// 수정 모달 붙여넣기
+function handleEfPaste(e){
+  var items = (e.clipboardData||e.originalEvent?.clipboardData)?.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image')){
+      var file = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        var dataUrl = ev.target.result;
+        var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+        stored.push(dataUrl);
+        document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+        var efInp = document.getElementById('ef-new-photo');
+        if(efInp) efInp._dataUrls = [...(efInp._dataUrls||[]), dataUrl];
+        renderEditPhotos(stored);
+        toast('📋 사진 붙여넣기 완료!');
+      };
+      reader.readAsDataURL(file);
+      e.preventDefault();
+      break;
+    }
   }
 }
+
+
+// ── 이미지 선택 모달 ────────────────────────────────────────────
+var _imgPickTarget = 'ef';
+var _imgPickSelected = new Set();
+var _imgPickImages = [];
+
+function openImgPickModal(images, target){
+  _imgPickTarget = target || 'ef';
+  _imgPickSelected = new Set();
+  _imgPickImages = images;
+  var grid = document.getElementById('img-pick-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  images.forEach(function(img, i){
+    var wrap = document.createElement('div');
+    wrap.id = 'ipk-'+i;
+    wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:2px solid #E8E5E0;cursor:pointer;background:#F0EDE8;transition:border-color .15s';
+    wrap.onclick = (function(idx){ return function(){ toggleImgPick(idx); }; })(i);
+    var image = document.createElement('img');
+    image.src = img.thumb;
+    image.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    image.onerror = function(){ this.style.display='none'; };
+    var chk = document.createElement('div');
+    chk.id = 'ipk-chk-'+i;
+    chk.style.cssText = 'display:none;position:absolute;inset:0;background:rgba(234,88,12,.18);border:2px solid #EA580C;border-radius:6px;align-items:center;justify-content:center';
+    var tick = document.createElement('div');
+    tick.style.cssText = 'width:22px;height:22px;border-radius:50%;background:#EA580C;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700';
+    tick.textContent = '✓';
+    chk.appendChild(tick);
+    wrap.appendChild(image);
+    wrap.appendChild(chk);
+    grid.appendChild(wrap);
+  });
+  document.getElementById('img-pick-count').textContent = '0';
+  var modal = document.getElementById('img-pick-modal');
+  if(modal){ modal.style.display='flex'; }
+}
+
+function toggleImgPick(idx){
+  var chk = document.getElementById('ipk-chk-'+idx);
+  var card = document.getElementById('ipk-'+idx);
+  if(_imgPickSelected.has(idx)){
+    _imgPickSelected.delete(idx);
+    if(chk) chk.style.display='none';
+    if(card) card.style.borderColor='#E8E5E0';
+  } else {
+    _imgPickSelected.add(idx);
+    if(chk) chk.style.display='flex';
+    if(card) card.style.borderColor='#EA580C';
+  }
+  document.getElementById('img-pick-count').textContent = _imgPickSelected.size;
+}
+
+function closeImgPickModal(){
+  var modal = document.getElementById('img-pick-modal');
+  if(modal) modal.style.display='none';
+  _imgPickSelected = new Set();
+  _imgPickImages = [];
+}
+
+async function confirmImgPick(){
+  if(!_imgPickSelected.size){ toast('⚠ 사진을 선택해주세요'); return; }
+  var btn = document.getElementById('img-pick-confirm');
+  var origText = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled=true; btn.textContent='추가 중...'; }
+  toast('⏳ 선택한 사진 추가 중...');
+  var selected = Array.from(_imgPickSelected).sort();
+  for(var i=0; i<selected.length; i++){
+    var img = _imgPickImages[selected[i]];
+    if(!img) continue;
+    var dataUrl = null;
+    if(img.base64){
+      dataUrl = 'data:'+img.mime+';base64,'+img.base64;
+    } else {
+      try{
+        var token = localStorage.getItem('lca_token')||'';
+        var res = await fetch('/api/inspect',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-access-token':token},
+          body:JSON.stringify({action:'proxy_image', imageUrl: img.original||img.thumb})
+        });
+        var j = await res.json();
+        if(j.success && j.base64) dataUrl = 'data:'+j.mime+';base64,'+j.base64;
+      }catch(e){ console.warn('[ImgPick]', e); }
+      if(!dataUrl) dataUrl = img.thumb;
+    }
+    if(!dataUrl) continue;
+    if(_imgPickTarget === 'nl'){
+      _nlPhotos.push(dataUrl);
+      _nlRenderPhotos();
+    } else {
+      var stored = JSON.parse(document.getElementById('ef-extra-images')?.value||'[]');
+      stored.push(dataUrl);
+      document.getElementById('ef-extra-images').value = JSON.stringify(stored);
+      var efInp = document.getElementById('ef-new-photo');
+      if(efInp) efInp._dataUrls = [...(efInp._dataUrls||[]), dataUrl];
+      renderEditPhotos(stored);
+    }
+  }
+  toast('✅ '+_imgPickSelected.size+'장 추가됐어요!');
+  closeImgPickModal();
+  if(btn){ btn.disabled=false; btn.innerHTML=origText; }
+}
+
+// ── 수정 모달 대표사진 원클릭 등록 ──────────────────────────────
 
 function handleEfPaste(e){
   var items = (e.clipboardData||e.originalEvent?.clipboardData)?.items;
