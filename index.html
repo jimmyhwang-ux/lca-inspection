@@ -6410,6 +6410,17 @@ function openSkuListNewForm(){
   var form = document.getElementById('sku-list-new-form');
   if(!form) return;
 
+  // ── 폼 완전 초기화 (이전 검색 값 잔류 방지) ──
+  ['nl-brand','nl-model-ko','nl-model-en','nl-color','nl-sku','nl-url','nl-notes'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  var nlSize = document.getElementById('nl-size'); if(nlSize) nlSize.value = '';
+  var nlDisp = document.getElementById('nl-size-display'); if(nlDisp) nlDisp.textContent = '탭하여 입력';
+  var nlSizeWrap = document.getElementById('nl-size-wrap');
+  if(nlSizeWrap){ nlSizeWrap.dataset.cat=''; nlSizeWrap.innerHTML='<span id="nl-size-display" style="color:#A8A29E">탭하여 입력</span>'; }
+  _nlPhotos = []; _nlRenderPhotos();
+  _nlAccList = []; _renderNlAccList();
+
   var q = (document.getElementById('sku-search')?.value||'').trim();
   var brand = '', modelKo = '';
 
