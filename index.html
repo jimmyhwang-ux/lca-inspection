@@ -169,7 +169,7 @@ input[type=file]{display:none}
 .sl-box .sl-count{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.72);color:#ffffff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;pointer-events:none;z-index:3}
 .screen{display:none}
 .screen.active{display:block}
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 .lightbox.open{opacity:1;pointer-events:all}#lightbox{overflow:hidden}
 .lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px}
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#ffffff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -5209,7 +5209,7 @@ function openLensMatchDetail(idx){
       <span style="font-size:15px;font-weight:800;flex:1">DB 매칭 상세</span>
     </div>
     ${imgs.length ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none">
-      ${imgs.map(u=>`<img src="${u}" onerror="this.style.display='none'" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #E8E5E0">`).join('')}
+      ${imgs.map((u,ii)=>`<img src="${u}" onerror="this.style.display='none'" onclick="openLightbox('${u}',[${imgs.map(x=>`'${x}'`).join(',')}])" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #E8E5E0;cursor:zoom-in">`).join('')}
     </div>` : ''}
     <div style="background:#FFFFFF;border-radius:12px;border:1px solid #E8E5E0;overflow:hidden;margin-bottom:12px">
       ${_lmdRow('브랜드',     'lmd-brand',    s.brand||'')}
@@ -5280,11 +5280,12 @@ function _addLmdPhoto(dataUrl){
   wrap.style.cssText = 'position:relative';
   const img = document.createElement('img');
   img.src = dataUrl;
-  img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0;display:block';
+  img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #E8E5E0;display:block;cursor:zoom-in';
+  img.onclick = () => openLightbox(dataUrl, window._lmdExtraPhotos);
   const del = document.createElement('button');
   del.textContent = '×';
   del.style.cssText = 'position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#1C1917;color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1';
-  del.onclick = ()=>{ window._lmdExtraPhotos = window._lmdExtraPhotos.filter(p=>p!==dataUrl); wrap.remove(); };
+  del.onclick = (e)=>{ e.stopPropagation(); window._lmdExtraPhotos = window._lmdExtraPhotos.filter(p=>p!==dataUrl); wrap.remove(); };
   wrap.appendChild(img); wrap.appendChild(del);
   preview.appendChild(wrap);
 }
