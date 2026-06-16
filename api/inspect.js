@@ -567,11 +567,8 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
     }).then(r => r.json());
 
     const imageUrlPromise = uploadImage(imageBase64).catch(e => { console.warn('[Storage 업로드 실패]', e.message); return ''; });
-    const dbPromise = sb('sku_items?select=*&order=created_at.desc&limit=10000')
-      .then(async r => { const data = await r.json(); return Array.isArray(data) ? data : []; })
-      .catch(e => { console.error('[DB fetch error]', e.message); return []; });
-
-    const [claudeRes, imageUrl, dbData] = await Promise.all([claudePromise, imageUrlPromise, dbPromise]);
+    const [claudeRes, imageUrl] = await Promise.all([claudePromise, imageUrlPromise]);
+    const dbData = []; // DB 매칭은 클라이언트에서 처리
 
     if (claudeRes.error) throw new Error('Claude 오류: ' + (claudeRes.error.message||''));
     const raw = claudeRes.content?.[0]?.text?.trim() || '{}';
@@ -608,60 +605,10 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       return false;
     }
 
-    let dbMatches = [];
-    try {
-      if (Array.isArray(dbData) && dbData.length > 0) {
-        const aiBrand   = (analysis.brand || '').toLowerCase().trim();
-        const aiModel   = (analysis.model_name || '').toLowerCase().trim();
-        const aiModelKo = (analysis.model_name_ko || '').toLowerCase().trim();
-        const aiSku     = (analysis.sku || '').toLowerCase().trim();
-        const candidates = [];
-        for (const item of dbData) {
-          const dbBrand   = (item.brand || '').toLowerCase().trim();
-          const dbModel   = (item.model_name || '').toLowerCase().trim();
-          const dbModelKo = (item.model_name_ko || '').toLowerCase().trim();
-          const dbSku     = (item.sku_code || '').toLowerCase().trim();
-          if (!aiBrand || !dbBrand) continue;
-          const isUnknownBrand = ['unknown','기타','알수없음','unidentified'].includes(aiBrand.toLowerCase());
-          if (!isUnknownBrand && !brandMatches(aiBrand, dbBrand)) continue;
-          if (aiSku && dbSku && aiSku === dbSku) { candidates.push({ item, score: 200 }); continue; }
-          let score = 0;
-          if (aiModel && dbModel) {
-            if (aiModel === dbModel) score = 100;
-            else if (dbModel.includes(aiModel) || aiModel.includes(dbModel)) score = 70;
-            else {
-              const w1 = aiModel.split(' ').filter(w => w.length >= 2);
-              const w2 = dbModel.split(' ').filter(w => w.length >= 2);
-              if (w1.length >= 1) {
-                const hits = w1.filter(w => w2.includes(w)).length;
-                const ratio = hits / w1.length;
-                if (w1.length === 1 && hits === 1) score = Math.max(score, 60);
-                else if (ratio >= 0.6) score = Math.round(ratio * 60);
-              }
-            }
-          }
-          if (aiModelKo && dbModelKo) {
-            if (aiModelKo === dbModelKo) score = Math.max(score, 95);
-            else if (dbModelKo.includes(aiModelKo) || aiModelKo.includes(dbModelKo)) score = Math.max(score, 70);
-            else {
-              const koToks = aiModelKo.split(/\s+/).filter(w => w.length >= 2);
-              if (koToks.length > 0) {
-                const hits = koToks.filter(t => dbModelKo.includes(t)).length;
-                if (hits > 0) score = Math.max(score, Math.round(60 + (hits / koToks.length) * 30));
-              }
-            }
-          }
-          if (score >= 60) candidates.push({ item, score });
-        }
-        if (candidates.length > 0) {
-          candidates.sort((a, b) => b.score - a.score);
-          const maxScore = candidates[0].score;
-          const topCandidates = candidates.filter(c => c.score >= maxScore - 10);
-          topCandidates.sort((a, b) => (b.item.notes ? 1 : 0) - (a.item.notes ? 1 : 0));
-          dbMatches = topCandidates.slice(0, 5).map(c => c.item);
-        }
-      }
-    } catch (e) { console.warn('DB skip:', e.message); }
+    // ── DB 매칭은 클라이언트(Lens 텍스트 기반)에서 수행 ──
+    // 서버는 visualMatches 텍스트만 내려주고, 매칭은 사람이 선택
+    const dbMatches = [];
+    // dbData는 클라이언트가 list_sku로 이미 보유 중
 
     let visualMatches = [];
     try {
@@ -680,7 +627,7 @@ verdict: pass/review/fail, confidence: 0-100 정수`,
       ref_image_url: m.ref_image_url || null,
     }));
 
-    return res.status(200).json({ success: true, imageUrl, analysis, dbMatch: dbMatches[0] || null, dbMatches, visualMatches: visualMatches.slice(0, 12) });
+    return res.status(200).json({ success: true, imageUrl, analysis, dbMatch: null, dbMatches: [], visualMatches: visualMatches.slice(0, 15) });
 
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
