@@ -5484,7 +5484,22 @@ function _findDbMatchForLens(title, brand, translatedKo){
     const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
     const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
     const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    return enHit || koHit || stHit;
+    if(!enHit && !koHit && !stHit) return false;
+
+    // 서브타입 크로스 제거: necklace/pendant 검색이면 ring/반지/링/bracelet/팔찌 제외
+    // ring 검색이면 necklace/목걸이/bracelet/팔찌 제외
+    const titleLow = q.toLowerCase();
+    const hasNecklace = /necklace|pendant/.test(titleLow) || lensKoWords.some(w=>/목걸이|팬던트/.test(w));
+    const hasRing     = /\bring\b/.test(titleLow)         || lensKoWords.some(w=>/^링$|반지/.test(w));
+    const hasBracelet = /bracelet/.test(titleLow)         || lensKoWords.some(w=>/팔찌|브레이슬릿/.test(w));
+    const sIsRing     = /\bring\b/.test((s.model_name||'').toLowerCase()) || /반지|^링$/.test(sKoW.join(' '));
+    const sIsNecklace = /necklace|pendant/.test((s.model_name||'').toLowerCase()) || /목걸이|네크리스|팬던트/.test(sKoW.join(' '));
+    const sIsBracelet = /bracelet/.test((s.model_name||'').toLowerCase()) || /팔찌|브레이슬릿/.test(sKoW.join(' '));
+    if(hasNecklace && (sIsRing || sIsBracelet)) return false;
+    if(hasRing && (sIsNecklace || sIsBracelet)) return false;
+    if(hasBracelet && (sIsRing || sIsNecklace)) return false;
+
+    return true;
   });
 
   return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand).slice(0,5);
