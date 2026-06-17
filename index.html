@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#EA580C">
-<title>SKU BANK</title>
+<title>번개케어 검수</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FAFAF8;color:#1C1917;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:15px;min-height:100vh;padding-bottom:100px}
@@ -23,7 +23,7 @@ body{background:#FAFAF8;color:#1C1917;font-family:-apple-system,'Apple SD Gothic
   .slot-sm{aspect-ratio:1}
 }
 .header{text-align:center;padding:16px 20px 12px}
-.header h1{font-size:25px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px}
+.header h1{font-size:19px;font-weight:800;margin-bottom:4px}
 .header p{font-size:12px;color:#57534E;line-height:1.4}
 .photo-wrap{padding:0 16px;margin-bottom:6px}
 .slot-big{background:#F0EDE8;border:2px dashed #DDD8D2ccc;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:120px}
@@ -218,19 +218,8 @@ input[type=file]{display:none}
   <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:#FAFAF8">
     <div style="width:100%;max-width:360px">
       <div style="text-align:center;margin-bottom:40px">
-        <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:center">
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <radialGradient id="bgGrad" cx="40%" cy="35%" r="70%">
-                <stop offset="0%" stop-color="#4a4a4a"/>
-                <stop offset="100%" stop-color="#000000"/>
-              </radialGradient>
-            </defs>
-            <rect width="56" height="56" rx="13" fill="url(#bgGrad)"/>
-            <path d="M33 9L17.5 29.5H26.5L23 47L38.5 26.5H29.5L33 9Z" fill="white" stroke="white" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div style="font-size:29px;font-weight:800;color:#1C1917;margin-bottom:6px;letter-spacing:-0.5px">SKU BANK</div>
+        <div style="font-size:40px;margin-bottom:12px">🔍</div>
+        <div style="font-size:22px;font-weight:700;color:#1C1917;margin-bottom:6px">번개케어 검수</div>
         <div style="font-size:13px;color:#57534E">접근 비밀번호를 입력하세요</div>
       </div>
       <div style="background:#FFFFFF;border-radius:16px;padding:24px;border:1px solid #E8E5E0;box-shadow:0 4px 16px rgba(0,0,0,.08)">
@@ -250,7 +239,7 @@ input[type=file]{display:none}
 <!-- STEP 1 -->
 <div id="screen-shoot" class="screen">
   <div class="header">
-    <h1>SKU BANK</h1>
+    <h1>번개케어 검수</h1>
     <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
   </div>
   <div class="photo-wrap">
@@ -529,7 +518,7 @@ input[type=file]{display:none}
 
 <!-- 🔍 Lens 카드 상세 bottom sheet -->
 <div id="lens-sheet-overlay" onclick="closeLensSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700"></div>
-<div id="lens-sheet" style="display:none;position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#FAFAF8;border-radius:20px 20px 0 0;z-index:701;padding:20px 20px 32px;transition:transform .25s;max-height:85vh;overflow-y:auto">
+<div id="lens-sheet" style="display:none;position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#FAFAF8;border-radius:20px 20px 0 0;z-index:701;padding:20px 20px 32px;transition:transform .25s">
   <div style="width:36px;height:4px;background:#DDD8D2;border-radius:2px;margin:0 auto 16px"></div>
   <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
     <img id="lens-sheet-img" src="" alt="" onerror="this.style.display='none'" style="width:72px;height:72px;object-fit:cover;border-radius:10px;background:#F0EDE8;flex-shrink:0">
@@ -2974,7 +2963,7 @@ function editSkuSize(){
     if(inp) inp.addEventListener('blur',doSave);
   });
   const first=document.getElementById('ssku-'+cfg[0].id);
-  if(first && !window._skipSizeFocus) first.focus();
+  if(first) first.focus();
 }
 
 function buildSkuSizeInput(cfg, nums){
@@ -3392,9 +3381,9 @@ function goToSku(){
     const sizeText = rSizeText;
     if(!sizeText) return;
 
-    // sku-size-wrap input 완전 제거 후 강제 재렌더
+    // sku-size-wrap 강제 초기화 후 editSkuSize 렌더
     const _sw = document.getElementById('sku-size-wrap');
-    if(_sw){ _sw.innerHTML = ''; delete _sw.dataset.cat; }
+    if(_sw) _sw.dataset.cat = '';
     editSkuSize();
 
     // editSkuSize가 렌더한 input에 값 주입 — 라벨 기반 파싱
@@ -5069,7 +5058,7 @@ async function deleteSku(id){
 function copyResult(){
   const a=resultData.analysis||{};
   const accText=accessories.map(a=>a.name).join('\n');
-  const text=['[SKU BANK 결과]',
+  const text=['[번개케어 검수 결과]',
     '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
     'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
@@ -5084,12 +5073,7 @@ async function openLensSheet(idx){
   _lensSheetData = m;
 
   const title = m.title||m.name||'';
-  let brand = _extractBrandFromAnalysis(title);
-  // 렌즈 카드 source(판매처)에서도 브랜드 추출 — "Cartier", "Dior" 공식몰 등
-  if(!brand){
-    const source = m.source||m.site||'';
-    brand = _extractBrandFromAnalysis(source + ' ' + title);
-  }
+  const brand = _extractBrandFromAnalysis(title);
   const thumb = m.thumbnail||m.image||m.img||'';
 
   const imgEl = document.getElementById('lens-sheet-img');
@@ -5124,34 +5108,50 @@ async function openLensSheet(idx){
     }catch(e){}
   }
 
-  // ── 매칭: _findDbMatchForLens로 전체 DB 키워드 검색 ──
-  // (Claude 번호 매칭은 30개 제한 + 파싱 불안정 문제로 제거)
-  let dbMatches = _findDbMatchForLens(title, brand, null);
-  console.log('[LensMatch] 1차 정적 매칭:', dbMatches.length, '건');
+  // ── 1단계: 모델 키워드로 전체 DB 검색 (브랜드는 점수 가산만) ──
+  // 브랜드 매칭 SKU 우선 + 전체에서 모델 키워드 매칭
+  const candidates = _filterByBrand(skuListAll, brand);
 
-  // 영문 제목이면 Claude로 번역 후 재매칭
-  if(!/[가-힣]/.test(title)){
+  // ── 2단계: Claude에게 매칭 요청 ──
+  let dbMatches = [];
+  if(candidates.length && title){
     try{
+      // 후보 목록을 간략하게 직렬화 (최대 30개)
+      const candidateList = candidates.slice(0,30).map((s,i)=>
+        `${i}. ${s.model_name_ko||''} / ${s.model_name||''} / SKU:${s.sku_code||''}`
+      ).join('\n');
+
+      const prompt = `아래 렌즈 검색 제목과 가장 유사한 DB 항목 번호를 골라줘 (최대 5개). 번호만 쉼표로 출력. 없으면 "없음" 출력.
+
+렌즈 제목: "${title}"
+
+DB 후보:
+${candidateList}
+
+답변 형식: 0,2,5 (번호만)`;
+
       const res = await fetch('/api/inspect',{
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          action:'translate_title', title,
-          prompt:`다음 명품 상품명(영문)을 한국어로 번역해줘. 브랜드명 제거하고 모델명만. 40자 이내. 원문: "${title}". 한국어만 출력.`
-        })
+        body: JSON.stringify({action:'translate_title', title, prompt})
       });
+      console.log('[LensMatch] Claude API 응답 status:', res.status);
       const j = await res.json();
-      const translated = (j.translated||'').trim().split('\n')[0];
-      console.log('[LensMatch] 번역:', translated);
-      if(translated){
-        const matches2 = _findDbMatchForLens(title, brand, translated);
-        const seen = new Set(dbMatches.map(s=>s.id));
-        matches2.forEach(s=>{ if(!seen.has(s.id)){ dbMatches.push(s); seen.add(s.id); } });
-        const tKo = translated.toLowerCase();
-        const tKoWords = tKo.replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
-        dbMatches = _scoreAndSort(dbMatches, title.toLowerCase(), tKo, null, tKoWords, null, brand);
-        console.log('[LensMatch] 번역 후 최종:', dbMatches.length, '건');
+      const answer = (j.translated||'').trim();
+      console.log('[LensMatch] Claude 답변:', answer, '/ candidates 수:', candidates.length);
+
+      if(answer && answer !== '없음'){
+        const idxs = answer.split(/[,\s]+/).map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>=0&&n<candidates.length);
+        dbMatches = idxs.map(i=>candidates[i]).filter(Boolean);
+        console.log('[LensMatch] 파싱된 인덱스:', idxs, '→ 매칭:', dbMatches.length, '건');
       }
-    }catch(e){ console.warn('[LensMatch 번역 오류]', e.message); }
+    }catch(e){ console.warn('[LensMatch Claude 오류]', e.message); }
+  }
+
+  // fallback: 정적 키워드 매칭
+  if(!dbMatches.length){
+    console.log('[LensMatch] fallback 실행 — skuListAll 길이:', skuListAll.length);
+    dbMatches = _findDbMatchForLens(title, brand, null);
+    console.log('[LensMatch] fallback 결과:', dbMatches.length, '건');
   }
 
   _renderLensMatches(matchWrap, dbMatches);
@@ -5170,9 +5170,7 @@ function _filterByBrand(list, brand){
 
 function _renderLensMatches(matchWrap, dbMatches){
   if(dbMatches.length){
-    // 최고 점수 기준으로 매칭율 % 계산
     const maxScore = Math.max(...dbMatches.map(s=>s._matchScore||0), 1);
-
     matchWrap.innerHTML = `<div style="font-size:11px;color:#22c55e;font-weight:700;margin-bottom:6px">✅ 매칭 결과 ${dbMatches.length}건</div>`
       + dbMatches.map((s,i)=>{
           const dims = s.size_actual ? ` • ${s.size_actual}` : '';
@@ -5183,12 +5181,10 @@ function _renderLensMatches(matchWrap, dbMatches){
             ${s.ref_image_url ? `<img src="${s.ref_image_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">` : ''}
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:700;color:#1C1917;margin-bottom:3px">${s.model_name_ko||s.model_name||'—'}</div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <div style="font-size:11px;color:#57534E">${skuCode}${dims}</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+              <div style="font-size:11px;color:#57534E;margin-bottom:4px">${skuCode}${dims}</div>
+              <div style="display:flex;align-items:center;gap:5px">
                 <div style="flex:1;height:3px;background:#F0EDE8;border-radius:2px;overflow:hidden">
-                  <div style="width:${pct}%;height:100%;background:${pctColor};border-radius:2px;transition:width .3s"></div>
+                  <div style="width:${pct}%;height:100%;background:${pctColor};border-radius:2px"></div>
                 </div>
                 <span style="font-size:10px;font-weight:700;color:${pctColor};flex-shrink:0">${pct}%</span>
               </div>
@@ -5229,11 +5225,6 @@ function openLensMatchDetail(idx){
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <button onclick="closeLensMatchDetail()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#57534E;padding:0;line-height:1">←</button>
       <span style="font-size:15px;font-weight:800;flex:1">DB 매칭 상세</span>
-      <button onclick="saveSkuDirectFromLmd()" title="SKU DB에 바로 저장"
-        style="display:flex;align-items:center;gap:5px;background:#1C1917;color:#fff;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        바로 저장
-      </button>
     </div>
     ${imgs.length ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none">
       ${imgs.map((u,ii)=>`<img src="${u}" onerror="this.style.display='none'" onclick="openLightbox('${u}',[${imgs.map(x=>`'${x}'`).join(',')}])" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #E8E5E0;cursor:zoom-in">`).join('')}
@@ -5259,7 +5250,7 @@ function openLensMatchDetail(idx){
         <input type="file" accept="image/*" multiple style="display:none" onchange="addLmdPhotos(this.files)">
       </label>
     </div>
-    <button onclick="applyLensMatchAndGo()" style="width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px">✏️ 수정 후 등록하기</button>
+    <button onclick="applyLensMatchAndGo()" style="width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px">+ 신규 SKU 등록하기</button>
     <button onclick="closeLensMatchDetail()" style="width:100%;background:none;border:1px solid #E8E5E0;color:#57534E;border-radius:12px;padding:12px;font-size:13px;cursor:pointer">닫기</button>
   `;
 
@@ -5323,68 +5314,6 @@ function addLmdPhotos(files){
     reader.onload = e => _addLmdPhoto(e.target.result);
     reader.readAsDataURL(file);
   });
-}
-
-async function saveSkuDirectFromLmd(){
-  const s = window._lmdSkuData || {};
-  const brand    = document.getElementById('lmd-brand')?.value    || s.brand || '';
-  const modelKo  = document.getElementById('lmd-model-ko')?.value || s.model_name_ko || '';
-  const modelEn  = document.getElementById('lmd-model-en')?.value || s.model_name || '';
-  const cat      = document.getElementById('lmd-cat')?.value      || s.category || '가방';
-  const color    = document.getElementById('lmd-color')?.value    || s.color || '';
-  const skuCode  = document.getElementById('lmd-sku')?.value      || s.sku_code || '';
-  const sizeName = document.getElementById('lmd-size-name')?.value|| s.size_label || '';
-  const sizeAct  = document.getElementById('lmd-size')?.value     || s.size_actual || '';
-  const siteUrl  = document.getElementById('lmd-url')?.value      || s.site_url || '';
-  const notes    = document.getElementById('lmd-notes')?.value    || s.notes || '';
-  const photos   = window._lmdExtraPhotos || [];
-
-  if(!modelKo && !modelEn){ toast('⚠️ 모델명을 입력해주세요'); return; }
-
-  const btn = document.querySelector('[onclick="saveSkuDirectFromLmd()"]');
-  if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
-
-  try{
-    // 이미지 업로드
-    const uploadedUrls = [];
-    for(const dataUrl of photos){
-      try{
-        const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'upload_image', imageBase64: dataUrl.split(',')[1], imageMime: dataUrl.split(';')[0].split(':')[1]})});
-        const j = await res.json();
-        if(j.url) uploadedUrls.push(j.url);
-      }catch(e){}
-    }
-
-    const skuData = {
-      brand, model_name_ko: modelKo, model_name: modelEn,
-      category: cat, color, sku_code: skuCode,
-      size_label: sizeName, size_actual: sizeAct,
-      site_url: siteUrl, notes,
-      ref_image_url: uploadedUrls[0] || s.ref_image_url || '',
-    };
-
-    const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action:'save_sku', source: cat==='시계'?'watches': cat==='주얼리'?'jewelry':'bags', skuData})});
-    const j = await res.json();
-
-    if(j.success){
-      closeLensMatchDetail();
-      closeLensSheet();
-      toast('✅ SKU가 저장됐어요!');
-      // SKU 관리 탭으로 이동
-      skuListAll = [];
-      loadSkuList();
-      switchSkuTab('list');
-      showScreen('sku');
-    } else {
-      toast('❌ 저장 실패: ' + (j.error||''));
-      if(btn){ btn.textContent = '바로 저장'; btn.disabled = false; }
-    }
-  }catch(e){
-    toast('❌ 오류: ' + e.message);
-    if(btn){ btn.textContent = '바로 저장'; btn.disabled = false; }
-  }
 }
 
 function closeLensMatchDetail(){
@@ -5467,7 +5396,7 @@ function applyLensMatchAndGo(){
     const cat2 = (document.getElementById('sku-cat')?.value||'가방');
     const cfg = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
     const sw = document.getElementById('sku-size-wrap');
-    if(sw){ sw.innerHTML = ''; delete sw.dataset.cat; }
+    if(sw) sw.dataset.cat = '';
     editSkuSize();
     setTimeout(function(){
       cfg.forEach(function(f,i){
@@ -5487,30 +5416,8 @@ function applyLensMatchAndGo(){
 
 function _extractBrandFromAnalysis(title){
   const a = resultData&&resultData.analysis ? resultData.analysis : {};
-  // Unknown, 빈값, 한국어 아닌 이상한 값은 스킵하고 title에서 직접 추출
-  const aiBrand = (a.brand||'').trim();
-  const validAiBrand = aiBrand && aiBrand.toLowerCase() !== 'unknown' && aiBrand !== '—' && aiBrand !== '-';
-
-  const luxBrands=['Dior','Christian Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès',
-    'Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry',
-    'Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega',
-    'Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara',
-    'Nike','Adidas','New Balance','Goyard','Chloe','Chloé','Damiani','Rado','Lemaire','Marni',
-    'Mulberry','Montblanc','Moose Knuckles','Mido','Boucheron','Chopard','Stone Island',
-    'Audemars Piguet','Oris','Zenith','Jil Sander','Tudor','Franck Muller','Frederique Constant',
-    'Piaget','Miu Miu','Maison Margiela','Tom Browne','Tag Heuer','Ferragamo','Delvaux',
-    'Fred','Chaumet','Van Cleef & Arpels','Pomellato','Buccellati','Chopard'];
-
-  // AI 브랜드가 유효하면 우선 사용 (단, luxBrands에 있는 정규화된 이름으로 반환)
-  if(validAiBrand){
-    const matched = luxBrands.find(b => b.toLowerCase() === aiBrand.toLowerCase()
-      || aiBrand.toLowerCase().includes(b.toLowerCase())
-      || b.toLowerCase().includes(aiBrand.toLowerCase()));
-    if(matched) return matched;
-    return aiBrand; // 목록에 없어도 AI 값 사용
-  }
-
-  // title에서 브랜드 추출
+  if(a.brand) return a.brand;
+  const luxBrands=['Dior','Christian Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès','Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry','Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega','Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara','Nike','Adidas','New Balance','Goyard','Chloe','Chloé','Damiani','Rado','Lemaire','Marni','Mulberry','Montblanc','Moose Knuckles','Mido','Boucheron','Chopard','Stone Island','Audemars Piguet','Oris','Zenith','Jil Sander','Tudor','Franck Muller','Frederique Constant','Piaget','Miu Miu','Maison Margiela','Tom Browne','Tag Heuer','Ferragamo','Delvaux'];
   for(const b of luxBrands){
     if(title.toLowerCase().includes(b.toLowerCase())) return b;
   }
@@ -5535,8 +5442,7 @@ function _findDbMatchForLens(title, brand, translatedKo){
 
   const STOP_EN = new Set(['and','the','with','for','from','dior','louis','vuitton','chanel','gucci',
     'prada','women','mens','womens','new','bag','handbag','purse','fabric','color',
-    'luxury','authentic','original','brand','size','style','cartier','hermes',
-    'jewelry','jewellery','collection','series']);
+    'classic','vintage','luxury','authentic','original','brand','size','style']);
   const lensEnWords = q.split(/\s+/).filter(w=>w.length>=3&&!STOP_EN.has(w));
 
   const STOP_KO = new Set(['가방','숄더','클러치','지갑','백','블랙','화이트','베이지','블루','네이비','그레이','레드','브라운','핑크','그린']);
@@ -5545,7 +5451,6 @@ function _findDbMatchForLens(title, brand, translatedKo){
     : [];
 
   const EN_TO_KO = {
-    // 가방
     'book':'북','tote':'토트','oblique':'오블리크','embroidery':'자수',
     'leather':'레더','canvas':'캔버스','large':'라지','small':'스몰',
     'medium':'미디엄','mini':'미니','micro':'마이크로','nano':'나노',
@@ -5558,30 +5463,23 @@ function _findDbMatchForLens(title, brand, translatedKo){
     'alma':'알마','onthego':'온더고','trapeze':'트라페즈',
     'luggage':'러기지','trio':'트리오',
     'bonbonniere':'봉보니에르','goyardine':'고야딘','artois':'아르투아',
-    'chevron':'쉐브론','anjou':'앙주','marcie':'마르시',
-    'triomphe':'트리옹프','cyme':'심',
-    // 주얼리/반지/팔찌
-    'love':'러브','ring':'링','band':'밴드','bracelet':'팔찌',
-    'clash':'클래쉬','clashed':'클래쉬드',
-    'juste':'쥐스뗑클루','juste un clou':'쥐스뗑클루',
-    'trinity':'트리니티','panthere':'팬더','panther':'팬더',
-    'ballon':'발롱블루','tank':'탱크','santos':'산토스',
-    'classic':'클래식','wedding':'웨딩','eternity':'이터니티',
-    'solitaire':'솔리테어','engagement':'인게이지먼트',
+    'saint':'생','chevron':'쉐브론','anjou':'앙주',
+    'marcie':'마르시','pixie':'픽시','drew':'드루',
+    'triomphe':'트리옹프','cyme':'심','ava':'아바',
+    'nano':'나노','mini':'미니','micro':'마이크로',
+    // 주얼리
+    'love':'러브','clash':'클래쉬','clashed':'클래쉬드','trinity':'트리니티',
+    'juste':'쥐스뗑클루','panthere':'팬더','alhambra':'알함브라',
+    'ring':'링','bracelet':'팔찌','necklace':'목걸이','pendant':'팬던트',
+    'earring':'이어링','bangle':'뱅글',
     'diamond':'다이아몬드','gold':'골드','rose':'로즈',
-    'white':'화이트','yellow':'옐로우','platinum':'플래티넘',
-    'necklace':'목걸이','pendant':'팬던트','earring':'이어링',
-    'alhambra':'알함브라','vintage':'빈티지','magic':'매직',
-    'perlee':'페를레','quatre':'카트르','serpenti':'세르펜티',
-    'bzero':'비제로','bvlgari':'불가리','bulgari':'불가리',
+    'white':'화이트','yellow':'옐로우','pink':'핑크',
     // 시계
-    'watch':'시계','automatic':'오토매틱','chronograph':'크로노그래프',
     'submariner':'서브마리너','datejust':'데이저스트','daytona':'데이토나',
     'seamaster':'씨마스터','speedmaster':'스피드마스터',
-    // 신발
-    'sneaker':'스니커즈','runner':'러너','trainer':'트레이너',
-    // 의류
-    'coat':'코트','jacket':'재킷','down':'다운',
+    'tank':'탱크','santos':'산토스','ballon':'발롱','pasha':'파샤',
+    'royaloak':'로얄오크','offshore':'오프쇼어','portugieser':'포르투기저',
+    'carrera':'카레라','aquaracer':'아쿠아레이서',
   };
   const staticKoWords = lensEnWords.map(w=>EN_TO_KO[w]).filter(Boolean);
 
@@ -5593,76 +5491,38 @@ function _findDbMatchForLens(title, brand, translatedKo){
     return normEn(str).split(/\s+/).filter(w=>w.length>=3);
   }
 
-  // 주얼리 서브타입 필터 — ring이면 bracelet/팔찌 제외, bracelet이면 ring/반지 제외
+  // 서브타입 감지 — ring이면 bracelet 제외 등
   const JEWELRY_TYPES = {
-    ring:    { en:['ring','band'],                   ko:['링','반지','밴드'] },
-    bracelet:{ en:['bracelet','bangle'],             ko:['팔찌','브레이슬릿','뱅글'] },
-    necklace:{ en:['necklace','pendant'],            ko:['목걸이','네크리스','팬던트'] },
-    earring: { en:['earring','stud'],                ko:['이어링','귀걸이'] },
+    ring:    {en:['ring'],        ko:['링','반지']},
+    bracelet:{en:['bracelet','bangle'], ko:['팔찌','브레이슬릿','뱅글']},
+    necklace:{en:['necklace','pendant'],ko:['목걸이','네크리스','팬던트']},
+    earring: {en:['earring'],     ko:['이어링','귀걸이']},
+    watch:   {en:['watch'],       ko:['시계']},
   };
   let detectedType = null;
-  for(const [type, {en, ko}] of Object.entries(JEWELRY_TYPES)){
-    if(en.some(w=>lensEnWords.includes(w)) || ko.some(w=>lensKoWords.includes(w))){
+  for(const [type,{en,ko}] of Object.entries(JEWELRY_TYPES)){
+    if(en.some(w=>lensEnWords.includes(w)) || ko.some(w=>staticKoWords.includes(w) || lensKoWords.includes(w))){
       detectedType = type; break;
     }
   }
 
-  // 렌즈 제목의 핵심 모델 키워드 (서브타입·색상·불용어 제외)
-  const COLOR_EN_SET   = new Set(['gold','silver','rose','white','yellow','pink','black','blue','red','green','brown','beige','gray','grey','ecru','platinum']);
-  const BRAND_EN_SET   = new Set(['dior','chanel','gucci','prada','cartier','hermes','loewe','fendi','celine','goyard','rolex','omega','tiffany','louis','vuitton']);
-  const SIZE_EN_SET    = new Set(['small','medium','large','mini','micro','nano','jumbo','maxi','petite','grande','pm','mm','gm','sm']);
-  const STOP_WEAK      = new Set(['model','style','size','type','new','authentic','genuine','original','classic','double','triple','single','flexible','necklace','necklaces','ring','rings','earring','earrings','watch','watches','bag','bags','tote','clutch','wallet']);
-  const SUBTYPE_EN_SET = new Set(['ring','band','bracelet','bangle','necklace','pendant','earring','watch','bag','tote','clutch','wallet','sneaker']);
+  // SKU 번호 패턴 제거 (crb7212300 등이 매칭 키워드에서 노이즈 유발)
+  const cleanLensEnWords = lensEnWords.filter(w=>!/^[a-z]{0,4}\d/.test(w) && !/^\d/.test(w));
 
-  // 진짜 모델 고유 키워드 (love, clash, trinity 등) — 사이즈/색상/SKU번호/서브타입 제외
-  const coreEnWords = lensEnWords.filter(w=>
-    !COLOR_EN_SET.has(w) && !BRAND_EN_SET.has(w) && !STOP_WEAK.has(w)
-    && !SUBTYPE_EN_SET.has(w) && !SIZE_EN_SET.has(w)
-    && !/^\d/.test(w)           // 숫자로 시작 제외 (18k, 3mm)
-    && !/^[a-z]{1,4}\d/.test(w) // SKU 패턴 제외 (crb7212400, b4085000, ch1234)
-  );
-  const SIZE_KO_SET  = new Set(['스몰','미디엄','라지','미니','마이크로','나노','점보','맥시','소','중','대']);
-  const coreKoWords = staticKoWords.filter(w=>
-    !new Set(['골드','실버','로즈','화이트','옐로우','핑크','블랙','블루','레드','그린','베이지','그레이','에크루','플래티넘',
-              '디올','샤넬','구찌','프라다','까르띠에','에르메스','로에베','펜디','셀린느','고야드','롤렉스','오메가','티파니',
-              '모델','스타일','사이즈','빈티지','클래식','오리지널']).has(w)
-    && !new Set(['링','반지','밴드','팔찌','브레이슬릿','뱅글','목걸이','팬던트','이어링','시계','가방','토트','클러치','지갑']).has(w)
-    && !SIZE_KO_SET.has(w)
-  );
-
-  // 전체 DB에서 매칭 — 핵심 키워드는 AND 조건
+  // 전체 DB에서 모델 키워드 매칭 (브랜드는 점수 가산)
   const matched = skuListAll.filter(s=>{
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = enW(s.model_name||'');
+    const enHit = cleanLensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
+    const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
+    const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
+    if(!enHit && !koHit && !stHit) return false;
 
-    // 핵심 모델 키워드가 있으면 모두 일치해야 함 (AND)
-    if(coreEnWords.length > 0){
-      const allEnMatch = coreEnWords.every(w=>{
-        // 영문→영문 매칭
-        if(sEnW.some(sw=>sw.includes(w)||w.includes(sw))) return true;
-        // 영문→한글 변환 후 한글 DB와 매칭 (직접 EN_TO_KO 조회)
-        const koKey = EN_TO_KO[w] || '';
-        if(koKey && sKoW.some(sw=>sw.includes(koKey)||koKey.includes(sw))) return true;
-        return false;
-      });
-      if(!allEnMatch) return false;
-    } else if(coreKoWords.length > 0){
-      const allKoMatch = coreKoWords.every(w=>
-        sKoW.some(sw=>sw.includes(w)||w.includes(sw))
-      );
-      if(!allKoMatch) return false;
-    } else {
-      // 핵심 키워드가 없으면 서브타입+일반 키워드 하나 이상 일치 필수
-      const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
-      const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-      if(!enHit && !stHit) return false;
-    }
-
-    // 주얼리 서브타입 불일치 제외 — 정확한 토큰 매칭
+    // 서브타입 필터 — 정확한 토큰 매칭으로 크로스 제거
     if(detectedType){
       const myType = (()=>{
-        for(const [type, {en, ko}] of Object.entries(JEWELRY_TYPES)){
-          if(en.some(w=>sEnW.includes(w)) || ko.some(w=>sKoW.includes(w))) return type;
+        for(const [t,{en:te,ko:tk}] of Object.entries(JEWELRY_TYPES)){
+          if(te.some(w=>sEnW.includes(w)) || tk.some(w=>sKoW.includes(w))) return t;
         }
         return null;
       })();
@@ -5671,73 +5531,29 @@ function _findDbMatchForLens(title, brand, translatedKo){
     return true;
   });
 
-  // 전체 반환 (제한 없음) — 점수 정렬만
-  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand);
+  return _scoreAndSort(matched, q, qKo, cleanLensEnWords, lensKoWords, staticKoWords, brand);
 }
 
-// 키워드 겹침 수 기준 정렬 + 최소 점수 미달 제거
+// 키워드 겹침 수 기준 정렬 + 매칭율 점수 부여
 function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand){
   if(!lensEnWords) lensEnWords=[];
   if(!lensKoWords) lensKoWords=[];
   if(!staticKoWords) staticKoWords=[];
-
-  // 서브타입 키워드 (링/팔찌/목걸이 등) — 이게 일치해야 의미있는 매칭
-  const SUBTYPE_EN  = new Set(['ring','band','bracelet','bangle','necklace','pendant','earring','watch','sneaker','bag','tote','clutch','wallet']);
-  const SUBTYPE_KO  = new Set(['링','반지','밴드','팔찌','브레이슬릿','뱅글','목걸이','네크리스','팬던트','이어링','귀걸이','시계','스니커즈','가방','토트','클러치','지갑']);
-
-  const lensSubtypeEn = lensEnWords.filter(w=>SUBTYPE_EN.has(w));
-  const lensSubtypeKo = staticKoWords.filter(w=>SUBTYPE_KO.has(w));
-  const hasSubtype = lensSubtypeEn.length > 0 || lensSubtypeKo.length > 0;
-
-  // 렌즈 제목의 핵심 모델 키워드 수 (서브타입+색상 제외)
-  const COLOR_EN = new Set(['gold','silver','rose','white','yellow','pink','black','blue','red','green','brown','beige','gray','grey','ecru']);
-  const modelKeywords = lensEnWords.filter(w=>!SUBTYPE_EN.has(w)&&!COLOR_EN.has(w));
-  const modelKoWords  = staticKoWords.filter(w=>!SUBTYPE_KO.has(w));
-
-  const SUBTYPE_KO_1CHAR = new Set(['링','백']);
-
+  const _SUBTYPE_KO_1CHAR = new Set(['링','백']);
   function koW(str){
-    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||SUBTYPE_KO_1CHAR.has(w));
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||_SUBTYPE_KO_1CHAR.has(w));
   }
-
-  const scored = items.map(s=>{
+  return items.map(s=>{
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
     const brandBonus = (brand && _brandMatch(s.brand, brand)) ? 5 : 0;
-
-    // 서브타입 일치 점수 (높은 가중치) — 정확한 토큰 매칭
-    const subtypeEnScore = lensSubtypeEn.filter(w=>sEnW.some(sw=>sw===w)).length * 6;
-    const subtypeKoScore = lensSubtypeKo.filter(w=>sKoW.some(sw=>sw===w)).length * 6;
-
-    // 모델 키워드 일치 점수
-    const modelEnScore = modelKeywords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3;
-    const modelKoScore = modelKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3;
-
-    // 번역 한글 키워드
-    const transKoScore = lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3;
-
-    const score = subtypeEnScore + subtypeKoScore + modelEnScore + modelKoScore + transKoScore + brandBonus;
+    const score =
+      lensEnWords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
+      + lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
+      + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2
+      + brandBonus;
     return {s, score};
-  })
-  .filter(({score, s})=>{
-    // 서브타입이 있는 검색이면: 서브타입이 DB 항목에도 일치해야 함
-    if(hasSubtype){
-      const sKoW = koW(s.model_name_ko||'');
-      const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
-      const subtypeMatch =
-        lensSubtypeEn.some(w=>sEnW.some(sw=>sw===w)) ||
-        lensSubtypeKo.some(w=>sKoW.some(sw=>sw===w));
-      if(!subtypeMatch) return false;
-    }
-    // 최소 점수: 브랜드 일치 시 3점, 브랜드 없으면 9점 (모델 키워드 2개 이상)
-    const hasBrand = brand && _brandMatch(s.brand, brand);
-    const netScore = score - (hasBrand ? 5 : 0);
-    return netScore >= (hasBrand ? 3 : 9);
-  })
-  .sort((a,b)=>b.score-a.score)
-  .map(({s, score})=>({ ...s, _matchScore: score }));
-
-  return scored;
+  }).sort((a,b)=>b.score-a.score).map(({s,score})=>({...s, _matchScore:score}));
 }
 
 function closeLensSheet(){
@@ -5838,7 +5654,7 @@ async function openUnregFromLensSheet(){
     const cat2 = (document.getElementById('sku-cat')?.value||'가방');
     const cfg = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
     const sw = document.getElementById('sku-size-wrap');
-    if(sw){ sw.innerHTML = ''; delete sw.dataset.cat; }
+    if(sw) sw.dataset.cat = '';
     editSkuSize();
     setTimeout(function(){
       cfg.forEach(function(f,i){
@@ -7865,36 +7681,23 @@ function _applySpecToForm(data, cat){
     }
 
     // editSkuSize로 입력 필드도 채우기 (이미 열려있어도 강제 재렌더)
-    // sku-size-wrap input 완전 제거 후 강제 재렌더 (dataset.cat만 삭제하면 input이 남아 skip됨)
     var sizeWrap = document.getElementById('sku-size-wrap');
-    console.log('[Size] sizeWrap 존재:', !!sizeWrap, '/ hasInput:', !!(sizeWrap && sizeWrap.querySelector('input')), '/ dataset.cat:', sizeWrap && sizeWrap.dataset.cat);
-    if(sizeWrap){
-      sizeWrap.innerHTML = '';
-      delete sizeWrap.dataset.cat;
-      console.log('[Size] innerHTML 초기화 완료, hasInput now:', !!sizeWrap.querySelector('input'));
-    }
-    window._skipSizeFocus = true;
+    if(sizeWrap) delete sizeWrap.dataset.cat; // 강제 재렌더 트리거
     editSkuSize();
-    console.log('[Size] editSkuSize 호출 후 ssku-sz-w:', !!document.getElementById('ssku-sz-w'), 'ssku-sz-h:', !!document.getElementById('ssku-sz-h'));
     setTimeout(function(){
-      window._skipSizeFocus = false;
       var wInp = document.getElementById('ssku-sz-w');
       var hInp = document.getElementById('ssku-sz-h');
       var dInp = document.getElementById('ssku-sz-d');
-      console.log('[Size 300ms] wInp:', !!wInp, 'hInp:', !!hInp, 'w='+w, 'h='+h);
-      if(wInp && w){ wInp.value = w; }
-      if(hInp && h){ hInp.value = h; }
-      if(dInp && d){ dInp.value = d; }
       var eInp = document.getElementById('ssku-sz-e');
       var fInp = document.getElementById('ssku-sz-f');
+      if(wInp && w) wInp.value = w;
+      if(hInp && h) hInp.value = h;
+      if(dInp && d) dInp.value = d;
       if(eInp && data.size_e && data.size_e!=='0') eInp.value = data.size_e;
       if(fInp && data.size_f && data.size_f!=='0') fInp.value = data.size_f;
       var cfg2 = SIZE_CONFIG[cat] || SIZE_CONFIG['가방'];
       saveSkuSize(cfg2);
-      var hid = document.getElementById('sku-size-hidden');
-      if(hid && sizeStr) hid.value = sizeStr;
-      console.log('[Size 300ms] 최종 hidden.value:', hid && hid.value);
-    }, 300);
+    }, 200);
   }
 
   // 특이사항 (소재·제조국·노트 합치기)
