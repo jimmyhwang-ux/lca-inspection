@@ -6350,7 +6350,7 @@ async function applySpecGoogleResult(){
       if(catEl2){ catEl2.value=_cat; }
 
       setTimeout(function(){
-        // 2) onUnregCatChange + editUnregSize
+        // 2) 카테고리 세팅 + editUnregSize 렌더
         var catEl3=document.getElementById(prefix+'-cat');
         if(catEl3){
           catEl3.value=_cat;
@@ -6358,35 +6358,35 @@ async function applySpecGoogleResult(){
           else catEl3.dispatchEvent(new Event('change'));
         }
         if(isUnreg) editUnregSize&&editUnregSize();
-        setTimeout(function(){
-          // 3) 카테고리 한번 더 확인 후 값 주입
-          var catEl4=document.getElementById(prefix+'-cat');
-          if(catEl4) catEl4.value=_cat;
-          var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
-          console.log('[SpecGoogle] 주입 _cat=['+_cat+'] fields='+cfg2.map(function(f){return f.label;}).join(','));
-          cfg2.forEach(function(f,i){
-            var val=valMap[f.label]||'';
-            if(!val) return;
-            var el=document.getElementById(isUnreg?'unreg-sf-'+i:'ssku-'+f.id);
-            if(!el){
-              var wrap=document.getElementById(prefix+'-size-wrap');
-              if(wrap){var inps=wrap.querySelectorAll('input[type="number"]');if(inps[i])el=inps[i];}
+        // rAF 두 번 → DOM 렌더 완전히 끝난 후 값 주입
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            var catEl4=document.getElementById(prefix+'-cat');
+            if(catEl4) catEl4.value=_cat;
+            var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
+            cfg2.forEach(function(f,i){
+              var val=valMap[f.label]||'';
+              if(!val) return;
+              var el=document.getElementById(isUnreg?'unreg-sf-'+i:'ssku-'+f.id);
+              if(!el){
+                var wrap=document.getElementById(prefix+'-size-wrap');
+                if(wrap){var inps=wrap.querySelectorAll('input');if(inps[i])el=inps[i];}
+              }
+              if(el) el.value=val;
+            });
+            if(isUnreg) _updateUnregSizeHidden&&_updateUnregSizeHidden();
+            else {
+              var hidden=document.getElementById('sku-size-hidden');
+              var disp=document.getElementById('sku-size-display');
+              var pts=cfg2.map(function(f){var v=valMap[f.label];return v?(f.label+' '+v):null;}).filter(Boolean);
+              var txt=pts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
+              if(hidden)hidden.value=txt;
+              if(disp)disp.textContent=txt||'탭하여 입력';
             }
-            console.log('[SpecGoogle] 주입:', f.label, '->', val, 'el=', el&&el.id);
-            if(el) el.value=val;
+            toast('✅ 폼에 반영됐어요!');
           });
-          if(isUnreg) _updateUnregSizeHidden&&_updateUnregSizeHidden();
-          else {
-            var hidden=document.getElementById('sku-size-hidden');
-            var disp=document.getElementById('sku-size-display');
-            var pts=cfg2.map(function(f){var v=valMap[f.label];return v?(f.label+' '+v):null;}).filter(Boolean);
-            var txt=pts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
-            if(hidden)hidden.value=txt;
-            if(disp)disp.textContent=txt||'탭하여 입력';
-          }
-          toast('✅ 폼에 반영됐어요!');
-        },100);
-      },100);
+        });
+      },50);
     } else {
       toast('✅ 폼에 반영됐어요!');
     }
