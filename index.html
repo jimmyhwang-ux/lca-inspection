@@ -529,7 +529,7 @@ input[type=file]{display:none}
 
 <!-- 🔍 Lens 카드 상세 bottom sheet -->
 <div id="lens-sheet-overlay" onclick="closeLensSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700"></div>
-<div id="lens-sheet" style="display:none;position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#FAFAF8;border-radius:20px 20px 0 0;z-index:701;padding:20px 20px 32px;transition:transform .25s">
+<div id="lens-sheet" style="display:none;position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:#FAFAF8;border-radius:20px 20px 0 0;z-index:701;padding:20px 20px 32px;transition:transform .25s;max-height:85vh;overflow-y:auto">
   <div style="width:36px;height:4px;background:#DDD8D2;border-radius:2px;margin:0 auto 16px"></div>
   <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
     <img id="lens-sheet-img" src="" alt="" onerror="this.style.display='none'" style="width:72px;height:72px;object-fit:cover;border-radius:10px;background:#F0EDE8;flex-shrink:0">
@@ -5143,7 +5143,7 @@ async function openLensSheet(idx){
         matches2.forEach(s=>{ if(!seen.has(s.id)){ dbMatches.push(s); seen.add(s.id); } });
         const tKo = translated.toLowerCase();
         const tKoWords = tKo.replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
-        dbMatches = _scoreAndSort(dbMatches, title.toLowerCase(), tKo, null, tKoWords, null, brand).slice(0,5);
+        dbMatches = _scoreAndSort(dbMatches, title.toLowerCase(), tKo, null, tKoWords, null, brand);
         console.log('[LensMatch] 번역 후 최종:', dbMatches.length, '건');
       }
     }catch(e){ console.warn('[LensMatch 번역 오류]', e.message); }
@@ -5485,6 +5485,20 @@ function _findDbMatchForLens(title, brand, translatedKo){
     return normEn(str).split(/\s+/).filter(w=>w.length>=3);
   }
 
+  // 주얼리 서브타입 필터 — ring이면 bracelet/팔찌 제외, bracelet이면 ring/반지 제외
+  const JEWELRY_TYPES = {
+    ring:    { en:['ring','band'],            ko:['링','반지','밴드'] },
+    bracelet:{ en:['bracelet','bangle'],      ko:['팔찌','브레이슬릿','뱅글'] },
+    necklace:{ en:['necklace','pendant','chain'], ko:['목걸이','네클리스','팬던트','체인'] },
+    earring: { en:['earring','stud','ear'],   ko:['이어링','귀걸이'] },
+  };
+  let detectedType = null;
+  for(const [type, {en, ko}] of Object.entries(JEWELRY_TYPES)){
+    if(en.some(w=>lensEnWords.includes(w)) || ko.some(w=>lensKoWords.some(kw=>kw.includes(w)))){
+      detectedType = type; break;
+    }
+  }
+
   // 전체 DB에서 모델 키워드 매칭 (브랜드는 점수 가산)
   const matched = skuListAll.filter(s=>{
     const sKoW = koW(s.model_name_ko||'');
@@ -5492,10 +5506,23 @@ function _findDbMatchForLens(title, brand, translatedKo){
     const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
     const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
     const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    return enHit || koHit || stHit;
+    if(!enHit && !koHit && !stHit) return false;
+
+    // 주얼리 서브타입 불일치 제외
+    if(detectedType){
+      const myType = (()=>{
+        for(const [type, {en, ko}] of Object.entries(JEWELRY_TYPES)){
+          if(en.some(w=>sEnW.includes(w)) || ko.some(w=>sKoW.some(sw=>sw.includes(w)))) return type;
+        }
+        return null;
+      })();
+      if(myType && myType !== detectedType) return false;
+    }
+    return true;
   });
 
-  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand).slice(0,5);
+  // 전체 반환 (제한 없음) — 점수 정렬만
+  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand);
 }
 
 // 키워드 겹침 수 기준 정렬
