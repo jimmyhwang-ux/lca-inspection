@@ -5495,22 +5495,7 @@ function _findDbMatchForLens(title, brand, translatedKo){
     const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
     const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
     const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    if(!enHit && !koHit && !stHit) return false;
-
-    // 서브타입 크로스 제거: necklace/pendant 검색이면 ring/반지/링/bracelet/팔찌 제외
-    // ring 검색이면 necklace/목걸이/bracelet/팔찌 제외
-    const titleLow = q.toLowerCase();
-    const hasNecklace = /necklace|pendant/.test(titleLow) || lensKoWords.some(w=>/목걸이|팬던트/.test(w));
-    const hasRing     = /\bring\b/.test(titleLow)         || lensKoWords.some(w=>/^링$|반지/.test(w));
-    const hasBracelet = /bracelet/.test(titleLow)         || lensKoWords.some(w=>/팔찌|브레이슬릿/.test(w));
-    const sIsRing     = /\bring\b/.test((s.model_name||'').toLowerCase()) || /반지|^링$/.test(sKoW.join(' '));
-    const sIsNecklace = /necklace|pendant/.test((s.model_name||'').toLowerCase()) || /목걸이|네크리스|팬던트/.test(sKoW.join(' '));
-    const sIsBracelet = /bracelet/.test((s.model_name||'').toLowerCase()) || /팔찌|브레이슬릿/.test(sKoW.join(' '));
-    if(hasNecklace && (sIsRing || sIsBracelet)) return false;
-    if(hasRing && (sIsNecklace || sIsBracelet)) return false;
-    if(hasBracelet && (sIsRing || sIsNecklace)) return false;
-
-    return true;
+    return enHit || koHit || stHit;
   });
 
   return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand).slice(0,5);
@@ -5528,11 +5513,23 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, b
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
     const brandBonus = (brand && _brandMatch(s.brand, brand)) ? 5 : 0;
+    // 서브타입 일치 보너스 (목걸이 검색에 목걸이 결과 상위 노출)
+    const titleLow = (q||'');
+    const hasNecklace = /necklace|pendant/.test(titleLow);
+    const hasRing     = /\bring\b/.test(titleLow);
+    const hasBracelet = /bracelet/.test(titleLow);
+    const sIsNecklace = /necklace|pendant/.test((s.model_name||'').toLowerCase()) || /목걸이|네크리스|팬던트/.test(s.model_name_ko||'');
+    const sIsRing     = /\bring\b/.test((s.model_name||'').toLowerCase()) || /링|반지/.test(s.model_name_ko||'');
+    const sIsBracelet = /bracelet/.test((s.model_name||'').toLowerCase()) || /팔찌|브레이슬릿/.test(s.model_name_ko||'');
+    const subtypeBonus =
+      (hasNecklace && sIsNecklace) ? 8 :
+      (hasRing && sIsRing) ? 8 :
+      (hasBracelet && sIsBracelet) ? 8 : 0;
     const score =
       lensEnWords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
       + lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
       + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2
-      + brandBonus;
+      + brandBonus + subtypeBonus;
     return {s, score};
   }).sort((a,b)=>b.score-a.score).map(({s,score})=>({...s,_matchScore:score}));
 }
