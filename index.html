@@ -5594,14 +5594,51 @@ function _findDbMatchForLens(title, brand, translatedKo){
     }
   }
 
-  // 전체 DB에서 모델 키워드 매칭 (브랜드는 점수 가산)
+  // 렌즈 제목의 핵심 모델 키워드 (서브타입·색상·불용어 제외)
+  const COLOR_EN_SET = new Set(['gold','silver','rose','white','yellow','pink','black','blue','red','green','brown','beige','gray','grey','ecru','platinum']);
+  const BRAND_EN_SET = new Set(['dior','chanel','gucci','prada','cartier','hermes','loewe','fendi','celine','goyard','rolex','omega','tiffany','louis','vuitton']);
+  const SIZE_EN_SET  = new Set(['small','medium','large','mini','micro','nano','jumbo','maxi','petite','grande','pm','mm','gm','sm']);
+  const STOP_WEAK    = new Set(['model','style','size','type','new','authentic','genuine','original','vintage','classic','double','triple','single','flexible','flexible']);
+  const SUBTYPE_EN_SET = new Set(['ring','band','bracelet','bangle','necklace','pendant','earring','watch','bag','tote','clutch','wallet','sneaker']);
+
+  // 진짜 모델 고유 키워드 (clash, love, trinity 등) — 사이즈 제외
+  const coreEnWords = lensEnWords.filter(w=>
+    !COLOR_EN_SET.has(w) && !BRAND_EN_SET.has(w) && !STOP_WEAK.has(w)
+    && !SUBTYPE_EN_SET.has(w) && !SIZE_EN_SET.has(w)
+  );
+  const SIZE_KO_SET  = new Set(['스몰','미디엄','라지','미니','마이크로','나노','점보','맥시','소','중','대']);
+  const coreKoWords = staticKoWords.filter(w=>
+    !new Set(['골드','실버','로즈','화이트','옐로우','핑크','블랙','블루','레드','그린','베이지','그레이','에크루','플래티넘',
+              '디올','샤넬','구찌','프라다','까르띠에','에르메스','로에베','펜디','셀린느','고야드','롤렉스','오메가','티파니',
+              '모델','스타일','사이즈','빈티지','클래식','오리지널']).has(w)
+    && !new Set(['링','반지','밴드','팔찌','브레이슬릿','뱅글','목걸이','팬던트','이어링','시계','가방','토트','클러치','지갑']).has(w)
+    && !SIZE_KO_SET.has(w)
+  );
+
+  // 전체 DB에서 매칭 — 핵심 키워드는 AND 조건
   const matched = skuListAll.filter(s=>{
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = enW(s.model_name||'');
-    const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
-    const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    if(!enHit && !koHit && !stHit) return false;
+
+    // 핵심 모델 키워드가 있으면 모두 일치해야 함 (AND)
+    if(coreEnWords.length > 0){
+      const allEnMatch = coreEnWords.every(w=>
+        sEnW.some(sw=>sw.includes(w)||w.includes(sw)) ||
+        sKoW.some(sw=>sw.includes(staticKoWords[lensEnWords.indexOf(w)]||'__NONE__')||
+          (staticKoWords[lensEnWords.indexOf(w)]||'__NONE__').includes(sw))
+      );
+      if(!allEnMatch) return false;
+    } else if(coreKoWords.length > 0){
+      const allKoMatch = coreKoWords.every(w=>
+        sKoW.some(sw=>sw.includes(w)||w.includes(sw))
+      );
+      if(!allKoMatch) return false;
+    } else {
+      // 핵심 키워드가 없으면 (서브타입만 있는 경우) 서브타입+브랜드 일치 필수
+      const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
+      const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
+      if(!enHit && !stHit) return false;
+    }
 
     // 주얼리 서브타입 불일치 제외 — 정확한 토큰 매칭
     if(detectedType){
