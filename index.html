@@ -2963,7 +2963,7 @@ function editSkuSize(){
     if(inp) inp.addEventListener('blur',doSave);
   });
   const first=document.getElementById('ssku-'+cfg[0].id);
-  if(first) first.focus();
+  if(first && !window._skipSizeFocus) first.focus();
 }
 
 function buildSkuSizeInput(cfg, nums){
@@ -3381,9 +3381,9 @@ function goToSku(){
     const sizeText = rSizeText;
     if(!sizeText) return;
 
-    // sku-size-wrap 강제 초기화 후 editSkuSize 렌더
+    // sku-size-wrap input 완전 제거 후 강제 재렌더
     const _sw = document.getElementById('sku-size-wrap');
-    if(_sw) _sw.dataset.cat = '';
+    if(_sw){ _sw.innerHTML = ''; delete _sw.dataset.cat; }
     editSkuSize();
 
     // editSkuSize가 렌더한 input에 값 주입 — 라벨 기반 파싱
@@ -5387,7 +5387,7 @@ function applyLensMatchAndGo(){
     const cat2 = (document.getElementById('sku-cat')?.value||'가방');
     const cfg = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
     const sw = document.getElementById('sku-size-wrap');
-    if(sw) sw.dataset.cat = '';
+    if(sw){ sw.innerHTML = ''; delete sw.dataset.cat; }
     editSkuSize();
     setTimeout(function(){
       cfg.forEach(function(f,i){
@@ -5600,7 +5600,7 @@ async function openUnregFromLensSheet(){
     const cat2 = (document.getElementById('sku-cat')?.value||'가방');
     const cfg = SIZE_CONFIG[cat2]||SIZE_CONFIG['가방'];
     const sw = document.getElementById('sku-size-wrap');
-    if(sw) sw.dataset.cat = '';
+    if(sw){ sw.innerHTML = ''; delete sw.dataset.cat; }
     editSkuSize();
     setTimeout(function(){
       cfg.forEach(function(f,i){
@@ -6350,7 +6350,7 @@ async function applySpecGoogleResult(){
       if(catEl2){ catEl2.value=_cat; }
 
       setTimeout(function(){
-        // 2) 카테고리 세팅 + editUnregSize 렌더
+        // 2) onUnregCatChange + editUnregSize
         var catEl3=document.getElementById(prefix+'-cat');
         if(catEl3){
           catEl3.value=_cat;
@@ -6358,35 +6358,35 @@ async function applySpecGoogleResult(){
           else catEl3.dispatchEvent(new Event('change'));
         }
         if(isUnreg) editUnregSize&&editUnregSize();
-        // rAF 두 번 → DOM 렌더 완전히 끝난 후 값 주입
-        requestAnimationFrame(function(){
-          requestAnimationFrame(function(){
-            var catEl4=document.getElementById(prefix+'-cat');
-            if(catEl4) catEl4.value=_cat;
-            var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
-            cfg2.forEach(function(f,i){
-              var val=valMap[f.label]||'';
-              if(!val) return;
-              var el=document.getElementById(isUnreg?'unreg-sf-'+i:'ssku-'+f.id);
-              if(!el){
-                var wrap=document.getElementById(prefix+'-size-wrap');
-                if(wrap){var inps=wrap.querySelectorAll('input');if(inps[i])el=inps[i];}
-              }
-              if(el) el.value=val;
-            });
-            if(isUnreg) _updateUnregSizeHidden&&_updateUnregSizeHidden();
-            else {
-              var hidden=document.getElementById('sku-size-hidden');
-              var disp=document.getElementById('sku-size-display');
-              var pts=cfg2.map(function(f){var v=valMap[f.label];return v?(f.label+' '+v):null;}).filter(Boolean);
-              var txt=pts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
-              if(hidden)hidden.value=txt;
-              if(disp)disp.textContent=txt||'탭하여 입력';
+        setTimeout(function(){
+          // 3) 카테고리 한번 더 확인 후 값 주입
+          var catEl4=document.getElementById(prefix+'-cat');
+          if(catEl4) catEl4.value=_cat;
+          var cfg2=(SIZE_CONFIG&&SIZE_CONFIG[_cat])||SIZE_CONFIG['가방']||[];
+          console.log('[SpecGoogle] 주입 _cat=['+_cat+'] fields='+cfg2.map(function(f){return f.label;}).join(','));
+          cfg2.forEach(function(f,i){
+            var val=valMap[f.label]||'';
+            if(!val) return;
+            var el=document.getElementById(isUnreg?'unreg-sf-'+i:'ssku-'+f.id);
+            if(!el){
+              var wrap=document.getElementById(prefix+'-size-wrap');
+              if(wrap){var inps=wrap.querySelectorAll('input[type="number"]');if(inps[i])el=inps[i];}
             }
-            toast('✅ 폼에 반영됐어요!');
+            console.log('[SpecGoogle] 주입:', f.label, '->', val, 'el=', el&&el.id);
+            if(el) el.value=val;
           });
-        });
-      },50);
+          if(isUnreg) _updateUnregSizeHidden&&_updateUnregSizeHidden();
+          else {
+            var hidden=document.getElementById('sku-size-hidden');
+            var disp=document.getElementById('sku-size-display');
+            var pts=cfg2.map(function(f){var v=valMap[f.label];return v?(f.label+' '+v):null;}).filter(Boolean);
+            var txt=pts.join(' × ')+(parsed.size_unit?' '+parsed.size_unit:'');
+            if(hidden)hidden.value=txt;
+            if(disp)disp.textContent=txt||'탭하여 입력';
+          }
+          toast('✅ 폼에 반영됐어요!');
+        },100);
+      },100);
     } else {
       toast('✅ 폼에 반영됐어요!');
     }
@@ -7627,23 +7627,36 @@ function _applySpecToForm(data, cat){
     }
 
     // editSkuSize로 입력 필드도 채우기 (이미 열려있어도 강제 재렌더)
+    // sku-size-wrap input 완전 제거 후 강제 재렌더 (dataset.cat만 삭제하면 input이 남아 skip됨)
     var sizeWrap = document.getElementById('sku-size-wrap');
-    if(sizeWrap) delete sizeWrap.dataset.cat; // 강제 재렌더 트리거
+    console.log('[Size] sizeWrap 존재:', !!sizeWrap, '/ hasInput:', !!(sizeWrap && sizeWrap.querySelector('input')), '/ dataset.cat:', sizeWrap && sizeWrap.dataset.cat);
+    if(sizeWrap){
+      sizeWrap.innerHTML = '';
+      delete sizeWrap.dataset.cat;
+      console.log('[Size] innerHTML 초기화 완료, hasInput now:', !!sizeWrap.querySelector('input'));
+    }
+    window._skipSizeFocus = true;
     editSkuSize();
+    console.log('[Size] editSkuSize 호출 후 ssku-sz-w:', !!document.getElementById('ssku-sz-w'), 'ssku-sz-h:', !!document.getElementById('ssku-sz-h'));
     setTimeout(function(){
+      window._skipSizeFocus = false;
       var wInp = document.getElementById('ssku-sz-w');
       var hInp = document.getElementById('ssku-sz-h');
       var dInp = document.getElementById('ssku-sz-d');
+      console.log('[Size 300ms] wInp:', !!wInp, 'hInp:', !!hInp, 'w='+w, 'h='+h);
+      if(wInp && w){ wInp.value = w; }
+      if(hInp && h){ hInp.value = h; }
+      if(dInp && d){ dInp.value = d; }
       var eInp = document.getElementById('ssku-sz-e');
       var fInp = document.getElementById('ssku-sz-f');
-      if(wInp && w) wInp.value = w;
-      if(hInp && h) hInp.value = h;
-      if(dInp && d) dInp.value = d;
       if(eInp && data.size_e && data.size_e!=='0') eInp.value = data.size_e;
       if(fInp && data.size_f && data.size_f!=='0') fInp.value = data.size_f;
       var cfg2 = SIZE_CONFIG[cat] || SIZE_CONFIG['가방'];
       saveSkuSize(cfg2);
-    }, 200);
+      var hid = document.getElementById('sku-size-hidden');
+      if(hid && sizeStr) hid.value = sizeStr;
+      console.log('[Size 300ms] 최종 hidden.value:', hid && hid.value);
+    }, 300);
   }
 
   // 특이사항 (소재·제조국·노트 합치기)
@@ -7856,16 +7869,14 @@ function _applySpecToUnreg(data, cat){
     if(hidden) hidden.value = sizeStr;
     var display = document.getElementById('unreg-size-display');
     if(display) display.textContent = sizeStr;
-    // editUnregSize → rAF 두 번 후 값 주입 (onUnregCatChange 내 editUnregSize와 충돌 방지)
+    // 실측 필드도 채우기
     editUnregSize();
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){
-        if(w){ var i0=document.getElementById('unreg-sf-0'); if(i0) i0.value=w; }
-        if(h){ var i1=document.getElementById('unreg-sf-1'); if(i1) i1.value=h; }
-        if(d){ var i2=document.getElementById('unreg-sf-2'); if(i2) i2.value=d; }
-        _updateUnregSizeHidden();
-      });
-    });
+    setTimeout(function(){
+      if(w){ var i=document.getElementById('unreg-sf-0'); if(i) i.value=w; }
+      if(h){ var i=document.getElementById('unreg-sf-1'); if(i) i.value=h; }
+      if(d){ var i=document.getElementById('unreg-sf-2'); if(i) i.value=d; }
+      _updateUnregSizeHidden();
+    }, 100);
   }
   if(data.size_label && data.size_label !== '—'){
     var el5 = document.getElementById('unreg-size-name');
