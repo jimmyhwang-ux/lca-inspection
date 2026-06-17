@@ -5572,10 +5572,10 @@ function _findDbMatchForLens(title, brand, translatedKo){
   };
   const staticKoWords = lensEnWords.map(w=>EN_TO_KO[w]).filter(Boolean);
 
+  const _SUBTYPE_KO_1CHAR = new Set(['링','백']);
   function koW(str){
-    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||_SUBTYPE_KO_1CHAR.has(w));
   }
-  function enW(str){
     return normEn(str).split(/\s+/).filter(w=>w.length>=3);
   }
 
@@ -5638,11 +5638,11 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, b
   const modelKeywords = lensEnWords.filter(w=>!SUBTYPE_EN.has(w)&&!COLOR_EN.has(w));
   const modelKoWords  = staticKoWords.filter(w=>!SUBTYPE_KO.has(w));
 
-  function koW(str){
-    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
-  }
+  const SUBTYPE_KO_1CHAR = new Set(['링','백']);
 
-  const scored = items.map(s=>{
+  function koW(str){
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||SUBTYPE_KO_1CHAR.has(w));
+  }
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
     const brandBonus = (brand && _brandMatch(s.brand, brand)) ? 5 : 0;
