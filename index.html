@@ -5084,7 +5084,12 @@ async function openLensSheet(idx){
   _lensSheetData = m;
 
   const title = m.title||m.name||'';
-  const brand = _extractBrandFromAnalysis(title);
+  let brand = _extractBrandFromAnalysis(title);
+  // 렌즈 카드 source(판매처)에서도 브랜드 추출 — "Cartier", "Dior" 공식몰 등
+  if(!brand){
+    const source = m.source||m.site||'';
+    brand = _extractBrandFromAnalysis(source + ' ' + title);
+  }
   const thumb = m.thumbnail||m.image||m.img||'';
 
   const imgEl = document.getElementById('lens-sheet-img');
@@ -5211,6 +5216,11 @@ function openLensMatchDetail(idx){
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <button onclick="closeLensMatchDetail()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#57534E;padding:0;line-height:1">←</button>
       <span style="font-size:15px;font-weight:800;flex:1">DB 매칭 상세</span>
+      <button onclick="saveSkuDirectFromLmd()" title="SKU DB에 바로 저장"
+        style="display:flex;align-items:center;gap:5px;background:#1C1917;color:#fff;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        바로 저장
+      </button>
     </div>
     ${imgs.length ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none">
       ${imgs.map((u,ii)=>`<img src="${u}" onerror="this.style.display='none'" onclick="openLightbox('${u}',[${imgs.map(x=>`'${x}'`).join(',')}])" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #E8E5E0;cursor:zoom-in">`).join('')}
@@ -5236,7 +5246,7 @@ function openLensMatchDetail(idx){
         <input type="file" accept="image/*" multiple style="display:none" onchange="addLmdPhotos(this.files)">
       </label>
     </div>
-    <button onclick="applyLensMatchAndGo()" style="width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px">+ 신규 SKU 등록하기</button>
+    <button onclick="applyLensMatchAndGo()" style="width:100%;background:#ff6b2b;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px">✏️ 수정 후 등록하기</button>
     <button onclick="closeLensMatchDetail()" style="width:100%;background:none;border:1px solid #E8E5E0;color:#57534E;border-radius:12px;padding:12px;font-size:13px;cursor:pointer">닫기</button>
   `;
 
@@ -5300,6 +5310,68 @@ function addLmdPhotos(files){
     reader.onload = e => _addLmdPhoto(e.target.result);
     reader.readAsDataURL(file);
   });
+}
+
+async function saveSkuDirectFromLmd(){
+  const s = window._lmdSkuData || {};
+  const brand    = document.getElementById('lmd-brand')?.value    || s.brand || '';
+  const modelKo  = document.getElementById('lmd-model-ko')?.value || s.model_name_ko || '';
+  const modelEn  = document.getElementById('lmd-model-en')?.value || s.model_name || '';
+  const cat      = document.getElementById('lmd-cat')?.value      || s.category || '가방';
+  const color    = document.getElementById('lmd-color')?.value    || s.color || '';
+  const skuCode  = document.getElementById('lmd-sku')?.value      || s.sku_code || '';
+  const sizeName = document.getElementById('lmd-size-name')?.value|| s.size_label || '';
+  const sizeAct  = document.getElementById('lmd-size')?.value     || s.size_actual || '';
+  const siteUrl  = document.getElementById('lmd-url')?.value      || s.site_url || '';
+  const notes    = document.getElementById('lmd-notes')?.value    || s.notes || '';
+  const photos   = window._lmdExtraPhotos || [];
+
+  if(!modelKo && !modelEn){ toast('⚠️ 모델명을 입력해주세요'); return; }
+
+  const btn = document.querySelector('[onclick="saveSkuDirectFromLmd()"]');
+  if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
+
+  try{
+    // 이미지 업로드
+    const uploadedUrls = [];
+    for(const dataUrl of photos){
+      try{
+        const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'upload_image', imageBase64: dataUrl.split(',')[1], imageMime: dataUrl.split(';')[0].split(':')[1]})});
+        const j = await res.json();
+        if(j.url) uploadedUrls.push(j.url);
+      }catch(e){}
+    }
+
+    const skuData = {
+      brand, model_name_ko: modelKo, model_name: modelEn,
+      category: cat, color, sku_code: skuCode,
+      size_label: sizeName, size_actual: sizeAct,
+      site_url: siteUrl, notes,
+      ref_image_url: uploadedUrls[0] || s.ref_image_url || '',
+    };
+
+    const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'save_sku', source: cat==='시계'?'watches': cat==='주얼리'?'jewelry':'bags', skuData})});
+    const j = await res.json();
+
+    if(j.success){
+      closeLensMatchDetail();
+      closeLensSheet();
+      toast('✅ SKU가 저장됐어요!');
+      // SKU 관리 탭으로 이동
+      skuListAll = [];
+      loadSkuList();
+      switchSkuTab('list');
+      showScreen('sku');
+    } else {
+      toast('❌ 저장 실패: ' + (j.error||''));
+      if(btn){ btn.textContent = '바로 저장'; btn.disabled = false; }
+    }
+  }catch(e){
+    toast('❌ 오류: ' + e.message);
+    if(btn){ btn.textContent = '바로 저장'; btn.disabled = false; }
+  }
 }
 
 function closeLensMatchDetail(){
@@ -5402,8 +5474,30 @@ function applyLensMatchAndGo(){
 
 function _extractBrandFromAnalysis(title){
   const a = resultData&&resultData.analysis ? resultData.analysis : {};
-  if(a.brand) return a.brand;
-  const luxBrands=['Dior','Christian Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès','Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry','Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega','Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara','Nike','Adidas','New Balance','Goyard','Chloe','Chloé','Damiani','Rado','Lemaire','Marni','Mulberry','Montblanc','Moose Knuckles','Mido','Boucheron','Chopard','Stone Island','Audemars Piguet','Oris','Zenith','Jil Sander','Tudor','Franck Muller','Frederique Constant','Piaget','Miu Miu','Maison Margiela','Tom Browne','Tag Heuer','Ferragamo','Delvaux'];
+  // Unknown, 빈값, 한국어 아닌 이상한 값은 스킵하고 title에서 직접 추출
+  const aiBrand = (a.brand||'').trim();
+  const validAiBrand = aiBrand && aiBrand.toLowerCase() !== 'unknown' && aiBrand !== '—' && aiBrand !== '-';
+
+  const luxBrands=['Dior','Christian Dior','Louis Vuitton','Chanel','Gucci','Prada','Hermes','Hermès',
+    'Balenciaga','Bottega Veneta','Celine','Céline','Loewe','Fendi','Givenchy','Valentino','Burberry',
+    'Saint Laurent','YSL','Versace','Bvlgari','Bulgari','Cartier','Van Cleef','Tiffany','Rolex','Omega',
+    'Patek Philippe','Breitling','IWC','Moncler','Loro Piana','Brunello Cucinelli','Max Mara',
+    'Nike','Adidas','New Balance','Goyard','Chloe','Chloé','Damiani','Rado','Lemaire','Marni',
+    'Mulberry','Montblanc','Moose Knuckles','Mido','Boucheron','Chopard','Stone Island',
+    'Audemars Piguet','Oris','Zenith','Jil Sander','Tudor','Franck Muller','Frederique Constant',
+    'Piaget','Miu Miu','Maison Margiela','Tom Browne','Tag Heuer','Ferragamo','Delvaux',
+    'Fred','Chaumet','Van Cleef & Arpels','Pomellato','Buccellati','Chopard'];
+
+  // AI 브랜드가 유효하면 우선 사용 (단, luxBrands에 있는 정규화된 이름으로 반환)
+  if(validAiBrand){
+    const matched = luxBrands.find(b => b.toLowerCase() === aiBrand.toLowerCase()
+      || aiBrand.toLowerCase().includes(b.toLowerCase())
+      || b.toLowerCase().includes(aiBrand.toLowerCase()));
+    if(matched) return matched;
+    return aiBrand; // 목록에 없어도 AI 값 사용
+  }
+
+  // title에서 브랜드 추출
   for(const b of luxBrands){
     if(title.toLowerCase().includes(b.toLowerCase())) return b;
   }
@@ -5577,8 +5671,10 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, b
         lensSubtypeKo.some(w=>sKoW.some(sw=>sw===w));
       if(!subtypeMatch) return false;
     }
-    // 최소 점수: 브랜드 보너스 제외하고 3점 이상 (모델 키워드 1개 이상)
-    return (score - (brand && _brandMatch(s.brand, brand) ? 5 : 0)) >= 3;
+    // 최소 점수: 브랜드 일치 시 3점, 브랜드 없으면 9점 (모델 키워드 2개 이상)
+    const hasBrand = brand && _brandMatch(s.brand, brand);
+    const netScore = score - (hasBrand ? 5 : 0);
+    return netScore >= (hasBrand ? 3 : 9);
   })
   .sort((a,b)=>b.score-a.score)
   .map(({s})=>s);
