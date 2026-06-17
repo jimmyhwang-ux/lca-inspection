@@ -7856,14 +7856,16 @@ function _applySpecToUnreg(data, cat){
     if(hidden) hidden.value = sizeStr;
     var display = document.getElementById('unreg-size-display');
     if(display) display.textContent = sizeStr;
-    // 실측 필드도 채우기
+    // editUnregSize → rAF 두 번 후 값 주입 (onUnregCatChange 내 editUnregSize와 충돌 방지)
     editUnregSize();
-    setTimeout(function(){
-      if(w){ var i=document.getElementById('unreg-sf-0'); if(i) i.value=w; }
-      if(h){ var i=document.getElementById('unreg-sf-1'); if(i) i.value=h; }
-      if(d){ var i=document.getElementById('unreg-sf-2'); if(i) i.value=d; }
-      _updateUnregSizeHidden();
-    }, 100);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        if(w){ var i0=document.getElementById('unreg-sf-0'); if(i0) i0.value=w; }
+        if(h){ var i1=document.getElementById('unreg-sf-1'); if(i1) i1.value=h; }
+        if(d){ var i2=document.getElementById('unreg-sf-2'); if(i2) i2.value=d; }
+        _updateUnregSizeHidden();
+      });
+    });
   }
   if(data.size_label && data.size_label !== '—'){
     var el5 = document.getElementById('unreg-size-name');
