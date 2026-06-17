@@ -5490,9 +5490,9 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, b
       (hasRing && sIsRing) ? 8 :
       (hasBracelet && sIsBracelet) ? 8 : 0;
     const score =
-      lensEnWords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
-      + lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 3
-      + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2
+      lensEnWords.filter(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw))).length * 1
+      + lensKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 5
+      + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 5
       + brandBonus + subtypeBonus;
     return {s, score};
   }).sort((a,b)=>b.score-a.score).map(({s,score})=>({...s,_matchScore:score}));
