@@ -5119,50 +5119,34 @@ async function openLensSheet(idx){
     }catch(e){}
   }
 
-  // ── 1단계: 모델 키워드로 전체 DB 검색 (브랜드는 점수 가산만) ──
-  // 브랜드 매칭 SKU 우선 + 전체에서 모델 키워드 매칭
-  const candidates = _filterByBrand(skuListAll, brand);
+  // ── 매칭: _findDbMatchForLens로 전체 DB 키워드 검색 ──
+  // (Claude 번호 매칭은 30개 제한 + 파싱 불안정 문제로 제거)
+  let dbMatches = _findDbMatchForLens(title, brand, null);
+  console.log('[LensMatch] 1차 정적 매칭:', dbMatches.length, '건');
 
-  // ── 2단계: Claude에게 매칭 요청 ──
-  let dbMatches = [];
-  if(candidates.length && title){
+  // 영문 제목이면 Claude로 번역 후 재매칭
+  if(!/[가-힣]/.test(title)){
     try{
-      // 후보 목록을 간략하게 직렬화 (최대 30개)
-      const candidateList = candidates.slice(0,30).map((s,i)=>
-        `${i}. ${s.model_name_ko||''} / ${s.model_name||''} / SKU:${s.sku_code||''}`
-      ).join('\n');
-
-      const prompt = `아래 렌즈 검색 제목과 가장 유사한 DB 항목 번호를 골라줘 (최대 5개). 번호만 쉼표로 출력. 없으면 "없음" 출력.
-
-렌즈 제목: "${title}"
-
-DB 후보:
-${candidateList}
-
-답변 형식: 0,2,5 (번호만)`;
-
       const res = await fetch('/api/inspect',{
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action:'translate_title', title, prompt})
+        body: JSON.stringify({
+          action:'translate_title', title,
+          prompt:`다음 명품 상품명(영문)을 한국어로 번역해줘. 브랜드명 제거하고 모델명만. 40자 이내. 원문: "${title}". 한국어만 출력.`
+        })
       });
-      console.log('[LensMatch] Claude API 응답 status:', res.status);
       const j = await res.json();
-      const answer = (j.translated||'').trim();
-      console.log('[LensMatch] Claude 답변:', answer, '/ candidates 수:', candidates.length);
-
-      if(answer && answer !== '없음'){
-        const idxs = answer.split(/[,\s]+/).map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>=0&&n<candidates.length);
-        dbMatches = idxs.map(i=>candidates[i]).filter(Boolean);
-        console.log('[LensMatch] 파싱된 인덱스:', idxs, '→ 매칭:', dbMatches.length, '건');
+      const translated = (j.translated||'').trim().split('\n')[0];
+      console.log('[LensMatch] 번역:', translated);
+      if(translated){
+        const matches2 = _findDbMatchForLens(title, brand, translated);
+        const seen = new Set(dbMatches.map(s=>s.id));
+        matches2.forEach(s=>{ if(!seen.has(s.id)){ dbMatches.push(s); seen.add(s.id); } });
+        const tKo = translated.toLowerCase();
+        const tKoWords = tKo.replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+        dbMatches = _scoreAndSort(dbMatches, title.toLowerCase(), tKo, null, tKoWords, null, brand).slice(0,5);
+        console.log('[LensMatch] 번역 후 최종:', dbMatches.length, '건');
       }
-    }catch(e){ console.warn('[LensMatch Claude 오류]', e.message); }
-  }
-
-  // fallback: 정적 키워드 매칭
-  if(!dbMatches.length){
-    console.log('[LensMatch] fallback 실행 — skuListAll 길이:', skuListAll.length);
-    dbMatches = _findDbMatchForLens(title, brand, null);
-    console.log('[LensMatch] fallback 결과:', dbMatches.length, '건');
+    }catch(e){ console.warn('[LensMatch 번역 오류]', e.message); }
   }
 
   _renderLensMatches(matchWrap, dbMatches);
@@ -5444,7 +5428,8 @@ function _findDbMatchForLens(title, brand, translatedKo){
 
   const STOP_EN = new Set(['and','the','with','for','from','dior','louis','vuitton','chanel','gucci',
     'prada','women','mens','womens','new','bag','handbag','purse','fabric','color',
-    'classic','vintage','luxury','authentic','original','brand','size','style']);
+    'luxury','authentic','original','brand','size','style','cartier','hermes',
+    'jewelry','jewellery','collection','series']);
   const lensEnWords = q.split(/\s+/).filter(w=>w.length>=3&&!STOP_EN.has(w));
 
   const STOP_KO = new Set(['가방','숄더','클러치','지갑','백','블랙','화이트','베이지','블루','네이비','그레이','레드','브라운','핑크','그린']);
@@ -5453,6 +5438,7 @@ function _findDbMatchForLens(title, brand, translatedKo){
     : [];
 
   const EN_TO_KO = {
+    // 가방
     'book':'북','tote':'토트','oblique':'오블리크','embroidery':'자수',
     'leather':'레더','canvas':'캔버스','large':'라지','small':'스몰',
     'medium':'미디엄','mini':'미니','micro':'마이크로','nano':'나노',
@@ -5465,10 +5451,30 @@ function _findDbMatchForLens(title, brand, translatedKo){
     'alma':'알마','onthego':'온더고','trapeze':'트라페즈',
     'luggage':'러기지','trio':'트리오',
     'bonbonniere':'봉보니에르','goyardine':'고야딘','artois':'아르투아',
-    'saint':'생','chevron':'쉐브론','anjou':'앙주',
-    'marcie':'마르시','pixie':'픽시','drew':'드루',
-    'triomphe':'트리옹프','cyme':'심','ava':'아바',
-    'nano':'나노','mini':'미니','micro':'마이크로',
+    'chevron':'쉐브론','anjou':'앙주','marcie':'마르시',
+    'triomphe':'트리옹프','cyme':'심',
+    // 주얼리/반지/팔찌
+    'love':'러브','ring':'링','band':'밴드','bracelet':'팔찌',
+    'clash':'클래쉬','clashed':'클래쉬드',
+    'juste':'쥐스뗑클루','juste un clou':'쥐스뗑클루',
+    'trinity':'트리니티','panthere':'팬더','panther':'팬더',
+    'ballon':'발롱블루','tank':'탱크','santos':'산토스',
+    'classic':'클래식','wedding':'웨딩','eternity':'이터니티',
+    'solitaire':'솔리테어','engagement':'인게이지먼트',
+    'diamond':'다이아몬드','gold':'골드','rose':'로즈',
+    'white':'화이트','yellow':'옐로우','platinum':'플래티넘',
+    'necklace':'목걸이','pendant':'팬던트','earring':'이어링',
+    'alhambra':'알함브라','vintage':'빈티지','magic':'매직',
+    'perlee':'페를레','quatre':'카트르','serpenti':'세르펜티',
+    'bzero':'비제로','bvlgari':'불가리','bulgari':'불가리',
+    // 시계
+    'watch':'시계','automatic':'오토매틱','chronograph':'크로노그래프',
+    'submariner':'서브마리너','datejust':'데이저스트','daytona':'데이토나',
+    'seamaster':'씨마스터','speedmaster':'스피드마스터',
+    // 신발
+    'sneaker':'스니커즈','runner':'러너','trainer':'트레이너',
+    // 의류
+    'coat':'코트','jacket':'재킷','down':'다운',
   };
   const staticKoWords = lensEnWords.map(w=>EN_TO_KO[w]).filter(Boolean);
 
