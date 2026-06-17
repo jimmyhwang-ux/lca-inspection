@@ -5081,16 +5081,11 @@ async function openLensSheet(idx){
   document.getElementById('lens-sheet-title').textContent = title || '—';
   document.getElementById('lens-sheet-brand').textContent = brand || '';
 
-  // 원본 링크 버튼
   const linkEl = document.getElementById('lens-sheet-link');
   const link = m.link||m.url||'';
   if(linkEl){
-    if(link && link !== '#'){
-      linkEl.href = link;
-      linkEl.style.display = 'inline-flex';
-    } else {
-      linkEl.style.display = 'none';
-    }
+    if(link && link !== '#'){ linkEl.href = link; linkEl.style.display = 'inline-flex'; }
+    else { linkEl.style.display = 'none'; }
   }
 
   document.getElementById('lens-sheet-overlay').style.display = 'block';
@@ -5099,7 +5094,7 @@ async function openLensSheet(idx){
   const matchWrap = document.getElementById('lens-sheet-matches');
   matchWrap.innerHTML = '<div style="font-size:11px;color:#78716C;text-align:center;padding:10px 0;display:flex;align-items:center;justify-content:center;gap:6px"><span style="display:inline-block;width:12px;height:12px;border:2px solid #E8E5E0;border-top-color:#ff6b2b;border-radius:50%;animation:spin .7s linear infinite"></span>DB 매칭 중...</div>';
 
-  // DB 없으면 먼저 로드
+  // DB 없으면 로드
   if(!skuListAll||!skuListAll.length){
     try{
       const r = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list_sku'})});
@@ -5108,52 +5103,21 @@ async function openLensSheet(idx){
     }catch(e){}
   }
 
-  // ── 1단계: 모델 키워드로 전체 DB 검색 (브랜드는 점수 가산만) ──
-  // 브랜드 매칭 SKU 우선 + 전체에서 모델 키워드 매칭
-  const candidates = _filterByBrand(skuListAll, brand);
+  // 제목을 한글로 직역 → 한글 키워드로 DB 검색
+  let translated = '';
+  try{
+    const res = await fetch('/api/inspect',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action:'translate_title', title,
+        prompt:`다음 명품 상품명을 한국어로 직역해줘. 브랜드명 제거하고 모델명+카테고리+색상만. 예) "Love Ring Small Yellow Gold" → "러브 링 스몰 옐로우 골드". 원문: "${title}". 한국어만 출력.`
+      })
+    });
+    const j = await res.json();
+    translated = (j.translated||'').trim().split('\n')[0];
+  }catch(e){}
 
-  // ── 2단계: Claude에게 매칭 요청 ──
-  let dbMatches = [];
-  if(candidates.length && title){
-    try{
-      // 후보 목록을 간략하게 직렬화 (최대 30개)
-      const candidateList = candidates.slice(0,30).map((s,i)=>
-        `${i}. ${s.model_name_ko||''} / ${s.model_name||''} / SKU:${s.sku_code||''}`
-      ).join('\n');
-
-      const prompt = `아래 렌즈 검색 제목과 가장 유사한 DB 항목 번호를 골라줘 (최대 5개). 번호만 쉼표로 출력. 없으면 "없음" 출력.
-
-렌즈 제목: "${title}"
-
-DB 후보:
-${candidateList}
-
-답변 형식: 0,2,5 (번호만)`;
-
-      const res = await fetch('/api/inspect',{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action:'translate_title', title, prompt})
-      });
-      console.log('[LensMatch] Claude API 응답 status:', res.status);
-      const j = await res.json();
-      const answer = (j.translated||'').trim();
-      console.log('[LensMatch] Claude 답변:', answer, '/ candidates 수:', candidates.length);
-
-      if(answer && answer !== '없음'){
-        const idxs = answer.split(/[,\s]+/).map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>=0&&n<candidates.length);
-        dbMatches = idxs.map(i=>candidates[i]).filter(Boolean);
-        console.log('[LensMatch] 파싱된 인덱스:', idxs, '→ 매칭:', dbMatches.length, '건');
-      }
-    }catch(e){ console.warn('[LensMatch Claude 오류]', e.message); }
-  }
-
-  // fallback: 정적 키워드 매칭
-  if(!dbMatches.length){
-    console.log('[LensMatch] fallback 실행 — skuListAll 길이:', skuListAll.length);
-    dbMatches = _findDbMatchForLens(title, brand, null);
-    console.log('[LensMatch] fallback 결과:', dbMatches.length, '건');
-  }
-
+  const dbMatches = _findDbMatchForLens(title, brand, translated||null);
   _renderLensMatches(matchWrap, dbMatches);
 }
 
