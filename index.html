@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#EA580C">
-<title>번개케어 검수</title>
+<title>SKU BANK</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FAFAF8;color:#1C1917;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:15px;min-height:100vh;padding-bottom:100px}
@@ -23,7 +23,7 @@ body{background:#FAFAF8;color:#1C1917;font-family:-apple-system,'Apple SD Gothic
   .slot-sm{aspect-ratio:1}
 }
 .header{text-align:center;padding:16px 20px 12px}
-.header h1{font-size:19px;font-weight:800;margin-bottom:4px}
+.header h1{font-size:25px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px}
 .header p{font-size:12px;color:#57534E;line-height:1.4}
 .photo-wrap{padding:0 16px;margin-bottom:6px}
 .slot-big{background:#F0EDE8;border:2px dashed #DDD8D2ccc;border-radius:14px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .15s;margin-bottom:8px;min-height:120px}
@@ -218,8 +218,19 @@ input[type=file]{display:none}
   <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:#FAFAF8">
     <div style="width:100%;max-width:360px">
       <div style="text-align:center;margin-bottom:40px">
-        <div style="font-size:40px;margin-bottom:12px">🔍</div>
-        <div style="font-size:22px;font-weight:700;color:#1C1917;margin-bottom:6px">번개케어 검수</div>
+        <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:center">
+          <svg width="64" height="64" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="bgG" cx="38%" cy="32%" r="70%">
+                <stop offset="0%" stop-color="#4a4a4a"/>
+                <stop offset="100%" stop-color="#000000"/>
+              </radialGradient>
+            </defs>
+            <rect width="56" height="56" rx="13" fill="url(#bgG)"/>
+            <path d="M33 9L17.5 29.5H26.5L23 47L38.5 26.5H29.5L33 9Z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div style="font-size:29px;font-weight:800;color:#1C1917;margin-bottom:6px;letter-spacing:-0.5px">SKU BANK</div>
         <div style="font-size:13px;color:#57534E">접근 비밀번호를 입력하세요</div>
       </div>
       <div style="background:#FFFFFF;border-radius:16px;padding:24px;border:1px solid #E8E5E0;box-shadow:0 4px 16px rgba(0,0,0,.08)">
@@ -239,7 +250,7 @@ input[type=file]{display:none}
 <!-- STEP 1 -->
 <div id="screen-shoot" class="screen">
   <div class="header">
-    <h1>번개케어 검수</h1>
+    <h1>SKU BANK</h1>
     <p>사진으로 브랜드 · 모델명 · 카테고리 자동 인식</p>
   </div>
   <div class="photo-wrap">
@@ -5058,7 +5069,7 @@ async function deleteSku(id){
 function copyResult(){
   const a=resultData.analysis||{};
   const accText=accessories.map(a=>a.name).join('\n');
-  const text=['[번개케어 검수 결과]',
+  const text=['[SKU BANK 결과]',
     '브랜드: '+(a.brand||'—'),'모델명: '+(a.model_name_ko||a.model_name||'—'),
     'SKU: '+(a.sku||'—'),'색상: '+(a.color||'—'),'','[부속품]',accText].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✅ 복사됨'));
@@ -5315,12 +5326,17 @@ async function saveSkuDirectFromLmd(){
       }catch(e){}
     }
 
+    // 기존 사진 유지 + 새 사진을 extra_images 끝에 추가
+    const existingExtra = Array.isArray(s.extra_images) ? s.extra_images : [];
+    const allExtraImages = [...existingExtra, ...uploadedUrls];
+
     const skuData = {
       brand, model_name_ko:modelKo, model_name:modelEn,
       category:cat, color, sku_code:skuCode,
       size_label:sizeName, size_actual:sizeAct,
       site_url:siteUrl, notes,
-      ref_image_url: uploadedUrls[0] || s.ref_image_url || '',
+      ref_image_url: s.ref_image_url || uploadedUrls[0] || '',
+      extra_images: allExtraImages,
     };
 
     const source = cat==='시계'?'watches':cat==='주얼리'?'jewelry':'bags';
