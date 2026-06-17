@@ -5576,6 +5576,7 @@ function _findDbMatchForLens(title, brand, translatedKo){
   function koW(str){
     return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||_SUBTYPE_KO_1CHAR.has(w));
   }
+  function enW(str){
     return normEn(str).split(/\s+/).filter(w=>w.length>=3);
   }
 
@@ -5643,6 +5644,8 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, b
   function koW(str){
     return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||SUBTYPE_KO_1CHAR.has(w));
   }
+
+  const scored = items.map(s=>{
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = (s.model_name||'').toLowerCase().split(/\s+/).filter(w=>w.length>=3);
     const brandBonus = (brand && _brandMatch(s.brand, brand)) ? 5 : 0;
