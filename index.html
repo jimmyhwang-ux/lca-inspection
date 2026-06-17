@@ -5189,6 +5189,10 @@ function openLensMatchDetail(idx){
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <button onclick="closeLensMatchDetail()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#57534E;padding:0;line-height:1">←</button>
       <span style="font-size:15px;font-weight:800;flex:1">DB 매칭 상세</span>
+      <button onclick="saveSkuDirectFromLmd()" title="SKU DB에 바로 저장" style="display:flex;align-items:center;gap:4px;background:#1C1917;color:#fff;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        바로 저장
+      </button>
     </div>
     ${imgs.length ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none">
       ${imgs.map((u,ii)=>`<img src="${u}" onerror="this.style.display='none'" onclick="openLightbox('${u}',[${imgs.map(x=>`'${x}'`).join(',')}])" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid #E8E5E0;cursor:zoom-in">`).join('')}
@@ -5278,6 +5282,69 @@ function addLmdPhotos(files){
     reader.onload = e => _addLmdPhoto(e.target.result);
     reader.readAsDataURL(file);
   });
+}
+
+async function saveSkuDirectFromLmd(){
+  const s = window._lmdSkuData || {};
+  const brand    = document.getElementById('lmd-brand')?.value    || s.brand || '';
+  const modelKo  = document.getElementById('lmd-model-ko')?.value || s.model_name_ko || '';
+  const modelEn  = document.getElementById('lmd-model-en')?.value || s.model_name || '';
+  const cat      = document.getElementById('lmd-cat')?.value      || s.category || '가방';
+  const color    = document.getElementById('lmd-color')?.value    || s.color || '';
+  const skuCode  = document.getElementById('lmd-sku')?.value      || s.sku_code || '';
+  const sizeName = document.getElementById('lmd-size-name')?.value|| s.size_label || '';
+  const sizeAct  = document.getElementById('lmd-size')?.value     || s.size_actual || '';
+  const siteUrl  = document.getElementById('lmd-url')?.value      || s.site_url || '';
+  const notes    = document.getElementById('lmd-notes')?.value    || s.notes || '';
+  const extraPhotos = window._lmdExtraPhotos || [];
+
+  if(!modelKo && !modelEn){ toast('⚠️ 모델명을 입력해주세요'); return; }
+
+  const btn = document.querySelector('#lens-match-detail button[onclick="saveSkuDirectFromLmd()"]');
+  if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
+
+  try{
+    // 이미지 업로드
+    const uploadedUrls = [];
+    for(const dataUrl of extraPhotos){
+      try{
+        const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'upload_image', imageBase64:dataUrl.split(',')[1], imageMime:dataUrl.split(';')[0].split(':')[1]})});
+        const j = await res.json();
+        if(j.url) uploadedUrls.push(j.url);
+      }catch(e){}
+    }
+
+    const skuData = {
+      brand, model_name_ko:modelKo, model_name:modelEn,
+      category:cat, color, sku_code:skuCode,
+      size_label:sizeName, size_actual:sizeAct,
+      site_url:siteUrl, notes,
+      ref_image_url: uploadedUrls[0] || s.ref_image_url || '',
+    };
+
+    const source = cat==='시계'?'watches':cat==='주얼리'?'jewelry':'bags';
+    const res = await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'save_sku', source, skuData})});
+    const j = await res.json();
+
+    if(j.success){
+      closeLensMatchDetail();
+      closeLensSheet();
+      toast('✅ SKU가 저장됐어요!');
+      // SKU 관리로 이동 + 목록 갱신
+      skuListAll = [];
+      loadSkuList();
+      switchSkuTab('list');
+      showScreen('sku');
+    } else {
+      toast('❌ 저장 실패: '+(j.error||''));
+      if(btn){ btn.textContent = '바로 저장'; btn.disabled = false; }
+    }
+  }catch(e){
+    toast('❌ 오류: '+e.message);
+    if(btn){ btn.textContent = '바로 저장'; btn.disabled = false; }
+  }
 }
 
 function closeLensMatchDetail(){
