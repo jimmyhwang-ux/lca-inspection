@@ -5175,8 +5175,8 @@ function _renderLensMatches(matchWrap, dbMatches){
       + dbMatches.map((s,i)=>{
           const dims = s.size_actual ? ` • ${s.size_actual}` : '';
           const skuCode = s.sku_code ? `<span style="color:#78716C">${s.sku_code}</span>` : '';
-          const pct = Math.min(100, Math.round(((s._matchScore||0) / maxScore) * 100));
-          const pctColor = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#A8A29E';
+          const pct = Math.min(100, Math.round(((s._matchScore||0)/maxScore)*100));
+          const pctColor = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#A8A29E';
           return `<div onclick="openLensMatchDetail(${i})" style="cursor:pointer;background:#FFFFFF;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
             ${s.ref_image_url ? `<img src="${s.ref_image_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">` : ''}
             <div style="flex:1;min-width:0">
@@ -5467,81 +5467,36 @@ function _findDbMatchForLens(title, brand, translatedKo){
     'marcie':'마르시','pixie':'픽시','drew':'드루',
     'triomphe':'트리옹프','cyme':'심','ava':'아바',
     'nano':'나노','mini':'미니','micro':'마이크로',
-    // 주얼리
-    'love':'러브','clash':'클래쉬','clashed':'클래쉬드','trinity':'트리니티',
-    'juste':'쥐스뗑클루','panthere':'팬더','alhambra':'알함브라',
-    'ring':'링','bracelet':'팔찌','necklace':'목걸이','pendant':'팬던트',
-    'earring':'이어링','bangle':'뱅글',
-    'diamond':'다이아몬드','gold':'골드','rose':'로즈',
-    'white':'화이트','yellow':'옐로우','pink':'핑크',
-    // 시계
-    'submariner':'서브마리너','datejust':'데이저스트','daytona':'데이토나',
-    'seamaster':'씨마스터','speedmaster':'스피드마스터',
-    'tank':'탱크','santos':'산토스','ballon':'발롱','pasha':'파샤',
-    'royaloak':'로얄오크','offshore':'오프쇼어','portugieser':'포르투기저',
-    'carrera':'카레라','aquaracer':'아쿠아레이서',
   };
   const staticKoWords = lensEnWords.map(w=>EN_TO_KO[w]).filter(Boolean);
 
-  const _SUBTYPE_KO_1CHAR = new Set(['링','백']);
   function koW(str){
-    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||_SUBTYPE_KO_1CHAR.has(w));
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
   }
   function enW(str){
     return normEn(str).split(/\s+/).filter(w=>w.length>=3);
   }
 
-  // 서브타입 감지 — ring이면 bracelet 제외 등
-  const JEWELRY_TYPES = {
-    ring:    {en:['ring'],        ko:['링','반지']},
-    bracelet:{en:['bracelet','bangle'], ko:['팔찌','브레이슬릿','뱅글']},
-    necklace:{en:['necklace','pendant'],ko:['목걸이','네크리스','팬던트']},
-    earring: {en:['earring'],     ko:['이어링','귀걸이']},
-    watch:   {en:['watch'],       ko:['시계']},
-  };
-  let detectedType = null;
-  for(const [type,{en,ko}] of Object.entries(JEWELRY_TYPES)){
-    if(en.some(w=>lensEnWords.includes(w)) || ko.some(w=>staticKoWords.includes(w) || lensKoWords.includes(w))){
-      detectedType = type; break;
-    }
-  }
-
-  // SKU 번호 패턴 제거 (crb7212300 등이 매칭 키워드에서 노이즈 유발)
-  const cleanLensEnWords = lensEnWords.filter(w=>!/^[a-z]{0,4}\d/.test(w) && !/^\d/.test(w));
-
   // 전체 DB에서 모델 키워드 매칭 (브랜드는 점수 가산)
   const matched = skuListAll.filter(s=>{
     const sKoW = koW(s.model_name_ko||'');
     const sEnW = enW(s.model_name||'');
-    const enHit = cleanLensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
+    const enHit = lensEnWords.some(w=>sEnW.some(sw=>sw.includes(w)||w.includes(sw)));
     const koHit = lensKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
     const stHit = staticKoWords.some(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw)));
-    if(!enHit && !koHit && !stHit) return false;
-
-    // 서브타입 필터 — 정확한 토큰 매칭으로 크로스 제거
-    if(detectedType){
-      const myType = (()=>{
-        for(const [t,{en:te,ko:tk}] of Object.entries(JEWELRY_TYPES)){
-          if(te.some(w=>sEnW.includes(w)) || tk.some(w=>sKoW.includes(w))) return t;
-        }
-        return null;
-      })();
-      if(myType && myType !== detectedType) return false;
-    }
-    return true;
+    return enHit || koHit || stHit;
   });
 
-  return _scoreAndSort(matched, q, qKo, cleanLensEnWords, lensKoWords, staticKoWords, brand);
+  return _scoreAndSort(matched, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand).slice(0,5);
 }
 
-// 키워드 겹침 수 기준 정렬 + 매칭율 점수 부여
+// 키워드 겹침 수 기준 정렬
 function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, brand){
   if(!lensEnWords) lensEnWords=[];
   if(!lensKoWords) lensKoWords=[];
   if(!staticKoWords) staticKoWords=[];
-  const _SUBTYPE_KO_1CHAR = new Set(['링','백']);
   function koW(str){
-    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2||_SUBTYPE_KO_1CHAR.has(w));
+    return (str||'').toLowerCase().replace(/[^\w가-힣\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
   }
   return items.map(s=>{
     const sKoW = koW(s.model_name_ko||'');
@@ -5553,7 +5508,7 @@ function _scoreAndSort(items, q, qKo, lensEnWords, lensKoWords, staticKoWords, b
       + staticKoWords.filter(w=>sKoW.some(sw=>sw.includes(w)||w.includes(sw))).length * 2
       + brandBonus;
     return {s, score};
-  }).sort((a,b)=>b.score-a.score).map(({s,score})=>({...s, _matchScore:score}));
+  }).sort((a,b)=>b.score-a.score).map(({s,score})=>({...s,_matchScore:score}));
 }
 
 function closeLensSheet(){
